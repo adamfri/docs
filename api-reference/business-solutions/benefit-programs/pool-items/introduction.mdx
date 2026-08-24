@@ -1,0 +1,47 @@
+---
+title: "Introduction"
+description: "The Pool Items API lets you query which catalog items a member can access through their active benefit programs."
+icon: "file-lines"
+---
+
+The Pool Items API lets you query which catalog items a member can access through their active benefit programs. Each pool item is a specific product, class, post, or other catalog item that's been provisioned for a member, contact, or visitor as part of a benefit in their pool. Use this API together with other [Wix Benefit Programs APIs](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/introduction).
+
+With the Pool Items API, you can:
+
+- List a member's currently accessible items in a single query, without walking the [Programs](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/programs), [Pools](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pools), and [Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/items) APIs yourself.
+- Check whether a member can access a specific catalog item by its provider-app reference (for example, a Wix Stores product ID).
+- List all items granted by a specific benefit for a specific member.
+- Filter pool items by benefit, program, category, provider app, or any of the supported fields.
+
+## Pool items in benefit programs
+
+A pool item is the per-beneficiary copy of a catalog [item](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/items) that's been assigned to a benefit inside a beneficiary's [pool](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pools). Pool items collapse the multi-step lookup that the underlying APIs would otherwise require. Instead of querying Programs, then Pools, then Items and joining the results, a single [Query Pool Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-items/query-pool-items) call returns the per-member list directly.
+
+Each pool item carries a `providerAppId`, `category`, and `externalId` triple that identifies the underlying catalog item, such as a Wix Stores product or a Wix Bookings service. Use these fields, or the pre-computed `itemSearchKey`, to map a pool item back to its source catalog. `itemSearchKey` has the format `providerAppId/category/externalId`. You can construct it manually with a `/` separator. Filtering by `itemSearchKey` is more efficient than composing 3 separate filter conditions.
+
+Learn more about benefit programs [components](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/benefit-program-components) and [lifecycle](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/benefit-programs-lifecycle).
+
+## Credits and benefit pricing
+
+When you request the `BENEFIT` enrichment via the `fields` parameter, `benefitInfo.price` is populated with the cost to consume the benefit, expressed in credits. Credits are a configurable unit defined on the parent pool definition: each pool definition declares a credit configuration that includes a unit type. `benefitInfo.price` is absent when the benefit doesn't use credit-based pricing.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Sites using this API must install the Pricing Plans app.
+- Pool items are created and removed by the underlying Pools and Items services. Eventual consistency applies. Newly assigned items may take a short time to appear in Query Pool Items results.
+- App callers must include an explicit `beneficiary.memberId` filter to scope results to a specific beneficiary. Member callers don't need this filter, as the response is automatically scoped to the calling member.
+
+## Terminology
+
+- **Pool item**: The per-beneficiary copy of a catalog item assigned to a benefit inside a beneficiary's pool. Identifies the specific item that a specific beneficiary can access.
+- **Beneficiary**: The member, contact, or visitor who holds a pool. Identified by the `beneficiary` field on each pool item.
+- **Benefit**: A specific thing a beneficiary can access in a pool. Each benefit is identified by a `benefitKey`. Use `poolId` together with `benefitKey` to identify a benefit.
+- **Item set**: An internal grouping identifier for a benefit's items. Surfaced as `itemSetId` on each pool item, but not the developer-facing identifier. Use `poolId` and `benefitKey` instead.
+- **Provider app**: The 3rd-party app that supplies the underlying catalog item. Identified by `providerAppId` on each pool item.
+- **Category**: A label that the provider app uses to group items by type, for example `class`, `post`, or `group`.
+- **Item search key**: A pre-computed field that uniquely identifies a catalog item within a provider app. Formed by joining `providerAppId`, `category`, and `externalId` with `/`. Use it as a single filter field when querying pool items by item reference.
+- **Credit**: A configurable unit defined on a pool definition's credit configuration. The unit type is set per pool definition (for example, `point` or `token`). Used in `benefitInfo.price` when the benefit has credit-based pricing.
+
+@sdk_package_setup

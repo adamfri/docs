@@ -1,0 +1,94 @@
+---
+title: "Sample Flows"
+description: "This article shares some possible use cases you could support, as well as a sample flow that could support each use case."
+icon: "file-lines"
+---
+
+This article shares some possible use cases you could support,
+as well as a sample flow that could support each use case.
+This can be a helpful jumping off point as you plan your implementation.
+
+## Collect a cancellation fee
+
+You could collect a cancellation fee from the customer when the business
+cancels a booking in their dashboard on behalf of the customer. Note that Wix
+Bookings automatically applies the cancellation fee to an eCommerce order if
+the customer cancels the booking themselves.
+
+To collect a cancellation fee:
+
+1. Listen to *Booking Canceled*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/on-booking-canceled) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/booking-canceled))
+   and save the booking ID.
+1. Confirm that the business has canceled the booking in the dashboard by checking
+   that `initiatedBy` is set to a `wixUserId`. Don't apply cancellation fees
+   for bookings that were canceled by customers themselves, since Wix Bookings
+   does that automatically.
+1. Calculate the resulting booking fees with
+   *List Booking Fees By Booking Ids*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-fees/list-booking-fees-by-booking-ids) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/list-booking-fees-by-booking-ids)).
+1. Apply the booking fees to an eCommerce order, calling
+   *Apply Booking Fees to Order*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-fees/apply-booking-fees-to-order) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/apply-booking-fees-to-order)).
+1. Charge the customer with *Collect Applied Booking Fees*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-fees/collect-applied-booking-fees) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/collect-applied-booking-fees)).
+
+## Create a cancellation fee dashboard
+
+You could display a dashboard to the business owners that allows them to
+manage cancellation fees for their bookings.
+
+To create a cancellation fee dashboard:
+
+1. Call *Query Extended Booking*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/extended-bookings/query-extended-bookings) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings))
+   and specify a time range as `query.filter`. This retrieves all
+   upcoming bookings. If you want to display only bookings for a specific list
+   of services, also specify the relevant service IDs in the filter. Save the
+   list of retrieved booking IDs.
+1. Display each booking to the business owners including a button to manage the
+   related cancellation fee.
+1. When the business owner clicks the manage cancellation fee button, call
+   *List Booking Fees By Booking Ids*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-fees/list-booking-fees-by-booking-ids) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/list-booking-fees-by-booking-ids))
+   to retrieve the associated fees. You could display them in a new modal.
+1. Make sure to not display fees with a status of `PREVIEW` since the customer hasn't
+   canceled the associated booking.
+1. In the modal, you may include a button that allows the business to discount
+   the cancellation fee and another button to apply the fee to the corresponding
+   eCommerce order.
+1. Make sure to save discounted fee prices on your servers until the business is
+   ready to apply them.
+1. Call *Apply Booking Fees to Order*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-fees/apply-booking-fees-to-order) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/apply-booking-fees-to-order))
+   to apply the relevant booking fees as a single additional fee to an
+   eCommerce order. To apply a discounted fee, specify a `priceOverride`
+   object with the amount stored on your servers.
+
+## Cancel a booking on behalf of the customer
+
+You could display information about the fee customers would have to be before
+they cancel their booking.
+
+To display cancellation fee details:
+
+1. Call *Query Extended Booking*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/extended-bookings/query-extended-bookings) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings)),
+   specifying `{"withBookingPolicySettings": true}` and a time range as `query.filter`.
+   This retrieves all bookings in the given range including their booking policies.
+1. Display each booking to the customer. Include a cancel button, if the
+   extended booking's  `allowedActions.cancel` field is set to `true`.
+1. When the customer clicks the cancel button check if the relevant
+   *booking policy snapshot's*
+  ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-policy-snapshots/introduction) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policy-snapshots/introduction))
+   `cancellationFeePolicy.enabled` is set to `true`. Then, call
+   *List Booking Fees By Booking Ids*
+  ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/booking-fees/list-booking-fees-by-booking-ids) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/list-booking-fees-by-booking-ids))
+   and specify the relevant `bookingId`. Note that the returned cancellation
+   fee has `{"status": "PREVIEW"}`, which means that the customer hasn't agreed
+   to pay it yet.
+1. Display the cancellation fee to the customer. After they've agreed to pay
+   the fee, call *Cancel Booking*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/cancel-booking) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/cancel-booking)).
+1. Wix Bookings automatically applies the cancellation fee to the order, once
+   the booking has been canceled.

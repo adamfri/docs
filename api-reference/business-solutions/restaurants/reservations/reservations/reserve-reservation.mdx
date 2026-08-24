@@ -1,0 +1,440 @@
+---
+title: "Reserve Reservation"
+description: "Reserves or requests a held reservation."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Reserves or requests a held reservation.
+
+    Held reservations are temporary reservations with the `HELD` status created by `Create Held Reservation`.
+    They are intended to reserve seats and tables for a party in a selected time slot while they enter further reservation details, such as names and contact information. Reservations with the `HELD` status are only valid for 10 minutes. Trying to call `Reserve Reservation` with a held reservation older than 10 minutes returns an error.
+
+    `Reserve Reservation` changes a reservation's `HELD` status to:
+    * `RESERVED` if the reservation's reservation location does not require manual approval.
+    * `REQUESTED` if the reservation's reservation location requires manual approval.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-RESERVATIONS.MANAGE-RESERVATIONS-BASIC">Manage Reservations (Basic)</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/table-reservations/reservations/v1/reservations/{reservationId}/reserve
+    ```
+
+    ## Path Params
+
+    <ParamField path="reservationId" type="string" required>
+
+      Reservation ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="reservee" type="Reservee" required>
+
+      Reservee details.
+
+      <Expandable title="reservee properties">
+
+        <ParamField body="firstName" type="string" required>
+
+          First name.
+
+          This field is required if the reservation's `source` is anything other than `WALK_IN`.
+
+        </ParamField>
+
+        <ParamField body="lastName" type="string">
+
+          Last name.
+
+        </ParamField>
+
+        <ParamField body="email" type="string">
+
+          Email address.
+
+        </ParamField>
+
+        <ParamField body="phone" type="string" required>
+
+          Phone number.
+
+          This property should begin with a +, followed by the country code, and then the rest of the phone number. For example, `"+972555555555"`.
+
+          This field is required if the reservation's `source` is anything other than `WALK_IN`.
+
+        </ParamField>
+
+        <ParamField body="marketingConsent" type="boolean">
+
+          Whether the reservee has given marketing consent.
+
+        </ParamField>
+
+        <ParamField body="customFields" type="object">
+
+          Custom fields for the reservee in key-value pairs.
+
+          The key is the custom field's ID, and the value is the custom field's value. For example, a custom field for allergies might have the key-value pair `f4283b2d-6340-4cf9-bae7-8769e6b62127 : "Nuts, Seafood"`.
+
+          Empty fields are not returned.
+
+        </ParamField>
+
+        <ParamField body="contactId" type="string">
+
+          Contact ID. If a contact with this ID does not exist on the site, one will be created.
+
+          **Read-only.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="revision" type="integer" required>
+
+      Revision number.
+
+      Specify the existing `revision` to prevent conflicting updates to reservations.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="reservation" type="Reservation">
+
+      Reservation.
+
+      See the [Reservation Object](/api-reference/business-solutions/restaurants/reservations/reservations/reservation-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MUST_BE_PREMIUM` | This feature requires a premium plan. |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_BE_UPDATED` | The reservation can't be updated in its current state. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Reservation Updated | `wix.table_reservations.v1.reservation_updated` | Triggered when a reservation is reserved. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/table-reservations/reservations/v1\
+          /reservations/52b1af0a-12e5-4835-a453-7992ab86339c/reserve' \
+          -H 'Authorization: <AUTH>'
+          --data-binary '{
+           "revision": "1",
+           "reservee": {
+               "firstName": "John",
+               "lastName": "Doe",
+               "email": "john.doe@mail.com",
+               "phone": "+380661234567"
+           }
+         }'
+      ```
+
+      ```json Response
+      {
+          "reservation": {
+              "id": "af878917-e3ab-42e1-9587-e8ee217418af",
+              "status": "RESERVED",
+              "details": {
+                  "reservationLocationId": "28bca9ee-e5b9-4081-9f45-a6dded8593a1",
+                  "tables": {
+                      "ids": []
+                  },
+                  "startDate": "2023-05-26T12:30:00Z",
+                  "endDate": "2023-05-26T14:00:00Z",
+                  "partySize": 2
+              },
+              "createdDate": "2023-04-06T14:43:31.926Z",
+              "revision": "2"
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Reserves or requests a held reservation.
+
+    Held reservations are temporary reservations with the `HELD` status created by `Create Held Reservation`.
+    They are intended to reserve seats and tables for a party in a selected time slot while they enter further reservation details, such as names and contact information. Reservations with the `HELD` status are only valid for 10 minutes. Trying to call `Reserve Reservation` with a held reservation older than 10 minutes returns an error.
+
+    `Reserve Reservation` changes a reservation's `HELD` status to:
+    * `RESERVED` if the reservation's reservation location does not require manual approval.
+    * `REQUESTED` if the reservation's reservation location requires manual approval.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-RESERVATIONS.MANAGE-RESERVATIONS-BASIC">Manage Reservations (Basic)</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { reservations } from '@wix/table-reservations';
+
+    reservations.reserveReservation(reservationId, reservee, revision): Promise<ReserveReservationResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="reservationId" type="string" required>
+
+      Reservation ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="reservee" type="Reservee" required>
+
+      Reservee details.
+
+      <Expandable title="reservee properties">
+
+        <ParamField body="firstName" type="string" required>
+
+          First name.
+
+          This field is required if the reservation's `source` is anything other than `WALK_IN`.
+
+        </ParamField>
+
+        <ParamField body="lastName" type="string">
+
+          Last name.
+
+        </ParamField>
+
+        <ParamField body="email" type="string">
+
+          Email address.
+
+        </ParamField>
+
+        <ParamField body="phone" type="string" required>
+
+          Phone number.
+
+          This property should begin with a +, followed by the country code, and then the rest of the phone number. For example, `"+972555555555"`.
+
+          This field is required if the reservation's `source` is anything other than `WALK_IN`.
+
+        </ParamField>
+
+        <ParamField body="marketingConsent" type="boolean">
+
+          Whether the reservee has given marketing consent.
+
+        </ParamField>
+
+        <ParamField body="customFields" type="object">
+
+          Custom fields for the reservee in key-value pairs.
+
+          The key is the custom field's ID, and the value is the custom field's value. For example, a custom field for allergies might have the key-value pair `f4283b2d-6340-4cf9-bae7-8769e6b62127 : "Nuts, Seafood"`.
+
+          Empty fields are not returned.
+
+        </ParamField>
+
+        <ParamField body="contactId" type="string">
+
+          Contact ID. If a contact with this ID does not exist on the site, one will be created.
+
+          **Read-only.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="revision" type="integer" required>
+
+      Revision number.
+
+      Specify the existing `revision` to prevent conflicting updates to reservations.
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ReserveReservationResponse>`.
+
+    <ResponseField name="reservation" type="Reservation">
+
+      Reservation.
+
+      See the [Reservation Object](/api-reference/business-solutions/restaurants/reservations/reservations/reservation-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MUST_BE_PREMIUM` | This feature requires a premium plan. |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_BE_UPDATED` | The reservation can't be updated in its current state. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Reservation Updated | `wix.table_reservations.v1.reservation_updated` | Triggered when a reservation is reserved. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-reserve-reservation" id="ex-sdk-reserve-reservation-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-reserve-reservation" id="ex-sdk-reserve-reservation-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-reserve-reservation-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-reserve-reservation-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">reserveReservation</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">reserveReservation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-reserve-reservation-0"><span className="wix-picker-name">reserveReservation</span></label>
+    <label htmlFor="ex-sdk-reserve-reservation-1"><span className="wix-picker-name">reserveReservation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript reserveReservation
+    import { reservations } from '@wix/table-reservations';
+
+    async function reserveReservation(reservationId,reservee,revision) {
+      const response = await reservations.reserveReservation(reservationId,reservee,revision);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript reserveReservation (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { reservations } from '@wix/table-reservations';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { reservations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function reserveReservation(reservationId,reservee,revision) {
+      const response = await myWixClient.reservations.reserveReservation(reservationId,reservee,revision);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

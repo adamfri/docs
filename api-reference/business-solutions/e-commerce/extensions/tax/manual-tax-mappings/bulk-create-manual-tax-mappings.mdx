@@ -1,0 +1,538 @@
+---
+title: "Bulk Create Manual Tax Mappings"
+description: "Creates up to 100 manual tax mappings in a single request."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates up to 100 manual tax mappings in a single request.
+
+    Use this method when you need to set up tax mappings for multiple tax group and region combinations at once,
+    such as when initially configuring tax rates for a new business or importing mappings from an external system.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/billing/v1/bulk/manual-tax-mappings/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="manualTaxMappings" type="ManualTaxMapping[]" required>
+
+      Manual tax mappings to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Manual Tax Mapping Object](/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/manual-tax-mapping-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the created manual tax mapping entities in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkManualTaxMappingResult[]">
+
+      Results of the bulk create operation, including created manual tax mappings and metadata.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual create operation.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="ManualTaxMapping">
+
+          Created manual tax mapping. Only present if `returnEntity` was set to `true` in the request.
+
+          See the [Manual Tax Mapping Object](/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/manual-tax-mapping-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk create operation.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Manual Tax Mapping Created | `wix.billing.v1.manual_tax_mapping_created` | Triggered when a manual tax mapping is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates multiple custom tax rate mappings in a single request for efficient setup or data import
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/billing/v1/bulk/manual-tax-mappings/create' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+              "manualTaxMappings": [
+                {
+                  "taxGroupId": "f1a7350b-7275-43f1-9846-672123a67d7b",
+                  "taxRegionId": "05255459-e414-4fdc-8c94-c6dbdc8c2f44",
+                  "taxRate": "0.1"
+                },
+                {
+                  "taxGroupId": "cb2a5db7-19a3-4423-8d20-9f3c66c19721",
+                  "taxRegionId": "08ca6b20-1daf-46f2-95fa-851ca62db98d",
+                  "taxRate": "0.2"
+                }
+              ]
+            }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "181ee706-5bb1-4d66-8d2f-46e62d347cd0",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "9d9b21d1-3094-451a-8969-b8ef41395616",
+              "originalIndex": 1,
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates up to 100 manual tax mappings in a single request.
+
+    Use this method when you need to set up tax mappings for multiple tax group and region combinations at once,
+    such as when initially configuring tax rates for a new business or importing mappings from an external system.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { manualTaxMappings } from '@wix/billing';
+
+    manualTaxMappings.bulkCreateManualTaxMappings(manualTaxMappings, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="manualTaxMappings" type="ManualTaxMapping[]" required>
+
+      Manual tax mappings to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Manual Tax Mapping Object](/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/manual-tax-mapping-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateManualTaxMappingsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the created manual tax mapping entities in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkManualTaxMappingResult[]">
+
+      Results of the bulk create operation, including created manual tax mappings and metadata.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual create operation.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="ManualTaxMapping">
+
+          Created manual tax mapping. Only present if `returnEntity` was set to `true` in the request.
+
+          See the [Manual Tax Mapping Object](/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/manual-tax-mapping-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk create operation.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Manual Tax Mapping Created | `wix.billing.v1.manual_tax_mapping_created` | Triggered when a manual tax mapping is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-manual-tax-mappings" id="ex-sdk-bulk-create-manual-tax-mappings-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-manual-tax-mappings" id="ex-sdk-bulk-create-manual-tax-mappings-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-manual-tax-mappings-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-manual-tax-mappings-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk Create Manual Tax Mappings</span><span className="wix-picker-desc">Create several tax rate mappings in a single request</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateManualTaxMappings (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-manual-tax-mappings-0"><span className="wix-picker-name">Bulk Create Manual Tax Mappings</span><span className="wix-picker-desc">Create several tax rate mappings in a single request</span></label>
+    <label htmlFor="ex-sdk-bulk-create-manual-tax-mappings-1"><span className="wix-picker-name">bulkCreateManualTaxMappings (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk Create Manual Tax Mappings
+    import { manualTaxMappings } from "@wix/billing";
+
+    async function bulkCreateManualTaxMappings() {
+      const response = await manualTaxMappings.bulkCreateManualTaxMappings(
+        [
+          {
+            taxGroupId: "a1b2c3d4-e5f6-7a8b-9c0d-e1f2a3b4c5d6",
+            taxRegionId: "b2c3d4e5-f6a7-8b9c-0d1e-f2a3b4c5d6e7",
+            taxRate: "0.100000",
+            taxName: "GST",
+          },
+          {
+            taxGroupId: "a1b2c3d4-e5f6-7a8b-9c0d-e1f2a3b4c5d6",
+            taxRegionId: "b2c3d4e5-f6a7-8b9c-0d1e-f2a3b4c5d6e7",
+            taxRate: "0.070000",
+            taxName: "PST",
+          },
+        ],
+        { returnEntity: false },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     { "itemMetadata": { "originalIndex": 0, "success": true, "_id": "c3d4e5f6-a7b8-9c0d-1e2f-a3b4c5d6e7f8" } },
+     *     { "itemMetadata": { "originalIndex": 1, "success": true, "_id": "d4e5f6a7-b8c9-0d1e-2f3a-b4c5d6e7f8a9" } }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 2,
+     *     "totalFailures": 0,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateManualTaxMappings (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { manualTaxMappings } from '@wix/billing';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { manualTaxMappings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateManualTaxMappings(manualTaxMappings,options) {
+      const response = await myWixClient.manualTaxMappings.bulkCreateManualTaxMappings(manualTaxMappings,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

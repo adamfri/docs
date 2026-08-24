@@ -1,0 +1,62 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Change where an existing redirect points
+
+A site owner renames a landing page and the redirect that used to point at it now sends visitors to the wrong place. There's no method to update a redirect, so the change is a retrieve, a delete, and a create.
+
+To change where a redirect points:
+
+1. Call [Get Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/get-redirect) with the redirect's ID, and keep the whole `redirect` object from the response.
+1. Call [Delete Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/delete-redirect) with the same ID.
+1. Call [Create Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect), passing every field you retrieved with your new `to` value applied. Keep `options` and `language` as they were: an omitted `options` turns a group redirect into an exact one, and an omitted `language` turns a language-scoped redirect into one that applies to every language. Keep `id` to preserve the redirect's identity.
+
+## Redirect a whole section of a site
+
+A site owner reorganizes a forum and every URL under one category moves to another. A group redirect covers the whole branch in a single redirect, carrying the rest of each URL over to the new path.
+
+To redirect a whole section:
+
+1. Call [Create Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect) with the shared path as `from`, the new shared path as `to`, and `options.groupRedirect` set to `true`. For example:
+
+    ```json
+    {
+      "redirect": {
+        "from": "/forum/questions/",
+        "to": "/forum/faqs/",
+        "options": { "groupRedirect": true }
+      }
+    }
+    ```
+
+1. Call [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) and confirm the new redirect is on the site. A request for `/forum/questions/my-post` now resolves to `/forum/faqs/my-post`.
+
+## Migrate a batch of URLs from another platform
+
+A site owner moves a site to Wix and needs every old URL to keep working. Bulk Create Redirects handles up to 500 redirects per request and reports each one separately, so a single bad entry doesn't cost you the rest of the batch.
+
+To migrate a batch of URLs:
+
+1. Build the list of old and new paths, as an array of up to 500 redirects.
+1. Call [Bulk Create Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) with that array. Leave `options.forceReplace` unset so an existing redirect on the site is never replaced silently.
+1. Read `results[].itemMetadata` from the response. An entry with `success` set to `false` carries an `error.code`, such as `FROM_URL_EXISTS` when another redirect already starts from that path, and `originalIndex` tells you which redirect in your request it was.
+1. Check `bulkActionMetadata.undetailedFailures`. If it isn't `0`, some redirects have an unknown outcome, so call [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) to see which of them exist.
+1. Fix the failed entries and call [Bulk Create Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) again with only those.
+1. Repeat from step 2 for each batch of 500 until the migration is done.
+
+## Clean up redirects for a retired section of a site
+
+A site owner retires a section of the site, and the redirects that pointed into it are no longer wanted. List Redirects takes no filter, so select the redirects on your side and delete them by ID.
+
+To clean up the redirects for a retired section:
+
+1. Call [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) to retrieve every redirect on the site.
+1. Filter the result on your side to the redirects you want to remove, and collect their IDs.
+1. Call [Bulk Delete Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-delete-redirects) with up to 500 of those IDs.
+1. Read `results[].itemMetadata` from the response. An ID that matches no redirect fails with `REDIRECT_NOT_FOUND`, and the rest are still deleted.
+1. Call [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) to confirm the redirects are gone. A successful item means the deletion was sent rather than confirmed, and a redirect scoped to a language can still appear in the list after it stops taking effect.

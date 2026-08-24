@@ -1,0 +1,171 @@
+---
+title: "Resumable Upload API"
+description: "To upload a file to a site's Media Manager with a URL that allows you to pause and resume an upload, you can call Generate File Resumable Upload URL."
+icon: "file-lines"
+---
+
+To upload a file to a site's Media Manager with a URL that allows you to pause and resume an upload, you can call [Generate File Resumable Upload URL](https://dev.wix.com/api/rest/media/media-manager/files/generate-file-resumable-upload-url). This call returns a signed `uploadUrl` and `uploadToken` that you can then use to upload a file.
+
+<Note>
+
+- If you don't specifically need a resumable upload experience, you can call one of the following options instead of calling Generate File Resumable Upload URL:
+  - For files with public URLs, you can call [Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/import-file).
+  - For files without public URLs, you can call [Generate File Upload URL](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/generate-file-upload-url).
+
+</Note>
+
+## Upload flow
+
+The code for generating an upload URL and sending it an upload request varies depending on your context. For example, the code for a dashboard page of a self-hosted app differs slightly from the code for a headless site.
+
+However, in all scenarios, you need to perform the following steps:
+
+1. Get the file to upload.
+1. Get the name of the file.
+1. Get the MIME type of the file.
+1. Generate an upload URL and upload token using the [Generate File Resumable Upload URL](https://dev.wix.com/docs/sdk/backend-modules/media/files/generate-file-resumable-upload-url) method.
+1. Create a new [tus](fallback::https://tus.io/) upload using the generated upload URL.
+1. Start the tus upload.
+1. When the tus upload completes successfully, send a PUT request to finalize the upload. Append the upload token to the generated upload URL path and add the file name as a query parameter.
+
+## Create a tus upload
+
+To create a resumable upload experience, use a tus client. There are tus client [implementations](fallback::https://tus.io/implementations) available for many popular languages.
+
+After generating an `uploadUrl` by calling Generate File Resumable Upload URL, use a tus client to create a tus upload with the following information:
+
+- **File:** Specify the file to upload.
+- `endpoint`: The `uploadUrl` returned from the call to Generate File Resumable Upload URL.
+- `metadata` Specify the following metadata:
+    - `filename`: The name of the file to upload.
+    - `contentType`: The MIME type of the file to upload.
+    - `token`: The upload token returned from the call to Generate File Resumable Upload URL.
+
+## Call the upload URL
+
+After the tus upload completes successfully, call the `uploadUrl` using the following information:
+
+- **HTTP method:** PUT.
+- **URL:** The `uploadUrl` followed by a `/` and the `uploadToken`.
+- **Query parameters:** `filename` with the name of the file, including the extension. The `filename` parameter is optional if `fileName` was already provided in the [Generate File Resumable Upload URL](https://dev.wix.com/api/rest/media/media-manager/files/generate-file-resumable-upload-url) call.
+
+<Note>
+
+You need to determine the file's MIME type before uploading. For example, in Node.js you can use the [mime-types](fallback::https://www.npmjs.com/package/mime-types) library or the [file-type](fallback::https://www.npmjs.com/package/file-type) package. Other languages and platforms have equivalent libraries for detecting MIME types.
+
+</Note>
+
+## Upload URL response
+
+When the upload is successful, Wix returns information about the file being uploaded.
+
+Uploading files takes time. Receiving a successful response from a call to the `uploadUrl` doesn't mean that the upload is complete. To run code when the upload finishes, listen for the [File Ready](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-ready) and [File Failed](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-failed) events. Learn more about [knowing when a file is ready](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/importing-files#knowing-when-the-file-is-ready).
+
+## Example
+
+The following example code shows the calls to generate a resumable upload URL and use it to upload an image file. How you make those calls depends on the context in which you're writing that code.
+
+You also need to write code that performs the other steps in the [upload flow](fallback::#upload-flow) to retrieve the information you need to provide when making the calls shown below.
+
+### Generate an upload URL
+
+To generate an upload URL, you need to send a POST request to Generate File Resumable Upload URL, specifying the MIME type of the file.
+
+```bash
+curl -X POST \
+  'https://www.wixapis.com/site-media/v1/files/generate-resumable-upload-url' \
+  -H 'Authorization: <AUTH>' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "mimeType": "<MIME_TYPE>",
+    "fileName": "<FILE_NAME>",
+    "uploadProtocol": "TUS"
+  }'
+```
+
+The response contains a signed `uploadUrl` and an `uploadToken`.
+
+### Use a generated resumable URL to upload a file
+
+After generating an `uploadUrl` and `uploadToken`, use a tus client to upload the file. When the tus upload completes, make a PUT request to finalize the upload.
+
+This example uses [tus-js-client](fallback::https://github.com/tus/tus-js-client/) to implement the resumable upload:
+
+```typescript
+async function resumableFileUpload(resumableUploadUrlResponse: GenerateFileResumableUploadUrlResponse, mimeType: string): Upload {
+  const fileName = 'imageExample.jpg';
+  const fileContent = await fs.createReadStream(path.join(__dirname, '..', 'files', fileName));
+
+  await new Promise(async (resolve, reject) => {
+    const upload = new tus.Upload(fileContent, {
+      endpoint: resumableUploadUrlResponse.uploadUrl,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      metadata: {
+        filename: fileName,
+        contentType: mimeType,
+        token: resumableUploadUrlResponse.uploadToken
+      },
+      onError: function (error) {
+        console.log('Failed because: ' + error);
+        reject(error);
+      },
+      onProgress: function (bytesUploaded, bytesTotal) {
+        var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+        console.log(bytesUploaded, bytesTotal, percentage + '%');
+      },
+      onSuccess: function () {
+        console.log('Download %s from %s', fileName, upload.url);
+        resolve(true);
+      }
+    });
+
+    upload.start();
+  });
+
+  const result = await httpClient.put(
+    `${resumableUploadUrlResponse.uploadUrl}/${resumableUploadUrlResponse.uploadToken}`,
+    {}, { params: { filename: fileName } }
+  );
+}
+```
+
+### Example response
+
+A call to a generated `uploadUrl` returns a response structured as follows:
+
+```json
+{
+  "file": {
+    "id": "2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+    "displayName": "file.jpg",
+    "url": "https://static.wixstatic.com/media/2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+    "parentFolderId": "media-root",
+    "hash": "cf96f0567ed967f02bc9580ab8db86be",
+    "sizeInBytes": "15359",
+    "private": false,
+    "mediaType": "IMAGE",
+    "media": {
+      "image": {
+        "image": {
+          "id": "2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+          "url": "https://static.wixstatic.com/media/2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+          "height": 226,
+          "width": 370,
+          "filename": "file.jpg",
+          "sizeInBytes": "15359"
+        },
+        "faces": []
+      }
+    },
+    "operationStatus": "READY",
+    "thumbnailUrl": "https://static.wixstatic.com/media/2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+    "labels": [],
+    "createdDate": "2022-09-11T15:13:24.000Z",
+    "updatedDate": "2022-09-11T15:13:24.000Z"
+  }
+}
+```
+
+## See also
+
+- [Wix Media: Supported Media File Types and File Sizes](fallback::https://support.wix.com/en/article/wix-media-supported-media-file-types-and-file-sizes)

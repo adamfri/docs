@@ -1,0 +1,113 @@
+---
+title: "Introduction"
+description: "The Cart API allows you to manage shopping carts for Wix e-commerce sites."
+icon: "file-lines"
+---
+
+The Cart API allows you to manage shopping carts for Wix e-commerce sites. With this API, you can create and manage carts, add line items, apply discounts, calculate prices and taxes, and complete checkout to create orders.
+
+This API replaces the [eCommerce Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/introduction) and [eCommerce Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/introduction) APIs, combining them into a single Cart entity that covers the whole purchase flow. Those APIs will be removed on February 1, 2027.
+
+The Cart API consists of two services:
+- **Cart**: Manage any cart by its ID. Use this for administrative tools, POS systems, or when working with specific carts.
+- **Current Cart**: Manage the current customer's cart using their session identity (visitor ID or member ID), without needing to track cart IDs. Use this for standard e-commerce shopping flows.
+
+With the Cart API, your app can:
+
+- Create and manage shopping carts with catalog items or custom line items.
+- Apply coupons and automatic discounts.
+- Set delivery methods and calculate shipping costs.
+- Calculate comprehensive cart totals including taxes, fees, and discounts.
+- Validate cart contents and business rules before checkout.
+- Complete checkout and create orders.
+- Handle various payment options including deposits, gift cards, and membership-based payments.
+- Support multi-currency shopping experiences.
+
+## Automatic behaviors
+
+The Cart API includes several automatic behaviors designed to keep carts synchronized with current pricing and inventory:
+
+- **Auto-refresh on retrieval**: When you call Get Cart, the API automatically refreshes the cart if it's stale (prices or inventory may have changed), if the customer's currency or language has changed, or if a visitor has logged in as a member. This ensures customers always see current information.
+
+- **Quantity adjustments**: When inventory drops below the requested quantity, `confirmedQuantity` automatically decreases to match available stock. However, when items are restocked, confirmed quantities don't automatically increase — you must call Update Line Items to adjust quantities after restocking.
+
+- **Ownership upgrades**: When a visitor logs in as a site member during their shopping session, Refresh Cart automatically upgrades cart ownership from visitor to member, ensuring the cart transfers to their member account.
+
+## Calculating vs estimating a cart
+
+The API provides two calculation methods:
+
+- **Calculate Cart**: Performs a full calculation of cart totals including all price components (subtotal, delivery, taxes, fees, gift cards, and discounts). Use this when you need the complete pricing breakdown, such as before checkout. Always runs checkout-level validations.
+- **Estimate Cart**: Performs a partial, component-based estimation controlled by boolean flags (`calculateDelivery`, `calculateTax`, `calculateAdditionalFees`, `calculateGiftCards`). Components not explicitly enabled are excluded from the calculation. Use this for lightweight preview scenarios like mini-cart widgets or progressive disclosure in multi-step checkout flows.
+
+Neither method modifies the cart entity. Both return a cart summary with the pricing breakdown.
+
+## Violations
+
+Violations are business-rule problems that the Cart API surfaces when validating the cart. They are returned in `summary.violations` by Calculate Cart and Estimate Cart.
+
+Violations have two severity levels:
+
+- `ERROR`: A blocker that must be resolved before the customer can place an order. Examples include items that are no longer in stock or have been removed from the catalog.
+- `WARNING`: A non-blocking issue that you should display to the customer but that doesn't prevent checkout.
+
+Always check `summary.violations` before calling Place Order. If any `ERROR`-severity violations exist, resolve them first. For example, remove items with `REMOVED_FROM_CATALOG` status or adjust quantities for out-of-stock items. Calling Place Order with unresolved `ERROR` violations fails.
+
+## Multi-currency
+
+The Cart API supports multi-currency shopping. Three currency-related fields work together:
+
+- `businessInfo.currencyCode`: The site's default currency. All `amount` values in money fields are in this currency.
+- `customerInfo.currencyCode`: The customer's selected display currency. All `convertedAmount` values reflect this currency.
+- `paymentInfo.currencyCode`: The currency used for payment processing. This is determined automatically — if the customer's currency is supported for payment, it matches `customerInfo.currencyCode`. Otherwise, it falls back to `businessInfo.currencyCode`.
+
+Currency conversion is handled automatically. The customer always pays in the currency defined by `paymentInfo.currencyCode`.
+
+## Custom line items vs catalog items
+
+- **Catalog items** trigger the Catalog service plugin for price lookups, inventory checks, and product validation.
+- **Custom items** bypass catalog validation — use these for administrative purposes like manual fees, adjustments, or special items not in your catalog.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Carts currently support a single coupon and a single gift card at a time. Attempting to add a second returns an error.
+- `CartSettings` can only be set when creating a cart and can't be changed afterward. These settings control checkout page behavior, such as locking coupons or gift cards from being modified during checkout.
+- You can set a `customCheckoutUrl` on a cart to redirect customers to a custom checkout page instead of the standard Wix checkout. If the URL contains the placeholder `{checkout_id}`, it's replaced with the cart ID.
+- If your app uses an external checkout system that creates orders independently, use Mark Cart As Completed to update the cart's status after order creation. In the standard flow, Place Order handles this automatically.
+- You can create carts with `openAccess` set to `true` in `customerInfo`. These carts don't have an owner, and the first person to access the cart via the API claims ownership. This is useful for building shareable pre-built cart experiences.
+- Carts created with `demo` set to `true` are interactive carts used in the Wix editor for merchant storefront previews. Demo carts can't proceed to checkout.
+- If your app uses the eCommerce Cart or eCommerce Checkout APIs, see the [Migration Guide](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-guide). Both APIs will be removed on February 1, 2027, but you can migrate incrementally until then.
+
+## Use cases
+
+- [Create a cart and add products](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#create-a-cart-and-add-products)
+- [Apply a coupon and calculate cart totals](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#apply-a-coupon-and-calculate-cart-totals)
+- [Complete the checkout process](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#complete-the-checkout-process)
+- [Manage session-based shopping with the current cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#manage-session-based-shopping-with-the-current-cart)
+- [Handle out-of-stock and partially available items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#handle-out-of-stock-and-partially-available-items)
+- [Add a gift card as payment](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#add-a-gift-card-as-payment)
+- [Build a cart recovery flow](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows#build-a-cart-recovery-flow)
+
+## Terminology
+
+- **Cart**: A shopping cart containing line items that a customer intends to purchase. Each cart belongs to a customer (identified by visitor ID, member ID, or user ID) and tracks items, discounts, delivery information, and payment details.
+- **Current cart**: The active cart associated with a customer's session. Each customer can have only one current cart at a time, accessible without requiring a cart ID.
+- **Line item**: A product or service in the cart. Line items can be either catalog items (from your product catalog) or custom items (added manually without catalog validation).
+- **Confirmed quantity**: The actual quantity that will be purchased for a line item, calculated as the minimum of requested quantity and available inventory. This quantity can decrease automatically when stock drops but doesn't increase automatically when items are restocked.
+- **Cart summary**: A detailed breakdown of cart pricing returned by Calculate Cart or Estimate Cart, including line item prices, discounts, delivery costs, taxes, additional fees, and total amounts.
+- **Price verification token**: A security token generated during Calculate Cart that represents the exact prices shown to the customer. Pass this token to Place Order to ensure prices haven't changed between calculation and checkout.
+- **Subtotal**: The sum of all line item prices after item-level discounts (automatic discounts), but before cart-level discounts (coupons), delivery costs, taxes, or additional fees.
+- **Modifier group**: A set of add-on items or extras that modify a base product (for example, extra toppings, gift wrapping, or extended warranty). Each modifier has its own price that gets added to the item's total.
+- **Purchase flow ID**: A persistent correlation ID generated when a cart is created. Unlike the order ID, it stays the same across checkout retries and can be used to track the entire purchase journey across systems.
+
+## See also
+
+- [Orders API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/introduction): After checkout, carts become orders. Use the Orders API to manage orders after Place Order completes.
+- [Catalogs](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/catalogs/introduction): Retrieve product information for catalog items added to carts.
+- [Coupons API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/coupons/coupons/introduction): Create and manage discount coupons that can be applied to carts.
+- [Migration Guide](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-guide): Move an existing Cart V1 or Checkout V1 integration to Cart V2.
+- [Migration Mapping](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-mapping): Field-by-field mapping between Cart V1, Checkout V1, and Cart V2.
+
+@sdk_package_setup

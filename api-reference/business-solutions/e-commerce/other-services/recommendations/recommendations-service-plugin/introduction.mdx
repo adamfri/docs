@@ -1,0 +1,99 @@
+---
+title: "Introduction"
+description: "<blockquote class=\"important\" Important: When developing websites or building apps with Blocks, use Velo service plugins."
+icon: "file-lines"
+---
+
+<Note>
+
+When developing websites or building apps with Blocks, use [Velo service plugins](fallback::https://dev.wix.com/docs/velo/events-service-plugins/about-events-service-plugins-and-the-sdk).
+
+</Note>
+
+By implementing the Recommendations Service Plugin, you can integrate your service with Wix to provide advanced recommendation algorithms that allow Wix merchants to provide tailored product recommendations to their customers.
+
+The integration process involves [creating an app](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/about-developing-apps) and configuring the Recommendations [service plugin extension](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions).
+
+With this service plugin, you can design your app to deliver tailored recommendations across various content types, such as products, services, events, or any combination the above. For example, you can:
++ Recommend products frequently bought together with the selected one.
++ Recommend blog posts related to the one currently being viewed.
++ Suggest a yoga mat when a yoga class service is booked.
++ Recommend popcorn when a ticket for a movie event is purchased.
+
+When your app implementing the Recommendations service plugin is installed on a Wix site, the recommendation algorithms it supports become accessible through the [Recommendations API](https://dev.wix.com/docs/rest/business-solutions/e-commerce/recommendations/introduction). 
+
+## Before you begin
+
+It’s important to note the following points before starting to code:
+
+- This service plugin isn't yet supported by the [CLI](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/about-the-wix-cli-for-apps).
+
+- Algorithms select items to recommend from their supported catalogs. The apps providing these catalogs must be installed on the Wix site before you can start using the Recommendations service plugin on this site.
+
+## Get started
+
+To enable Wix to communicate with your app:
+
+1. Select your app from the [Custom Apps page](fallback::https://manage.wix.com/studio/custom-apps) in your Wix Studio workspace. 
+1. Go to [**Extensions**](fallback::https://dev.wix.com/app-selector?title=Select+an+App&primaryButtonText=Select+Site&actionUrl=https%3A%2F%2Fdev.wix.com%2Fapps%2F%7BappId%7D%2Fextensions) and click **+ Create Extension**.
+1. In the **Choose the extension you want to create** modal, use the search bar and look for **Recommendations**. Then select **Ecom Recommendations Provider** and click **Create**.
+1. In the JSON editor, create the extension’s configuration file, ensuring that all required fields outlined in the table below are included.
+
+### Configuration file fields
+
+| Name                 | Type               | Description                                                                                                                                                                                                                                                                    |
+|----------------------|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `deploymentUri`      | string             | Required. Base URI for your service's methods. Wix appends the method path to the base URI. For example, to call the Get Recommendations method at `https://my-recommendation.com/v1/get-recommendations`, the base URI you provide here is `https://my-recommendation.com/`.|
+| `catalogAppIds`      | Array &lt;string>     | Required. App IDs of supported catalogs. <br /><br />The following are Wix apps that provide catalogs and their app IDs: <br /> Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"` <br /> Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"` <br /> Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`  |
+| `supportedAlgorithms`| Array &lt;object>     | Required. Recommendation algorithms implemented by the app. See the table below for details on the structure of the supportedAlgorithms object.                                                                                                                                                                                                                   |
+| `componentName`      | string             | Required. A unique name for this component. This is an internal name that will only appear in the app dashboard.                                                                                                                                                                |
+                                                    
+### `supportedAlgorithms` properties
+
+| Property        | Type                         | Description                                                                                                                                                                                                                                                                                                                                                                   |
+|-----------------|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `reserved`      | int                          | Reserved field with a value of 1.                                                                                                                                                                                                                                                                                                                                             |
+| `name`          | string                       | Required. Algorithm name. This value is not translatable.                                                                                                                                                                                                                                                                                        |
+| `description`   | string                       | Required. Algorithm description. This describes how the algorithm works and if it has any limitations regarding site content, number of items in the catalog, site traffic, and so on. This value is not translatable.                                                                                                                              |
+| `additionalInfo`| google.protobuf.StringValue  | A supplemental `description`. It can be used to help break up and organize information. You can, for example, display this information as a tooltip or as an additional section that is collapsed by default.                                                                                                                                    |
+| `algorithmType`| enum                         | Algorithms may have the following types:<br />* `RELATED_ITEMS` - This type of algorithm provides recommendations based on 1 or more other provided items. For example, when an item is added to a cart, the algorithm can suggest other items frequently bought together with that item.<br />* `GLOBAL` - This type of algorithm provides general recommendations based on site or project statistics. |
+| `algorithmId`  | string                       | Required. Algorithm ID. This must be unique for a specific app but does not have to be unique across all apps on the site or in the project.                                                                                                                                                                                                                      |
+
+   
+    The following is an example of a valid config file:
+   
+    ```json
+    {
+        "deploymentUri": "https://my-recommendation.com/",
+        "catalogAppIds": ["c567afb8-ac2c-4888-a90c-94933066ae6a"],
+        "supportedAlgorithms": [
+            {
+                "algorithmId": "945a457f-0a57-4cf4-95a1-95991b545119",
+                "name": "Frequently bought together",
+                "description": "Products frequently bought together with selected one",
+                "algorithmType": "RELATED_ITEMS"
+            },
+            {
+                "algorithmId": "97f48eb2-4d42-4296-b620-13862dd0353e",
+                "name": "Personalized recommendations",
+                "description": "Personalized recommendations based on user's behavior",
+                "additionalInfo": "Works best when user has a history of interactions with the site",
+                "algorithmType": "GLOBAL"
+            }
+        ],
+        "componentName": "MyRecommendations"
+    }
+    ```
+1. Click **Save**.
+1. Click [**Test Your App**](https://dev.wix.com/docs/build-apps/launch-your-app/app-submission/test-your-app-on-a-premium-site), and then check that the recommendations are working as intended. 
+
+## Terminology
+
++ __Supported catalogs__: The types of items that can be recommended through your service. This may include products, services, events, blog posts, and other content types.
++ __Recommendation algorithm__: The logic used to generate recommendations. For example, logic that determines products frequently bought together, shows frequently watched together, new arrivals, or personalized recommendations.
++ __Recommendation__: A curated list of items generated by the algorithm. For example, a list of products frequently bought with a selected item.
+
+## See also
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Self-hosted Service Plugin With the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)

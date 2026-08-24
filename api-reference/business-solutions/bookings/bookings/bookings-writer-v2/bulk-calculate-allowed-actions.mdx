@@ -1,0 +1,544 @@
+---
+title: "Bulk Calculate Allowed Actions"
+description: "Checks whether you can reschedule or cancel a list of bookings without using force resolution."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Checks whether you can [reschedule](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-booking) or [cancel](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/cancel-booking) a list of bookings without using [force resolution](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#force-resolution).
+
+    Call this method to determine which standard actions are available before attempting to modify bookings. If standard actions aren't available, you may need to use force resolution to override business rules and availability validation.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-BOOKINGS-PUBLIC">Read Bookings - Public Data</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/bulk/bookings/calculate_allowed_actions
+    ```
+
+    ## Body Params
+
+    <ParamField body="bookingIds" type="string[]" required>
+
+      List of booking IDs to calculate allowed actions for.
+
+      Constraints: `minItems 1`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkCalculateAllowedActionsResult[]">
+
+      Results for each booking in the request, containing the allowed actions or error information.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the booking. Including ID, index in the provided sequence, success status, and error.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="AllowedActions">
+
+          Booking entity.
+
+          <Expandable title="item properties">
+
+            <ResponseField name="cancel" type="boolean">
+
+              Whether canceling the booking is allowed.
+
+            </ResponseField>
+
+            <ResponseField name="reschedule" type="boolean">
+
+              Whether rescheduling the booking is allowed.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Summary of successful and failed operations.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-bulk-calculate-allowed-actions" id="ex-rest-bulk-calculate-allowed-actions-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-bulk-calculate-allowed-actions" id="ex-rest-bulk-calculate-allowed-actions-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-bulk-calculate-allowed-actions-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-bulk-calculate-allowed-actions-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Check allowed actions with a failed booking lookup</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Check allowed actions for multiple bookings</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-bulk-calculate-allowed-actions-0"><span className="wix-picker-name">Check allowed actions with a failed booking lookup</span></label>
+    <label htmlFor="ex-rest-bulk-calculate-allowed-actions-1"><span className="wix-picker-name">Check allowed actions for multiple bookings</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/bulk/bookings/calculate_allowed_actions' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "bookingIds": [
+          "e3b0c442-98fc-1c14-b39f-92d1282a4f8c",
+          "invalid-booking-id-12345"
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "e3b0c442-98fc-1c14-b39f-92d1282a4f8c",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "cancel": true,
+              "reschedule": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "invalid-booking-id-12345",
+              "originalIndex": 1,
+              "success": false,
+              "error": {
+                "code": "NOT_FOUND",
+                "description": "Booking not found"
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/bulk/bookings/calculate_allowed_actions' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "bookingIds": [
+          "e3b0c442-98fc-1c14-b39f-92d1282a4f8c",
+          "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+          "a1b2c3d4-5e6f-7g8h-9i0j-k1l2m3n4o5p6"
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "e3b0c442-98fc-1c14-b39f-92d1282a4f8c",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "cancel": true,
+              "reschedule": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "cancel": false,
+              "reschedule": false
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "a1b2c3d4-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+              "originalIndex": 2,
+              "success": true
+            },
+            "item": {
+              "cancel": true,
+              "reschedule": false
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 3,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Checks whether you can [reschedule](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-booking) or [cancel](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/cancel-booking) a list of bookings without using [force resolution](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#force-resolution).
+
+    Call this method to determine which standard actions are available before attempting to modify bookings. If standard actions aren't available, you may need to use force resolution to override business rules and availability validation.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-BOOKINGS-PUBLIC">Read Bookings - Public Data</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.bulkCalculateAllowedActions(bookingIds): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="bookingIds" type="string[]" required>
+
+      List of booking IDs to calculate allowed actions for.
+
+      Constraints: `minItems 1`.
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkCalculateAllowedActionsResult[]">
+
+      Results for each booking in the request, containing the allowed actions or error information.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the booking. Including ID, index in the provided sequence, success status, and error.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="AllowedActions">
+
+          Booking entity.
+
+          <Expandable title="item properties">
+
+            <ResponseField name="cancel" type="boolean">
+
+              Whether canceling the booking is allowed.
+
+            </ResponseField>
+
+            <ResponseField name="reschedule" type="boolean">
+
+              Whether rescheduling the booking is allowed.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Summary of successful and failed operations.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-calculate-allowed-actions" id="ex-sdk-bulk-calculate-allowed-actions-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-calculate-allowed-actions" id="ex-sdk-bulk-calculate-allowed-actions-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-calculate-allowed-actions-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-calculate-allowed-actions-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCalculateAllowedActions</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCalculateAllowedActions (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-calculate-allowed-actions-0"><span className="wix-picker-name">bulkCalculateAllowedActions</span></label>
+    <label htmlFor="ex-sdk-bulk-calculate-allowed-actions-1"><span className="wix-picker-name">bulkCalculateAllowedActions (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCalculateAllowedActions
+    import { bookings } from '@wix/bookings';
+
+    async function bulkCalculateAllowedActions(bookingIds) {
+      const response = await bookings.bulkCalculateAllowedActions(bookingIds);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCalculateAllowedActions (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCalculateAllowedActions(bookingIds) {
+      const response = await myWixClient.bookings.bulkCalculateAllowedActions(bookingIds);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

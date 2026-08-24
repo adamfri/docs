@@ -1,0 +1,61 @@
+---
+title: "Sample Flow"
+description: "This article presents a possible use case and corresponding sample flow that you can support."
+icon: "file-lines"
+---
+
+This article presents a possible use case and corresponding sample flow that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Implement validation configuration
+
+Let's say we have an eCommerce app, and as part of the app we create a trigger called `product_purchase` for when a customer purchases some product via the app. The trigger has the following filter:
+
+```json
+{
+  "staticFieldKey": "productId",
+  "valueInput": {
+      "entitySelector": {
+      "allowMultiSelect": true,
+      "entitySelectorId": ".."
+      },
+      "label": "Select specific products"
+  },
+  "followUpFilters": []
+}
+```
+
+A Wix user installs our app and creates an automation with our `product_purchased` trigger. The user defines the automation to activate only when specific products are purchased--in this case, shirts and glasses. The validation request looks like this:
+
+```json
+{
+    "triggerKey": "product_purchased",
+    "selectedFilterOptions": [{
+        "fieldKey": "productId",
+        "values": ["shirtId", "glassesId"],
+        "operator": "IN"
+    }]
+}
+```
+
+Since this is a valid trigger configuration, we return a response like this:
+
+```json
+{
+    "valid": true,
+    "configurationErrors": []
+}
+```
+
+After a couple of weeks, we remove the shirt and glasses products from the eCommerce app, making the current trigger configuration invalid. Now when the site sends a new validation request, we send back a response like this:
+
+```json
+{
+    "valid": false,
+    "configurationErrors": [{
+        "fieldKey": "productId",
+        "message": "selected productId was not found - [shirtId]"
+    }]
+}
+```
+
+This notifies the Wix user that the configuration is no longer valid and returns a message explaining the error.

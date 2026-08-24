@@ -1,0 +1,121 @@
+---
+title: "Introduction"
+description: "The Bookings Writer V2 API allows you to manage bookings for a business's services."
+icon: "file-lines"
+---
+
+The Bookings Writer V2 API allows you to manage bookings for a business's services.
+You can create single-service bookings or multi-service bookings that combine the booking of multiple services into a single transaction.
+For payment processing, you can integrate with Wix eCommerce (Checkout and Orders APIs) or implement your own custom checkout flow.
+The booking object holds information about the customer and the session or schedule they have booked.
+
+With the Bookings Writer V2 API you can:
+
++ Create single-service and multi-service bookings.
++ Manage bookings' life cycles.
+
+## Double booking management
+
+Wix Bookings prevents double bookings by default, but conflicts can occasionally occur.
+When they do, the system sets a booking's `doubleBooked` flag to `true` and requires the business to manually resolve the conflict.
+
+To prevent conflicts, always use the [Time Slots V2 API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/introduction) before creating or rescheduling bookings to verify availability.
+When conflicts do occur, you can detect them through events and choose from these resolution options:
+- Standard resolution: Reschedule conflicted bookings to an alternative time or cancel them.
+- Force resolution: Force confirm or decline bookings regardless of conflicts.
+
+See complete implementation details for [handling double booking conflicts](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#handle-double-booking-conflicts) in the sample flows article.
+
+## Multi-service bookings
+
+Multi-service bookings enable businesses to offer comprehensive service packages where customers can book multiple related services together in a single transaction.
+Each multi-service booking contains several single-service bookings.
+Single-service bookings in the package must be scheduled sequentially with each booking starting when the previous booking ends.
+
+### Requirements and constraints
+
+Multi-service bookings have the following requirements and limitations:
+
+- Booking creation: You can't create a multi-service booking using existing single-service bookings.
+  [Create Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-multi-service-booking) creates the multi-service booking and all included single-service bookings simultaneously.
+- Number of single-service bookings: 2-8 single-service bookings per multi-service booking.
+- Scheduling type: Sequential only with single-service bookings running consecutively without gaps.
+- Location requirement: All single-service bookings must be at the same business location.
+- Service type limitation: Only appointment-based services are supported. Courses and classes aren't supported.
+- Status synchronization: Operations affect all grouped single-service bookings simultaneously.
+- Pricing: Total price equals the sum of all individual service prices. There are no automatic package discounts.
+
+### Operational behaviors
+
+Multi-service bookings have specific operational characteristics:
+
+- Method restrictions: Single-service bookings in a multi-service booking must be managed using multi-service methods only.
+  For example, call [Reschedule Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-multi-service-booking) instead of [Reschedule Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-booking).
+- Booking modifications: You can add or remove single-service bookings after creating a multi-service booking.
+  If only 1 booking remains after removals, Wix Bookings automatically deletes the multi-service booking while keeping the remaining single-service booking.
+- Error handling: Multi-service bookings can experience partial failures where some operations succeed while others fail due to availability conflicts, policy violations, or capacity issues.
+
+## Anonymous booking actions
+
+The Anonymous Booking Actions methods let you build secure booking-management flows that don't require authentication. They support customer-facing links that allow customers to view, cancel, or reschedule a booking using an encrypted token.
+
+The methods use 2 authentication models:
+
+- **Authenticated**: [Get Anonymous Action Token](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/get-anonymous-action-token) requires standard OAuth authentication or an API key. Use it from your backend to generate a token for a specific booking.
+- **Unauthenticated**: All other anonymous methods accept the token instead of authentication headers. Call them directly from your frontend or any code that handles the customer's request.
+
+### Prerequisites and guidelines
+
+Keep the following in mind when implementing anonymous booking actions:
+
+- The service's [booking policy](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction) must enable anonymous actions for the relevant operations. Set `cancellationPolicy.allowAnonymous` to `true` to allow anonymous cancellation, and `reschedulePolicy.allowAnonymous` to `true` to allow anonymous rescheduling. Without this configuration, `allowedAnonymousActions` returns `false` for the corresponding action.
+- Anonymous rescheduling requires the site to be published. During development on an unpublished site, `allowedAnonymousActions.reschedule` is always `false`.
+- Rescheduling always sends a notification to participants.
+- Tokens don't expire after a set time, but a token only works while the booking exists. Always call [Get Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-get-booking-anonymously) before performing an action, because the booking status determines which anonymous actions are currently available.
+- Treat the token as a secret credential and store it only when necessary.
+
+## Use cases
+
+- [Book an appointment](##book-an-appointment*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#book-an-appointment).
+- [Book a class session](##book-a-class-session*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#book-a-class-session).
+- [Book a course](##book-a-course*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#book-a-course).
+- [Create a multi-service booking](##create-a-multi-service-booking*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#create-a-multi-service-booking).
+- [Reschedule a multi-service booking and add a single-service booking](##reschedule-a-multi-service-booking-and-add-a-single-service-booking*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#reschedule-a-multi-service-booking-and-add-a-single-service-booking).
+- [Generate an anonymous booking link](##generate-an-anonymous-booking-link*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#generate-an-anonymous-booking-link).
+- [Cancel a booking anonymously](##cancel-a-booking-anonymously*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#cancel-a-booking-anonymously).
+- [Reschedule a booking anonymously](##reschedule-a-booking-anonymously*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#reschedule-a-booking-anonymously).
+- [Monitor subscription payment status](##monitor-subscription-payment-status*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/sample-booking-flows#monitor-subscription-payment-status).
+
+Refer to [End-to-End Booking Flows](https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows) for a complete step-by-step overview of the full booking process (including service selection, availability checks, and payment).
+
+## Before you begin
+
+- The Bookings Writer V2 API doesn't include methods to retrieve individual single-service bookings. Use the [Bookings Reader V2 API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/introduction) for reading single-service bookings. The Bookings Writer V2 API does include multi-service booking retrieval methods: [Get Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/get-multi-service-booking) and [Bulk Get Multi Service Booking Allowed Actions](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/bulk-get-multi-service-booking-allowed-actions).
+- You can handle checkout and payment flows with the [eCommerce Checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction) and [eCommerce Orders](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction) APIs or use your own custom flow. When customers pay via a Wix eCommerce checkout, Wix Bookings automatically syncs the booking's payment status with the [Wix eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction), so avoid manually updating the booking status. For custom payment flows only, you must manually update the booking's payment status using [Confirm Booking or Decline Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking).
+- You can't track attendance with the Bookings Writer V2 API. Instead, use the [Attendance API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/attendance/introduction).
+- Always call the [Time Slots V2 API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/introduction) before creating bookings to ensure the requested time slot is available.
+
+## Terminology
+
+- **Single-service booking**: A standard booking for 1 service. Used in multi-service booking contexts to distinguish individual bookings from packages.
+- **Anonymous token**: Encrypted token that grants anonymous access to a specific booking. You can safely embed it in a URL. Call [Get Anonymous Action Token](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/get-anonymous-action-token) to generate a token.
+- **Allowed anonymous actions**: Actions a customer can perform on a booking without authentication, such as canceling or rescheduling. The booking policy and booking status control availability. Call [Get Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-get-booking-anonymously) to check the `allowedAnonymousActions` object. These differ from the authenticated allowed actions you get from [Bulk Calculate Allowed Actions](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/bulk-calculate-allowed-actions).
+
+For a comprehensive glossary of Wix Bookings terms, see [Terminology](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/terminology).
+
+## See also
+  
++ [Bookings Reader V2 API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/introduction):
+  Retrieve single-service bookings, allowed actions, and query booking data.
++ [Bookings Services API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction):
+  Manage a business's services so customers can book appointments, class sessions, and courses.
++ [Availability Calendar API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/availability-calendar/introduction):
+  Calculate the availability of appointments and class sessions.
++ [Attendance API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/attendance/introduction):
+  Lets you track attendance data for booking sessions.  
++ [Calendar V3 APIs](fallback::https://dev.wix.com/docs/rest/business-management/calendar/introduction):
+  Manage a business' schedules and events.
++ [eCommerce Checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction) and [eCommerce Orders](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction) APIs:
+  Manage checkout and payment flows for a business' bookings.
+
+@sdk_package_setup

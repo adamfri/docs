@@ -1,0 +1,135 @@
+---
+title: "Sample Flows"
+description: "These sample flows illustrate how to establish an external database connection in different ways."
+icon: "file-lines"
+---
+
+These sample flows illustrate how to establish an external database connection in different ways. They can be helpful jumping-off points as you plan your implementation.
+
+## Deploy an out-of-the-box adaptor
+
+Wix offers several out-of-the-box [external database adaptors](fallback::https://dev.wix.com/docs/develop-websites/articles/databases/external-databases/overview/integrating-external-databases-with-your-wix-site) for common platforms. Deploying an out-of-the-box adaptor is a quick way to integrate an external database with a site. To do this:
+
+1. Set up the [external database adaptor](fallback::https://dev.wix.com/docs/develop-websites/articles/databases/external-databases/overview/integrating-external-databases-with-your-wix-site#deploy-an-external-database-adaptor) for the platform hosting the external database.
+
+2. Call the [Create External Database Connection](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/external-database-connection/create-external-database-connection) method and specify the connection's name, the endpoint by which it can be accessed, and any additional configuration details. For `connectionType`, specify `STANDALONE`. For example:
+
+    ```json
+    {
+      "externalDatabaseConnection": {
+        "name": "MyStandaloneConnection",
+        "endpoint": "https://example.com/my-external-database",
+        "configuration": {
+          "secretKey": "2b723306-4d74-42a2-8438-2ff40da3e6b6"
+        }
+      },
+      "connectionType": "STANDALONE"
+    }
+    ```
+
+    The method returns the following response:
+
+    ```json
+     {
+      "externalDatabaseConnection": {
+        "name": "MyStandaloneConnection",
+        "endpoint": "https://example.com/my-external-database",
+        "configuration": {
+          "secretKey": "2b723306-4d74-42a2-8438-2ff40da3e6b6"
+        },
+        "connectionStatus": {
+          "successful": true,
+          "causeOfFailure": "NONE",
+          "hasCollections": "YES"
+        },
+        "capabilities": {
+          "collectionModificationsSupported": true,
+          "fieldTypes": ["TEXT", "NUMBER", "DATETIME", "BOOLEAN"]
+        }
+      }
+    }
+    ```
+
+    You can now access the external database in the [CMS](fallback::https://support.wix.com/en/article/cms-content-management-system-an-overview) and using [Wix Data APIs](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/introduction).
+
+## Build your own adaptor
+
+You can also build and deploy your own adaptor to integrate an external database directly with a site:
+
+1. Implement the endpoints for the [External Database Service Plugin](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/service-plugins/external-database-service-plugin/introduction) and expose them on a public, `https` base URL. For example:
+
+    ```bash
+    https://example.com/my-external-database
+    ```
+
+  <Note>
+
+  You can make your adaptor available for integration with one or more sites by [creating a Wix app](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/service-plugins/external-database-service-plugin/introduction#create-a-wix-app). If you create an app, you can skip the remaining steps.
+
+  </Note>
+
+2. Call the [Create External Database Connection](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/external-database-connection/create-external-database-connection) method and specify the connection's name. For the `connectionType` property, specify `WIX_SERVICE_PLUGIN`. For example:
+
+    ```json
+    {
+     "externalDatabaseConnection": {
+        "name":"MyServicePluginConnection"
+      },
+      "connectionType": "WIX_SERVICE_PLUGIN"
+    }
+    ```
+
+    The connection is set up with a `connectionStatus.successful` status of `false`. For example:
+
+    ```json
+    {
+      "externalDatabaseConnection": {
+        "name": "MyServicePluginConnection",
+        "endpoint": null,
+        "configuration": null,
+        "connectionStatus": {
+          "successful": false,
+          "causeOfFailure": "NONE",
+          "hasCollections": "UNKNOWN"
+        },
+        "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmYlnuhZRCBCrvMkVXojR\nNbOlcwXgPey+4kHwiXK0gry6+JsjqQfJrldlLEwMUHVKruXRE80v3K7AlQ2+i0Zn\n+4njzU6kT5Xh/B2yua+BsAOsQ5gWL9lpCZE65P7L2q6Pp28VS6owRx1p0Ncb+eZB\niWrs023UmiPEaB0NGJTQYAKAA9moCzOZ9zNPg6Nh+NICG8TINQ1hc1oGWaLiWkej\n40M9iP2icTdXJ6Oma0+KXRKwsaVlD0SFxW6k4ProHvJ878uWCslDrfp8/Lud7nwz\nF3o67E2AtfELxbgXVVFU2mvD2jfgdok5CGyYiujb/qjmkzj1/4F6BAKzlS5nL+Om\n6wIDAQAB\n-----END PUBLIC KEY-----",
+        "capabilities": null
+      }
+    }
+    ```
+
+3. Use the `publicKey` in the response to configure your service to [verify that the requests it receives are coming from Wix](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest#validating-request-signatures).
+
+4. To finish setting up the connection, call the [Update External Database Connection](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/external-database-connection/update-external-database-connection) method with the same name used when creating the connection. In the `externalDatabaseConnection` parameter, specify the endpoint by which the service can be accessed. For example:
+
+    ```json
+    {
+     "externalDatabaseConnection": {
+        "name":"MyServicePluginConnection",
+        "endpoint":"https://example.com/my-external-database",
+      }
+    }
+    ```
+
+    The method returns the following response:
+
+    ```json
+    {
+      "externalDatabaseConnection": {
+        "name": "MyServicePluginConnection",
+        "endpoint": "https://example.com/my-external-database",
+        "connectionStatus": {
+          "successful": true,
+          "causeOfFailure": "NONE",
+          "hasCollections": "YES"
+        },
+        "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmYlnuhZRCBCrvMkVXojR\nNbOlcwXgPey+4kHwiXK0gry6+JsjqQfJrldlLEwMUHVKruXRE80v3K7AlQ2+i0Zn\n+4njzU6kT5Xh/B2yua+BsAOsQ5gWL9lpCZE65P7L2q6Pp28VS6owRx1p0Ncb+eZB\niWrs023UmiPEaB0NGJTQYAKAA9moCzOZ9zNPg6Nh+NICG8TINQ1hc1oGWaLiWkej\n40M9iP2icTdXJ6Oma0+KXRKwsaVlD0SFxW6k4ProHvJ878uWCslDrfp8/Lud7nwz\nF3o67E2AtfELxbgXVVFU2mvD2jfgdok5CGyYiujb/qjmkzj1/4F6BAKzlS5nL+Om\n6wIDAQAB\n-----END PUBLIC KEY-----",
+        "capabilities": {
+          "collectionModificationsSupported": true,
+          "fieldTypes": ["TEXT", "NUMBER", "DATETIME", "BOOLEAN"]
+        }
+      }
+    }
+    ```
+
+    You can now now access the external database in the [CMS](fallback::https://support.wix.com/en/article/cms-content-management-system-an-overview) and using [Wix Data APIs](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/introduction).

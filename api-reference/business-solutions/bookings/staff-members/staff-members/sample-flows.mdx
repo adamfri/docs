@@ -1,0 +1,173 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Connect a staff member to a Wix user
+
+To enable staff members to manage their own working hour schedule in their dashboard, connect a staff member to a Wix user.
+
+To connect a staff member to a Wix user:
+
+1. Call [Query Staff Members](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members).
+   Save the relevant staff member ID.
+1. Call [Connect Staff Member to User](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/connect-staff-member-to-user).
+   Specify the staff member ID. If an existing Wix user is related to the staff
+   member but has a different email address than the staff member's `email`,
+   specify that email address.
+1. Call [Get Staff Member](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/get-staff-member),
+   specifying `ASSOCIATED_IDENTITY_STATUS` in the `fields` parameter.
+   Check the value of the `associatedWixIdentity.connection.status` field.
+
+## Build a staff directory of the entire team
+
+To show a business its full staff, including the staff members who don't deliver services to customers, use the V2 read methods. They return the entire staff by default, so a team directory doesn't need to pass any filter.
+
+To build a staff directory:
+
+1. Call [Count Staff Members V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/count-staff-members-v2) with an empty `filter` to get the size of the team. Use the returned `count` to decide how many pages the directory needs.
+1. Call [Query Staff Members V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members-v2) to retrieve the first page. Specify `RESOURCE_DETAILS` in the `fields` parameter if the directory shows each staff member's working hours.
+
+   ```json
+   {
+     "query": {
+       "cursorPaging": { "limit": 50 },
+       "sort": [{ "fieldName": "createdDate", "order": "ASC" }]
+     },
+     "fields": ["RESOURCE_DETAILS"]
+   }
+   ```
+
+1. Read `pagingMetadata.cursors.next` from the response. To retrieve the following page, call Query Staff Members V2 again with that value in `query.cursorPaging.cursor`. Repeat until `pagingMetadata.hasNext` is `false`.
+1. To let the business search the directory by name, call [Search Staff Members V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/search-staff-members-v2) with the typed text.
+
+   ```json
+   {
+     "search": {
+       "search": {
+         "fields": ["name"],
+         "expression": "dana"
+       },
+       "cursorPaging": { "limit": 50 }
+     }
+   }
+   ```
+
+1. To show only the staff members customers can book, add a `serviceProvider` filter to the query or search.
+
+   ```json
+   {
+     "query": {
+       "filter": { "serviceProvider": true },
+       "cursorPaging": { "limit": 50 }
+     }
+   }
+   ```
+
+## Make a staff member bookable
+
+A business often hires someone into a back-office role first and starts booking them for services
+later. The same works in reverse when someone moves off the floor. Use Set Service Provider to move
+a staff member between the two states without recreating them.
+
+To make an existing staff member bookable:
+
+1. Call [Query Staff Members V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members-v2)
+   to find the staff member. Filter by `serviceProvider` set to `false` to list only the team
+   members who aren't bookable yet.
+
+   ```json
+   {
+     "query": {
+       "filter": { "serviceProvider": false },
+       "cursorPaging": { "limit": 50 }
+     }
+   }
+   ```
+
+1. Call [Set Service Provider](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/set-service-provider)
+   with the staff member's `id` and `serviceProvider` set to `true`.
+
+   ```json
+   {
+     "staffMemberId": "0954bbb2-88cd-445c-9827-44253eb8b039",
+     "serviceProvider": true
+   }
+   ```
+
+   The staff member now appears in booking flows. If a Wix user is connected to them, that user is
+   also granted the Staff role, so they can manage their own working hours in the dashboard.
+
+1. Assign the staff member to the services they deliver with the
+   [Services API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction),
+   and set their working hours if they shouldn't use the business default. See
+   [Set a staff member's weekly working hours](fallback::#set-a-staff-members-weekly-working-hours).
+
+To move a staff member off the floor, call Set Service Provider with `serviceProvider` set to
+`false`. They stop appearing in booking flows, but their working hours, service assignments, and
+existing bookings are left untouched, and the call is reversible. The Staff role granted on
+promotion isn't revoked.
+
+## Set a staff member's weekly working hours
+
+To give a staff member custom working hours that differ from the business default schedule, assign a custom schedule and create recurring working hours events for each weekday. If the staff member already has custom working hours, cancel the existing ones before creating new ones.
+
+To set a staff member's weekly working hours:
+
+1. Call [Get Staff Member](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/get-staff-member), specifying `RESOURCE_DETAILS` in the `fields` parameter.
+   Save the staff member's `id`, `resourceId`, and `resource.eventsSchedule.id`.
+1. Call [Assign Working Hours Schedule to Staff Member](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/assign-working-hours-schedule).
+   Specify the staff member `id` and `resource.eventsSchedule.id` from the previous step as `staffMemberId` and `scheduleId`.
+   This one-time call detaches the staff member from the default business schedule and enables custom working hours.
+1. Call [Query Events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/query-events) to find any existing working hours.
+   Filter by `externalScheduleId` set to the staff member's `resourceId`, `eventType` set to `WORKING_HOURS`, and `recurrenceType` set to `MASTER`.
+   Use `externalScheduleId` rather than `scheduleId` to target this staff member's events.
+   Save the `id` of each returned event.
+1. Call [Cancel Event](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/cancel-event) for each event `id` from the previous step to clear the existing working hours before setting new ones.
+1. Call [Create Event](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/create-event) for each weekday to set the working hours.
+   For each event, set `scheduleId` to `resource.eventsSchedule.id` from step 1, `type` to `WORKING_HOURS`, `recurrenceRule.frequency` to `WEEKLY`, and `recurrenceRule.days` to a single weekday per event.
+   Set `start.localDate` to a date that falls on that weekday.
+   For example, to set Monday hours from 9 AM to 5 PM:
+
+   ```json
+   {
+     "event": {
+       "scheduleId": "EVENTS_SCHEDULE_ID",
+       "type": "WORKING_HOURS",
+       "start": { "localDate": "2026-03-16T09:00:00" },
+       "end": { "localDate": "2026-03-16T17:00:00" },
+       "recurrenceRule": {
+         "frequency": "WEEKLY",
+         "days": ["MONDAY"]
+       }
+     }
+   }
+   ```
+
+## Block a staff member's availability for a vacation day
+
+To block a staff member's availability for a specific date, such as a vacation day or personal time off, create an `OPAQUE` calendar event on their event schedule. Wix Bookings treats `OPAQUE` events on a staff member's event schedule as unavailable time, so no bookings can be made during that period. See [how Wix Bookings uses the Calendar APIs](fallback::https://dev.wix.com/docs/rest/business-management/calendar/wix-bookings-integration) for background.
+
+To block a vacation day:
+
+1. Call [Get Staff Member](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/get-staff-member), specifying `RESOURCE_DETAILS` in the `fields` parameter.
+   Save the event schedule ID from `resource.eventsSchedule.id`.
+2. Call [Create Event](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/create-event) with `transparency` set to `OPAQUE` and start/end spanning the full day.
+   The `idempotencyKey` must be a valid UUID/GUID.
+   For example, to block April 15, 2026:
+
+   ```json
+   {
+     "event": {
+       "scheduleId": "EVENTS_SCHEDULE_ID",
+       "title": "Vacation",
+       "start": { "localDate": "2026-04-15T00:00:00" },
+       "end": { "localDate": "2026-04-16T00:00:00" },
+       "transparency": "OPAQUE"
+     },
+     "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000"
+   }
+   ```

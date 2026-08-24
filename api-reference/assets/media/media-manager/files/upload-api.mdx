@@ -1,0 +1,121 @@
+---
+title: "Upload API"
+description: "To upload a file to a site's Media Manager, you can call Generate File Upload URL."
+icon: "file-lines"
+---
+
+To upload a file to a site's Media Manager, you can call [Generate File Upload URL](https://dev.wix.com/api/rest/media/media-manager/files/generate-file-upload-url). This call returns a signed `uploadUrl` that you can then use to upload a file.
+
+<Note>
+
+For files with public URLs, you can call [Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/import-file) instead of calling the Generate File Upload URL.
+
+</Note>
+
+## Upload flow
+
+The code for generating an upload URL and sending it an upload request varies depending on your context. For example, the code for a dashboard page of a self-hosted app differs slightly from the code for a headless site.
+
+However, in all scenarios, you need to perform the following steps:
+
+1. Get the file's content as a binary stream.
+1. Get the name of the file.
+1. Get the MIME type of the file.
+1. Generate an upload URL using the [Generate File Upload URL](https://dev.wix.com/api/rest/media/media-manager/files/generate-file-upload-url) method.
+1. If you didn't provide the file name in the [Generate File Upload URL](https://dev.wix.com/api/rest/media/media-manager/files/generate-file-upload-url) call, append it to the generated upload URL as the `filename` query parameter.
+1. Call the generated upload URL to upload the file.
+
+## Upload URL call
+
+After generating an `uploadUrl`, send a request to it using the following information:
+
+- **HTTP method:** PUT.
+- **Headers:** `"Content-Type"` with the appropriate MIME type, such as `"image/jpeg"` or `"video/mp4"`.
+- **Query parameters:** `filename` with the name of the file, including the extension. The `filename` parameter is optional if `fileName` was already provided in the [Generate File Upload URL](https://dev.wix.com/api/rest/media/media-manager/files/generate-file-upload-url) call.
+- **Body:** The file content as a binary stream.
+
+<Note>
+
+You need to determine the file's MIME type before uploading. For example, in Node.js you can use the [mime-types](fallback::https://www.npmjs.com/package/mime-types) library or the [file-type](fallback::https://www.npmjs.com/package/file-type) package. Other languages and platforms have equivalent libraries for detecting MIME types.
+
+</Note>
+
+## Upload URL response
+
+When the upload is successful, Wix returns an `uploadUrl` with information about the file being uploaded.
+
+Uploading files takes time. Receiving a successful response from a call to the `uploadUrl` doesn't mean that the upload is complete. To run code when the upload finishes, listen for the [File Ready](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-ready) and [File Failed](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-failed) events. Learn more about [knowing when a file is ready](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/importing-files#knowing-when-the-file-is-ready).
+
+## Example
+
+The following example code shows the calls to generate an upload URL and use it to upload an image file. How you make those calls depends on the context in which you're writing that code.
+
+You also need to write code that performs the other steps in the [upload flow](fallback::#upload-flow) to retrieve the information you need to provide when making the calls shown below.
+
+### Generate an upload URL
+
+To generate an upload URL, you need to send a POST request to Generate File Upload URL, specifying the MIME type of the file.
+
+```bash
+curl -X POST \
+  'https://www.wixapis.com/site-media/v1/files/generate-upload-url' \
+  -H 'Authorization: <AUTH>' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "mimeType": "<MIME_TYPE>",
+    "fileName": "<FILE_NAME>",
+  }'
+```
+
+The response contains a signed `uploadUrl`.
+
+### Use a generated URL to upload a file
+
+After generating an `uploadUrl`, you can upload the file by sending a PUT request to the generated URL.
+
+```bash
+curl -X PUT "<UPLOAD_URL>?filename=<FILE_NAME>" \
+-H "Content-Type: <MIME_TYPE>" \
+--data-binary <FILE_STREAM>
+```
+
+### Example response
+
+A call to a generated `uploadUrl` returns a response structured as follows:
+
+```json
+{
+  "file": {
+    "id": "2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+    "displayName": "file.jpg",
+    "url": "https://static.wixstatic.com/media/2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+    "parentFolderId": "media-root",
+    "hash": "cf96f0567ed967f02bc9580ab8db86be",
+    "sizeInBytes": "15359",
+    "private": false,
+    "mediaType": "IMAGE",
+    "media": {
+      "image": {
+        "image": {
+          "id": "2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+          "url": "https://static.wixstatic.com/media/2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+          "height": 226,
+          "width": 370,
+          "filename": "myfilename.jpg",
+          "sizeInBytes": "15359"
+        },
+        "faces": []
+      }
+    },
+    "operationStatus": "READY",
+    "thumbnailUrl": "https://static.wixstatic.com/media/2acbb8_86485e224dd84143ba2f228777217bb7~mv2.jpeg",
+    "labels": [],
+    "createdDate": "2022-09-11T15:13:24.000Z",
+    "updatedDate": "2022-09-11T15:13:24.000Z"
+  }
+}
+```
+
+## See also
+
+- [Wix Media: Supported Media File Types and File Sizes](fallback::https://support.wix.com/en/article/wix-media-supported-media-file-types-and-file-sizes)

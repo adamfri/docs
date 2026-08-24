@@ -1,0 +1,1075 @@
+---
+title: "List Events"
+description: "Retrieves a list of events from all external calendar accounts, based on the provided filtering and paging."
+icon: "download"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of events from all external calendar accounts, based on
+    the provided filtering and paging.
+
+    ### Filters
+
+    You must filter by specifying both `from` and `to` dates, unless you specify
+    `cursorPaging.cursor`.
+
+    Additionally, you can specify `scheduleIds` or `userIds` to further limit
+    which events are returned. By default, events related to all schedules and
+    Wix users are returned.
+
+    ### Sorting
+
+    Returned events are sorted by start date in ascending order. You can't
+    adjust the sorting.
+
+    ### Personal data
+
+    By default, the following `event` fields aren't returned:
+
+    + `calendarName`.
+    + `title`.
+    + `scheduleOwnerName`.
+
+    You can retrieve these fields, by specifying `{"fieldsets": "OWN_PI"}`.
+
+    ### Partial success
+
+    By default, the call fails if events for at least 1 connection can't be
+    retrieved from an external provider. However, you can specify
+    `{"partialFailure": true}` to allow the call to succeed, if details for at
+    least 1 connection can be retrieved.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-EXTERNAL-CALENDARS">Manage External Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/bookings/v2/external-calendars/events
+    ```
+
+    ## Query Params
+
+    <ParamField query="from" type="string">
+
+      Date and time from which to retrieve events,
+      formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+      Required, unless `cursorPaging.cursor` is provided.
+
+      Events which start before the `from` time and end after it are included in the returned list.
+
+    </ParamField>
+
+    <ParamField query="to" type="string">
+
+      Date and time until which to retrieve events,
+      formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+      Required, unless `cursorPaging.cursor` is provided.
+
+      Events which start before the `to` time and end after it are included in the returned list.
+
+    </ParamField>
+
+    <ParamField query="scheduleIds" type="string[]">
+
+      Schedule IDs to filter by. If provided, the returned list includes only events belonging to external calendars connected to the specified schedules.
+      Maximum of 100 schedule IDs per request.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField query="userIds" type="string[]">
+
+      Wix user IDs to filter by. If provided, the returned list includes only events belonging to external calendars connected to schedules belonging to the specified Wix users.
+      Maximum of 100 Wix user IDs per request.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField query="allDay" type="boolean">
+
+      Whether to include only all-day events in the returned list.
+      If `true`, only all-day events are returned.
+      If `false`, only events with a specified time are returned.
+
+      Default: All events are returned.
+
+    </ParamField>
+
+    <ParamField query="fieldsets" type="string[]">
+
+      Predefined sets of fields to return.
+      - `NO_PI`: Returns event objects without personal information.
+      - `OWN_PI`: Returns complete event objects, including personal information.
+
+      Default: `NO_PI`
+
+    </ParamField>
+
+    <ParamField query="cursorPaging" type="CursorPaging">
+
+      Pagination options.
+
+      <Expandable title="cursorPaging properties">
+
+        <ParamField query="limit" type="integer">
+
+          Number of events to load.
+          Max: `1000`
+
+        </ParamField>
+
+        <ParamField query="cursor" type="string">
+
+          Pointer to the next or previous page in the list of results.
+
+          You can get the relevant cursor token
+          from the `pagingMetadata` object in the previous call's response.
+          Not relevant for the first request.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField query="partialFailure" type="boolean">
+
+      Whether to return a partial list of events if details can't be retrieved for some connections.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="events" type="Event[]">
+
+      List of external calendar events matching the filters.
+
+      <Expandable title="events properties">
+
+        <ResponseField name="scheduleId" type="string">
+
+          ID of the [schedule](https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/introduction)
+          to which the event belongs.
+
+        </ResponseField>
+
+        <ResponseField name="calendarType" type="string">
+
+          External calendar type.
+
+          **Supported values:**
+
+          - `UNDEFINED` — There is no information about the external calendar type.
+          - `GOOGLE` — [Google Calendar](https://developers.google.com/calendar/api/guides/overview).
+          - `I_CAL` — Apple iCalendar.
+          - `OUTLOOK` — __Deprecated__. Use `MICROSOFT` instead.
+          - `OFFICE_365` — __Deprecated__. Use `MICROSOFT` instead.
+          - `MICROSOFT` — Microsoft Calendar. For example, Office 365 calendar or Outlook calendar.
+          - `OTHER` — A different type of external calendar, not listed here.
+
+        </ResponseField>
+
+        <ResponseField name="calendarName" type="string">
+
+          Display name of the external calendar.
+          For example, `Primary` or `Birthdays`.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Event title.
+
+        </ResponseField>
+
+        <ResponseField name="start" type="string">
+
+          Start date and time of the event (inclusive), formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+
+        </ResponseField>
+
+        <ResponseField name="end" type="string">
+
+          End date and time of the event (exclusive), formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+
+        </ResponseField>
+
+        <ResponseField name="allDay" type="boolean">
+
+          Whether the event is an all-day event.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="scheduleOwnerId" type="string">
+
+          ID of the [Wix user](https://dev.wix.com/docs/rest/articles/getting-started/about-identities#wix-user)
+          to whom the schedule belongs.
+          For Bookings [staff members](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/introduction)
+          identical to their [resource ID](https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/introduction).
+
+        </ResponseField>
+
+        <ResponseField name="scheduleOwnerName" type="string">
+
+          Name of the [Wix user](https://dev.wix.com/docs/rest/articles/getting-started/about-identities#wix-user)
+          to whom the schedule belongs.
+          For example, the `name` of a Bookings [staff member](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/introduction).
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="failedProviderIds" type="string[]">
+
+      List of provider IDs for connections for which retrieval of events failed. Returned only if `partialFailure` body parameter is `true` in the request.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-list-events" id="ex-rest-list-events-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-list-events" id="ex-rest-list-events-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-list-events" id="ex-rest-list-events-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-list-events" id="ex-rest-list-events-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-list-events" id="ex-rest-list-events-4" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-list-events-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-list-events-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">List the next page of events within a specified time range using a cursor obtained in the previous request</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List a limited number of events within a specified time range</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List all events within a specified time range and include personal information</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List events connected to a specified schedule within a specified time range</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List all events within a specified time range</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-list-events-0"><span className="wix-picker-name">List the next page of events within a specified time range using a cursor obtained in the previous request</span></label>
+    <label htmlFor="ex-rest-list-events-1"><span className="wix-picker-name">List a limited number of events within a specified time range</span></label>
+    <label htmlFor="ex-rest-list-events-2"><span className="wix-picker-name">List all events within a specified time range and include personal information</span></label>
+    <label htmlFor="ex-rest-list-events-3"><span className="wix-picker-name">List events connected to a specified schedule within a specified time range</span></label>
+    <label htmlFor="ex-rest-list-events-4"><span className="wix-picker-name">List all events within a specified time range</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET 'https://www.wixapis.com/bookings/v2/external-calendars/events?from=2022-12-31T22:00:00.000Z&to=2023-01-07T21:59:59.999Z&cursorPaging.cursor=JWE.eyJhbGciOiJBMTI4S1ciLCJlbm...' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "events": [
+          {
+            "scheduleId": "3e47ec65-2975-447c-a7ed-75041e850d5e",
+            "calendarType": "I_CAL",
+            "calendarName": "Work",
+            "title": "Meeting with...",
+            "start": "2023-01-02T22:00:00.000Z",
+            "end": "2023-01-02T23:15:00.000Z",
+            "scheduleOwnerId": "76570209-101f-409b-af97-b445bdb63125",
+            "scheduleOwnerName": "JONATHAN"
+          },
+          {
+            "scheduleId": "b936298d-18a6-4ae8-8e9f-10bf49314c95",
+            "calendarType": "GOOGLE",
+            "start": "2023-01-03T01:00:00.000Z",
+            "end": "2023-01-03T02:00:00.000Z",
+            "scheduleOwnerId": "e2c75c80-0c1e-4091-8ff1-98cc7865bfc0",
+            "scheduleOwnerName": "ANITA"
+          }
+        ],
+        "pagingMetadata": {
+          "count": 2,
+          "hasNext": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET 'https://www.wixapis.com/bookings/v2/external-calendars/events?from=2022-12-31T22:00:00.000Z&to=2023-01-07T21:59:59.999Z&cursorPaging.limit=2' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "events": [
+          {
+            "scheduleId": "b936298d-18a6-4ae8-8e9f-10bf49314c95",
+            "calendarType": "GOOGLE",
+            "start": "2023-01-03T06:15:00.000Z",
+            "end": "2023-01-03T14:30:00.000Z",
+            "scheduleOwnerId": "e2c75c80-0c1e-4091-8ff1-98cc7865bfc0",
+            "scheduleOwnerName": "ANITA"
+          },
+          {
+            "scheduleId": "3e47ec65-2975-447c-a7ed-75041e850d5e",
+            "calendarType": "I_CAL",
+            "start": "2023-01-03T07:00:00.000Z",
+            "end": "2023-01-03T09:00:00.000Z",
+            "scheduleOwnerId": "76570209-101f-409b-af97-b445bdb63125",
+            "scheduleOwnerName": "JONATHAN"
+          }
+        ],
+        "pagingMetadata": {
+          "count": 2,
+          "cursors": {
+            "next": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiNzhoWmRPU04ifQ.lCA2iWbaGECJftlgREzE39A64huYgi9abL278DnhdjfZ0M2FsUtXKQ.m4p9hwXZGeMspgL-gJz3PQ.3-IcwW-cbGdnyAGf7uWJDChA4zfmo3tlaGPy2Gxs__k8MXTxCvMkCD3Xd1eEr8EJB7-sSFKnUfDbZm0ZgcWnfvyyz7iZ5FwQuGhD9QcRBvmfvDH7KIlxBw-UYUB5LEYzn29cV6OTuXux4eod2MFbZrBk-Nwvc01lzkyRXTUU8D3CzwXTOFJcnqm8rzfVgtHrUYjWxtiRvPVBa-CZ28glMQPSitT6hSBHOMi6TwrXXGRPNq0kCPKQ7WuLSN6-wH1U.UWssZKfOzTprxUh577w0Hg"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET 'https://www.wixapis.com/bookings/v2/external-calendars/events?from=2022-12-31T22:00:00.000Z&to=2023-01-07T21:59:59.999Z&fieldsets=OWN_PI' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "events": [
+          {
+            "scheduleId": "3e47ec65-2975-447c-a7ed-75041e850d5e",
+            "calendarType": "I_CAL",
+            "calendarName": "Work",
+            "title": "Meeting with...",
+            "start": "2023-01-02T22:00:00.000Z",
+            "end": "2023-01-02T23:15:00.000Z",
+            "scheduleOwnerId": "76570209-101f-409b-af97-b445bdb63125",
+            "scheduleOwnerName": "JONATHAN"
+          },
+          {
+            "scheduleId": "b936298d-18a6-4ae8-8e9f-10bf49314c95",
+            "calendarType": "GOOGLE",
+            "start": "2023-01-03T01:00:00.000Z",
+            "end": "2023-01-03T02:00:00.000Z",
+            "scheduleOwnerId": "e2c75c80-0c1e-4091-8ff1-98cc7865bfc0",
+            "scheduleOwnerName": "ANITA"
+          }
+        ],
+        "pagingMetadata": {
+          "count": 2,
+          "hasNext": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET 'https://www.wixapis.com/bookings/v2/external-calendars/events?from=2022-12-31T22:00:00.000Z&to=2023-01-07T21:59:59.999Z&scheduleIds=b936298d-18a6-4ae8-8e9f-10bf49314c95' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "events": [
+          {
+            "scheduleId": "b936298d-18a6-4ae8-8e9f-10bf49314c95",
+            "calendarType": "GOOGLE",
+            "start": "2023-01-02T01:00:00.000Z",
+            "end": "2023-01-02T02:00:00.000Z",
+            "scheduleOwnerId": "e2c75c80-0c1e-4091-8ff1-98cc7865bfc0",
+            "scheduleOwnerName": "ANITA"
+          }
+        ],
+        "pagingMetadata": {
+          "count": 1,
+          "hasNext": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET 'https://www.wixapis.com/bookings/v2/external-calendars/events?from=2022-12-31T22:00:00.000Z&to=2023-01-07T21:59:59.999Z' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "events": [
+          {
+            "scheduleId": "b936298d-18a6-4ae8-8e9f-10bf49314c95",
+            "calendarType": "GOOGLE",
+            "start": "2023-01-02T01:00:00.000Z",
+            "end": "2023-01-02T02:00:00.000Z",
+            "scheduleOwnerId": "e2c75c80-0c1e-4091-8ff1-98cc7865bfc0",
+            "scheduleOwnerName": "ANITA"
+          },
+          {
+            "scheduleId": "3e47ec65-2975-447c-a7ed-75041e850d5e",
+            "calendarType": "I_CAL",
+            "start": "2023-01-02T22:00:00.000Z",
+            "end": "2023-01-02T23:15:00.000Z",
+            "scheduleOwnerId": "76570209-101f-409b-af97-b445bdb63125",
+            "scheduleOwnerName": "JONATHAN"
+          }
+        ],
+        "pagingMetadata": {
+          "count": 2,
+          "hasNext": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of events from all external calendar accounts, based on
+    the provided filtering and paging.
+
+    ### Filters
+
+    You must filter by specifying both `from` and `to` dates, unless you specify
+    `cursorPaging.cursor`.
+
+    Additionally, you can specify `scheduleIds` or `userIds` to further limit
+    which events are returned. By default, events related to all schedules and
+    Wix users are returned.
+
+    ### Sorting
+
+    Returned events are sorted by start date in ascending order. You can't
+    adjust the sorting.
+
+    ### Personal data
+
+    By default, the following `event` fields aren't returned:
+
+    + `calendarName`.
+    + `title`.
+    + `scheduleOwnerName`.
+
+    You can retrieve these fields, by specifying `{"fieldsets": "OWN_PI"}`.
+
+    ### Partial success
+
+    By default, the call fails if events for at least 1 connection can't be
+    retrieved from an external provider. However, you can specify
+    `{"partialFailure": true}` to allow the call to succeed, if details for at
+    least 1 connection can be retrieved.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-EXTERNAL-CALENDARS">Manage External Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { externalCalendars } from '@wix/bookings';
+
+    externalCalendars.listEvents(options): Promise<NonNullablePaths>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="ListEventsOptions">
+
+      Options to use when listing events.
+
+      <Expandable title="options properties">
+
+        <ParamField body="from" type="string">
+
+          Date and time from which to retrieve events,
+          formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+          Required, unless `cursorPaging.cursor` is provided.
+
+          Events which start before the `from` time and end after it are included in the returned list.
+
+        </ParamField>
+
+        <ParamField body="to" type="string">
+
+          Date and time until which to retrieve events,
+          formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+          Required, unless `cursorPaging.cursor` is provided.
+
+          Events which start before the `to` time and end after it are included in the returned list.
+
+        </ParamField>
+
+        <ParamField body="scheduleIds" type="string[]">
+
+          Schedule IDs to filter by. If provided, the returned list includes only events belonging to external calendars connected to the specified schedules.
+          Maximum of 100 schedule IDs per request.
+
+          Constraints: `format GUID`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="userIds" type="string[]">
+
+          Wix user IDs to filter by. If provided, the returned list includes only events belonging to external calendars connected to schedules belonging to the specified Wix users.
+          Maximum of 100 Wix user IDs per request.
+
+          Constraints: `format GUID`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="allDay" type="boolean">
+
+          Whether to include only all-day events in the returned list.
+          If `true`, only all-day events are returned.
+          If `false`, only events with a specified time are returned.
+
+          Default: All events are returned.
+
+        </ParamField>
+
+        <ParamField body="fieldsets" type="string[]">
+
+          Predefined sets of fields to return.
+          - `NO_PI`: Returns event objects without personal information.
+          - `OWN_PI`: Returns complete event objects, including personal information.
+
+          Default: `NO_PI`
+
+        </ParamField>
+
+        <ParamField body="cursorPaging" type="CursorPaging">
+
+          Pagination options.
+
+          <Expandable title="cursorPaging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Number of events to load.
+              Max: `1000`
+
+            </ParamField>
+
+            <ParamField body="cursor" type="string">
+
+              Pointer to the next or previous page in the list of results.
+
+              You can get the relevant cursor token
+              from the `pagingMetadata` object in the previous call's response.
+              Not relevant for the first request.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="partialFailure" type="boolean">
+
+          Whether to return a partial list of events if details can't be retrieved for some connections.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<NonNullablePaths>`.
+
+    <ResponseField name="events" type="Event[]">
+
+      List of external calendar events matching the filters.
+
+      <Expandable title="events properties">
+
+        <ResponseField name="scheduleId" type="string">
+
+          ID of the [schedule](https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/introduction)
+          to which the event belongs.
+
+        </ResponseField>
+
+        <ResponseField name="calendarType" type="string">
+
+          External calendar type.
+
+          **Supported values:**
+
+          - `UNDEFINED` — There is no information about the external calendar type.
+          - `GOOGLE` — [Google Calendar](https://developers.google.com/calendar/api/guides/overview).
+          - `I_CAL` — Apple iCalendar.
+          - `OUTLOOK` — __Deprecated__. Use `MICROSOFT` instead.
+          - `OFFICE_365` — __Deprecated__. Use `MICROSOFT` instead.
+          - `MICROSOFT` — Microsoft Calendar. For example, Office 365 calendar or Outlook calendar.
+          - `OTHER` — A different type of external calendar, not listed here.
+
+        </ResponseField>
+
+        <ResponseField name="calendarName" type="string">
+
+          Display name of the external calendar.
+          For example, `Primary` or `Birthdays`.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Event title.
+
+        </ResponseField>
+
+        <ResponseField name="start" type="string">
+
+          Start date and time of the event (inclusive), formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+
+        </ResponseField>
+
+        <ResponseField name="end" type="string">
+
+          End date and time of the event (exclusive), formatted according to [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt).
+
+        </ResponseField>
+
+        <ResponseField name="allDay" type="boolean">
+
+          Whether the event is an all-day event.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="scheduleOwnerId" type="string">
+
+          ID of the [Wix user](https://dev.wix.com/docs/rest/articles/getting-started/about-identities#wix-user)
+          to whom the schedule belongs.
+          For Bookings [staff members](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/introduction)
+          identical to their [resource ID](https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/introduction).
+
+        </ResponseField>
+
+        <ResponseField name="scheduleOwnerName" type="string">
+
+          Name of the [Wix user](https://dev.wix.com/docs/rest/articles/getting-started/about-identities#wix-user)
+          to whom the schedule belongs.
+          For example, the `name` of a Bookings [staff member](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/introduction).
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="failedProviderIds" type="string[]">
+
+      List of provider IDs for connections for which retrieval of events failed. Returned only if `partialFailure` body parameter is `true` in the request.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-4" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-5" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-events" id="ex-sdk-list-events-6" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-events-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-events-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">List all events within a time range</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List all events within a time range (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List events connected to a specified schedule</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List events connected to a specified schedule (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List events including personal information</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List events including personal information (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listEvents (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-events-0"><span className="wix-picker-name">List all events within a time range</span></label>
+    <label htmlFor="ex-sdk-list-events-1"><span className="wix-picker-name">List all events within a time range (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-list-events-2"><span className="wix-picker-name">List events connected to a specified schedule</span></label>
+    <label htmlFor="ex-sdk-list-events-3"><span className="wix-picker-name">List events connected to a specified schedule (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-list-events-4"><span className="wix-picker-name">List events including personal information</span></label>
+    <label htmlFor="ex-sdk-list-events-5"><span className="wix-picker-name">List events including personal information (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-list-events-6"><span className="wix-picker-name">listEvents (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript List all events within a time range
+    import {externalCalendars} from '@wix/bookings';
+
+    async function listEvents() {
+        const options = {
+            from: '2023-01-01T00:00:00Z',
+            to: '2023-01-07T00:00:00Z'
+        }
+        const {events} = await externalCalendars.listEvents(options)
+        return events
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List all events within a time range (with elevated permissions)
+    import { externalCalendars } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    const elevatedListEvents = auth.elevate(externalCalendars.listEvents);
+
+    async function listEvents() {
+        const options = {
+            from: '2023-01-01T00:00:00Z',
+            to: '2023-01-07T00:00:00Z'
+        }
+        const { events } = await elevatedListEvents(options);
+        return events;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List events connected to a specified schedule
+    import {externalCalendars} from '@wix/bookings';
+
+    async function listScheduleEvents(from, to) {
+        const options = {
+            from,
+            to,
+            scheduleId: 'b936298d-18a6-4ae8-8e9f-10bf49314c95'
+        }
+        const {events: eventsOfSchedule} = await externalCalendars.listEvents(options)
+        return eventsOfSchedule
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List events connected to a specified schedule (with elevated permissions)
+    import { externalCalendars } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    const elevatedListEvents = auth.elevate(externalCalendars.listEvents);
+
+    async function listScheduleEvents(from, to) {
+        const options = {
+            from,
+            to,
+            scheduleId: 'b936298d-18a6-4ae8-8e9f-10bf49314c95'
+        }
+        const { events: eventsOfSchedule } = await elevatedListEvents(options)
+        return eventsOfSchedule
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List events including personal information
+    import {externalCalendars} from '@wix/bookings';
+
+    async function listEventsWithPI(from, to) {
+        const options = {
+            from,
+            to,
+            fieldsets: ['OWN_PI']
+        }
+        const {events: eventsWithPI} = await externalCalendars.listEvents(options)
+        return eventsWithPI
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List events including personal information (with elevated permissions)
+    import { externalCalendars } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    const elevatedListEvents = auth.elevate(externalCalendars.listEvents);
+
+    async function listEventsWithPI(from, to) {
+        const options = {
+            from,
+            to,
+            fieldsets: ['OWN_PI']
+        }
+        const {events: eventsWithPI} = await elevatedListEvents(options)
+        return eventsWithPI
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listEvents (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { externalCalendars } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { externalCalendars },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listEvents(options) {
+      const response = await myWixClient.externalCalendars.listEvents(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

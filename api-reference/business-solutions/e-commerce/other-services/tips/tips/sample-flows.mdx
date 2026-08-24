@@ -1,0 +1,110 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. 
+This can be a helpful jumping off point as you plan your implementation.
+
+## Add a tip to an order
+
+You could add a customer tip for the staff to an
+[eCommerce order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+To add a tip to an order:
+
+1. Call [Search Orders](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/search-orders)
+   to identify unpaid orders. Provide `{ "paymentStatus": { "$in": ["NOT_PAID", "PARTIALLY_PAID"]}}`
+   in the `filter`. Save the returned order IDs, included line items,
+   `priceSummary.subTotal.formattedAmount`, and all additional details that you
+   want to display later in the flow.
+1. Check which of the retrieved orders doesn't include a tip by calling
+   [Get Tip By Order ID](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/get-tip-by-order-id)
+   for each of them. If an order has no tip, the call fails with a
+   `TIP_NOT_FOUND` error.
+1. Display a list of all orders without a tip and 
+   choose the order for which you want to add a tip. Save the relevant
+   order ID.
+1. Retrieve the relevant tip settings with
+   [Query Tip Settings](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tip-settings/query-tip-settings).
+   For example, you could use the default setting or filter by `paymentTerminalId`.
+1. Display the tip settings `presets` and the order's
+   `priceSummary.subTotal.formattedAmount`. Save the tip choice.
+1. Call [Preview Tip](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/preview-tip).
+   Provide `price` for all the order's line items and save the returned `tip`.
+1. Apply the tip including its distributions to the
+   [eCommerce order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction)
+   with [Set Tip On Order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/set-tip-on-order).
+   Pass the order ID and the complete `tip` object from the previous step.
+
+## Manage a tip's distributions
+
+You can adjust a staff member's share and add a tip distribution for another staff member.
+
+To adjust tip distributions:
+
+1. Call [Search Orders](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/search-orders)
+   to identify unpaid orders. Provide `{ "paymentStatus": { "$in": ["NOT_PAID", "PARTIALLY_PAID"]}}`
+   in the `filter`. Save the returned order IDs, included line items,
+   `priceSummary.subTotal.formattedAmount`, and all additional details that you
+   want to display later in the flow.
+1. Check which of the retrieved orders includes a tip by calling
+   [Get Tip By Order ID](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/get-tip-by-order-id)
+   for each of them. If an order has a tip, the relevant `tip` is returned. If
+   an order has no tip, the call fails with a `TIP_NOT_FOUND` error. Save all
+   returned `tip` objects including their `distributions`.
+1. Display a list of all orders with tip and 
+   choose the order for which you want to adjust the distributions. Save
+   the relevant order ID.
+1. Call [List Tippable Staff](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tippable-staff/list-tippable-staff) to retrieve a list of all staff who are eligible to receive tips.
+1. Display information about all staff who is eligible to receive a share of
+   the tip and let choose who also receives a share
+   of the tip. Save the relevant `staff.id` and the distribution amount they
+   receive.
+1. Call [Set Tip On Order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/set-tip-on-order)
+   to update the tip. Pass the adjusted, the new and all unchanged distributions.
+
+## Create a tip dashboard
+
+You could display a dashboard to manage tips by staff member.
+
+To create a tip dashboard:
+
+1. Call [List Tippable Staff](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tippable-staff/list-tippable-staff)
+   to retrieve all staff eligible to receive tips. Display the list. 
+   When a specific staff member is clicked to
+   view details, save that staff member's `staff.id`.
+1. Optional: Set a time range to retrieve tip details for that period.
+1. Call [Search Orders](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/search-orders)
+   and filter by your desired time range. Save the IDs of the returned orders.
+1. Call [Query Tip Distributions](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/query-tip-distributions),
+   filtering by `staff.id` and the list of order IDs. Be sure to save
+   the `orderId` for each distribution.
+1. Optional: Call [Sum Distribution Amounts](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/sum-tip-distribution-amounts)
+   with the same filter as in the previous step to calculate the total tip
+   amount for the selected staff member.  
+   Alternatively, you can calculate the total amount on your own.
+1. Display all tip distributions and the total tip amount for the staff member.
+1. When a specific distribution is clicked, call
+   [Get Order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/get-order)
+   to display the corresponding order details, such as line items.
+
+## Manage a tip in a custom checkout
+
+You can allow customers to add or update a tip as when you're using a custom checkout.
+Keep in mind that [Wix Tips](fallback::https://www.wix.com/app-market/wix-tips)
+allows Wix users to manage tips out-of-the-box, when the business is using the standard
+[eCommerce checkout](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+
+To manage a tip in a custom checkout:
+
+1. Call [Get Checkout](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/get-checkout) and save the `purchaseFlowId`.
+2. Call [Query Tip Settings](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tip-settings/query-tip-settings) to confirm that customers are allowed to tip by checking `allowCustomerTip` and save the tip choice `presets`.
+3. Call [Get Tip Choice](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/get-tip-choice) and provide the saved `purchaseFlowId` to check if the customer has already chosen a tip.
+4. Based on the customer's selection, call [Update Tip Choice](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/tips/tips/update-tip-choice) to set or update the tip amount.
+5. Once the customer completes the checkout, call [Update Checkout](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/update-checkout) to recalculate the checkout details.
+   This automatically applies an `additionalFee`  associated with the tip choice to the relevant
+   [eCommerce order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+6. Call [Create Order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/create-order) to complete the 
+   checkout flow with the updated tip information.

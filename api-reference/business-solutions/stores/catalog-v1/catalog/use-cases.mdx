@@ -1,0 +1,303 @@
+---
+title: "Use Cases"
+description: "In this example we will query a product variant: The product is a Shirt."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+In this example we will query a product variant: 
+* The product is a `Shirt`.
+* The `Shirt` has 2 **options** - `Size` and `Color`.
+* The size option has 3 **choices** - `S`/`M`/`L`.
+* The color option has 3 **choices** - `Red`/`Green`/`Blue`.
+* The product **variant** `S`+`Red` is out of stock.
+
+**Call [Get Product](fallback::https://dev.wix.com/docs/rest/business-solutions/stores/catalog/get-product) to retrieve product options**
+
+<Tabs>
+
+<Tab title="REST">
+
+```bash
+    curl -X GET \
+    'https: //www.wixapis.com/stores/v1/products/91f7ac8b-2baa-289c-aa50-6d64764f35d3' \
+    -H 'Authorization: <AUTH>'
+   ```
+:::
+:::SDK_TAB
+```js
+import { products } from "@wix/stores";
+
+const id = "91f7ac8b-2baa-289c-aa50-6d64764f35d3"
+
+async function getProduct(id) {
+  const response = await products.getProduct(id);
+}
+```
+:::
+::::
+
+```json
+{
+  ...
+  "productOptions": [
+    {
+      "optionType": "drop_down",
+      "name": "Size",
+      "choices": [
+        {
+          "value": "S",
+          "description": "S",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "M",
+          "description": "M",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "L",
+          "description": "L",
+          "inStock": true,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "optionType": "color",
+      "name": "Color",
+      "choices": [
+        {
+          "value": "#FF0000",
+          "description": "Red",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "#00FF00",
+          "description": "Green",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "#00000FF",
+          "description": "Blue",
+          "inStock": true,
+          "visible": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Call [Get Product Options Availability](fallback::https://dev.wix.com/docs/rest/business-solutions/stores/catalog/get-product-options-availability) to retrieve the `S` size availability**  
+
+Notice in the response that:
+- `Red` is out of stock because `S`+`Red` is out of stock.
+- `availableForPurchase` is false because both size and color must be given for this product.
+
+::::tabs
+:::REST_TAB
+```bash
+   curl -X POST \
+    'https://www.wixapis.com/stores/v1/products/1044e7e4-37d1-0705-c5b3-623baae212fd/productOptionsAvailability' \
+    -d '{
+          "options": {
+            "size": "S"
+          }
+        }' \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: <AUTH>'
+   ```
+
+</Tab>
+
+<Tab title="SDK">
+
+```js
+import { products } from "@wix/stores";
+
+const id = "1044e7e4-37d1-0705-c5b3-623baae212fd"
+
+const options = {
+  size = "S"
+}
+
+async function getProductOptionsAvailability(id, options) {
+  const response = await products.getProductOptionsAvailability(id, options);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+```json
+{
+  "productOptions": [
+    {
+      "optionType": "drop_down",
+      "name": "Size",
+      "choices": [
+        {
+          "value": "S",
+          "description": "S",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "M",
+          "description": "M",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "L",
+          "description": "L",
+          "inStock": true,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "optionType": "color",
+      "name": "Color",
+      "choices": [
+        {
+          "value": "#FF0000",
+          "description": "Red",
+          "inStock": false,
+          "visible": true
+        },
+        {
+          "value": "#00FF00",
+          "description": "Green",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "#00000FF",
+          "description": "Blue",
+          "inStock": true,
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "availableForPurchase": false
+}
+```
+
+**Call [Get Product Options Availability](fallback::https://dev.wix.com/docs/rest/business-solutions/stores/catalog/get-product-options-availability) to retrieve the availability of `S`+`Green`**
+
+Notice in the response that:
+- We get the selected variant, with proper values for price, weight, SKU and inventory.
+- `availableForPurchase` is true.
+
+::::tabs
+:::REST_TAB
+```bash
+   curl -X POST \
+    'https://www.wixapis.com/stores/v1/products/1044e7e4-37d1-0705-c5b3-623baae212fd/productOptionsAvailability' \
+    -d '{
+          "options": {
+            "size": "S",
+            "color": "Green"
+          }
+        }' \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: <AUTH>'
+   ```
+:::
+:::SDK_TAB
+```js
+import { products } from "@wix/stores";
+
+const id = "1044e7e4-37d1-0705-c5b3-623baae212fd"
+
+const options = {
+    size = "S"
+    color = "Green"
+}
+
+async function getProductOptionsAvailability(id, options) {
+  const response = await products.getProductOptionsAvailability(id, options);
+}
+```
+:::
+::::
+
+```json
+{
+  "selectedVariant": {
+    "price": {
+      "currency": "USD",
+      "price": 81,
+      "discountedPrice": 81,
+      "formatted": {
+        "price": "$81.00",
+        "discountedPrice": "$81.00"
+      }
+    },
+    "weight": 0,
+    "sku": "364215376135191",
+    "inStock": true,
+    "visible": true
+  },
+  "productOptions": [
+    {
+      "optionType": "drop_down",
+      "name": "Size",
+      "choices": [
+        {
+          "value": "S",
+          "description": "S",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "M",
+          "description": "M",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "L",
+          "description": "L",
+          "inStock": true,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "optionType": "color",
+      "name": "Color",
+      "choices": [
+        {
+          "value": "#FF0000",
+          "description": "Red",
+          "inStock": false,
+          "visible": true
+        },
+        {
+          "value": "#00FF00",
+          "description": "Green",
+          "inStock": true,
+          "visible": true
+        },
+        {
+          "value": "#00000FF",
+          "description": "Blue",
+          "inStock": true,
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "availableForPurchase": true
+}
+```

@@ -1,0 +1,59 @@
+---
+title: "Introduction"
+description: "The Marketing Plan API generates and manages a site's AI-driven social media marketing plan."
+icon: "file-lines"
+---
+
+The Marketing Plan API generates and manages a site's AI-driven social media marketing plan. A plan is a schedule of marketing activities covering today through the end of next month. Social posts can then be generated for those activities, ready to schedule and publish. A site has at most one plan at a time.
+
+With the Marketing Plan API, you can:
+
+- Generate and regenerate a marketing plan.
+- Regenerate a plan with fresh SEO keyword research to add blog activities.
+- Generate social posts for activities, and regenerate their content or media.
+- Schedule the generated post drafts for publishing.
+- Retrieve a plan's status and activities, and delete a plan or its activities.
+
+## Plan lifecycle
+
+Plan generation is asynchronous. A plan moves through these statuses:
+
+- `NEVER_CREATED`: The site has no plan yet.
+- `GENERATING`: The plan is being generated.
+- `ACTIVE`: The plan is ready to use.
+- `INACTIVE`: The plan was automatically deactivated after a long period without engagement. An `INACTIVE` plan returns no activities. Calling `GetSocialMarketingPlan` after a long idle period can itself trigger this transition. Generating or regenerating reactivates the plan.
+- `FAILED`: Generation failed. Try generating again.
+
+After calling a generate or regenerate method, poll [Get Social Marketing Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/get-social-marketing-plan) until the `status` is `ACTIVE` or `FAILED`.
+
+When a plan is generated, posts are created automatically only for the nearest-term activities; how far ahead that reaches can depend on the site's social marketing premium plan. To generate posts for the remaining activities, call [Generate Social Posts](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/generate-social-posts). Posts are generated for all supported social channels and all of them are returned, but only posts for connected channels can be scheduled and published. Posts are created as drafts managed by the Publisher API, and you schedule them with [Schedule Drafts](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/schedule-drafts).
+
+## Regenerating a plan
+
+`RegenerateMarketingPlan` rebuilds the plan's upcoming activities from the current marketing settings and site content. `RegenerateMarketingPlanWithKeywordResearch` does the same but first runs fresh SEO keyword research to refresh the plan's blog activities, so it's multi-stage and takes longer. Use the keyword-research variant after changing the content pillars (the `topics` in the marketing settings) so the blog activities reflect them; otherwise the plain regenerate is faster. Both run asynchronously and report `GENERATING` while they work (the keyword-research variant has an internal preconditions phase, but the status you see stays `GENERATING`), so poll [Get Social Marketing Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/get-social-marketing-plan) the same way.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The site should be published before you generate a plan, because generation draws on the published site. This isn't validated at call time: an unpublished site results in either a `FAILED` status or an `ACTIVE` plan with no generated posts. Verify the site is published before generating.
+- Generation is asynchronous and non-deterministic. Poll for completion instead of relying on the immediate response.
+- Marketing settings are optional. Defaults are applied at generation time. Social marketing must be enabled in the settings for posts to be generated automatically when a plan is created.
+- Scheduling a draft succeeds, but only drafts whose channel is connected through the Publisher API are actually scheduled. The rest remain drafts. Connect channels through the Publisher to publish.
+
+## Use cases
+
+- [Generate a marketing plan and publish its posts](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows#generate-a-marketing-plan-and-publish-its-posts)
+- [Generate and schedule posts for more activities](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows#generate-and-schedule-posts-for-more-activities)
+
+## Terminology
+
+- **Marketing plan:** A per-site, AI-generated schedule of marketing activities covering today through the end of next month.
+- **Marketing activity:** A single planned marketing action within a plan, such as a social campaign, blog post, or email.
+- **Post:** An image and channel-specific caption generated for an activity, created as a draft that can be scheduled for publishing.
+
+## See also
+
+- [Marketing Plan API: Sample Flows](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows)
+
+@sdk_package_setup

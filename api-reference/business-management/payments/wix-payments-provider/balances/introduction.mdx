@@ -1,0 +1,55 @@
+---
+title: "Introduction"
+description: "The Balance Records API is a read-only ledger of financial operations on a Wix Payments merchant account."
+icon: "file-lines"
+---
+
+The Balance Records API is a read-only ledger of financial operations on a Wix Payments merchant account. Each balance record represents 1 financial operation (a payment, refund, chargeback, reserve hold or release, top-up, or Wix Capital movement) and how it affected the account's balance.
+
+A balance record describes the effect of a financial operation on the balance, not the operation itself. For payment details such as the payment method, authorization, and capture, use the [Transactions API](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/transactions/introduction). Disputes are managed through the Disputes API, and each dispute's effect on the balance appears here as `CHARGEBACK` and `CHARGEBACK_FEE` records. To trigger or schedule a payout, use the Payouts API.
+
+With the Balance Records API, you can:
+
+- Query balance records by profile, payout, transaction, type, date range, or a named tag (for example, `AVAILABLE`, `PENDING`, or `RESERVE`).
+- Retrieve a single balance record by ID.
+- Get aggregate totals (gross, fees, and net) across any filter, in the same call.
+- Preview the merchant's next reserve hold and release before they happen, via virtual estimated records.
+
+For an in-depth conceptual map, including types, statuses, lifecycles, settlement, tags, virtual records, and immutability, see [About Balance Records](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/balances/about-balance-records).
+
+## Records versus payouts
+
+A balance record is 1 entry on the account ledger, caused by 1 financial operation. Payments, refunds, chargebacks, reserves, top-ups, and Wix Capital movements are owned by other services. The balance record is how their effect on the merchant's balance appears.
+
+Payouts do not create balance records. A payout sends funds from the Wix Payments account to the merchant's bank, and stamps each settled record it includes with its `payoutId`.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Records are immutable. The `amount`, `fee`, and `net` fields never change after creation. Adjustments are always expressed as new records. For example, a `REFUND_REVERSAL` is a new record, not an edit to the original `REFUND`.
+- On every record, `net` equals `amount - fee`. A positive `amount` is a credit to the account, and a negative `amount` is a deduction.
+- The `recordStatus` field is response-only and can't be used as a filter on list or query requests. To filter by a record's effect on the balance (for example, `AVAILABLE`, `PENDING`, or `RESERVE`), pass values to the `tags` request field instead.
+- Records bundled into a payout move to `PAID_OUT`, with one exception: a `RESERVE_HOLD` in a payout ends at `DEDUCTED_FROM_PAYOUT`, because the held amount is subtracted from the payout total rather than sent to the merchant.
+- `PAID_OUT` is used for both regular payouts and Wix Checking Instant Access transfers, distinguished by which detail block is populated. A record with `payoutInfo` was sent via a regular payout, where bank settlement can take several days. A record with `bookTransferInfo` was funded via a Wix Checking Instant Access transfer, where the funds are immediately available.
+- One financial operation can produce more than one record. For example, a chargeback always produces a separate `CHARGEBACK_FEE` alongside the `CHARGEBACK`.
+
+## Use cases
+
+- [List the records inside a payout](fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/sample-flows#list-the-records-inside-a-payout*original::./sample-flows#list-the-records-inside-a-payout).
+- [Find every balance record linked to a transaction](fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/sample-flows#find-every-balance-record-linked-to-a-transaction*original::./sample-flows#find-every-balance-record-linked-to-a-transaction).
+- [Show what's pending versus available](fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/sample-flows#show-whats-pending-versus-available*original::./sample-flows#show-whats-pending-versus-available).
+- [Project the merchant's next reserve activity](fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/sample-flows#project-the-merchants-next-reserve-activity*original::./sample-flows#project-the-merchants-next-reserve-activity).
+- [Surface chargebacks and disputes for an account](fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/sample-flows#surface-chargebacks-and-disputes-for-an-account*original::./sample-flows#surface-chargebacks-and-disputes-for-an-account).
+
+## Terminology
+
+- **Balance record**: A single entry on the Wix Payments account ledger, describing how 1 financial operation affected the merchant's balance.
+- **Account profile**: A sub-entity inside a Wix Payments account with its own balance and payouts. Every balance record belongs to exactly 1 profile.
+- **Settlement**: The point when a credit record's funds become part of the available balance, after the pending period elapses. The record's `recordStatus` moves from `PENDING_CREDIT` to `CREDITED`.
+- **Payout**: A transfer of the available balance to the merchant's bank account. A payout doesn't create balance records: it bundles settled records and stamps them with its `payoutId`.
+- **Reserve**: Funds temporarily withheld from the available balance, expressed as a paired `RESERVE_HOLD` and `RESERVE_RELEASE`.
+- **Tag**: A named filter shortcut (for example, `AVAILABLE` or `PENDING`) that the server expands into a composite filter at query time. Tags aren't stored on records.
+- **Virtual record**: A projection of the merchant's next reserve hold or release, returned as the first result for the `ESTIMATED_RESERVE_HOLD` and `ESTIMATED_RESERVE_RELEASE` tags. It has no `id` and no `appliedDate`.
+
+@sdk_package_setup

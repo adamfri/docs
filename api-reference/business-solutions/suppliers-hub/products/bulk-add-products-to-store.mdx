@@ -1,0 +1,651 @@
+---
+title: "Bulk Add Products To Store"
+description: "Adds multiple Marketplace products to the caller's Wix store in a single request."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Adds multiple Marketplace products to the caller's Wix store in a single request.
+
+    Call this method to adopt products from the Marketplace into a Wix Stores catalog for selling. The target store is determined by the calling identity, so there's no need to specify a store ID in the request.
+
+    Supports partial success. Some products may be added successfully while others fail. Each result includes an `itemMetadata` object indicating success or failure with error details.
+
+    When handling failures, distinguish between validation errors, which shouldn't be retried, and transient errors, which can be retried. Retry only failed items, not the entire batch.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.SUPPLIERS_HUB.READ_MARKETPLACE">Read Marketplace</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/suppliershub/marketplace-product/v1/bulk/add-products-to-store
+    ```
+
+    ## Body Params
+
+    <ParamField body="productReferences" type="ProductReference[]" required>
+
+      References to the Marketplace products to add to the store.
+
+      Each reference must include a `productId` identifying an existing Marketplace product.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="productReferences properties">
+
+        <ParamField body="productId" type="string" required>
+
+          Product ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string">
+
+          Provider app ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="options" type="object">
+
+          Additional metadata for the product reference.
+
+          For example, internal identifiers on the provider's platform.
+
+        </ParamField>
+
+        <ParamField body="visibleInStore" type="boolean">
+
+          Whether the product is visible in the store.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkAddProductToStoreResult[]">
+
+      Results of the bulk add-to-store operation, one per input product reference.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual add-to-store operation, including success or failure status and error details.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible. For example, when failing to create an item.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="ProductReference">
+
+          Reference to the product added to the store.
+
+          <Expandable title="item properties">
+
+            <ResponseField name="productId" type="string">
+
+              Product ID.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="appId" type="string">
+
+              Provider app ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="options" type="object">
+
+              Additional metadata for the product reference.
+
+              For example, internal identifiers on the provider's platform.
+
+            </ResponseField>
+
+            <ResponseField name="visibleInStore" type="boolean">
+
+              Whether the product is visible in the store.
+
+              Default: `false`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata about the bulk operation, including success and failure counts.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Imports selected marketplace products into a Wix store in bulk
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/suppliers-hub/v1/bulk/add-products-to-store' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "productReferences": [
+          {
+            "productId": "e61fdfc3-8cc9-434c-b4b3-c1bf39275fc8",
+            "visibleInStore": true
+          },
+          {
+            "productId": "6affe02b-5088-4af6-865d-662c714c45b5",
+            "visibleInStore": true
+          },
+          {
+            "productId": "740164a3-d5c9-496b-844a-0d6a7b5f20fe",
+            "visibleInStore": false
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "e61fdfc3-8cc9-434c-b4b3-c1bf39275fc8",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "productId": "e61fdfc3-8cc9-434c-b4b3-c1bf39275fc8",
+              "appId": "f3203df0-b444-414f-bd9c-2e973ea5acfa",
+              "visibleInStore": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "6affe02b-5088-4af6-865d-662c714c45b5",
+              "originalIndex": 1,
+              "success": false,
+              "error": {
+                "code": "PRODUCT_NOT_FOUND",
+                "description": "Marketplace product not found.",
+                "data": {
+                  "productId": "6affe02b-5088-4af6-865d-662c714c45b5"
+                }
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "740164a3-d5c9-496b-844a-0d6a7b5f20fe",
+              "originalIndex": 2,
+              "success": true
+            },
+            "item": {
+              "productId": "740164a3-d5c9-496b-844a-0d6a7b5f20fe",
+              "appId": "f3203df0-b444-414f-bd9c-2e973ea5acfa",
+              "visibleInStore": false
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Adds multiple Marketplace products to the caller's Wix store in a single request.
+
+    Call this method to adopt products from the Marketplace into a Wix Stores catalog for selling. The target store is determined by the calling identity, so there's no need to specify a store ID in the request.
+
+    Supports partial success. Some products may be added successfully while others fail. Each result includes an `itemMetadata` object indicating success or failure with error details.
+
+    When handling failures, distinguish between validation errors, which shouldn't be retried, and transient errors, which can be retried. Retry only failed items, not the entire batch.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.SUPPLIERS_HUB.READ_MARKETPLACE">Read Marketplace</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { products } from '@wix/suppliers-hub';
+
+    products.bulkAddProductsToStore(productReferences): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="productReferences" type="ProductReference[]" required>
+
+      References to the Marketplace products to add to the store.
+
+      Each reference must include a `productId` identifying an existing Marketplace product.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="productReferences properties">
+
+        <ParamField body="productId" type="string" required>
+
+          Product ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string">
+
+          Provider app ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="options" type="object">
+
+          Additional metadata for the product reference.
+
+          For example, internal identifiers on the provider's platform.
+
+        </ParamField>
+
+        <ParamField body="visibleInStore" type="boolean">
+
+          Whether the product is visible in the store.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkAddProductToStoreResult[]">
+
+      Results of the bulk add-to-store operation, one per input product reference.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual add-to-store operation, including success or failure status and error details.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible. For example, when failing to create an item.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="ProductReference">
+
+          Reference to the product added to the store.
+
+          <Expandable title="item properties">
+
+            <ResponseField name="productId" type="string">
+
+              Product ID.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="appId" type="string">
+
+              Provider app ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="options" type="object">
+
+              Additional metadata for the product reference.
+
+              For example, internal identifiers on the provider's platform.
+
+            </ResponseField>
+
+            <ResponseField name="visibleInStore" type="boolean">
+
+              Whether the product is visible in the store.
+
+              Default: `false`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata about the bulk operation, including success and failure counts.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-add-products-to-store" id="ex-sdk-bulk-add-products-to-store-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-add-products-to-store" id="ex-sdk-bulk-add-products-to-store-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-add-products-to-store" id="ex-sdk-bulk-add-products-to-store-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-add-products-to-store-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-add-products-to-store-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkAddProductsToStore</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkAddProductsToStore (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkAddProductsToStore (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-add-products-to-store-0"><span className="wix-picker-name">bulkAddProductsToStore</span></label>
+    <label htmlFor="ex-sdk-bulk-add-products-to-store-1"><span className="wix-picker-name">bulkAddProductsToStore (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-add-products-to-store-2"><span className="wix-picker-name">bulkAddProductsToStore (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkAddProductsToStore
+    import { products } from '@wix/suppliers-hub';
+
+    async function bulkAddProductsToStore(productReferences) {
+      const response = await products.bulkAddProductsToStore(productReferences);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkAddProductsToStore (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { products } from '@wix/suppliers-hub';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { products },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkAddProductsToStore(productReferences) {
+      const response = await myWixClient.products.bulkAddProductsToStore(productReferences);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkAddProductsToStore (with elevated permissions)
+    import { products } from '@wix/suppliers-hub';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkAddProductsToStoreMethod(productReferences) {
+      const elevatedBulkAddProductsToStore = auth.elevate(products.bulkAddProductsToStore);
+      const response = await elevatedBulkAddProductsToStore(productReferences);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

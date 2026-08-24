@@ -1,0 +1,1025 @@
+---
+title: "Calculate Tax"
+description: "Calculates tax for the provided line items."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Calculates tax for the provided line items.
+
+    Wix calls this method whenever tax needs to be recalculated on a site, for example when a site visitor views their cart, begins checkout, or changes cart contents. Wix groups the line items by the tax calculator bound to each item's tax region and calls the corresponding provider.
+
+    Wix uses the returned tax breakdown to display tax on the cart and checkout pages and to calculate the order total.
+
+    Calculate tax for each line item based on the tax region in `lineItems.taxRegionId` and the tax group in `lineItems.taxGroupId`. The response `currency` must match the request `currency`, otherwise the response is invalid. Return:
+    + `taxSummary`: The overall total tax calculated.
+    + `lineItemTaxDetails.taxBreakdown`: The tax calculated for each line item in each jurisdiction.
+    + `lineItemTaxDetails.taxSummary`: The total tax calculated for each line item.
+
+    *Error handling:** If your implementation returns an error or times out, Wix falls back to the Wix manual tax calculator. If that also fails, the order proceeds with zero tax and a calculation error. A resolved buyer exemption bypasses third-party providers and forces the Wix manual calculator.
+
+    ## Endpoint
+
+    ```http
+    POST /v1/calculate-tax
+    ```
+
+    ## Body Params
+
+    <ParamField body="currency" type="string">
+
+      3-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format.
+
+      Constraints: `format CURRENCY`.
+
+    </ParamField>
+
+    <ParamField body="addresses" type="Address[]">
+
+      Array of addresses. Each line item can individually reference the address to apply with `lineItems.addressIndex`.
+
+      Constraints: `minItems 1`, `maxItems 3`.
+
+      <Expandable title="addresses properties">
+
+        <ParamField body="country" type="string">
+
+          2-letter country code in [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements) format.
+
+        </ParamField>
+
+        <ParamField body="subdivision" type="string">
+
+          Subdivision (such as state, prefecture, or province) in [ISO-3166 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-2) format.
+
+        </ParamField>
+
+        <ParamField body="city" type="string">
+
+          City name.
+
+        </ParamField>
+
+        <ParamField body="postalCode" type="string">
+
+          Postal or zip code.
+
+        </ParamField>
+
+        <ParamField body="addressLine" type="string">
+
+          Main address line, usually street and number as free text.
+
+        </ParamField>
+
+        <ParamField body="addressLine2" type="string">
+
+          Free text providing more detailed address information, such as apartment, suite, or floor.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="lineItems" type="LineItem[]">
+
+      Line items to calculate tax for.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="lineItems properties">
+
+        <ParamField body="id" type="string">
+
+          Line item ID.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="itemName" type="string">
+
+          Line item name to display.
+
+        </ParamField>
+
+        <ParamField body="quantity" type="integer">
+
+          Line item quantity.
+
+          Constraints: `min 1`, `max 100000`.
+
+        </ParamField>
+
+        <ParamField body="price" type="string">
+
+          Line item price.
+
+          Constraints: `format DECIMAL_VALUE`, `<= 1000000000000000`.
+
+        </ParamField>
+
+        <ParamField body="itemCode" type="string">
+
+          Stock keeping unit for this line item. Learn more about [SKUs](https://www.wix.com/encyclopedia/definition/stock-keeping-unit-sku).
+
+        </ParamField>
+
+        <ParamField body="taxGroupId" type="string">
+
+          Tax group ID for this line item. If not provided, the default tax group applies.
+
+        </ParamField>
+
+        <ParamField body="taxIncludedInPrice" type="boolean">
+
+          Whether tax is included in the price.
+
+        </ParamField>
+
+        <ParamField body="addressIndex" type="AddressIndex">
+
+          Index of the address from `addresses` to use to calculate tax for this specific line item. The index is zero-based.
+
+          <Expandable title="One of the following">
+
+            <ParamField body="AddressIndexOptions" type="AddressIndexOptions">
+
+              AddressIndexOptions
+
+              _Nested structure omitted for brevity — see the `AddressIndexOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="taxRegionId" type="string">
+
+          Tax region ID for this line item.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="currency" type="string">
+
+      3-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format.
+      If this code doesn't match the `currency` passed in the request, then the response is invalid.
+
+      Constraints: `format CURRENCY`.
+
+    </ResponseField>
+
+    <ResponseField name="taxSummary" type="TaxSummary">
+
+      Summary of the tax calculated.
+
+      <Expandable title="taxSummary properties">
+
+        <ResponseField name="totalAmount" type="string">
+
+          Total price for all line items.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="totalTax" type="string">
+
+          Total amount of tax calculated for all line items.
+          Note that due to rounding, `totalTax` may not equal the sum of `lineItemTaxDetails.taxSummary.taxAmount`.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="totalTaxableAmount" type="string">
+
+          Total taxable amount for all line items.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="totalTaxIncludedInPrice" type="string">
+
+          Total amount of `totalTax` that is included in price. Applies to line items with `taxIncludedInPrice` set to `true`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lineItemTaxDetails" type="LineItemTaxDetails[]">
+
+      Details of each tax applied to each line item.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="lineItemTaxDetails properties">
+
+        <ResponseField name="id" type="string">
+
+          Line item ID.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="itemName" type="string">
+
+          Line item name to display.
+
+        </ResponseField>
+
+        <ResponseField name="quantity" type="integer">
+
+          Line item quantity.
+
+          Constraints: `min 1`, `max 100000`.
+
+        </ResponseField>
+
+        <ResponseField name="taxBreakdown" type="TaxBreakdown[]">
+
+          Array of each tax applied, grouped by `jurisdiction`, `jurisdictionType`, `taxName`, `rate`, and `taxType`.
+
+          Constraints: `maxItems 7`.
+
+          <Expandable title="taxBreakdown properties">
+
+            <ResponseField name="jurisdiction" type="string">
+
+              Jurisdiction that taxes were calculated for.
+
+            </ResponseField>
+
+            <ResponseField name="nonTaxableAmount" type="string">
+
+              Non-taxable amount of the price.
+
+            </ResponseField>
+
+            <ResponseField name="rate" type="string">
+
+              Tax rate used for this jurisdiction, as a decimal. For example, 10% tax is `"0.1000"` and 200% tax is `"2.0000"`.
+
+            </ResponseField>
+
+            <ResponseField name="taxAmount" type="string">
+
+              Amount of this tax calculated for this jurisdiction.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAmount" type="string">
+
+              Taxable amount of the price.
+
+            </ResponseField>
+
+            <ResponseField name="taxType" type="string">
+
+              Type of tax that was calculated. For example, `"Sales Tax"`, `"Income Tax"`, `"Value Added Tax"`, etc.
+
+            </ResponseField>
+
+            <ResponseField name="taxName" type="string">
+
+              Name of the tax that was calculated. For example, `"NY State Sales Tax"`, `"Quebec GST"`, etc.
+
+            </ResponseField>
+
+            <ResponseField name="jurisdictionType" type="string">
+
+              Type of jurisdiction that taxes were calculated for. For example, `"State"`, `"County"`, `"City"`, `"Special"`, etc.
+
+              **Supported values:**
+
+              - `UNDEFINED`
+              - `COUNTRY`
+              - `STATE`
+              - `COUNTY`
+              - `CITY`
+              - `SPECIAL`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxSummary" type="LineItemTaxSummary">
+
+          Summary of this line item's total price and tax.
+
+          <Expandable title="taxSummary properties">
+
+            <ResponseField name="fullPrice" type="string">
+
+              Total price for this line item.
+              To determine the price for each individual unit of this line item, divide by `quantity`.
+
+            </ResponseField>
+
+            <ResponseField name="taxAmount" type="string">
+
+              The total amount of tax calculated for this line item.
+
+              Constraints: `format DECIMAL_VALUE`.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAmount" type="string">
+
+              Total taxable amount for this line item.
+
+              Constraints: `format DECIMAL_VALUE`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Trigger a tax calculation for a given set of line items and their addresses.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://provider.example.com/v1/calculate-tax' \
+      --header 'accept: application/json, text/plain, */*' \
+      --header 'accept-language: en-US,en;q=0.9' \
+      --header 'authorization: <AUTH>' \
+      --header 'content-type: application/json' \
+      --data '{
+        "lineItems": [
+          {
+            "id": "item123",
+            "item_name": "some",
+            "price": "123",
+            "tax_group_id": "56ce0f07-adda-4419-9d16-1af86b2ed284",
+            "tax_included": false,
+            "address_index": {
+              "single_address": 0
+            },
+            "quantity": 4
+          }
+        ],
+        "addresses": [
+          {
+            "country": "US",
+            "subdivision": "TX",
+            "postal_code": "76248",
+            "address_line": "296 Valley View Street Keller, TX 76248"
+          }
+        ],
+        "currency": "USD"
+      }'
+      ```
+
+      ```json Response
+      {
+        "currency": "USD",
+        "tax_summary": {
+          "total_amount": "123.00",
+          "total_tax": "10.15",
+          "total_taxable_amount": "123.00",
+          "total_tax_included_in_price": "0.00"
+        },
+        "line_item_tax_details": [
+          {
+            "id": "item123",
+            "item_name": "some",
+            "quantity": 4,
+            "tax_breakdown": [
+              {
+                "jurisdiction": "TEXAS",
+                "non_taxable_amount": "0.00",
+                "rate": "0.0625",
+                "tax_amount": "7.69",
+                "taxable_amount": "123.00",
+                "tax_type": "Sales",
+                "tax_name": "TX STATE TAX",
+                "jurisdiction_type": "STATE"
+              },
+              {
+                "jurisdiction": "KELLER",
+                "non_taxable_amount": "0.00",
+                "rate": "0.0175",
+                "tax_amount": "2.15",
+                "taxable_amount": "123.00",
+                "tax_type": "Sales",
+                "tax_name": "TX CITY TAX",
+                "jurisdiction_type": "CITY"
+              },
+              {
+                "jurisdiction": "KELLER CRIME CONTROL",
+                "non_taxable_amount": "0.00",
+                "rate": "0.0025",
+                "tax_amount": "0.31",
+                "taxable_amount": "123.00",
+                "tax_type": "Sales",
+                "tax_name": "TX SPECIAL TAX",
+                "jurisdiction_type": "SPECIAL"
+              }
+            ],
+            "tax_summary": {
+              "full_price": "123.00",
+              "tax_amount": "10.15",
+              "taxable_amount": "123.00"
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Calculates tax for the provided line items.
+
+    Wix calls this method whenever tax needs to be recalculated on a site, for example when a site visitor views their cart, begins checkout, or changes cart contents. Wix groups the line items by the tax calculator bound to each item's tax region and calls the corresponding provider.
+
+    Wix uses the returned tax breakdown to display tax on the cart and checkout pages and to calculate the order total.
+
+    Calculate tax for each line item based on the tax region in `lineItems.taxRegionId` and the tax group in `lineItems.taxGroupId`. The response `currency` must match the request `currency`, otherwise the response is invalid. Return:
+    + `taxSummary`: The overall total tax calculated.
+    + `lineItemTaxDetails.taxBreakdown`: The tax calculated for each line item in each jurisdiction.
+    + `lineItemTaxDetails.taxSummary`: The total tax calculated for each line item.
+
+    *Error handling:** If your implementation returns an error or times out, Wix falls back to the Wix manual tax calculator. If that also fails, the order proceeds with zero tax and a calculation error. A resolved buyer exemption bypasses third-party providers and forces the Wix manual calculator.
+
+    ## Method Declaration
+
+    ```typescript
+    import { taxCalculationProvider } from '@wix/billing';
+
+    taxCalculationProvider.calculateTax(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="CalculateTaxRequest">
+
+      Items and information to calculate tax for.
+
+      <Expandable title="request properties">
+
+        <ParamField body="currency" type="string">
+
+          3-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format.
+
+          Constraints: `format CURRENCY`.
+
+        </ParamField>
+
+        <ParamField body="addresses" type="Address[]">
+
+          Array of addresses. Each line item can individually reference the address to apply with `lineItems.addressIndex`.
+
+          Constraints: `minItems 1`, `maxItems 3`.
+
+          <Expandable title="addresses properties">
+
+            <ParamField body="city" type="string" />
+
+            <ParamField body="subdivision" type="string" />
+
+            <ParamField body="country" type="string" />
+
+            <ParamField body="postalCode" type="string" />
+
+            <ParamField body="addressLine2" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="lineItems" type="LineItem[]">
+
+          Line items to calculate tax for.
+
+          Constraints: `minItems 1`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="_id" type="string">
+
+              Line item ID.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="itemName" type="string">
+
+              Line item name to display.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              Line item quantity.
+
+              Constraints: `min 1`, `max 100000`.
+
+            </ParamField>
+
+            <ParamField body="price" type="string">
+
+              Line item price.
+
+              Constraints: `format DECIMAL_VALUE`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="itemCode" type="string">
+
+              Stock keeping unit for this line item. Learn more about [SKUs](https://www.wix.com/encyclopedia/definition/stock-keeping-unit-sku).
+
+            </ParamField>
+
+            <ParamField body="taxGroupId" type="string">
+
+              Tax group ID for this line item. If not provided, the default tax group applies.
+
+            </ParamField>
+
+            <ParamField body="taxIncludedInPrice" type="boolean">
+
+              Whether tax is included in the price.
+
+            </ParamField>
+
+            <ParamField body="addressIndex" type="AddressIndex">
+
+              Index of the address from `addresses` to use to calculate tax for this specific line item. The index is zero-based.
+
+              _Nested structure omitted for brevity — see the `AddressIndex` object._
+
+            </ParamField>
+
+            <ParamField body="taxRegionId" type="string">
+
+              Tax region ID for this line item.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="currency" type="string">
+
+      3-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format.
+      If this code doesn't match the `currency` passed in the request, then the response is invalid.
+
+      Constraints: `format CURRENCY`.
+
+    </ResponseField>
+
+    <ResponseField name="taxSummary" type="TaxSummary">
+
+      Summary of the tax calculated.
+
+      <Expandable title="taxSummary properties">
+
+        <ResponseField name="totalAmount" type="string">
+
+          Total price for all line items.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="totalTax" type="string">
+
+          Total amount of tax calculated for all line items.
+          Note that due to rounding, `totalTax` may not equal the sum of `lineItemTaxDetails.taxSummary.taxAmount`.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="totalTaxableAmount" type="string">
+
+          Total taxable amount for all line items.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="totalTaxIncludedInPrice" type="string">
+
+          Total amount of `totalTax` that is included in price. Applies to line items with `taxIncludedInPrice` set to `true`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lineItemTaxDetails" type="LineItemTaxDetails[]">
+
+      Details of each tax applied to each line item.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="lineItemTaxDetails properties">
+
+        <ResponseField name="_id" type="string">
+
+          Line item ID.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="itemName" type="string">
+
+          Line item name to display.
+
+        </ResponseField>
+
+        <ResponseField name="quantity" type="integer">
+
+          Line item quantity.
+
+          Constraints: `min 1`, `max 100000`.
+
+        </ResponseField>
+
+        <ResponseField name="taxBreakdown" type="TaxBreakdown[]">
+
+          Array of each tax applied, grouped by `jurisdiction`, `jurisdictionType`, `taxName`, `rate`, and `taxType`.
+
+          Constraints: `maxItems 7`.
+
+          <Expandable title="taxBreakdown properties">
+
+            <ResponseField name="jurisdiction" type="string">
+
+              Jurisdiction that taxes were calculated for.
+
+            </ResponseField>
+
+            <ResponseField name="nonTaxableAmount" type="string">
+
+              Non-taxable amount of the price.
+
+            </ResponseField>
+
+            <ResponseField name="rate" type="string">
+
+              Tax rate used for this jurisdiction, as a decimal. For example, 10% tax is `"0.1000"` and 200% tax is `"2.0000"`.
+
+            </ResponseField>
+
+            <ResponseField name="taxAmount" type="string">
+
+              Amount of this tax calculated for this jurisdiction.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAmount" type="string">
+
+              Taxable amount of the price.
+
+            </ResponseField>
+
+            <ResponseField name="taxType" type="string">
+
+              Type of tax that was calculated. For example, `"Sales Tax"`, `"Income Tax"`, `"Value Added Tax"`, etc.
+
+            </ResponseField>
+
+            <ResponseField name="taxName" type="string">
+
+              Name of the tax that was calculated. For example, `"NY State Sales Tax"`, `"Quebec GST"`, etc.
+
+            </ResponseField>
+
+            <ResponseField name="jurisdictionType" type="string">
+
+              Type of jurisdiction that taxes were calculated for. For example, `"State"`, `"County"`, `"City"`, `"Special"`, etc.
+
+              **Supported values:**
+
+              - `UNDEFINED`
+              - `COUNTRY`
+              - `STATE`
+              - `COUNTY`
+              - `CITY`
+              - `SPECIAL`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxSummary" type="LineItemTaxSummary">
+
+          Summary of this line item's total price and tax.
+
+          <Expandable title="taxSummary properties">
+
+            <ResponseField name="fullPrice" type="string">
+
+              Total price for this line item.
+              To determine the price for each individual unit of this line item, divide by `quantity`.
+
+            </ResponseField>
+
+            <ResponseField name="taxAmount" type="string">
+
+              The total amount of tax calculated for this line item.
+
+              Constraints: `format DECIMAL_VALUE`.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAmount" type="string">
+
+              Total taxable amount for this line item.
+
+              Constraints: `format DECIMAL_VALUE`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-calculate-tax" id="ex-sdk-calculate-tax-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-calculate-tax" id="ex-sdk-calculate-tax-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-calculate-tax-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-calculate-tax-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Example of an taxCalculationProvider return value</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">calculateTax (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-calculate-tax-0"><span className="wix-picker-name">Example of an taxCalculationProvider return value</span></label>
+    <label htmlFor="ex-sdk-calculate-tax-1"><span className="wix-picker-name">calculateTax (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Example of an taxCalculationProvider return value
+    import { taxCalculationProvider } from '@wix/ecom/service-plugins'
+
+    taxCalculationProvider.provideHandlers({
+      calculateTax: async (payload) => {
+
+        const {request, metadata} = payload;
+            // Use the `request` and `metadata` received from Wix and
+            // apply custom logic.
+          return {
+            "currency": "USD",
+            "lineItemTaxDetails": [
+              {
+                "_id": "205c539b-fd89-4b0c-8d7e-55630f66e5f9",
+                "itemName": "Wireless Headphones",
+                "quantity": 2,
+                "taxBreakdown": [
+                  {
+                    "jurisdiction": "State of California",
+                    "jurisdictionType": "STATE",
+                    "nonTaxableAmount": "0.00",
+                    "rate": "0.0750",
+                    "taxAmount": "3.00",
+                    "taxName": "California State Sales Tax",
+                    "taxType": "Sales Tax",
+                    "taxableAmount": "40.00"
+                  },
+                  {
+                    "jurisdiction": "City of Los Angeles",
+                    "jurisdictionType": "CITY",
+                    "nonTaxableAmount": "0.00",
+                    "rate": "0.01",
+                    "taxAmount": "0.40",
+                    "taxName": "Los Angeles City Sales Tax",
+                    "taxType": "Sales Tax",
+                    "taxableAmount": "40.00"
+                  }
+                ],
+                "taxSummary": {
+                  "fullPrice": "100.00",
+                  "taxAmount": "3.40",
+                  "taxableAmount": "40.00"
+                }
+              }
+            ],
+            "taxSummary": {
+              "totalAmount": "103.40",
+              "totalTax": "3.40",
+              "totalTaxIncludedInPrice": "0.00",
+              "totalTaxableAmount": "40.00"
+            }
+          }
+
+      }
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculateTax (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { taxCalculationProvider } from '@wix/billing/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { taxCalculationProvider },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function calculateTax(request,metadata) {
+      const response = await myWixClient.taxCalculationProvider.calculateTax(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

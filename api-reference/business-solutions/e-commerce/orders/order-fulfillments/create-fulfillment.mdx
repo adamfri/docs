@@ -1,0 +1,695 @@
+---
+title: "Create Fulfillment"
+description: "Creates an order fulfillment."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an order fulfillment.
+
+    A line item's quantity can be split across multiple fulfillments. When `lineItems[i].quantity` isn't passed, it defaults to the line item's remaining unfulfilled quantity.
+
+    <Note>
+
+    + Fulfillments can only be created for orders with `status: "APPROVED"`.
+    + When passing `trackingInfo`, both `trackingNumber` and `shippingProvider` are required.
+    + Don't pass `fulfillment.id`. It's assigned automatically and passing it results in an error.
+    + A shipping notification email may be sent to the buyer when the fulfillment is created, depending on the site's email settings.
+    + The order's `fulfillmentStatus` is recalculated asynchronously after the call.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/fulfillments/orders/{orderId}/create-fulfillment
+    ```
+
+    ## Path Params
+
+    <ParamField path="orderId" type="string" required>
+
+      Order ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="fulfillment" type="Fulfillment" required>
+
+      Fulfillment info.
+
+      <Expandable title="fulfillment properties">
+
+        <ParamField body="id" type="string">
+
+          Fulfillment ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="createdDate" type="datetime">
+
+          Fulfillment creation date and time in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="lineItems" type="FulfillmentLineItem[]" required>
+
+          Line items being fulfilled.
+
+          Constraints: `minItems 0`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="id" type="string" required>
+
+              Line item ID (mirrors the ID of the order line item).
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              Line item quantity.
+
+              * If this property isn't passed on creation, it defaults to the number of items not already linked to a fulfillment.
+              * If the order does not have the requested quantity of line items available to add to this fulfillment, the fulfillment will not be created and an error is returned.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="status" type="string">
+
+          The current status of the fulfillment process.
+
+          Supported values (case-sensitive, any other value is rejected):
+          + `"Pending"` - Initial state when fulfillment is created but processing hasn't started.
+          + `"Accepted"` - Order has been received and validated for fulfillment.
+          + `"Ready"` - Items have been picked and packed, ready for shipping.
+          + `"In_Delivery"` - Items have been handed over to the shipping carrier.
+          + `"Fulfilled"` - Delivery has been completed successfully.
+
+          The status typically progresses from `Pending` to `Accepted`, `Ready`, `In_Delivery`, and finally `Fulfilled`.
+          Update the status manually or automatically depending on your fulfillment workflow.
+
+          This field is informational. The order's `fulfillmentStatus` is primarily derived from the fulfilled line item quantities, not from this field.
+
+        </ParamField>
+
+        <ParamField body="completed" type="boolean">
+
+          Fulfillment handling complete.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="FulfillmentInfo" type="FulfillmentInfo">
+
+          FulfillmentInfo
+
+          <Expandable title="FulfillmentInfo properties">
+
+            <ParamField body="trackingInfo" type="FulfillmentTrackingInfo">
+
+              Tracking info.
+
+              _Nested structure omitted for brevity — see the `FulfillmentTrackingInfo` object._
+
+            </ParamField>
+
+            <ParamField body="customInfo" type="CustomFulfillmentInfo">
+
+              Custom fulfillment info.
+
+              _Nested structure omitted for brevity — see the `CustomFulfillmentInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="orderWithFulfillments" type="OrderWithFulfillments">
+
+      Order ID and the orders' fulfillments.
+
+      See the [Fulfillments Object](/api-reference/business-solutions/e-commerce/orders/order-fulfillments/fulfillments-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="fulfillmentId" type="string">
+
+      ID of created fulfillment.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `409` | `ALREADY_EXISTS` | `TRACKING_NUMBER_ALREADY_EXISTS` | fulfillment with tracking number already exist |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order With Fulfillments Updated | `wix.ecom.v1.fulfillments_updated` | Triggered when one or more of an order's fulfillments are created, updated, or deleted. The response contains the order's ID and details about all of its fulfillments following the change. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Passing a shipping provider that supports auto-filling the `trackingLink` in the response.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/fulfillments/orders/58c9a790-27b7-463f-a865-c7cb494f7c29/create-fulfillment' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "fulfillment": {
+            "lineItems": [
+              {
+                "id": "00000000-0000-0000-0000-000000000001",
+                "quantity": 1
+              }
+            ],
+            "trackingInfo": {
+              "trackingNumber": "12345",
+              "shippingProvider": "fedex"
+            }
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "orderWithFulfillments": {
+          "orderId": "58c9a790-27b7-463f-a865-c7cb494f7c29",
+          "fulfillments": [
+            {
+              "id": "0d824fc7-2621-4e97-a5c8-489ec1b43377",
+              "createdDate": "2023-02-22T15:55:47.021Z",
+              "lineItems": [
+                {
+                  "id": "00000000-0000-0000-0000-000000000001",
+                  "quantity": 1
+                }
+              ],
+              "trackingInfo": {
+                "trackingNumber": "12345",
+                "shippingProvider": "fedex",
+                "trackingLink": "https://www.fedex.com/apps/fedextrack/?action=track&trackingnumber=12345"
+              }
+            }
+          ]
+        },
+        "fulfillmentId": "0d824fc7-2621-4e97-a5c8-489ec1b43377"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an order fulfillment.
+
+    A line item's quantity can be split across multiple fulfillments. When `lineItems[i].quantity` isn't passed, it defaults to the line item's remaining unfulfilled quantity.
+
+    <Note>
+
+    + Fulfillments can only be created for orders with `status: "APPROVED"`.
+    + When passing `trackingInfo`, both `trackingNumber` and `shippingProvider` are required.
+    + Don't pass `fulfillment.id`. It's assigned automatically and passing it results in an error.
+    + A shipping notification email may be sent to the buyer when the fulfillment is created, depending on the site's email settings.
+    + The order's `fulfillmentStatus` is recalculated asynchronously after the call.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderFulfillments } from '@wix/ecom';
+
+    orderFulfillments.createFulfillment(orderId, fulfillment): Promise<CreateFulfillmentResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID.
+
+    </ParamField>
+
+    <ParamField body="fulfillment" type="Fulfillment" required>
+
+      Fulfillment info.
+
+      <Expandable title="fulfillment properties">
+
+        <ParamField body="_id" type="string">
+
+          Fulfillment ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="_createdDate" type="datetime">
+
+          Fulfillment creation date and time in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="lineItems" type="FulfillmentLineItem[]" required>
+
+          Line items being fulfilled.
+
+          Constraints: `minItems 0`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="_id" type="string" required>
+
+              Line item ID (mirrors the ID of the order line item).
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              Line item quantity.
+
+              * If this property isn't passed on creation, it defaults to the number of items not already linked to a fulfillment.
+              * If the order does not have the requested quantity of line items available to add to this fulfillment, the fulfillment will not be created and an error is returned.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="status" type="string">
+
+          The current status of the fulfillment process.
+
+          Supported values (case-sensitive, any other value is rejected):
+          + `"Pending"` - Initial state when fulfillment is created but processing hasn't started.
+          + `"Accepted"` - Order has been received and validated for fulfillment.
+          + `"Ready"` - Items have been picked and packed, ready for shipping.
+          + `"In_Delivery"` - Items have been handed over to the shipping carrier.
+          + `"Fulfilled"` - Delivery has been completed successfully.
+
+          The status typically progresses from `Pending` to `Accepted`, `Ready`, `In_Delivery`, and finally `Fulfilled`.
+          Update the status manually or automatically depending on your fulfillment workflow.
+
+          This field is informational. The order's `fulfillmentStatus` is primarily derived from the fulfilled line item quantities, not from this field.
+
+        </ParamField>
+
+        <ParamField body="completed" type="boolean">
+
+          Fulfillment handling complete.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="FulfillmentInfo" type="FulfillmentInfo">
+
+          FulfillmentInfo
+
+          <Expandable title="FulfillmentInfo properties">
+
+            <ParamField body="trackingInfo" type="FulfillmentTrackingInfo">
+
+              Tracking info.
+
+              _Nested structure omitted for brevity — see the `FulfillmentTrackingInfo` object._
+
+            </ParamField>
+
+            <ParamField body="customInfo" type="CustomFulfillmentInfo">
+
+              Custom fulfillment info.
+
+              _Nested structure omitted for brevity — see the `CustomFulfillmentInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CreateFulfillmentResponse>`.
+
+    <ResponseField name="orderWithFulfillments" type="OrderWithFulfillments">
+
+      Order ID and the orders' fulfillments.
+
+      See the [Fulfillments Object](/api-reference/business-solutions/e-commerce/orders/order-fulfillments/fulfillments-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="fulfillmentId" type="string">
+
+      ID of created fulfillment.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `409` | `ALREADY_EXISTS` | `TRACKING_NUMBER_ALREADY_EXISTS` | fulfillment with tracking number already exist |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Fulfillments Updated | `wix.ecom.v1.fulfillments_updated` | Triggered when one or more of an order's fulfillments are created, updated, or deleted. The response contains the order's ID and details about all of its fulfillments following the change. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-fulfillment" id="ex-sdk-create-fulfillment-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-fulfillment" id="ex-sdk-create-fulfillment-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-fulfillment" id="ex-sdk-create-fulfillment-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-fulfillment-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-fulfillment-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a fulfillment</span><span className="wix-picker-desc">By passing a supported shippingProvider, the trackingLink field is auto-populated in the response</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a fulfillment (with elevated permissions)</span><span className="wix-picker-desc">By passing a supported shippingProvider, the trackingLink field is auto-populated in the response</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createFulfillment (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-fulfillment-0"><span className="wix-picker-name">Create a fulfillment</span><span className="wix-picker-desc">By passing a supported shippingProvider, the trackingLink field is auto-populated in the response</span></label>
+    <label htmlFor="ex-sdk-create-fulfillment-1"><span className="wix-picker-name">Create a fulfillment (with elevated permissions)</span><span className="wix-picker-desc">By passing a supported shippingProvider, the trackingLink field is auto-populated in the response</span></label>
+    <label htmlFor="ex-sdk-create-fulfillment-2"><span className="wix-picker-name">createFulfillment (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a fulfillment
+    import { orderFulfillments } from '@wix/ecom';
+
+    /* Sample orderId value: 'e613320a-8e8f-4f8f-9d87-b5edc9f99788';
+
+     * Sample fulfillment value:
+     * {
+     *   lineItems: [{
+     *     id: '00000000-0000-0000-0000-000000000001',
+     *     quantity: 1
+     *   }],
+     *   trackingInfo: {
+     *     trackingNumber: '12345',
+     *     shippingProvider: 'dhl'
+     *   }
+     * };
+     */
+
+    export async function myCreateFulfillmentFunction(orderId, fulfillment) {
+      try {
+        const newFulfillment = await orderFulfillments.createFulfillment(orderId, fulfillment);
+
+        const fulfillmentId = newFulfillment.fulfillmentId;
+        const newOrderFulfillments = newFulfillment.orderWithFulfillments.fulfillments;
+        const trackingLink = orderFulfillments[0].trackingInfo.trackingLink;
+        console.log('Success! Created new fulfillment:', newFulfillment);
+
+        return newFulfillment;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+
+    }
+
+    /* Promise resolves to:
+     *
+     * {
+     *   "orderWithFulfillments": {
+     *     "orderId": "e613320a-8e8f-4f8f-9d87-b5edc9f99788",
+     *     "fulfillments": [
+     *       {
+     *         "_id": "91357295-a95c-4973-b210-281640f3e795",
+     *         "_createdDate": "2023-03-06T15:23:29.967Z",
+     *         "lineItems": [
+     *           {
+     *             "_id": "00000000-0000-0000-0000-000000000001",
+     *             "quantity": 1
+     *           }
+     *         ],
+     *         "trackingInfo": {
+     *           "trackingNumber": "12345",
+     *           "shippingProvider": "dhl",
+     *           "trackingLink": "https://www.logistics.dhl/global-en/home/tracking.html?tracking-id=12345"
+     *         }
+     *       }
+     *     ]
+     *   },
+     *   "fulfillmentId": "91357295-a95c-4973-b210-281640f3e795"
+     * }
+     *
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a fulfillment (with elevated permissions)
+    import { orderFulfillments } from '@wix/ecom';
+    import { auth } from '@wix/essentials';
+
+    /* Sample orderId value: 'e613320a-8e8f-4f8f-9d87-b5edc9f99788';
+
+    * Sample fulfillment value:
+    * {
+    *   lineItems: [{
+    *     id: '00000000-0000-0000-0000-000000000001',
+    *     quantity: 1
+    *   }],
+    *   trackingInfo: {
+    *     trackingNumber: '12345',
+    *     shippingProvider: 'dhl'
+    *   }
+    * };
+    */
+
+    const elevatedCreateFulfillment = auth.elevate(orderFulfillments.createFulfillment);
+
+    export async function myCreateFulfillmentFunction(orderId, fulfillment) {
+      try {
+        const newFulfillment = await elevatedCreateFulfillment(orderId, fulfillment);
+
+        const fulfillmentId = newFulfillment.fulfillmentId;
+        const newOrderFulfillments = newFulfillment.orderWithFulfillments.fulfillments;
+        const trackingLink = orderFulfillments[0].trackingInfo.trackingLink;
+        console.log('Success! Created new fulfillment:', newFulfillment);
+
+        return newFulfillment;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+
+    }
+
+    /* Promise resolves to:
+     *
+     * {
+     *   "orderWithFulfillments": {
+     *     "orderId": "e613320a-8e8f-4f8f-9d87-b5edc9f99788",
+     *     "fulfillments": [
+     *       {
+     *         "_id": "91357295-a95c-4973-b210-281640f3e795",
+     *         "_createdDate": "2023-03-06T15:23:29.967Z",
+     *         "lineItems": [
+     *           {
+     *             "_id": "00000000-0000-0000-0000-000000000001",
+     *             "quantity": 1
+     *           }
+     *         ],
+     *         "trackingInfo": {
+     *           "trackingNumber": "12345",
+     *           "shippingProvider": "dhl",
+     *           "trackingLink": "https://www.logistics.dhl/global-en/home/tracking.html?tracking-id=12345"
+     *         }
+     *       }
+     *     ]
+     *   },
+     *   "fulfillmentId": "91357295-a95c-4973-b210-281640f3e795"
+     * }
+     *
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createFulfillment (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderFulfillments } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderFulfillments },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createFulfillment(orderId,fulfillment) {
+      const response = await myWixClient.orderFulfillments.createFulfillment(orderId,fulfillment);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

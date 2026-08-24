@@ -1,0 +1,447 @@
+---
+title: "Collect Applied Booking Fees"
+description: "Collects booking fees by charging the customer using the payment method that's saved on the corresponding eCommerce order <blockquote class=\"warning\" Warning:…"
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Collects booking fees by charging the customer using the payment method that's
+    saved on the corresponding [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction)
+
+    <Warning>
+
+    Currently, there is no validation that prevents idempotent requests.
+    This means that your code must make sure to not charge customers multiple
+    times for the same booking fee. You could use
+    [List Transactions For Single Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-transactions/list-transactions-for-single-order)
+    to check which charges were made previously for an eCommerce order.
+
+    </Warning>
+
+    An HTTP status of `200` means that all booking fees were successfully collected.
+    Any other HTPP status means that collection failed.
+
+    Collects the order's `additionalFees.price.amount` that's related to the
+    booking fees. If there are multiple additional fees on the eCommerce order,
+    the amount that's collected differs from `priceSummary.totalAdditionalFees.amount`.
+
+    Possible failure reasons include:
+    + The order's `status` isn't `APPROVED`.
+    + There is no payment method saved on the order.
+    + The order's `balanceSummary.balance.amount` is lower than the
+    `additionalFees.price.amount` to collect.
+    + The order's `additionalFeeId` doesn't belong to a Wix Bookings cancellation fee.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/booking-fees/v1/booking-fees/collect
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      ID of the eCommerce order that includes the booking fees as a single
+      `additionalFee`.
+
+    </ParamField>
+
+    <ParamField body="additionalFeeId" type="string" required>
+
+      ID of the additional fee that's related to all given booking fees.
+
+    </ParamField>
+
+    <ParamField body="businessNotification" type="BusinessNotification">
+
+      Information about whether to notify the business about failing to collect the
+      booking fees from the customer and the message to send.
+
+      <Expandable title="businessNotification properties">
+
+        <ParamField body="notifyBusiness" type="boolean">
+
+          Whether to notify the business about changes made to the booking fees.
+          Default is false.
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Optional custom message to send.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="collectedPrice" type="Price">
+
+      Collected amount.
+
+      <Expandable title="collectedPrice properties">
+
+        <ResponseField name="amount" type="string">
+
+          Amount.
+
+          Constraints: `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedAmount" type="string">
+
+          Amount formatted with currency symbol.
+
+          **Read-only.** Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `404` | `NOT_FOUND` | `ADDITIONAL_FEE_NOT_FOUND` | Couldn't find the additional fee. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_IS_NOT_BOOKING_FEE` | The specified additional fee isn't a booking fee. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_BALANCE_NON_POSITIVE` | The order balance is `0` or negative. There is no outstanding amount to collect. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/_api/booking-fees/v1/booking-fees/collect' \
+      -H 'Authorization: <AUTH>'
+      -d '{
+        "order_id": "b12ac1a5-810b-45ed-8b23-8a24cc31bbd0",
+        "additional_fee_id": "981a1567-c02f-4a1f-9c3e-c86ff891ecbf"
+      }'
+      ```
+
+      ```json Response
+      {}
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Collects booking fees by charging the customer using the payment method that's
+    saved on the corresponding [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction)
+
+    <Warning>
+
+    Currently, there is no validation that prevents idempotent requests.
+    This means that your code must make sure to not charge customers multiple
+    times for the same booking fee. You could use
+    [List Transactions For Single Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-transactions/list-transactions-for-single-order)
+    to check which charges were made previously for an eCommerce order.
+
+    </Warning>
+
+    An HTTP status of `200` means that all booking fees were successfully collected.
+    Any other HTPP status means that collection failed.
+
+    Collects the order's `additionalFees.price.amount` that's related to the
+    booking fees. If there are multiple additional fees on the eCommerce order,
+    the amount that's collected differs from `priceSummary.totalAdditionalFees.amount`.
+
+    Possible failure reasons include:
+    + The order's `status` isn't `APPROVED`.
+    + There is no payment method saved on the order.
+    + The order's `balanceSummary.balance.amount` is lower than the
+    `additionalFees.price.amount` to collect.
+    + The order's `additionalFeeId` doesn't belong to a Wix Bookings cancellation fee.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookingFees } from '@wix/bookings';
+
+    bookingFees.collectAppliedBookingFees(orderId, options): Promise<CollectAppliedBookingFeesResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      ID of the eCommerce order that includes the booking fees as a single
+      `additionalFee`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CollectAppliedBookingFeesOptions" required>
+
+      Options to use when collecting booking fees that have been applied to an eCommerce order.
+
+      <Expandable title="options properties">
+
+        <ParamField body="additionalFeeId" type="string" required>
+
+          ID of the additional fee that's related to all given booking fees.
+
+        </ParamField>
+
+        <ParamField body="businessNotification" type="BusinessNotification">
+
+          Information about whether to notify the business about failing to collect the
+          booking fees from the customer and the message to send.
+
+          <Expandable title="businessNotification properties">
+
+            <ParamField body="notifyBusiness" type="boolean">
+
+              Whether to notify the business about changes made to the booking fees.
+              Default is false.
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Optional custom message to send.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CollectAppliedBookingFeesResponse>`.
+
+    <ResponseField name="collectedPrice" type="Price">
+
+      Collected amount.
+
+      <Expandable title="collectedPrice properties">
+
+        <ResponseField name="amount" type="string">
+
+          Amount.
+
+          Constraints: `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedAmount" type="string">
+
+          Amount formatted with currency symbol.
+
+          **Read-only.** Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `404` | `NOT_FOUND` | `ADDITIONAL_FEE_NOT_FOUND` | Couldn't find the additional fee. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_IS_NOT_BOOKING_FEE` | The specified additional fee isn't a booking fee. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_BALANCE_NON_POSITIVE` | The order balance is `0` or negative. There is no outstanding amount to collect. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Fee Failed Collect Booking Fees | `wix.bookings.fees.v1.booking_fee_failed_collect_booking_fees` | Triggered when [Collect Applied Booking Fees](https://dev.wix.com/docs/api-reference/business-solutions/bookings/pricing/booking-fees/collect-applied-booking-fees) fails. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-collect-applied-booking-fees" id="ex-sdk-collect-applied-booking-fees-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-collect-applied-booking-fees" id="ex-sdk-collect-applied-booking-fees-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-collect-applied-booking-fees" id="ex-sdk-collect-applied-booking-fees-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-collect-applied-booking-fees-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-collect-applied-booking-fees-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">collectAppliedBookingFees</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">collectAppliedBookingFees (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">collectAppliedBookingFees (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-collect-applied-booking-fees-0"><span className="wix-picker-name">collectAppliedBookingFees</span></label>
+    <label htmlFor="ex-sdk-collect-applied-booking-fees-1"><span className="wix-picker-name">collectAppliedBookingFees (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-collect-applied-booking-fees-2"><span className="wix-picker-name">collectAppliedBookingFees (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript collectAppliedBookingFees
+    import { bookingFees } from '@wix/bookings';
+
+    async function collectAppliedBookingFees(orderId,options) {
+      const response = await bookingFees.collectAppliedBookingFees(orderId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript collectAppliedBookingFees (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookingFees } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookingFees },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function collectAppliedBookingFees(orderId,options) {
+      const response = await myWixClient.bookingFees.collectAppliedBookingFees(orderId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript collectAppliedBookingFees (with elevated permissions)
+    import { bookingFees } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myCollectAppliedBookingFeesMethod(orderId,options) {
+      const elevatedCollectAppliedBookingFees = auth.elevate(bookingFees.collectAppliedBookingFees);
+      const response = await elevatedCollectAppliedBookingFees(orderId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

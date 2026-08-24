@@ -1,0 +1,612 @@
+---
+title: "Bulk Update Resources"
+description: "Updates multiple resources."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple resources.
+
+    Refer to [Update Resource](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/update-resource)
+    for more details.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/bulk/resources/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="resources" type="MaskedResource[]" required>
+
+      Resources to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="resources properties">
+
+        <ParamField body="resource" type="Resource">
+
+          Resource to update.
+
+          See the [Resource Object](/api-reference/business-solutions/bookings/resources/resources-v2/resource-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="fieldMask" type="FieldMask">
+
+          Explicit list of fields to update.
+
+          <Expandable title="fieldMask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to include the updated resources in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkResourceResult[]">
+
+      The result of each resource update.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Resource">
+
+          The resulting resource after the bulk operation.
+
+          See the [Resource Object](/api-reference/business-solutions/bookings/resources/resources-v2/resource-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Update statistics.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_NAME_IS_REQUIRED` | Resource `name` can't be empty. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_LOCATION_ID_IS_REQUIRED` | Business location ID is required. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_SPECIFIC_LOCATION_OPTIONS_NOT_ALLOWED` | `specificLocationOptions` can't be set when `availableInAllLocations` is set to `true`. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_SPECIFIC_LOCATION_OPTIONS_MUST_BE_SET` | `specificLocationOptions` must be set when `availableInAllLocations` is set to `false` or empty. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_AVAILABLE_IN_BUSINESS_LOCATION_MUST_BE_TRUE` | `availableInBusinessLocations` must be set to `true`. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_WORKING_HOURS_SCHEDULE_ID_IS_REQUIRED` | `workingHoursSchedules.scheduleId` is required. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_WORKING_HOURS_SHARED_IS_REQUIRED` | `workingHoursSchedules.shared` is required. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Resource Updated | `wix.bookings.resources.v2.resource_updated` | Triggered when an resource is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+          'https://www.wixapis.com/bookings/v2/bulk/resources/update' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "resources": [
+          {
+            "resource": {
+              "id": "ef5f8d3d-9269-490c-a067-a3d226fcb5d8",
+              "revision": "1",
+              "name": "Updated Small Meeting Room"
+            }
+          },
+          {
+            "resource": {
+              "id": "77c7a7d1-0045-47eb-bef7-f1bcac5f68e1",
+              "revision": "2",
+              "name": "Large Conference Room",
+              "locationOptions": {
+                "availableInAllLocations": false,
+                "specificLocationOptions": {
+                  "availableInBusinessLocations": true,
+                  "businessLocations": [
+                    {
+                      "locationId": "808dfb00-0a74-4e70-bb3b-f96ff6ba1246"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "ef5f8d3d-9269-490c-a067-a3d226fcb5d8",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "ef5f8d3d-9269-490c-a067-a3d226fcb5d8",
+              "revision": "2",
+              "createdDate": "2024-11-22T14:02:34.993Z",
+              "updatedDate": "2024-11-22T15:25:18.127Z",
+              "name": "Updated Small Meeting Room",
+              "typeId": "dd7790c7-f3ac-4821-accb-52ed385fd932",
+              "locationOptions": {
+                "availableInAllLocations": true
+              },
+              "eventsSchedule": {
+                "scheduleId": "ee500718-7ce3-478a-89fb-1d839a37e324"
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "77c7a7d1-0045-47eb-bef7-f1bcac5f68e1",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "77c7a7d1-0045-47eb-bef7-f1bcac5f68e1",
+              "revision": "3",
+              "createdDate": "2024-11-22T13:28:29.869Z",
+              "updatedDate": "2024-11-22T15:25:18.127Z",
+              "name": "Large Conference Room",
+              "locationOptions": {
+                "availableInAllLocations": false,
+                "specificLocationOptions": {
+                  "availableInBusinessLocations": true,
+                  "businessLocations": [
+                    {
+                      "locationId": "808dfb00-0a74-4e70-bb3b-f96ff6ba1246"
+                    }
+                  ]
+                }
+              },
+              "eventsSchedule": {
+                "scheduleId": "c0091359-7007-4288-be59-dccade075472"
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple resources.
+
+    Refer to [Update Resource](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/update-resource)
+    for more details.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { resources } from '@wix/bookings';
+
+    resources.bulkUpdateResources(resources, options): Promise<BulkUpdateResourcesResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="resources" type="MaskedResource[]" required>
+
+      Resources to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="resources properties">
+
+        <ParamField body="resource" type="Resource">
+
+          Resource to update.
+
+          See the [Resource Object](/api-reference/business-solutions/bookings/resources/resources-v2/resource-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="fieldMask" type="string[]">
+
+          Explicit list of fields to update.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdateResourcesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to include the updated resources in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkUpdateResourcesResponse>`.
+
+    <ResponseField name="results" type="BulkResourceResult[]">
+
+      The result of each resource update.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Resource">
+
+          The resulting resource after the bulk operation.
+
+          See the [Resource Object](/api-reference/business-solutions/bookings/resources/resources-v2/resource-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Update statistics.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_NAME_IS_REQUIRED` | Resource `name` can't be empty. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_LOCATION_ID_IS_REQUIRED` | Business location ID is required. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_SPECIFIC_LOCATION_OPTIONS_NOT_ALLOWED` | `specificLocationOptions` can't be set when `availableInAllLocations` is set to `true`. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_SPECIFIC_LOCATION_OPTIONS_MUST_BE_SET` | `specificLocationOptions` must be set when `availableInAllLocations` is set to `false` or empty. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_AVAILABLE_IN_BUSINESS_LOCATION_MUST_BE_TRUE` | `availableInBusinessLocations` must be set to `true`. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_WORKING_HOURS_SCHEDULE_ID_IS_REQUIRED` | `workingHoursSchedules.scheduleId` is required. |
+    | `400` | `INVALID_ARGUMENT` | `RESOURCE_WORKING_HOURS_SHARED_IS_REQUIRED` | `workingHoursSchedules.shared` is required. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Resource Updated | `wix.bookings.resources.v2.resource_updated` | Triggered when an resource is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-resources" id="ex-sdk-bulk-update-resources-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-resources" id="ex-sdk-bulk-update-resources-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-resources" id="ex-sdk-bulk-update-resources-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-resources-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-resources-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateResources</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateResources (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateResources (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-resources-0"><span className="wix-picker-name">bulkUpdateResources</span></label>
+    <label htmlFor="ex-sdk-bulk-update-resources-1"><span className="wix-picker-name">bulkUpdateResources (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-update-resources-2"><span className="wix-picker-name">bulkUpdateResources (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateResources
+    import { resources } from '@wix/bookings';
+
+    async function bulkUpdateResources(resources,options) {
+      const response = await resources.bulkUpdateResources(resources,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateResources (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { resources } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { resources },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateResources(resources,options) {
+      const response = await myWixClient.resources.bulkUpdateResources(resources,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateResources (with elevated permissions)
+    import { resources } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkUpdateResourcesMethod(resources,options) {
+      const elevatedBulkUpdateResources = auth.elevate(resources.bulkUpdateResources);
+      const response = await elevatedBulkUpdateResources(resources,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

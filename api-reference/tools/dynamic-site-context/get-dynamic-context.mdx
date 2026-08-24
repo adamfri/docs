@@ -1,0 +1,718 @@
+---
+title: "Get Dynamic Context"
+description: "Retrieves aggregated context for the caller's sites and account."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<div className="wix-api-columns">
+
+<div className="wix-ref">
+
+<Info>
+
+  **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+</Info>
+
+Retrieves aggregated context for the caller's sites and account.
+
+Returns enriched site information including installed apps, editor type,
+Velo status, and account details. Results are paginated using cursor-based paging.
+
+You can optionally filter by a single site ID or site display name.
+When no filter is provided, all of the caller's sites are returned.
+
+## Permissions
+
+This method requires one of the following permission scopes:
+
+<div className="wix-scopes">
+
+<span className="wix-scope" title="code:context:v1:get_dynamic_context">code:context:v1:get_dynamic_context</span>
+
+</div>
+
+Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+## Endpoint
+
+```http
+POST https://www.wixapis.com/_api/dynamic-context/v1/dynamic-context
+```
+
+## Body Params
+
+<ParamField body="query" type="CursorQuery">
+
+  Cursor-based pagination. Use `query.paging.limit` to control page size (default: 10, max: 100).
+  Pass the cursor from a previous response's `paging_metadata.cursors.next` to fetch the next page.
+  `query.filter` optionally accepts a Site-List filter and replaces the default
+  namespace filtering; `query.sort` is not supported and is ignored.
+
+  <Expandable title="query properties">
+
+    <ParamField body="filter" type="object">
+
+      Filter object.
+
+      Learn more about the [filter section](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language#the-filter-section).
+
+    </ParamField>
+
+    <ParamField body="sort" type="Sorting[]">
+
+      Sort object.
+
+      Learn more about the [sort section](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language#the-sort-section).
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="sort properties">
+
+        <ParamField body="fieldName" type="string">
+
+          Name of the field to sort by.
+
+          Constraints: `maxLength 512`.
+
+        </ParamField>
+
+        <ParamField body="order" type="string">
+
+          Sort order.
+
+          **Supported values:**
+
+          - `ASC`
+          - `DESC`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+  </Expandable>
+
+  <Expandable title="One of the following">
+
+    <ParamField body="pagingMethod" type="pagingMethod">
+
+      pagingMethod
+
+      <Expandable title="pagingMethod properties">
+
+        <ParamField body="cursorPaging" type="CursorPaging">
+
+          Cursor paging options.
+
+          Learn more about [cursor paging](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language#cursor-paging).
+
+          _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+  </Expandable>
+
+</ParamField>
+
+## Response Object
+
+<ResponseField name="account" type="Account">
+
+  Account-level information for the calling user.
+
+  <Expandable title="account properties">
+
+    <ResponseField name="id" type="string">
+
+      Unique account identifier.
+
+      Constraints: `format GUID`, `maxLength 36`.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the account was created.
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the account was last modified.
+
+    </ResponseField>
+
+    <ResponseField name="displayName" type="string">
+
+      The account holder's display name. This field contains PII.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the account.
+
+      **Supported values:**
+
+      - `ACTIVE` — The account is active and in good standing.
+      - `BLOCKED` — The account has been blocked by Wix.
+      - `DELETED` — The account has been deleted.
+
+    </ResponseField>
+
+    <ResponseField name="coBranding" type="string">
+
+      Co-branding partner label, if the account was created through a partner program.
+
+    </ResponseField>
+
+  </Expandable>
+
+</ResponseField>
+
+<ResponseField name="sites" type="Site[]">
+
+  Enriched context for each matching site, including installed apps and editor metadata.
+  Results are ordered by site creation date and limited to the requested page size.
+
+  Constraints: `maxItems 100`.
+
+  <Expandable title="sites properties">
+
+    <ResponseField name="id" type="string">
+
+      Unique site identifier.
+
+      Constraints: `format GUID`, `maxLength 36`.
+
+    </ResponseField>
+
+    <ResponseField name="displayName" type="string">
+
+      Human-readable site name as shown in the dashboard.
+
+    </ResponseField>
+
+    <ResponseField name="url" type="string">
+
+      Published site URL. Only present for published sites with a live URL.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the site was created.
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the site was last modified.
+
+    </ResponseField>
+
+    <ResponseField name="published" type="boolean">
+
+      Whether the site is currently published and accessible to visitors.
+
+    </ResponseField>
+
+    <ResponseField name="premium" type="boolean">
+
+      Whether the site has an active Wix Premium plan.
+
+    </ResponseField>
+
+    <ResponseField name="ownerAccountId" type="string">
+
+      Account ID of the site owner.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="editorType" type="string">
+
+      The editor type used to build and manage this site (e.g., `WIX`, `STUDIO`, `EDITOR_X`).
+
+      **Supported values:**
+
+      - `WIX` — Classic Editor.
+      - `STUDIO` — Studio Editor.
+      - `EDITOR_X` — EditorX.
+      - `EDITOR_3` — Editor3.
+      - `WIX_VIBE` — Wix Vibe.
+      - `BLOCKS` — Blocks Editor.
+      - `MOBILE_WIDGET_BUILDER` — Mobile Widget Builder.
+      - `EDITOR` — Classic Editor (legacy alias).
+      - `STUDIO_TWO` — Studio 2.
+      - `ADI` — ADI (Artificial Design Intelligence).
+      - `WIXEL` — Wixel Editor.
+      - `PICASSO` — Picasso Editor.
+      - `EDITORLESS` — Editorless (no editor site).
+      - `ODEDITOR` — OD Editor.
+
+    </ResponseField>
+
+    <ResponseField name="namespace" type="string">
+
+      The origin or creation source of this site (e.g., `WIX`, `HEADLESS`, `RISE`).
+
+      **Supported values:**
+
+      - `WIX` — Standard Wix Editor site.
+      - `SHOUT_OUT` — Wix ShoutOut email marketing.
+      - `ALBUMS` — Wix Photo Albums.
+      - `WIX_STORES_TEST_DRIVES` — Wix Stores test-drive sites.
+      - `WIX_STORES_TEST_DRIVE` — Wix Stores test-drive (singular alias).
+      - `UNKNOWN_NAMESPACE` — Unknown namespace (default source value).
+      - `HOTELS` — Wix Hotels vertical.
+      - `CLUBS` — Wix Clubs (community groups).
+      - `ONBOARDING_DRAFT` — Onboarding draft site (created during signup flow).
+      - `DEV_SITE` — Developer / sandbox site.
+      - `LOGOS` — Wix Logo Maker.
+      - `VIDEO_MAKER` — Wix Video Maker.
+      - `PARTNER_DASHBOARD` — Wix Partner Dashboard site.
+      - `DEV_CENTER_COMPANY` — Wix Dev Center company site.
+      - `HTML_DRAFT` — HTML-based draft site.
+      - `SITELESS_BUSINESS` — Business entity without a published site.
+      - `CREATOR_ECONOMY` — Creator Economy platform.
+      - `DASHBOARD_FIRST` — Dashboard-first experience (site created from dashboard).
+      - `ANYWHERE` — Wix Anywhere (mobile-first creation).
+      - `HEADLESS` — Headless / API-only site (no visual editor).
+      - `ACCOUNT_MASTER_CMS` — Account-level master CMS.
+      - `RISE` — Wix Rise platform.
+      - `BRANDED_FIRST` — Branded-first creation flow.
+      - `NOWNIA` — Nownia AI site builder.
+      - `UGC_TEMPLATE` — User-generated content template.
+      - `CODUX` — Codux visual IDE.
+      - `MEDIA_DESIGN_CREATOR` — Media / design creator tool.
+      - `SHARED_BLOG_ENTERPRISE` — Shared blog for enterprise accounts.
+      - `STANDALONE_FORMS` — Standalone Forms app site.
+      - `STANDALONE_EVENTS` — Standalone Events app site.
+      - `MIMIR` — Mimir platform.
+      - `TWINS` — Twins platform.
+      - `NANO` — Nano lightweight site.
+      - `BASE44` — Base44 platform.
+      - `CHANNELS` — Channels platform.
+
+    </ResponseField>
+
+    <ResponseField name="domainConnected" type="boolean">
+
+      Whether a custom domain (non-Wix) is connected to this site.
+
+    </ResponseField>
+
+    <ResponseField name="installedApps" type="InstalledApp[]">
+
+      List of apps currently installed and enabled on this site.
+
+      Constraints: `maxItems 500`.
+
+      <Expandable title="installedApps properties">
+
+        <ResponseField name="appId" type="string">
+
+          The app's definition ID (unique identifier for the app).
+
+          Constraints: `format GUID`, `maxLength 36`.
+
+        </ResponseField>
+
+        <ResponseField name="catalogVersion" type="string">
+
+          The Wix Stores catalog version. Either `"V1"` or `"V3"`.
+          Only present when the app is Wix Stores; absent for all other apps.
+
+        </ResponseField>
+
+        <ResponseField name="oauthApp" type="boolean">
+
+          Whether this installed app is a headless OAuth app (an auth client for
+          minting visitor/member tokens, not a functional site app). Details for
+          these apps appear in the site's `oauth_apps` list.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="veloEnabled" type="boolean">
+
+      Whether Velo by Wix (Wix Code) is enabled on this site.
+
+    </ResponseField>
+
+    <ResponseField name="properties" type="SiteProperties">
+
+      Site-level properties such as language, locale, timezone, and currency.
+
+      <Expandable title="properties properties">
+
+        <ResponseField name="locale" type="SiteLocale">
+
+          Site locale.
+
+          _Nested structure omitted for brevity — see the `SiteLocale` object._
+
+        </ResponseField>
+
+        <ResponseField name="language" type="string">
+
+          Site language code (e.g., "en").
+
+          Constraints: `maxLength 10`.
+
+        </ResponseField>
+
+        <ResponseField name="paymentCurrency" type="string">
+
+          Payment currency code (e.g., "EUR", "USD").
+
+          Constraints: `maxLength 10`.
+
+        </ResponseField>
+
+        <ResponseField name="timeZone" type="string">
+
+          IANA timezone identifier (e.g., "Europe/Dublin").
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="email" type="string">
+
+          Contact email.
+
+          Constraints: `maxLength 500`.
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Contact phone.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="cmsCollections" type="CmsCollection[]">
+
+      CMS data collections defined on this site. Limited to the first 20 native collections.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="cmsCollections properties">
+
+        <ResponseField name="id" type="string">
+
+          Collection ID (also used as the collection name in CMS).
+
+          Constraints: `maxLength 256`.
+
+        </ResponseField>
+
+        <ResponseField name="displayName" type="string">
+
+          Human-readable display name.
+
+          Constraints: `maxLength 500`.
+
+        </ResponseField>
+
+        <ResponseField name="fields" type="CmsField[]">
+
+          Field schemas in this collection.
+
+          Constraints: `maxItems 500`.
+
+          _Nested structure omitted for brevity — see the `CmsField[]` object._
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="oauthApps" type="SiteOAuthApp[]">
+
+      Headless OAuth apps installed on this site. Each also appears in
+      `installed_apps` with `is_oauth_app` set.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="oauthApps properties">
+
+        <ResponseField name="clientId" type="string">
+
+          OAuth app ID. Equals the installed app's `app_id`, and is also the OAuth
+          `client_id` used with the `anonymous` grant to mint visitor tokens.
+
+          Constraints: `format GUID`, `maxLength 36`.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Display name of the OAuth app.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Description of the OAuth app.
+
+        </ResponseField>
+
+        <ResponseField name="allowedDomains" type="string[]">
+
+          Domains allowed for redirects from Wix back to the external client
+          (the OAuth app's `allowed_redirect_domains`).
+
+          Constraints: `maxLength 2048`, `maxItems 20`.
+
+        </ResponseField>
+
+        <ResponseField name="loginUrl" type="string">
+
+          External login URL, when member authentication happens outside Wix.
+
+        </ResponseField>
+
+        <ResponseField name="logoutUrl" type="string">
+
+          External logout URL.
+
+        </ResponseField>
+
+        <ResponseField name="applicationType" type="string">
+
+          Application type as declared on the OAuth app (e.g. `WEB_APP`).
+
+          Constraints: `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="technology" type="string">
+
+          Technology as declared on the OAuth app (e.g. `NEXTJS`).
+
+          Constraints: `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="origin" type="string">
+
+          Which flow created the OAuth app (e.g. `headless-landing-page`).
+
+          Constraints: `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the OAuth app was created.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Expandable>
+
+</ResponseField>
+
+<ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+  Cursor-based paging metadata. Use `cursors.next` to retrieve the next page of results.
+
+  <Expandable title="pagingMetadata properties">
+
+    <ResponseField name="count" type="integer">
+
+      Number of items returned in current page.
+
+    </ResponseField>
+
+    <ResponseField name="cursors" type="Cursors">
+
+      Cursor strings that point to the next page, previous page, or both.
+
+      <Expandable title="cursors properties">
+
+        <ResponseField name="next" type="string">
+
+          Cursor string pointing to the next page in the list of results.
+
+        </ResponseField>
+
+        <ResponseField name="prev" type="string">
+
+          Cursor pointing to the previous page in the list of results.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hasNext" type="boolean">
+
+      Whether there are more pages to retrieve following the current page.
+
+      + `true`: Another page of results can be retrieved.
+      + `false`: This is the last page.
+
+    </ResponseField>
+
+  </Expandable>
+
+</ResponseField>
+
+<ResponseField name="partnerContext" type="PartnerContext">
+
+  Partner account context. Present only when partner context resolution is enabled and a Partner Dashboard is found.
+
+  <Expandable title="partnerContext properties">
+
+    <ResponseField name="partner" type="boolean">
+
+      Whether the calling account has a Partner Dashboard.
+
+    </ResponseField>
+
+    <ResponseField name="dashboardSiteId" type="string">
+
+      Partner Dashboard metasite ID.
+
+    </ResponseField>
+
+    <ResponseField name="dashboardUrl" type="string">
+
+      Partner Dashboard URL.
+
+    </ResponseField>
+
+  </Expandable>
+
+</ResponseField>
+
+## Errors
+
+<Note>
+
+  This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+</Note>
+
+</div>
+
+<div className="wix-examples">
+
+## Examples
+
+Retrieves aggregated site and account context for the authenticated user
+
+<CodeGroup>
+
+  ```bash Request
+  curl -X POST \
+    'https://www.wixapis.com/_api/dynamic-context/v1/dynamic-context' \
+    -H 'Authorization: <AUTH>' \
+    -H 'Content-Type: application/json' \
+    -d '{}'
+  ```
+
+  ```json Response
+  {
+      "account": {
+          "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+          "createdDate": "2023-01-15T10:30:00Z",
+          "updatedDate": "2025-11-20T14:22:00Z",
+          "displayName": "Jane Developer",
+          "status": "ACTIVE"
+      },
+      "sites": [
+          {
+              "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+              "displayName": "My Online Store",
+              "url": "https://www.my-online-store.com",
+              "createdDate": "2023-06-01T08:00:00Z",
+              "updatedDate": "2025-12-01T16:45:00Z",
+              "published": true,
+              "premium": true,
+              "ownerAccountId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+              "editorType": "STUDIO",
+              "namespace": "WIX",
+              "domainConnected": true,
+              "installedApps": [
+                  {
+                      "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+                      "catalogVersion": "V3"
+                  },
+                  {
+                      "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97"
+                  },
+                  {
+                      "appId": "e4da5bd3-ac15-48a6-b73d-a9aa5bbc49de",
+                      "oauthApp": true
+                  }
+              ],
+              "veloEnabled": true,
+              "oauthApps": [
+                  {
+                      "clientId": "e4da5bd3-ac15-48a6-b73d-a9aa5bbc49de",
+                      "name": "Storefront Client",
+                      "allowedDomains": ["https://my-storefront.example.com"],
+                      "origin": "headless-landing-page",
+                      "createdDate": "2026-08-14T05:21:51Z"
+                  }
+              ]
+          },
+          {
+              "id": "b2c3d4e5-6789-01bc-def0-2345678901bc",
+              "displayName": "Portfolio Site",
+              "url": "https://www.janedeveloper.com",
+              "createdDate": "2024-03-10T12:00:00Z",
+              "updatedDate": "2025-10-15T09:30:00Z",
+              "published": true,
+              "premium": false,
+              "ownerAccountId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+              "editorType": "WIX",
+              "namespace": "WIX",
+              "domainConnected": false,
+              "installedApps": [],
+              "veloEnabled": false
+          }
+      ],
+      "pagingMetadata": {
+          "count": 2,
+          "hasNext": false,
+          "cursors": {}
+      }
+  }
+  ```
+
+</CodeGroup>
+
+</div>
+
+</div>

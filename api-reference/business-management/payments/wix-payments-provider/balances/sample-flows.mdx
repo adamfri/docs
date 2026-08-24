@@ -1,0 +1,119 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+All flows use [Query Balance Records](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/balances/query-balance-records) for retrieval and [Get Balance Record](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/balances/get-balance-record) for single-record lookups.
+
+## List the records inside a payout
+
+The merchant clicks a payout in the payouts list and wants to see exactly what's in it.
+
+To list the records inside a payout:
+
+1. Call **Query Balance Records** with a filter on `payout_id` and `includeSummary: true`:
+
+   ```json
+   {
+     "accountId": "<id>",
+     "query": {
+       "filter": { "payout_id": "<payout-id>" },
+       "sort": [{ "fieldName": "applied_date", "order": "ASC" }]
+     },
+     "includeSummary": true
+   }
+   ```
+
+2. Render each record. `summary.total` gives the merchant's payout amount; `summary.totalFees` is the total Wix Payments fee.
+3. Reserve holds in the payout end at `recordStatus = DEDUCTED_FROM_PAYOUT`, not `PAID_OUT`. Render them differently, because the merchant didn't receive that amount: it was subtracted from the payout total.
+
+## Find every balance record linked to a transaction
+
+You want the full balance history for 1 specific transaction: every record it produced.
+
+To find every balance record linked to a transaction:
+
+1. Call **Query Balance Records** with `transaction_id`:
+
+   ```json
+   {
+     "accountId": "<id>",
+     "query": {
+       "filter": { "transaction_id": "<transaction-id>" },
+       "sort": [{ "fieldName": "applied_date", "order": "ASC" }]
+     }
+   }
+   ```
+
+2. Walk the records in `applied_date` order to read the ledger history chronologically.
+3. Expect related records to cluster together: 1 `CREDIT`, then any `REFUND` / `REFUND_REVERSAL` / `CHARGEBACK` / `CHARGEBACK_REVERSAL`, plus a separate `CHARGEBACK_FEE` (and `CHARGEBACK_FEE_REVERSAL` if the merchant won).
+
+## Show what's pending versus available
+
+You want the underlying records for "still processing" or "available right now", not a single primary total.
+
+To show what's pending versus available:
+
+1. Call **Query Balance Records** with the appropriate tag and `includeSummary: true`. For pending records:
+
+   ```json
+   {
+     "accountId": "<id>",
+     "query": {
+       "filter": { "tags": ["PENDING"] },
+       "sort": [{ "fieldName": "applied_date", "order": "DESC" }]
+     },
+     "includeSummary": true
+   }
+   ```
+
+   Swap `PENDING` for `AVAILABLE` to render the other tile.
+
+2. Render the records. Each has `recordType`, `amount`, `fee`, `net`, `appliedDate`, and a `paymentInfo` block when it came from a buyer-side event.
+3. Use `summary.total` for the net of all matched records and `summary.items` for the per-category breakdown.
+
+> Filter by `tags`, not by `recordStatus`. `recordStatus` is response-only.
+
+## Project the merchant's next reserve activity
+
+The merchant wants to know "what will the next reserve hold look like, and when is the next release coming back?", before either actually happens.
+
+To project the merchant's next reserve activity:
+
+1. Call **Query Balance Records** with `tags = ESTIMATED_RESERVE_HOLD`. The first record in the response is virtual: it has no `id` and no `appliedDate` and represents the projected next reserve hold, computed from the current available balance and the active reserve policy. Render it distinctly as "projected".
+
+   ```json
+   {
+     "accountId": "<id>",
+     "query": { "filter": { "tags": ["ESTIMATED_RESERVE_HOLD"] } }
+   }
+   ```
+
+2. Call **Query Balance Records** again with `tags = ESTIMATED_RESERVE_RELEASE`. Again, the first record is a virtual projection. Subsequent records are real `RESERVE_RELEASE` records waiting for their `payoutAvailabilityDate`.
+3. Render the projected hold and projected release plus the real upcoming releases scheduled by date.
+
+## Surface chargebacks and disputes for an account
+
+You want a list of every chargeback-related record on the account: the chargeback debits, their fees, and any later reversals if the merchant won the dispute.
+
+To surface chargebacks and disputes:
+
+1. Call **Query Balance Records** with a filter that matches the 4 chargeback-related types:
+
+   ```json
+   {
+     "accountId": "<id>",
+     "query": {
+       "filter": {
+         "types": { "$in": ["CHARGEBACK", "CHARGEBACK_FEE", "CHARGEBACK_REVERSAL", "CHARGEBACK_FEE_REVERSAL"] }
+       },
+       "sort": [{ "fieldName": "created_date", "order": "DESC" }]
+     }
+   }
+   ```
+
+2. Group the returned records client-side by the response field `paymentInfo.transactionId` (each record has 1) to assemble each dispute's lifecycle: the `CHARGEBACK` debit, its `CHARGEBACK_FEE`, plus any later `CHARGEBACK_REVERSAL` and `CHARGEBACK_FEE_REVERSAL` if the merchant won. Grouping happens client-side, after the fetch, because `paymentInfo.transactionId` isn't a supported filter key. To fetch records for a single transaction, filter by top-level `transaction_id` (see the flow above).
+3. Don't read the chargeback fee from the `fee` field on the chargeback record. It's a separate record (`CHARGEBACK_FEE`).

@@ -1,0 +1,581 @@
+---
+title: "Bulk Create Steps"
+description: "Creates up to 100 steps in a single API call."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates up to 100 steps in a single API call.
+
+    Specify the parent section in each step's `sectionId`.
+    The service derives the parent program automatically.
+    To create quiz steps, create or clone the quizzes separately, then specify their IDs in each step's `quizOptions.id`.
+
+    This is the preferred bulk-create method.
+    To create a single step, call [CreateStep](https://dev.wix.com/docs/api-reference/business-management/online-programs/steps/create-step).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CHALLENGES.MANAGE">Manage Online Programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/online-programs/v3/bulk/steps/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="steps" type="Step[]" required>
+
+      Steps to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Step Object](/api-reference/business-management/online-programs/steps/step-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return created steps in the response.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkStepResult[]">
+
+      Results for each processed step.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the processed step.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Step">
+
+          Processed step. Empty when `returnEntity` is `false`.
+
+          See the [Step Object](/api-reference/business-management/online-programs/steps/step-object) for this object's fields.
+
+        </ResponseField>
+
+        <ResponseField name="action" type="string">
+
+          Bulk action performed for the step.
+
+          **Supported values:**
+
+          - `UNKNOWN_ACTION_TYPE`
+          - `INSERT`
+          - `UPDATE`
+          - `DELETE`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata about the bulk action.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates two article steps in the same program section.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/online-programs/v3/bulk/steps/create' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "steps": [
+          {
+            "sectionId": "b142d26b-2c56-4b85-9f8d-6bea0920eb4d",
+            "description": {
+              "title": "Prepare your workspace",
+              "details": "Set up the tools and materials you need before starting."
+            },
+            "ordering": 20,
+            "stepType": "ARTICLE"
+          },
+          {
+            "sectionId": "b142d26b-2c56-4b85-9f8d-6bea0920eb4d",
+            "description": {
+              "title": "Share your goals",
+              "details": "Write down the outcome you want to achieve this week."
+            },
+            "ordering": 30,
+            "stepType": "ARTICLE"
+          }
+        ],
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "3d6af890-6411-49b2-a4fb-8a63ae520f78",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "3d6af890-6411-49b2-a4fb-8a63ae520f78",
+              "revision": "1",
+              "createdDate": "2026-08-18T09:54:08.770Z",
+              "updatedDate": "2026-08-18T09:54:08.770Z",
+              "sectionId": "b142d26b-2c56-4b85-9f8d-6bea0920eb4d",
+              "description": {
+                "title": "Prepare your workspace",
+                "details": "Set up the tools and materials you need before starting."
+              },
+              "ordering": 20,
+              "stepType": "ARTICLE",
+              "programId": "9a76e7d5-235a-4821-8f36-2d8bd0e7e9c1"
+            },
+            "action": "INSERT"
+          },
+          {
+            "itemMetadata": {
+              "id": "e87125b7-9ad1-4d9d-85c7-24765fab16c8",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "e87125b7-9ad1-4d9d-85c7-24765fab16c8",
+              "revision": "1",
+              "createdDate": "2026-08-18T09:54:08.770Z",
+              "updatedDate": "2026-08-18T09:54:08.770Z",
+              "sectionId": "b142d26b-2c56-4b85-9f8d-6bea0920eb4d",
+              "description": {
+                "title": "Share your goals",
+                "details": "Write down the outcome you want to achieve this week."
+              },
+              "ordering": 30,
+              "stepType": "ARTICLE",
+              "programId": "9a76e7d5-235a-4821-8f36-2d8bd0e7e9c1"
+            },
+            "action": "INSERT"
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates up to 100 steps in a single API call.
+
+    Specify the parent section in each step's `sectionId`.
+    The service derives the parent program automatically.
+    To create quiz steps, create or clone the quizzes separately, then specify their IDs in each step's `quizOptions.id`.
+
+    This is the preferred bulk-create method.
+    To create a single step, call [CreateStep](https://dev.wix.com/docs/api-reference/business-management/online-programs/steps/create-step).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CHALLENGES.MANAGE">Manage Online Programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { steps } from '@wix/online-programs';
+
+    steps.bulkCreateSteps(steps, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="steps" type="Step[]" required>
+
+      Steps to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Step Object](/api-reference/business-management/online-programs/steps/step-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateStepsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return created steps in the response.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkStepResult[]">
+
+      Results for each processed step.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the processed step.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Step">
+
+          Processed step. Empty when `returnEntity` is `false`.
+
+          See the [Step Object](/api-reference/business-management/online-programs/steps/step-object) for this object's fields.
+
+        </ResponseField>
+
+        <ResponseField name="action" type="string">
+
+          Bulk action performed for the step.
+
+          **Supported values:**
+
+          - `UNKNOWN_ACTION_TYPE`
+          - `INSERT`
+          - `UPDATE`
+          - `DELETE`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata about the bulk action.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Step Created | `wix.online_programs.v3.step_created` | Triggered when a step is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-steps" id="ex-sdk-bulk-create-steps-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-steps" id="ex-sdk-bulk-create-steps-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-steps-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-steps-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create multiple article steps</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateSteps (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-steps-0"><span className="wix-picker-name">Create multiple article steps</span></label>
+    <label htmlFor="ex-sdk-bulk-create-steps-1"><span className="wix-picker-name">bulkCreateSteps (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create multiple article steps
+    import { steps } from "@wix/online-programs";
+
+    const bulkCreateStepsResponse = await steps.bulkCreateSteps(
+      [
+        {
+          sectionId: "b142d26b-2c56-4b85-9f8d-6bea0920eb4d",
+          description: {
+            title: "Prepare your workspace",
+            details: "Set up the tools and materials you need before starting.",
+          },
+          ordering: 20,
+          stepType: "ARTICLE",
+        },
+        {
+          sectionId: "b142d26b-2c56-4b85-9f8d-6bea0920eb4d",
+          description: {
+            title: "Share your goals",
+            details: "Write down the outcome you want to achieve this week.",
+          },
+          ordering: 30,
+          stepType: "ARTICLE",
+        },
+      ],
+      { returnEntity: true },
+    );
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateSteps (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { steps } from '@wix/online-programs';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { steps },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateSteps(steps,options) {
+      const response = await myWixClient.steps.bulkCreateSteps(steps,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

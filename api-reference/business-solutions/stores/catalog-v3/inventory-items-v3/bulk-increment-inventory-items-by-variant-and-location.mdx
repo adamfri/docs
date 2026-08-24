@@ -1,0 +1,664 @@
+---
+title: "Bulk Increment Inventory Items By Variant And Location"
+description: "Increments quantities of multiple inventory items by variant and location."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Increments quantities of multiple inventory items by variant and location.
+
+    <Note>
+
+    `trackQuantity` must be `true` to allow for incrementing the quantity.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INVENTORY_ITEM_WRITE">Inventory write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/inventory-items/increment-by-variant-and-location
+    ```
+
+    ## Body Params
+
+    <ParamField body="incrementData" type="IncrementDataByVariantAndLocation[]" required>
+
+      Variant and location IDs, as well as increment data.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="incrementData properties">
+
+        <ParamField body="variantId" type="string" required>
+
+          Variant ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="locationId" type="string">
+
+          Location ID.
+
+        </ParamField>
+
+        <ParamField body="incrementBy" type="integer" required>
+
+          Amount to increment by.
+
+          Constraints: `min 1`, `max 99999`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the full inventory item entities in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="reason" type="string">
+
+      Reason for increment inventory action.
+
+      **Supported values:**
+
+      - `ORDER`
+      - `MANUAL`
+      - `REVERT_INVENTORY_CHANGE`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkInventoryItemResult[]">
+
+      Inventory items updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InventoryItem">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Inventory Item Object](/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/inventory-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata details as: totalSuccess and totalFailure.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVENTORY_QUANTITY_NOT_TRACKED` | Increment attempted for untracked inventory. Enable inventory tracking first. |
+    | `428` | `FAILED_PRECONDITION` | `MAX_QUANTITY_LIMIT_REACHED` | Increment would exceed the maximum quantity limit. |
+    | `428` | `FAILED_PRECONDITION` | `NOT_FOUND` | Inventory item with the specified `variant_id` and `location_id` not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Inventory Item Updated | `wix.stores.catalog.v3.inventory_item_updated` | Triggered when an inventory item is updated. |
+    | Inventory Item Stock Status Updated | `wix.stores.catalog.v3.inventory_item_stock_status_updated` | Triggered when an inventory item's stock is updated. |
+    | Inventory Item Updated With Reason | `wix.stores.catalog.v3.inventory_item_updated_with_reason` | Triggered when an inventory item is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Increment quantity of multiple inventory items. The 1st item is requested with both variant ID and location ID of a tracked inventory item and succeeds. The 2nd is requested with variant ID and empty location ID, so the variant in the default location is updated and succeeds. The 3rd is requested with variant ID and location ID of an untracked inventory item and fails.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/stores/v3/bulk/inventory-items/increment-by-variant-and-location' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization:  <AUTH>' \
+        -d '{
+              "incrementData": [
+                  {
+                    "variantId": "b692b19a-0fb8-41b3-bcea-f742f42e8c95",
+                    "locationId": "6aa58daa-de56-4dd9-95c2-07943e346348",
+                    "incrementBy": 10
+                  },
+                  {
+                    "variantId": "a4eb080d-7aac-4b59-8d4e-ff7500a05cd1",
+                    "incrementBy": 5
+                  },
+                  {
+                    "variantId": "d889c456-4f6c-4dee-9658-0b3546b8cef2",
+                    "locationId": "6aa58daa-de56-4dd9-95c2-07943e346348",
+                    "incrementBy": 11
+                  }
+                ],
+                "returnEntity": true
+           }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "b48f3746-b428-4dbb-81c1-848e73861a52",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "b48f3746-b428-4dbb-81c1-848e73861a52",
+              "revision": "1",
+              "createdDate": "2024-07-04T10:53:55.922Z",
+              "updatedDate": "2024-07-04T11:07:52.756Z",
+              "variantId": "b692b19a-0fb8-41b3-bcea-f742f42e8c95",
+              "locationId": "6aa58daa-de56-4dd9-95c2-07943e346348",
+              "productId": "07919370-9e89-4226-9277-bf1c2655bc4f",
+              "quantity": 10,
+              "trackQuantity": true,
+              "availabilityStatus": "IN_STOCK",
+              "preorderInfo": {
+                "enabled": false
+              },
+              "product": {
+                "name": "Biker Short",
+                "directCategoryIds": [
+                  "37a6a8e4-d48d-43c0-9815-e12223d5f705"
+                ]
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "d7f4d5fa-4619-494b-8bee-ec63b6c4ff6d",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "d7f4d5fa-4619-494b-8bee-ec63b6c4ff6d",
+              "revision": "1",
+              "createdDate": "2024-07-04T11:07:05.775Z",
+              "updatedDate": "2024-07-04T11:07:52.757Z",
+              "variantId": "a4eb080d-7aac-4b59-8d4e-ff7500a05cd1",
+              "locationId": "6791d945-a6b6-4dcd-8ee8-441e5cabebdc",
+              "productId": "aef748f9-ee94-4a75-8233-1a0ce0edcc31",
+              "quantity": 9,
+              "trackQuantity": true,
+              "availabilityStatus": "IN_STOCK",
+              "preorderInfo": {
+                "enabled": false
+              },
+              "product": {
+                "name": "Premium Legacy Cargo Oversize Fit Pants",
+                "directCategoryIds": [
+                  "37a6a8e4-d48d-43c0-9815-e12223d5f705"
+                ]
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "edde688d-7499-4a90-8ebb-19be6f865c83",
+              "originalIndex": 2,
+              "success": false,
+              "error": {
+                "code": "INVENTORY_QUANTITY_NOT_TRACKED",
+                "description": "Cannot set quantity on untracked inventoryItem: Some(edde688d-7499-4a90-8ebb-19be6f865c83), variantId: , location: "
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Increments quantities of multiple inventory items by variant and location.
+
+    <Note>
+
+    `trackQuantity` must be `true` to allow for incrementing the quantity.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INVENTORY_ITEM_WRITE">Inventory write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { inventoryItemsV3 } from '@wix/stores';
+
+    inventoryItemsV3.bulkIncrementInventoryItemsByVariantAndLocation(incrementData, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="incrementData" type="IncrementDataByVariantAndLocation[]" required>
+
+      Variant and location IDs, as well as increment data.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="incrementData properties">
+
+        <ParamField body="variantId" type="string" required>
+
+          Variant ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="locationId" type="string">
+
+          Location ID.
+
+        </ParamField>
+
+        <ParamField body="incrementBy" type="integer" required>
+
+          Amount to increment by.
+
+          Constraints: `min 1`, `max 99999`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkIncrementInventoryItemsByVariantAndLocationOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the full inventory item entities in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="reason" type="string">
+
+          Reason for increment inventory action.
+
+          **Supported values:**
+
+          - `ORDER`
+          - `MANUAL`
+          - `REVERT_INVENTORY_CHANGE`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkInventoryItemResult[]">
+
+      Inventory items updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InventoryItem">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Inventory Item Object](/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/inventory-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata details as: totalSuccess and totalFailure.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVENTORY_QUANTITY_NOT_TRACKED` | Increment attempted for untracked inventory. Enable inventory tracking first. |
+    | `428` | `FAILED_PRECONDITION` | `MAX_QUANTITY_LIMIT_REACHED` | Increment would exceed the maximum quantity limit. |
+    | `428` | `FAILED_PRECONDITION` | `NOT_FOUND` | Inventory item with the specified `variant_id` and `location_id` not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Inventory Item Updated | `wix.stores.catalog.v3.inventory_item_updated` | Triggered when an inventory item is updated. |
+    | Inventory Item Stock Status Updated | `wix.stores.catalog.v3.inventory_item_stock_status_updated` | Triggered when an inventory item's stock is updated. |
+    | Inventory Item Updated With Reason | `wix.stores.catalog.v3.inventory_item_updated_with_reason` | Triggered when an inventory item is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-increment-inventory-items-by-variant-and-location" id="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-increment-inventory-items-by-variant-and-location" id="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-increment-inventory-items-by-variant-and-location" id="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkIncrementInventoryItemsByVariantAndLocation</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkIncrementInventoryItemsByVariantAndLocation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkIncrementInventoryItemsByVariantAndLocation (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-0"><span className="wix-picker-name">bulkIncrementInventoryItemsByVariantAndLocation</span></label>
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-1"><span className="wix-picker-name">bulkIncrementInventoryItemsByVariantAndLocation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-by-variant-and-location-2"><span className="wix-picker-name">bulkIncrementInventoryItemsByVariantAndLocation (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkIncrementInventoryItemsByVariantAndLocation
+    import { inventoryItemsV3 } from '@wix/stores';
+
+    async function bulkIncrementInventoryItemsByVariantAndLocation(incrementData,options) {
+      const response = await inventoryItemsV3.bulkIncrementInventoryItemsByVariantAndLocation(incrementData,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkIncrementInventoryItemsByVariantAndLocation (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { inventoryItemsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { inventoryItemsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkIncrementInventoryItemsByVariantAndLocation(incrementData,options) {
+      const response = await myWixClient.inventoryItemsV3.bulkIncrementInventoryItemsByVariantAndLocation(incrementData,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkIncrementInventoryItemsByVariantAndLocation (with elevated permissions)
+    import { inventoryItemsV3 } from '@wix/stores';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkIncrementInventoryItemsByVariantAndLocationMethod(incrementData,options) {
+      const elevatedBulkIncrementInventoryItemsByVariantAndLocation = auth.elevate(inventoryItemsV3.bulkIncrementInventoryItemsByVariantAndLocation);
+      const response = await elevatedBulkIncrementInventoryItemsByVariantAndLocation(incrementData,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

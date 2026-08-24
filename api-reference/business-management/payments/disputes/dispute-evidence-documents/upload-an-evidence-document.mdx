@@ -1,0 +1,77 @@
+---
+title: "Upload an Evidence Document"
+description: "Upload file-based evidence to support payment dispute resolution cases."
+icon: "file-lines"
+---
+
+Upload file-based evidence to support payment dispute resolution cases.
+
+When you create a dispute evidence document, you receive an upload URL in the response. You use this upload URL to upload your file directly. After you upload the file, you can submit the evidence.
+
+## Step 1 | Create a dispute evidence document
+
+This step creates a new dispute evidence document and provides an upload URL for file attachment.
+
+To create a dispute evidence document, call [Create Dispute Evidence Document](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/disputes/dispute-evidence-documents/create-dispute-evidence-document), specifying the dispute ID.
+
+Save the `uploadUrl` included in the response.
+
+## Step 2 | Upload the file with the upload URL
+
+This step uploads your evidence file by calling the upload URL from the previous step.
+
+### Syntax
+```
+PUT {{uploadUrl}}
+```
+
+### Authorization
+This method uses the upload token included in the URL for authorization. You don't need additional authorization.
+
+<Note>
+
+The upload token expires after 10 minutes, so the upload URL must be used within 10 minutes of receiving it.
+
+</Note>
+
+### Headers params
+| Name         | Type   | Optional | Description                                                   |
+|--------------|--------|:--------:|---------------------------------------------------------------|
+| Content-Type | string |    no    | File content type. For example, "image/jpeg" for a jpg file.  |
+
+<Note>
+
+You can use the standard [File API](fallback::https://developer.mozilla.org/en-US/docs/Web/API/File_API) to retrieve the file content type using the [File](fallback::https://developer.mozilla.org/en-US/docs/Web/API/File) or [Blob](fallback::https://developer.mozilla.org/en-US/docs/Web/API/Blob) `type` attributes.
+You can also use external libraries, such as [file-type](fallback::https://www.npmjs.com/package/file-type), to retrieve the file content type.
+
+</Note>
+
+### Examples
+
+#### JavaScript
+```javascript
+const uploadUrl = 'https://upload.wixapis.com/upload/token123/dispute-evidence?filename=receipt.pdf';
+const file = // Retrieve file
+
+fetch(uploadUrl, {
+  method: 'PUT',
+  body: file,
+});
+```
+
+#### Curl
+```bash
+curl -X PUT \
+'https://upload.wixapis.com/upload/token123/dispute-evidence?filename=receipt.pdf' \
+-H 'Content-Type: application/pdf' \
+--data-binary @./evidence/receipt.pdf
+```
+
+<Note>
+
+The upload process is asynchronous. A successful response doesn't guarantee the file is immediately available. The file processing happens in the background. When the upload is complete, the [Dispute Evidence Document Updated](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/disputes/dispute-evidence-documents/dispute-evidence-document-updated) event is triggered.
+
+</Note>
+
+## What's next
+To submit the evidence to the payment processor or bank, call [Defend Dispute](fallback::https://dev.wix.com/docs/rest/business-management/payments/disputes/disputes/defend-dispute). This submits all evidence documents associated with the dispute for review by the payment processor.

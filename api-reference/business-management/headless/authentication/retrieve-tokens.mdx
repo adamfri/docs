@@ -1,0 +1,161 @@
+---
+title: "Retrieve Tokens"
+description: "<blockquote class=\"warning\" Developer Preview - This API is subject to change."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+<Warning>
+
+**Developer Preview** - This API is subject to change. Bug fixes and new features will be released based on developer feedback throughout the preview period.
+
+</Warning>
+
+Retrieves access and refresh tokens that a [Wix OAuth app](fallback::https://dev.wix.com/docs/rest/api-reference/auth-management/o-auth-apps/introduction) can use to make API calls on behalf of a site visitor.
+
+This endpoint accepts requests with both `application/json` and `application/x-www-form-urlencoded` content types. The parameter names are the same for both content types.
+
+The endpoint supports several `grantType` flows for obtaining tokens. Each flow has its own set of required fields.
+Here are the supported flows with their required fields:
+
+|Grant Type|Description|Required Fields|
+|---|---|---|
+|`authorization_code`|Used to obtain access and refresh tokens for an authenticated visitor after obtaining an authorization code.|`redirectUri`<br />`code`<br />`codeVerifier`| 
+| `refresh_token`|Used to obtain an access token using a refresh token after the previous one expires.|`refreshToken`|
+| `anonymous`|Used to obtain access and refresh tokens for an unauthenticated site visitor.| N/A|
+
+## Syntax
+
+```
+POST https://www.wixapis.com/oauth2/token
+```
+
+## Body Params
+
+|Name|Type|Description|
+|---|---|---|
+|`clientId`|string| **Required**: ID of the Wix OAuth app requesting authorization.|
+|`grantType`|string| Type of request flow.  <br />Supported values: <br />- `authorization_code` <br />- `refresh_token` <br />- `urn:ietf:params:oauth:grant-type:device_code`<br />- `anonymous`|
+|`refreshToken`|string|Refresh token. Required when using the `refresh_token` grant type.|
+|`redirectUri`|string| Redirect URI that passed to the [redirect API](https://dev.wix.com/docs/rest/api-reference/auth-management/redirect-sessions) when requesting an authorization code. Used to verify that the authentication and token requests are from the same source. Required when using the `authorization_code` grant type.|
+|`code`|string| Authorization code. Retrieved using the [redirect API](https://dev.wix.com/docs/rest/api-reference/auth-management/redirect-sessions). Required when using the `authorization_code` grant type.|
+|`codeVerifier`|string| Code for PKCE verification. This is the encrypted version of the `codeChallenge` that was sent using the [redirect API](https://dev.wix.com/docs/rest/api-reference/auth-management/redirect-sessions). Required when using the `authorization_code` grant type.|
+
+## Response Object
+
+### Success Response
+
+If a request succeeds, the server returns an HTTP `200` status code with an `application/json` content type. The response body is a JSON object with the following fields:
+
+|Name|Type|Description|
+|---|---|---|
+|`access_token`|string|Access token.|
+|`expires_in`|integer|Number of seconds until the token expires.|
+|`token_type`|string| Token type. Only `Bearer` is supported.|
+|`refresh_token`|string|Refresh token.|
+
+### Error Responses
+
+There are two types of error responses:
+
+#### Invalid redirect URI
+
+If the request includes an invalid `redirectUri` parameter, the server returns an HTTP `302` status code and redirects the request back to the client. The redirect URL contains a fragment with an `error` key and one of the following values:
+
+|Error Message|Description|
+|---|---|
+|`invalid_request`|The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.|
+|`unauthorized_client`|The client is not authorized to request an access token using this method.|
+|`access_denied`| The request was denied.|
+|`server_error`|The authorization server encountered an unexpected condition that prevented it from fulfilling the request. (This error code is needed because a 500 Internal Server Error HTTP status code cannot be returned to the client via an HTTP redirect.)|
+|`temporarily_unavailable`|The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server. (This error code is needed because a 503 Service Unavailable HTTP status code cannot be returned to the client via an HTTP redirect.)|
+
+#### Other invalid requests
+
+If the request is invalid for any other reason, the server returns an HTTP `400` status code with an `application/json` content type. The response body is a JSON object with an `error` key and one of the following values:
+
+|Error Message|Description|
+|---|---|
+|`invalid_request`|The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.|
+|`invalid_client`|Client authentication failed.|
+|`invalid_grant`|The provided authorization code or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.|
+|`unauthorized_client`|The authenticated client is not authorized to use this authorization grant type.|
+|`unsupported_grant_type`|The authorization grant type is not supported by the authorization server.|
+
+## Examples
+
+### Retrieve a visitor access token
+
+> All examples use the `application/json` content type.
+
+**Request**:
+
+```bash
+curl --location 'https://www.wixapis.com/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+          "clientId": "e345f72c-a4ef-46b6-8b0f-f6b2cd66b78b",
+          "grantType": "anonymous"
+        }'
+```
+
+**Response**
+```json
+{
+  "access_token": "OauthNG.JWS.eyJraWQiOiJZSEDI5M...",
+  "token_type": "Bearer",
+  "expires_in": 14400,
+  "refresh_token": "AQS.eyJraWQiOiJZSEJzdUpwSCIsImFs..."
+}
+```
+
+### Refresh an access token
+
+**Request**:
+
+```bash
+curl --location 'https://www.wixapis.com/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+          "refresh_token": "AQS.eyJraWQiOiJZSEJzdUpwSCIsImFs...",
+          "grantType": "refresh_token"
+        }'
+```
+
+**Response**
+```json
+{
+  "access_token": "OauthNG.JWS.eyJraWQiOiJZSEDI5M...",
+  "token_type": "Bearer",
+  "expires_in": 14400,
+  "refresh_token": "AQS.eyJraWQiOiJZSEJzdUpwSCIsImFs..."
+}
+```
+
+### Retrieve an access token for an authenticated visitor
+
+**Request**:
+
+```bash
+curl --location 'https://www.wixapis.com/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+          "clientId": "e345f72c-a4ef-46b6-8b0f-f6b2cd66b78b",
+          "grantType": "authorization_code",
+          "redirectUri": "https://wix-events-nextjs.vercel.app/callback",
+          "code": "OLI66BELkX"
+        }'
+```
+        
+**Response**
+
+```json
+{
+  "access_token": "OauthNG.JWS.eyJraWQiOiJZSEDI5M...",
+  "token_type": "Bearer",
+  "expires_in": 14400,
+  "refresh_token": "AQS.eyJraWQiOiJZSEJzdUpwSCIsImFs..."
+}
+
+```

@@ -1,0 +1,52 @@
+---
+title: "Introduction"
+description: "The Partner Profiles API lets Wix Partners manage their public profile and lets external developers read it."
+icon: "file-lines"
+---
+
+The Partner Profiles API lets Wix Partners manage their public profile and lets external developers read it. A partner profile is how agencies and freelancers showcase their work across Wix surfaces: the Partner Directory, the Wix Marketplace, and the Templates Marketplace.
+
+A **Wix Partner** is an agency or freelancer that uses a partner profile to showcase their work. A partner profile may be linked to one or more surfaces depending on the partner's status: the **Partner Directory** (a registry of all partner profiles), the **Wix Marketplace** (for partners who have been accepted to it), or the **Templates Marketplace** (for partners who have created a template listing). Each partner account has exactly one profile. The profile represents the agency or freelancer, not an individual team member.
+
+The API has two distinct layers:
+
+- **`PartnerProfiles` service (owner-facing):** The partner's editable working copy. Partners use it to update professional information, services, portfolio items, and contact details. Access is authenticated and restricted to the profile owner.
+- **`PublicPartnerProfiles` service (public-facing):** The verified, published projection that appears on partner directory pages. A new `PublicPartnerProfile` is created or updated only after the partner's edits pass verification. All reads are unauthenticated: no Wix account is required.
+
+With the Partner Profiles API, you can:
+
+- [Create a partner profile.](##create-a-partner-profile*fallback::https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/sample-flows#create-a-partner-profile)
+- [Keep a partner's profile up to date.](##keep-a-partners-profile-up-to-date*fallback::https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/sample-flows#keep-a-partners-profile-up-to-date)
+- [Remove a partner from the directory.](##remove-a-partner-from-the-directory*fallback::https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/sample-flows#remove-a-partner-from-the-directory)
+- [Display partners from the public directory.](##display-partners-from-the-public-directory*fallback::https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/sample-flows#display-partners-from-the-public-directory)
+
+## Verification lifecycle
+
+Every time a partner creates or updates their profile, the content enters an automated verification queue. During verification, the profile's `validation.validationStatus` is set to `PENDING_VALIDATION`. Once verification completes (typically within seconds), the status changes to either:
+
+- `VALID`: The content passed verification. A `PublicPartnerProfile` is created or updated to reflect the latest changes.
+- `NOT_VALID`: The content failed verification. The `validation.failedValidationReasons` field lists the specific fields and failure categories. To resolve, call [Update Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/update-partner-profile) with corrected content. This resets the status to `PENDING_VALIDATION` and triggers re-verification.
+
+The following fields are subject to content verification: `professionalInformation.about`, `professionalInformation.tagline`, and `professionalInformation.businessWebsite` (the URL content is fetched and scanned).
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The `PartnerProfile` (editable) and `PublicPartnerProfile` (published) entities are separate. Updates to `PartnerProfile` don't immediately appear in `PublicPartnerProfile`. Changes go through a verification step first.
+- `PublicPartnerProfiles` read methods require no permission or authentication.
+- There is one `PartnerProfile` per Wix account (agency). Multiple team members on the same account share a single profile.
+- The `ContactPartner` method is reserved for Wix first-party UI use and isn't intended for third-party integrations.
+- A partner's `slug` is auto-generated from their `professionalInformation.businessName` at profile creation. It can be changed via the API.
+- A partner's public profile page URL is `https://www.wix.com/studio/community/partners/{slug}`, where `{slug}` is the partner's `slug` field. To get the slug for the authenticated partner, call [Get Current Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/get-current-partner-profile) and read the `slug` field from the response.
+- The `euValid` field is set automatically by the system based on the partner's country and EU trader traceability status. Partners can't set this field directly. When `true`, you can display an EU compliance indicator on the partner's profile.
+- Setting `hideFromDirectory` to `true` opts the partner out of appearing in the Partner Directory listing, but the public partner profile remains accessible via the API regardless of this setting.
+
+## Terminology
+
+- **PartnerProfile**: The partner's editable working copy of their profile. Contains unverified data that the partner is actively managing.
+- **PublicPartnerProfile**: The verified, published version of a partner profile. This is what appears on public directory pages and is accessible without authentication.
+- **Partner**: A Wix agency or freelancer who uses a partner profile to showcase their work. One Wix account = one partner profile.
+- **Verification**: The automated process that runs after a partner saves changes to their `PartnerProfile`. Only verified updates are reflected in the `PublicPartnerProfile`.
+
+@sdk_package_setup

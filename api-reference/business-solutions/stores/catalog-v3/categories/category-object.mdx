@@ -1,0 +1,1743 @@
+---
+title: "Category Object"
+description: "A category for organizing items into a hierarchical structure."
+icon: "cube"
+---
+
+A category for organizing items into a hierarchical structure.
+
+Categories can be nested to create a multi-level hierarchy. Each category belongs to a specific category tree, identified by its `treeReference`. Each Wix Stores site has one category tree.
+
+<Note>
+
+Currently, only Wix Stores Catalog (V3) categories are supported. Pass `appNamespace: "@wix/stores"` in the `treeReference` for all API calls.
+
+</Note>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Category ID.
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the category is updated.
+      To prevent conflicting changes, the current revision must be passed when updating.
+
+      Ignored when creating a category.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the category was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the category was updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+
+      Category name.
+
+    </ResponseField>
+
+    <ResponseField name="image" type="Image">
+
+      Category image.
+
+      + Pass WixMedia image ID for media previously saved in the [Wix Media Manager](https://support.wix.com/en/article/wix-media-about-the-media-manager).
+      + Pass full image URL to upload to Wix Media Manager.
+
+      <Expandable title="image properties">
+
+        <ResponseField name="id" type="string">
+
+          WixMedia image ID.
+
+          Constraints: `maxLength 400`.
+
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+
+          Image URL.
+
+          Constraints: `format WEB_URL`.
+
+        </ResponseField>
+
+        <ResponseField name="height" type="integer">
+
+          Original image height.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="width" type="integer">
+
+          Original image width.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="altText" type="string">
+
+          Image alt text.
+
+        </ResponseField>
+
+        <ResponseField name="filename" type="string">
+
+          Image filename.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="itemCounter" type="integer">
+
+      Number of items directly assigned to this category. Doesn't include items in subcategories.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+
+      Plain-text category description.
+
+      Returned only when you pass `"DESCRIPTION"` to the `fields` array.
+
+    </ResponseField>
+
+    <ResponseField name="visible" type="boolean">
+
+      Whether the category is visible to site visitors.
+
+      Visibility cascades to subcategories: if a parent category's visibility is set to `false`, all its subcategories become hidden as well.
+      Setting a subcategory's visibility to `true` fails if any of its parent categories are hidden.
+
+      > **Notes:**
+      > 1. Hidden categories and their items are still accessible via API calls. For example, List Items In Category returns items even for hidden categories.
+      > 2. The `visible` field can only be changed using the [Update Category Visibility](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/update-category-visibility) method.
+      > 3. Default: `true`
+
+    </ResponseField>
+
+    <ResponseField name="breadcrumbsInfo" type="BreadcrumbsInfo">
+
+      Category breadcrumbs, representing the path from the top-level ancestor category down to the parent of the current category.
+
+      Breadcrumbs are useful for building navigation UI and for SEO purposes. For top-level categories, the breadcrumbs list is empty.
+
+      Returned only when you pass `"BREADCRUMBS_INFO"` to the `fields` array.
+
+      **Read-only.**
+
+      <Expandable title="breadcrumbsInfo properties">
+
+        <ResponseField name="breadcrumbs" type="Breadcrumb[]">
+
+          List of ancestor categories from the top-level category down to the parent of the current category. The current category isn't included in the list.
+
+          **Read-only.** Constraints: `maxItems 5`.
+
+          <Expandable title="breadcrumbs properties">
+
+            <ResponseField name="categoryId" type="string">
+
+              Ancestor category ID.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="categoryName" type="string">
+
+              Ancestor category name.
+
+              Constraints: `minLength 1`, `maxLength 80`.
+
+            </ResponseField>
+
+            <ResponseField name="categorySlug" type="string">
+
+              Ancestor category slug.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="parentCategory" type="ParentCategory">
+
+      Information about the category's parent. Top-level categories don't have a parent.
+
+      Constraints: `immutable`.
+
+      <Expandable title="parentCategory properties">
+
+        <ResponseField name="id" type="string">
+
+          ID of the parent category.
+
+          Leave empty or omit to create a top-level category.
+
+        </ResponseField>
+
+        <ResponseField name="index" type="integer">
+
+          Position of this category among its sibling categories within the parent.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="slug" type="string">
+
+      Category slug. A URL-friendly identifier used in the category page address.
+
+      If not provided, the slug is autogenerated based on the category name.
+
+    </ResponseField>
+
+    <ResponseField name="seoData" type="SeoSchema">
+
+      Custom SEO data for the category.
+
+      <Expandable title="seoData properties">
+
+        <ResponseField name="tags" type="Tag[]">
+
+          SEO tag information.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="settings" type="Settings">
+
+          SEO general settings.
+
+          <Expandable title="settings properties">
+
+            <ResponseField name="preventAutoRedirect" type="boolean">
+
+              Whether the [automatical redirect visits](https://support.wix.com/en/article/customizing-your-pages-seo-settings-in-the-seo-panel) from the old URL to the new one is enabled.
+
+              Default: `false` (automatical redirect is enabled).
+
+            </ResponseField>
+
+            <ResponseField name="keywords" type="Keyword[]">
+
+              User-selected keyword terms for a specific page.
+
+              Constraints: `maxItems 5`.
+
+              <Expandable title="keywords properties">
+
+                <ResponseField name="term" type="string">
+
+                  Keyword value.
+
+                </ResponseField>
+
+                <ResponseField name="isMain" type="boolean">
+
+                  Whether the keyword is the main focus keyword.
+
+                </ResponseField>
+
+                <ResponseField name="origin" type="string">
+
+                  The source that added the keyword terms to the SEO settings.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="richContentDescription" type="RichContent">
+
+      Category description using rich content.
+      > **Note:** Returned only when you pass `"RICH_CONTENT_DESCRIPTION"` to the `fields` array in Categories API requests.
+
+      &lt;widget src="https://apps.wix.com/_serverless/ricos-playground-services/goto/api-component" plugins="indent.emoji.divider.codeBlock.file.gallery.giphy.image.table.link.textHighlight.textColor" exampleid="7dc9240e-d548-417a-abcf-0291b68b4303">
+      &lt;a href="https://dev.wix.com/docs/ricos/api-reference/ricos-document">See Ricos document reference&lt;/a>
+      &lt;/widget>
+
+      <Expandable title="richContentDescription properties">
+
+        <ResponseField name="nodes" type="Node[]">
+
+          Node objects representing a rich content document.
+
+          <Expandable title="nodes properties">
+
+            <ResponseField name="type" type="string">
+
+              Node type. Use `APP_EMBED` for nodes that embed content from other Wix apps. Use `EMBED` to embed content in [oEmbed](https://oembed.com/) format.
+
+              **Supported values:**
+
+              - `PARAGRAPH`
+              - `TEXT`
+              - `HEADING`
+              - `BULLETED_LIST`
+              - `ORDERED_LIST`
+              - `LIST_ITEM`
+              - `BLOCKQUOTE`
+              - `CODE_BLOCK`
+              - `VIDEO`
+              - `DIVIDER`
+              - `FILE`
+              - `GALLERY`
+              - `GIF`
+              - `HTML`
+              - `IMAGE`
+              - `LINK_PREVIEW`
+              - `MAP` — @deprecated
+              - `POLL`
+              - `APP_EMBED`
+              - `BUTTON`
+              - `COLLAPSIBLE_LIST`
+              - `TABLE`
+              - `EMBED`
+              - `COLLAPSIBLE_ITEM`
+              - `COLLAPSIBLE_ITEM_TITLE`
+              - `COLLAPSIBLE_ITEM_BODY`
+              - `TABLE_CELL`
+              - `TABLE_ROW`
+              - `EXTERNAL`
+              - `AUDIO`
+              - `CAPTION`
+              - `LAYOUT`
+              - `LAYOUT_CELL`
+              - `SHAPE`
+              - `CARD`
+              - `TOC`
+              - `SMART_BLOCK`
+              - `SMART_BLOCK_CELL`
+              - `CHECKBOX_LIST`
+
+            </ResponseField>
+
+            <ResponseField name="id" type="string">
+
+              Node ID.
+
+            </ResponseField>
+
+            <ResponseField name="nodes" type="Node[]">
+
+              A list of child nodes.
+
+              _Recursive reference to `Node[]`._
+
+            </ResponseField>
+
+            <ResponseField name="style" type="NodeStyle">
+
+              Padding and background color styling for the node.
+
+              <Expandable title="style properties">
+
+                <ResponseField name="paddingTop" type="string">
+
+                  The top padding value in pixels.
+
+                </ResponseField>
+
+                <ResponseField name="paddingBottom" type="string">
+
+                  The bottom padding value in pixels.
+
+                </ResponseField>
+
+                <ResponseField name="backgroundColor" type="string">
+
+                  The background color as a hexadecimal value.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="metadata" type="Metadata">
+
+          Object metadata.
+
+          <Expandable title="metadata properties">
+
+            <ResponseField name="version" type="integer">
+
+              Schema version.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="createdTimestamp" type="datetime">
+
+              When the object was created.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="updatedTimestamp" type="datetime">
+
+              When the object was most recently updated.
+
+            </ResponseField>
+
+            <ResponseField name="id" type="string">
+
+              Object ID.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="documentStyle" type="DocumentStyle">
+
+          Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+          <Expandable title="documentStyle properties">
+
+            <ResponseField name="headerOne" type="TextNodeStyle">
+
+              Styling for H1 nodes.
+
+              <Expandable title="headerOne properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerTwo" type="TextNodeStyle">
+
+              Styling for H2 nodes.
+
+              <Expandable title="headerTwo properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerThree" type="TextNodeStyle">
+
+              Styling for H3 nodes.
+
+              <Expandable title="headerThree properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerFour" type="TextNodeStyle">
+
+              Styling for H4 nodes.
+
+              <Expandable title="headerFour properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerFive" type="TextNodeStyle">
+
+              Styling for H5 nodes.
+
+              <Expandable title="headerFive properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerSix" type="TextNodeStyle">
+
+              Styling for H6 nodes.
+
+              <Expandable title="headerSix properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="paragraph" type="TextNodeStyle">
+
+              Styling for paragraph nodes.
+
+              <Expandable title="paragraph properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="blockquote" type="TextNodeStyle">
+
+              Styling for block quote nodes.
+
+              <Expandable title="blockquote properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="codeBlock" type="TextNodeStyle">
+
+              Styling for code block nodes.
+
+              <Expandable title="codeBlock properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="treeReference" type="TreeReference">
+
+      Reference to the category tree this category belongs to.
+
+      When working with Wix Stores categories, always pass `appNamespace: "@wix/stores"` and `treeKey: null`.
+
+      **Read-only.**
+
+      <Expandable title="treeReference properties">
+
+        <ResponseField name="appNamespace" type="string">
+
+          Namespace of the app whose catalog this category tree belongs to.
+
+          Currently, only `"@wix/stores"` is supported.
+
+          Constraints: `minLength 4`, `maxLength 150`.
+
+        </ResponseField>
+
+        <ResponseField name="treeKey" type="string">
+
+          Key to differentiate between multiple trees managed by the same app.
+
+          For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="managingAppId" type="string">
+
+      ID of the app responsible for managing items in this category.
+
+      When set, only the specified app can add or remove items from this category. This is useful for third-party apps that want to create categories exclusively managed by their app, preventing site owners or other apps from modifying the category's items.
+
+      You can get your app's ID from the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Custom extended fields for the category object.
+
+      [Extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions) must be configured in the [app dashboard](https://dev.wix.com/dc3/my-apps/) before they can be accessed with API calls.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "category": {
+          "id": "bb67b86e-f7f1-45b3-abeb-38f18191b4cf",
+          "revision": "1",
+          "createdDate": "2026-01-13T13:42:04.145Z",
+          "updatedDate": "2026-01-13T13:45:00.282Z",
+          "name": "Drink Bottles",
+          "itemCounter": 1,
+          "visible": true,
+          "breadcrumbsInfo": {
+            "breadcrumbs": [
+              {
+                "categoryId": "84908192-d7d7-42b7-b8eb-bc8dd2272a1f",
+                "categoryName": "Drinkware",
+                "categorySlug": "drinkware"
+              },
+              {
+                "categoryId": "c81cfe6b-4511-4bea-8f62-c1baae028b7f",
+                "categoryName": "Bottles",
+                "categorySlug": "bottles"
+              }
+            ]
+          },
+          "parentCategory": {
+            "id": "c81cfe6b-4511-4bea-8f62-c1baae028b7f",
+            "index": 1
+          },
+          "slug": "drink-bottles",
+          "treeReference": {
+            "appNamespace": "@wix/stores"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Category ID.
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the category is updated.
+      To prevent conflicting changes, the current revision must be passed when updating.
+
+      Ignored when creating a category.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the category was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the category was updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+
+      Category name.
+
+    </ResponseField>
+
+    <ResponseField name="image" type="string">
+
+      Category image.
+
+      + Pass WixMedia image ID for media previously saved in the [Wix Media Manager](https://support.wix.com/en/article/wix-media-about-the-media-manager).
+      + Pass full image URL to upload to Wix Media Manager.
+
+    </ResponseField>
+
+    <ResponseField name="itemCounter" type="integer">
+
+      Number of items directly assigned to this category. Doesn't include items in subcategories.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+
+      Plain-text category description.
+
+      Returned only when you pass `"DESCRIPTION"` to the `fields` array.
+
+    </ResponseField>
+
+    <ResponseField name="visible" type="boolean">
+
+      Whether the category is visible to site visitors.
+
+      Visibility cascades to subcategories: if a parent category's visibility is set to `false`, all its subcategories become hidden as well.
+      Setting a subcategory's visibility to `true` fails if any of its parent categories are hidden.
+
+      > **Notes:**
+      > 1. Hidden categories and their items are still accessible via API calls. For example, List Items In Category returns items even for hidden categories.
+      > 2. The `visible` field can only be changed using the [Update Category Visibility](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/update-category-visibility) method.
+      > 3. Default: `true`
+
+    </ResponseField>
+
+    <ResponseField name="breadcrumbsInfo" type="BreadcrumbsInfo">
+
+      Category breadcrumbs, representing the path from the top-level ancestor category down to the parent of the current category.
+
+      Breadcrumbs are useful for building navigation UI and for SEO purposes. For top-level categories, the breadcrumbs list is empty.
+
+      Returned only when you pass `"BREADCRUMBS_INFO"` to the `fields` array.
+
+      **Read-only.**
+
+      <Expandable title="breadcrumbsInfo properties">
+
+        <ResponseField name="breadcrumbs" type="Breadcrumb[]">
+
+          List of ancestor categories from the top-level category down to the parent of the current category. The current category isn't included in the list.
+
+          **Read-only.** Constraints: `maxItems 5`.
+
+          <Expandable title="breadcrumbs properties">
+
+            <ResponseField name="categoryId" type="string">
+
+              Ancestor category ID.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="categoryName" type="string">
+
+              Ancestor category name.
+
+              Constraints: `minLength 1`, `maxLength 80`.
+
+            </ResponseField>
+
+            <ResponseField name="categorySlug" type="string">
+
+              Ancestor category slug.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="parentCategory" type="ParentCategory">
+
+      Information about the category's parent. Top-level categories don't have a parent.
+
+      Constraints: `immutable`.
+
+      <Expandable title="parentCategory properties">
+
+        <ResponseField name="_id" type="string">
+
+          ID of the parent category.
+
+          Leave empty or omit to create a top-level category.
+
+        </ResponseField>
+
+        <ResponseField name="index" type="integer">
+
+          Position of this category among its sibling categories within the parent.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="slug" type="string">
+
+      Category slug. A URL-friendly identifier used in the category page address.
+
+      If not provided, the slug is autogenerated based on the category name.
+
+    </ResponseField>
+
+    <ResponseField name="seoData" type="SeoSchema">
+
+      Custom SEO data for the category.
+
+      <Expandable title="seoData properties">
+
+        <ResponseField name="tags" type="Tag[]">
+
+          SEO tag information.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="settings" type="Settings">
+
+          SEO general settings.
+
+          <Expandable title="settings properties">
+
+            <ResponseField name="preventAutoRedirect" type="boolean">
+
+              Whether the [automatical redirect visits](https://support.wix.com/en/article/customizing-your-pages-seo-settings-in-the-seo-panel) from the old URL to the new one is enabled.
+
+              Default: `false` (automatical redirect is enabled).
+
+            </ResponseField>
+
+            <ResponseField name="keywords" type="Keyword[]">
+
+              User-selected keyword terms for a specific page.
+
+              Constraints: `maxItems 5`.
+
+              <Expandable title="keywords properties">
+
+                <ResponseField name="term" type="string">
+
+                  Keyword value.
+
+                </ResponseField>
+
+                <ResponseField name="isMain" type="boolean">
+
+                  Whether the keyword is the main focus keyword.
+
+                </ResponseField>
+
+                <ResponseField name="origin" type="string">
+
+                  The source that added the keyword terms to the SEO settings.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="richContentDescription" type="RichContent">
+
+      Category description using rich content.
+      > **Note:** Returned only when you pass `"RICH_CONTENT_DESCRIPTION"` to the `fields` array in Categories API requests.
+
+      &lt;widget src="https://apps.wix.com/_serverless/ricos-playground-services/goto/api-component" plugins="indent.emoji.divider.codeBlock.file.gallery.giphy.image.table.link.textHighlight.textColor" exampleid="7dc9240e-d548-417a-abcf-0291b68b4303">
+      &lt;a href="https://dev.wix.com/docs/ricos/api-reference/ricos-document">See Ricos document reference&lt;/a>
+      &lt;/widget>
+
+      <Expandable title="richContentDescription properties">
+
+        <ResponseField name="nodes" type="Node[]">
+
+          Node objects representing a rich content document.
+
+          <Expandable title="nodes properties">
+
+            <ResponseField name="type" type="string">
+
+              Node type. Use `APP_EMBED` for nodes that embed content from other Wix apps. Use `EMBED` to embed content in [oEmbed](https://oembed.com/) format.
+
+              **Supported values:**
+
+              - `PARAGRAPH`
+              - `TEXT`
+              - `HEADING`
+              - `BULLETED_LIST`
+              - `ORDERED_LIST`
+              - `LIST_ITEM`
+              - `BLOCKQUOTE`
+              - `CODE_BLOCK`
+              - `VIDEO`
+              - `DIVIDER`
+              - `FILE`
+              - `GALLERY`
+              - `GIF`
+              - `HTML`
+              - `IMAGE`
+              - `LINK_PREVIEW`
+              - `MAP` — @deprecated
+              - `POLL`
+              - `APP_EMBED`
+              - `BUTTON`
+              - `COLLAPSIBLE_LIST`
+              - `TABLE`
+              - `EMBED`
+              - `COLLAPSIBLE_ITEM`
+              - `COLLAPSIBLE_ITEM_TITLE`
+              - `COLLAPSIBLE_ITEM_BODY`
+              - `TABLE_CELL`
+              - `TABLE_ROW`
+              - `EXTERNAL`
+              - `AUDIO`
+              - `CAPTION`
+              - `LAYOUT`
+              - `LAYOUT_CELL`
+              - `SHAPE`
+              - `CARD`
+              - `TOC`
+              - `SMART_BLOCK`
+              - `SMART_BLOCK_CELL`
+              - `CHECKBOX_LIST`
+
+            </ResponseField>
+
+            <ResponseField name="_id" type="string">
+
+              Node ID.
+
+            </ResponseField>
+
+            <ResponseField name="nodes" type="Node[]">
+
+              A list of child nodes.
+
+              _Recursive reference to `Node[]`._
+
+            </ResponseField>
+
+            <ResponseField name="style" type="NodeStyle">
+
+              Padding and background color styling for the node.
+
+              <Expandable title="style properties">
+
+                <ResponseField name="paddingTop" type="string">
+
+                  The top padding value in pixels.
+
+                </ResponseField>
+
+                <ResponseField name="paddingBottom" type="string">
+
+                  The bottom padding value in pixels.
+
+                </ResponseField>
+
+                <ResponseField name="backgroundColor" type="string">
+
+                  The background color as a hexadecimal value.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="metadata" type="Metadata">
+
+          Object metadata.
+
+          <Expandable title="metadata properties">
+
+            <ResponseField name="version" type="integer">
+
+              Schema version.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="createdTimestamp" type="datetime">
+
+              When the object was created.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="updatedTimestamp" type="datetime">
+
+              When the object was most recently updated.
+
+            </ResponseField>
+
+            <ResponseField name="_id" type="string">
+
+              Object ID.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="documentStyle" type="DocumentStyle">
+
+          Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+          <Expandable title="documentStyle properties">
+
+            <ResponseField name="headerOne" type="TextNodeStyle">
+
+              Styling for H1 nodes.
+
+              <Expandable title="headerOne properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerTwo" type="TextNodeStyle">
+
+              Styling for H2 nodes.
+
+              <Expandable title="headerTwo properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerThree" type="TextNodeStyle">
+
+              Styling for H3 nodes.
+
+              <Expandable title="headerThree properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerFour" type="TextNodeStyle">
+
+              Styling for H4 nodes.
+
+              <Expandable title="headerFour properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerFive" type="TextNodeStyle">
+
+              Styling for H5 nodes.
+
+              <Expandable title="headerFive properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="headerSix" type="TextNodeStyle">
+
+              Styling for H6 nodes.
+
+              <Expandable title="headerSix properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="paragraph" type="TextNodeStyle">
+
+              Styling for paragraph nodes.
+
+              <Expandable title="paragraph properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="blockquote" type="TextNodeStyle">
+
+              Styling for block quote nodes.
+
+              <Expandable title="blockquote properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="codeBlock" type="TextNodeStyle">
+
+              Styling for code block nodes.
+
+              <Expandable title="codeBlock properties">
+
+                <ResponseField name="decorations" type="Decoration[]">
+
+                  The decorations to apply to the node.
+
+                  _Nested structure omitted for brevity — see the `Decoration[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="nodeStyle" type="NodeStyle">
+
+                  Padding and background color for the node.
+
+                  _Nested structure omitted for brevity — see the `NodeStyle` object._
+
+                </ResponseField>
+
+                <ResponseField name="lineHeight" type="string">
+
+                  Line height for text in the node.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="treeReference" type="TreeReference">
+
+      Reference to the category tree this category belongs to.
+
+      When working with Wix Stores categories, always pass `appNamespace: "@wix/stores"` and `treeKey: null`.
+
+      **Read-only.**
+
+      <Expandable title="treeReference properties">
+
+        <ResponseField name="appNamespace" type="string">
+
+          Namespace of the app whose catalog this category tree belongs to.
+
+          Currently, only `"@wix/stores"` is supported.
+
+          Constraints: `minLength 4`, `maxLength 150`.
+
+        </ResponseField>
+
+        <ResponseField name="treeKey" type="string">
+
+          Key to differentiate between multiple trees managed by the same app.
+
+          For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="managingAppId" type="string">
+
+      ID of the app responsible for managing items in this category.
+
+      When set, only the specified app can add or remove items from this category. This is useful for third-party apps that want to create categories exclusively managed by their app, preventing site owners or other apps from modifying the category's items.
+
+      You can get your app's ID from the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Custom extended fields for the category object.
+
+      [Extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions) must be configured in the [app dashboard](https://dev.wix.com/dc3/my-apps/) before they can be accessed with API calls.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,165 @@
+---
+title: "Introduction"
+description: "The Tools Provider service plugin lets your app expose tools that Aria can discover and use during conversations with Wix users."
+icon: "file-lines"
+---
+
+The Tools Provider service plugin lets your app expose tools that [Aria](fallback::https://dev.wix.com/docs/overview/ai-the-wix-platform/about-aria) can discover and use during conversations with Wix users.
+
+Expose any of your app's functionality as tools for Aria to use, including 3rd-party API and service integrations, data retrieval, workflows, and actions.
+
+## Before you begin
+
+It's important to note the following before starting to code:
+
+- Set up a [CLI](fallback::https://dev.wix.com/docs/wix-cli) or [self-managed](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/develop-a-self-managed-app/about-self-managed-apps) project. For more details about supported development paths, see [App Tools across development paths](fallback::https://dev.wix.com/docs/overview/extensions-framework/backend-extensions/app-tools#app-tools-across-development-paths).
+- Your app can include up to 100 tools. 
+
+## Extensions configuration
+
+Exposing a tool to Aria requires you to configure the following [backend extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/about-backend-extensions):
+
++ [App Tools](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/app-tools/about-app-tools-extensions): A backend extension that declares which tools your app offers.
++ Tools Provider: A service plugin that enables Aria to run a specified tool.
+
+Additionally, your app must implement the [`runTool()`](fallback::#tools-provider-handler) handler so Aria can execute your tools.
+
+For an end-to-end example, see [Get a package's status with Aria](fallback::https://dev.wix.com/docs/api-reference/app-management/app-tools/tools-provider-v1/sample-flows).
+
+## Set up
+
+<Tabs>
+
+<Tab title="CLI">
+
+To set up the App Tools and Tools Provider extensions using the Wix CLI, make sure you have an existing CLI project and that you're logged in to your Wix account.
+
+<Tip>
+
+Use the [App Tools skill](fallback::https://github.com/wix/skills/blob/main/skills/wix-app/references/APP_TOOLS.md) to give your AI agent the context it needs to scaffold and implement App Tools and the Tools Provider service plugin.
+
+</Tip>
+
+**App Tools Extension**
+
+1. Run [`wix generate`](fallback::https://dev.wix.com/docs/wix-cli/command-reference/project-commands/generate).
+2. Select **App Tools** from the list of available backend extension types.
+3. Provide a name for your extension. 
+
+The CLI generates the [extension files](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/develop-an-app-with-the-cli/supported-extensions/backend/app-tools/app-tools-extension-files-and-code) and registers them in `src/extensions.ts`.
+
+**Tools Provider service plugin**
+
+1. Run [`wix generate`](fallback::https://dev.wix.com/docs/wix-cli/command-reference/project-commands/generate).
+2. Select **Service Plugin** from the list of available backend extension types.
+3. Select **Tools Provider** from the list of available service plugins.
+4. Provide a name for your service plugin.
+
+The CLI generates the [extension files](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/develop-an-app-with-the-cli/supported-extensions/backend/app-tools/app-tools-extension-files-and-code) and registers them in `src/extensions.ts`.
+
+</Tab>
+
+<Tab title="Self managed">
+
+To set up the App Tools and Tools Provider extensions, go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+
+**App Tools**
+
+1. Click **Create Extension** in the top right.
+2. Find **App Tools** and click **Create**.
+3. Configure an array of tools in the JSON editor. For details, see [About App Tools Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/app-tools/about-app-tools-extensions).
+4. Click **Save**.
+
+**Tools Provider**
+
+1. Click **Create Extension** in the top right.
+2. Find **Tools Provider Config** and click **Create**.
+3. Set the [Tools Provider Extension Config](fallback::https://dev.wix.com/docs/api-reference/app-management/app-tools/tools-provider-v1/extension-config) to enable Wix to locate your tools and expose them to Aria.
+4. Click **Save**.
+
+</Tab>
+
+</Tabs>
+
+## Tools Provider handler
+
+Use [`toolsProvider.provideHandlers()`](##step-4--define-handler-functions*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions) to define the following handler method in your app:
+
+| Method | Required |
+| --- | --- |
+| [`runTool()`](fallback::https://dev.wix.com/docs/api-reference/app-management/app-tools/tools-provider-v1/run-tool) | Yes |
+
+When Aria selects a tool, Wix calls your handler with that tool's `methodName` and a `payload` shaped by the tool's `requestSchema`. Your handler routes on `methodName`, runs the tool, and returns data matching the tool's `responseSchema`. Aria uses that response to answer the Wix user in natural language.
+
+<Tabs>
+
+<Tab title="CLI">
+
+This is the basic code structure for implementing the Tools Provider service plugin with the Wix CLI:
+
+```js
+import { toolsProvider } from '@wix/app-tools/service-plugins';
+
+toolsProvider.provideHandlers({
+  runTool: async (payload) => {
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+```
+
+<Note>
+
+Use [elevation](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-elevation) when calling Wix APIs from the Tools Provider handler.
+
+</Note>
+
+</Tab>
+
+<Tab title="Self managed">
+
+This is the basic code structure for implementing the Tools Provider service plugin in a self-managed project:
+
+```js
+import { createClient } from '@wix/sdk';
+import { toolsProvider } from '@wix/app-tools/service-plugins';
+
+const wixClient = createClient({
+  auth: {
+    appId: '<YOUR_APP_ID>',
+    publicKey: '<YOUR_APP_PUBLIC_KEY>'
+  },
+  modules: { toolsProvider }
+});
+
+wixClient.toolsProvider.provideHandlers({
+  runTool: async (payload) => {
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## See also
+
++ [About Aria](fallback::https://dev.wix.com/docs/overview/ai-the-wix-platform/about-aria)
++ [AI on the Wix Platform](fallback::https://dev.wix.com/docs/overview/ai-the-wix-platform/ai-on-the-wix-platform)
++ [App Tools](fallback::https://dev.wix.com/docs/overview/extensions-framework/backend-extensions/app-tools)
++ [About App Tools Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/app-tools/about-app-tools-extensions)
++ [Add App Tools Extensions with the Wix CLI](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/develop-an-app-with-the-cli/supported-extensions/backend/app-tools/add-app-tools-extensions-with-the-wix-cli)
++ [App Tools Extension Files and Code](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/develop-an-app-with-the-cli/supported-extensions/backend/app-tools/app-tools-extension-files-and-code)
++ [Add App Tools Extensions with the Wix CLI (Headless)](fallback::https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/extensions/backend/app-tools/add-app-tools-extensions-with-the-wix-cli)
++ [App Tools Extension Files and Code (Headless)](fallback::https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/extensions/backend/app-tools/app-tools-extension-files-and-code)

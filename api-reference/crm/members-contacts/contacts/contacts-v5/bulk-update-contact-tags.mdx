@@ -1,0 +1,709 @@
+---
+title: "Bulk Update Contact Tags"
+description: "Adds or removes tags on multiple contacts, specified by contact ID."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds or removes tags on multiple contacts, specified by contact ID. Works synchronously.
+
+    Specify which tags to assign and which to unassign. A tag that appears in both the list to assign and the list to unassign is assigned. At least one tag must be specified to assign or unassign.
+
+    To update tags for a single contact, call [Update Contact Tags](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact-tags).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/contacts/v5/bulk/contacts/update-tags
+    ```
+
+    ## Body Params
+
+    <ParamField body="contactIds" type="string[]" required>
+
+      IDs of the contacts to add or remove tags on.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to include the updated contacts in the response.
+
+    </ParamField>
+
+    <ParamField body="assignTags" type="PrivateTags">
+
+      Tags to assign.
+
+      <Expandable title="assignTags properties">
+
+        <ParamField body="privateTags" type="TagList">
+
+          Tags that require an additional permission to access, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ParamField body="tagIds" type="string[]">
+
+              A list of tag IDs.
+              To create a tag, use the [Tags API](https://dev.wix.com/docs/api-reference/business-management/tags/introduction) with the contacts FQDN: `wix.contacts.*.contact`.
+
+              Constraints: `maxLength 5`, `maxItems 1000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="unassignTags" type="PrivateTags">
+
+      Tags to unassign.
+
+      <Expandable title="unassignTags properties">
+
+        <ParamField body="privateTags" type="TagList">
+
+          Tags that require an additional permission to access, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ParamField body="tagIds" type="string[]">
+
+              A list of tag IDs.
+              To create a tag, use the [Tags API](https://dev.wix.com/docs/api-reference/business-management/tags/introduction) with the contacts FQDN: `wix.contacts.*.contact`.
+
+              Constraints: `maxLength 5`, `maxItems 1000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkUpdateContactTagsResult[]">
+
+      Results of the tag update for each contact.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata regarding the tag update for this specific contact.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Contact">
+
+          Returned only when `returnEntity` is `true` in the request.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Summary of successes and failures.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `EMPTY_ASSIGN_AND_UNASSIGN_LISTS` | No tags were specified to assign or unassign. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Adds tags to multiple contacts in a single request, identified by contact IDs.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/contacts/v5/bulk/contacts/update-tags' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "contactIds": [
+          "3078e8d6-6bfc-4304-9a84-bbc3fa64ffdb",
+          "e6b00217-e1f0-4b4c-89a1-6c635ed66e68"
+        ],
+        "assignTags": {
+          "privateTags": {
+            "tagIds": ["zsdCR"]
+          }
+        },
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "3078e8d6-6bfc-4304-9a84-bbc3fa64ffdb",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "3078e8d6-6bfc-4304-9a84-bbc3fa64ffdb",
+              "revision": "3",
+              "createdDate": "2026-07-01T18:24:15.364Z",
+              "updatedDate": "2026-07-01T18:25:25.342Z",
+              "name": {
+                "first": "Maria",
+                "last": "Hill"
+              },
+              "email": {
+                "email": "maria.hill@example.com",
+                "subscriptionStatus": {
+                  "status": "SUBSCRIBED",
+                  "updatedDate": "2026-06-29T10:33:17.590Z"
+                },
+                "deliverabilityStatus": "NOT_SET"
+              },
+              "additionalEmails": [],
+              "additionalPhones": [],
+              "addresses": [],
+              "company": {
+                "name": "ExampleCo",
+                "jobTitle": "Senior Operations Manager"
+              },
+              "locationIds": [],
+              "source": {
+                "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+              },
+              "lastActivity": {
+                "date": "2026-07-01T18:24:15.364Z",
+                "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+              },
+              "segmentIds": [],
+              "tags": {
+                "privateTags": {
+                  "tagIds": [
+                    "zsdCR"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "e6b00217-e1f0-4b4c-89a1-6c635ed66e68",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "e6b00217-e1f0-4b4c-89a1-6c635ed66e68",
+              "revision": "3",
+              "createdDate": "2026-07-01T18:24:15.364Z",
+              "updatedDate": "2026-07-01T18:25:25.342Z",
+              "name": {
+                "first": "Daniel",
+                "last": "Reyes"
+              },
+              "email": {
+                "email": "daniel.reyes@example.com",
+                "subscriptionStatus": {
+                  "status": "SUBSCRIBED",
+                  "updatedDate": "2026-06-29T10:33:17.590Z"
+                },
+                "deliverabilityStatus": "NOT_SET"
+              },
+              "additionalEmails": [],
+              "additionalPhones": [],
+              "addresses": [],
+              "company": {
+                "name": "ExampleCo",
+                "jobTitle": "Senior Account Executive"
+              },
+              "locationIds": [],
+              "source": {
+                "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+              },
+              "lastActivity": {
+                "date": "2026-07-01T18:24:15.364Z",
+                "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+              },
+              "segmentIds": [],
+              "tags": {
+                "privateTags": {
+                  "tagIds": [
+                    "zsdCR"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds or removes tags on multiple contacts, specified by contact ID. Works synchronously.
+
+    Specify which tags to assign and which to unassign. A tag that appears in both the list to assign and the list to unassign is assigned. At least one tag must be specified to assign or unassign.
+
+    To update tags for a single contact, call [Update Contact Tags](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact-tags).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsV5 } from '@wix/crm';
+
+    contactsV5.bulkUpdateContactTags(contactIds, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="contactIds" type="string[]" required>
+
+      IDs of the contacts to add or remove tags on.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdateContactTagsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to include the updated contacts in the response.
+
+        </ParamField>
+
+        <ParamField body="assignTags" type="PrivateTags">
+
+          Tags to assign.
+
+          <Expandable title="assignTags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission to access, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="unassignTags" type="PrivateTags">
+
+          Tags to unassign.
+
+          <Expandable title="unassignTags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission to access, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkUpdateContactTagsResult[]">
+
+      Results of the tag update for each contact.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata regarding the tag update for this specific contact.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Contact">
+
+          Returned only when `returnEntity` is `true` in the request.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Summary of successes and failures.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `EMPTY_ASSIGN_AND_UNASSIGN_LISTS` | No tags were specified to assign or unassign. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Updated | `wix.contacts.v5.contact_updated` | Triggered when a contact is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-contact-tags" id="ex-sdk-bulk-update-contact-tags-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-contact-tags" id="ex-sdk-bulk-update-contact-tags-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-contact-tags-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-contact-tags-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Assign contact tags in bulk</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateContactTags (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-contact-tags-0"><span className="wix-picker-name">Assign contact tags in bulk</span></label>
+    <label htmlFor="ex-sdk-bulk-update-contact-tags-1"><span className="wix-picker-name">bulkUpdateContactTags (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Assign contact tags in bulk
+    import { contactsV5 } from "@wix/crm";
+
+    const contactIds = [
+      "55022a00-b54c-4ccc-a131-020cbb1b45e8",
+      "d1ce3067-5344-4a50-8eda-c720fb0e726d",
+    ];
+
+    const options = {
+      assignTags: {
+        privateTags: { tagIds: ["zsdCR"] },
+      },
+      returnEntity: true,
+    };
+
+    async function bulkUpdateContactTags() {
+      const response = await contactsV5.bulkUpdateContactTags(contactIds, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 0,
+     *         "success": true,
+     *         "_id": "55022a00-b54c-4ccc-a131-020cbb1b45e8"
+     *       },
+     *       "item": {
+     *         "revision": "3",
+     *         "name": { "first": "Maria", "last": "Hill" },
+     *         "tags": { "privateTags": { "tagIds": ["zsdCR"] } },
+     *         "_id": "55022a00-b54c-4ccc-a131-020cbb1b45e8"
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 1,
+     *         "success": true,
+     *         "_id": "d1ce3067-5344-4a50-8eda-c720fb0e726d"
+     *       },
+     *       "item": {
+     *         "revision": "3",
+     *         "name": { "first": "Daniel", "last": "Reyes" },
+     *         "tags": { "privateTags": { "tagIds": ["zsdCR"] } },
+     *         "_id": "d1ce3067-5344-4a50-8eda-c720fb0e726d"
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 2,
+     *     "totalFailures": 0,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateContactTags (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsV5 } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsV5 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateContactTags(contactIds,options) {
+      const response = await myWixClient.contactsV5.bulkUpdateContactTags(contactIds,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

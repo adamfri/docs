@@ -1,0 +1,705 @@
+---
+title: "Set Seo Pattern"
+description: "Changes the pattern a site has for a page type."
+icon: "pen"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-patch">PATCH</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Changes the pattern a site has for a page type.
+
+    Setting `pattern` replaces the page type's tag templates in full, so retrieve the
+    pattern first and send back the complete set you want it to have. Sending an empty
+    pattern clears it, which returns the page type to its Wix default.
+
+    This method changes a pattern that already exists rather than creating one. For a page
+    type still on its Wix default, call [Create SEO
+    Pattern](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/create-seo-pattern)
+    instead.
+
+    A pattern has no revision, and the site's SEO settings in the dashboard write to the
+    same pattern. The last write wins, so retrieve the pattern immediately before writing
+    it.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    PATCH https://www.wixapis.com/promote/seo/v1/seo-patterns/{pageType}
+    ```
+
+    ## Path Params
+
+    <ParamField path="pageType" type="string" required>
+
+      Page type whose pattern to change. For example, `STATIC_PAGE`, `BLOG_POST`, or
+      `STORES_PRODUCT`.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="seoPattern" type="SeoPattern" required>
+
+      Pattern to set for the page type.
+
+      `pattern` is the only writable field, and setting it replaces the page type's tag
+      templates in full. Sending an empty pattern clears it, which returns the page type to
+      its Wix default.
+
+      See the [Seo Pattern Object](/api-reference/business-management/seo/seo-pattern-v1/seo-pattern-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="fieldMask" type="FieldMask" required>
+
+      Fields to update.
+
+      Supported properties: `pattern`
+
+      <Expandable title="fieldMask properties">
+
+        <ParamField body="paths" type="string[]" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="pageId" type="string">
+
+      ID of a single page built from a Wix Data collection, to change the pattern of that
+      page alone.
+
+      Supported only for the `WIX_DATA_PAGE_ITEM` page type.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="seoPattern" type="SeoPattern">
+
+      The updated pattern.
+
+      See the [Seo Pattern Object](/api-reference/business-management/seo/seo-pattern-v1/seo-pattern-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_PAGE_TYPE` | Wix doesn't recognize the specified `pageType`. The error message lists the page types that are supported. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PATTERN` | The pattern references a variable the page type doesn't offer, or contains a tag that isn't valid. When a variable is the problem, the error message lists the variables the page type offers. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FIELD_MASK` | The `fieldMask` is empty, or names a field that doesn't exist or isn't writable. |
+    | `404` | `NOT_FOUND` | `PATTERN_NOT_FOUND` | Couldn't find the pattern. The site has no pattern of its own for this page type, so call Create SEO Pattern instead. |
+    | `400` | `INVALID_ARGUMENT` | `PAGE_ID_NOT_SUPPORTED` | A `pageId` was specified for a page type that has a single pattern for the whole type. Only `WIX_DATA_PAGE_ITEM` supports a per-page pattern. |
+    | `400` | `INVALID_ARGUMENT` | `COLLECTION_NAME_NOT_SUPPORTED` | A `collectionName` was specified. Resolving a dynamic page by collection isn't supported yet, so specify the page's ID in `pageId` instead. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The request carries every tag the pattern should keep, not only the changed title, because the tags sent replace the pattern in full.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/seo-metatags-server/v1/seo-patterns/STATIC_PAGE' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "seoPattern": {
+          "pattern": {
+            "tags": [
+              {
+                "type": "title",
+                "children": "{{page.name}} | {{site.business.name}}"
+              },
+              {
+                "type": "meta",
+                "props": {
+                  "name": "description",
+                  "content": "{{page.name}} at {{site.business.name}}."
+                }
+              },
+              {
+                "type": "link",
+                "props": {
+                  "rel": "canonical",
+                  "href": "{{page.url}}"
+                }
+              }
+            ]
+          }
+        },
+        "fieldMask": "pattern"
+      }'
+      ```
+
+      ```json Response
+      {
+        "seoPattern": {
+          "id": "STATIC_PAGE",
+          "pageType": "STATIC_PAGE",
+          "pattern": {
+            "tags": [
+              {
+                "type": "title",
+                "children": "{{page.name}} | {{site.business.name}}",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "meta",
+                "props": {
+                  "name": "description",
+                  "content": "{{page.name}} at {{site.business.name}}."
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "link",
+                "props": {
+                  "rel": "canonical",
+                  "href": "{{page.url}}"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              }
+            ]
+          },
+          "defaultPattern": {
+            "tags": [
+              {
+                "type": "title",
+                "children": "{{page.name}} | {{site.name}}",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "meta",
+                "props": {
+                  "property": "og:title",
+                  "content": "{{@TITLE}}"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "meta",
+                "props": {
+                  "property": "og:image",
+                  "content": "{{site.image}}"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "link",
+                "props": {
+                  "rel": "canonical",
+                  "href": "{{page.url}}"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              }
+            ]
+          },
+          "source": "PATTERN_SOURCE_USER",
+          "origin": "ORIGIN_UNSPECIFIED"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Changes the pattern a site has for a page type.
+
+    Setting `pattern` replaces the page type's tag templates in full, so retrieve the
+    pattern first and send back the complete set you want it to have. Sending an empty
+    pattern clears it, which returns the page type to its Wix default.
+
+    This method changes a pattern that already exists rather than creating one. For a page
+    type still on its Wix default, call [Create SEO
+    Pattern](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/create-seo-pattern)
+    instead.
+
+    A pattern has no revision, and the site's SEO settings in the dashboard write to the
+    same pattern. The last write wins, so retrieve the pattern immediately before writing
+    it.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { seoPatterns } from '@wix/seo';
+
+    seoPatterns.setSeoPattern(pageType, seoPattern, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="pageType" type="string" required>
+
+      Page type whose pattern to change. For example, `STATIC_PAGE`, `BLOG_POST`, or
+      `STORES_PRODUCT`.
+
+      Constraints: `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="seoPattern" type="SetSeoPattern" required>
+
+      Pattern to set for the page type.
+
+      `pattern` is the only writable field, and setting it replaces the page type's tag
+      templates in full. Sending an empty pattern clears it, which returns the page type to
+      its Wix default.
+
+      <Expandable title="seoPattern properties">
+
+        <ParamField body="_id" type="string">
+
+          SEO pattern ID, in the format `{pageType}`.
+
+          For a pattern that applies to a single page built from a Wix Data collection, the
+          format is `{pageType}:{pageId}`.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="pageType" type="string">
+
+          Page type the pattern applies to. For example, `STATIC_PAGE`, `BLOG_POST`, or
+          `STORES_PRODUCT`.
+
+          **Read-only.** Constraints: `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="pageId" type="string">
+
+          ID of a single page built from a Wix Data collection, when the pattern applies to
+          that page alone rather than to the whole page type.
+
+          Supported only for the `WIX_DATA_PAGE_ITEM` page type.
+
+        </ParamField>
+
+        <ParamField body="pattern" type="SeoPatternBlob">
+
+          The site's own pattern for the page type, which takes precedence over the Wix
+          default.
+
+          Empty when the site has no pattern of its own, in which case `defaultPattern`
+          applies.
+
+          <Expandable title="pattern properties">
+
+            <ParamField body="tags" type="Tag[]">
+
+              The pattern's SEO tag templates.
+
+              A tag may reference only the variables the page type offers. Call [List SEO Pattern
+              Variables](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables)
+              for the page type to retrieve them.
+
+              A tag whose `disabled` or `custom` value is itself a variable is returned with that
+              value unset, because those fields are booleans. The behavior still applies when the
+              page renders.
+
+              Constraints: `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `Tag[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="defaultPattern" type="SeoPatternBlob">
+
+          The pattern Wix provides for the page type, which applies whenever the site has no
+          pattern of its own.
+
+          Always returned, so you can see what a reset would restore.
+
+          **Read-only.**
+
+          <Expandable title="defaultPattern properties">
+
+            <ParamField body="tags" type="Tag[]">
+
+              The pattern's SEO tag templates.
+
+              A tag may reference only the variables the page type offers. Call [List SEO Pattern
+              Variables](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables)
+              for the page type to retrieve them.
+
+              A tag whose `disabled` or `custom` value is itself a variable is returned with that
+              value unset, because those fields are booleans. The behavior still applies when the
+              page renders.
+
+              Constraints: `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `Tag[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="source" type="string">
+
+          Which pattern is in effect for the page type: the site's own, or the Wix default.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `PATTERN_SOURCE_USER` — The site has a pattern of its own for the page type, returned in `pattern`.
+          - `PATTERN_SOURCE_DEFAULT` — The site has no pattern of its own for the page type, so the Wix default in
+          `defaultPattern` applies.
+
+        </ParamField>
+
+        <ParamField body="language" type="string">
+
+          Language the pattern applies to, as an IETF BCP 47 language tag. For example,
+          `en-US` for U.S. English.
+
+          A page type has a single pattern, so this reports the site's primary language.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="origin" type="string">
+
+          What made the most recent change to the pattern, for example a Wix user or the site
+          migration flow. Derived from the caller, not from the request.
+
+          Reported only on the response to a write, and on the event the write emits. It isn't
+          stored with the pattern, so Get SEO Pattern and List SEO Patterns always report
+          `ORIGIN_UNSPECIFIED`, as does a write by a caller Wix doesn't identify as a specific
+          origin.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `ORIGIN_USER` — A user, working in the dashboard or editor, or calling the API on their own behalf.
+          - `ORIGIN_MIGRATION` — The flow that imports an existing site into Wix.
+          - `ORIGIN_AI` — An AI agent or an automated suggestion flow.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="SetSeoPatternOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fieldMask" type="FieldMask" required>
+
+          Fields to update.
+
+          Supported properties: `pattern`
+
+          <Expandable title="fieldMask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="pageId" type="string">
+
+          ID of a single page built from a Wix Data collection, to change the pattern of that
+          page alone.
+
+          Supported only for the `WIX_DATA_PAGE_ITEM` page type.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="seoPattern" type="SeoPattern">
+
+      The updated pattern.
+
+      See the [Seo Pattern Object](/api-reference/business-management/seo/seo-pattern-v1/seo-pattern-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_PAGE_TYPE` | Wix doesn't recognize the specified `pageType`. The error message lists the page types that are supported. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PATTERN` | The pattern references a variable the page type doesn't offer, or contains a tag that isn't valid. When a variable is the problem, the error message lists the variables the page type offers. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FIELD_MASK` | The `fieldMask` is empty, or names a field that doesn't exist or isn't writable. |
+    | `404` | `NOT_FOUND` | `PATTERN_NOT_FOUND` | Couldn't find the pattern. The site has no pattern of its own for this page type, so call Create SEO Pattern instead. |
+    | `400` | `INVALID_ARGUMENT` | `PAGE_ID_NOT_SUPPORTED` | A `pageId` was specified for a page type that has a single pattern for the whole type. Only `WIX_DATA_PAGE_ITEM` supports a per-page pattern. |
+    | `400` | `INVALID_ARGUMENT` | `COLLECTION_NAME_NOT_SUPPORTED` | A `collectionName` was specified. Resolving a dynamic page by collection isn't supported yet, so specify the page's ID in `pageId` instead. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-set-seo-pattern" id="ex-sdk-set-seo-pattern-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-set-seo-pattern" id="ex-sdk-set-seo-pattern-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-set-seo-pattern-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-set-seo-pattern-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Change a page type's pattern</span><span className="wix-picker-desc">The tags sent replace the pattern in full, so this call carries every tag the pattern should keep, not only the changed title</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">setSeoPattern (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-set-seo-pattern-0"><span className="wix-picker-name">Change a page type's pattern</span><span className="wix-picker-desc">The tags sent replace the pattern in full, so this call carries every tag the pattern should keep, not only the changed title</span></label>
+    <label htmlFor="ex-sdk-set-seo-pattern-1"><span className="wix-picker-name">setSeoPattern (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Change a page type's pattern
+    import { seoPatterns } from "@wix/seo";
+
+    async function setSeoPattern() {
+      const response = await seoPatterns.setSeoPattern(
+        "STATIC_PAGE",
+        {
+          pattern: {
+            tags: [
+              {
+                type: "title",
+                children: "{{page.name}} | {{site.business.name}}",
+              },
+              {
+                type: "meta",
+                props: {
+                  name: "description",
+                  content: "{{page.name}} at {{site.business.name}}.",
+                },
+              },
+              {
+                type: "link",
+                props: { rel: "canonical", href: "{{page.url}}" },
+              },
+            ],
+          },
+        },
+        { fieldMask: ["pattern"] },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "seoPattern": {
+     *     "pageType": "STATIC_PAGE",
+     *     "pattern": {
+     *       "tags": [
+     *         {
+     *           "type": "title",
+     *           "children": "{{page.name}} | {{site.business.name}}",
+     *           "custom": false,
+     *           "disabled": false
+     *         },
+     *         {
+     *           "type": "meta",
+     *           "props": { "name": "description", "content": "{{page.name}} at {{site.business.name}}." },
+     *           "children": "",
+     *           "custom": false,
+     *           "disabled": false
+     *         },
+     *         {
+     *           "type": "link",
+     *           "props": { "rel": "canonical", "href": "{{page.url}}" },
+     *           "children": "",
+     *           "custom": false,
+     *           "disabled": false
+     *         }
+     *       ]
+     *     },
+     *     "defaultPattern": {
+     *       "tags": [
+     *         {
+     *           "type": "title",
+     *           "children": "{{page.name}} | {{site.name}}",
+     *           "custom": false,
+     *           "disabled": false
+     *         }
+     *       ]
+     *     },
+     *     "source": "PATTERN_SOURCE_USER",
+     *     "origin": "ORIGIN_UNSPECIFIED",
+     *     "_id": "STATIC_PAGE"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript setSeoPattern (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { seoPatterns } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { seoPatterns },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function setSeoPattern(pageType,seoPattern,options) {
+      const response = await myWixClient.seoPatterns.setSeoPattern(pageType,seoPattern,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

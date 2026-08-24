@@ -1,0 +1,669 @@
+---
+title: "Bulk Report Event"
+description: "Reports multiple events at once, activating site automations configured with the specified trigger key."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Reports multiple events at once, activating site automations configured with the specified trigger key.
+
+    Each event in `eventsInfo` is processed independently and asynchronously, so some events can succeed while others fail. Check `bulkActionMetadata` for the success and failure totals.
+
+    To report a single event, call [Report Event](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-event).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CRM.SETUP-AUTOMATIONS">Set Up Automations</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/automations/v1/events/bulk-report
+    ```
+
+    ## Body Params
+
+    <ParamField body="triggerKey" type="string" required>
+
+      Trigger key as defined in your app's trigger configuration
+      in the app dashboard.
+      For example, `form_submitted` or `invoice_due`.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="eventsInfo" type="EventInfo[]" required>
+
+      Repeated list of event details for bulk reporting.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="eventsInfo properties">
+
+        <ParamField body="payload" type="object">
+
+          Event payload, formatted as key:value pairs.
+          Must comply with the payload schema
+          if you provided one when configuring your trigger.
+
+        </ParamField>
+
+        <ParamField body="externalEntityId" type="string">
+
+          ID of the related resource in GUID format.
+
+        </ParamField>
+
+        <ParamField body="idempotency" type="Idempotency">
+
+          Idempotency information for the event.
+
+          <Expandable title="idempotency properties">
+
+            <ParamField body="key" type="string">
+
+              A unique identifier for the event.
+              If you send the same idempotency key in multiple report event requests, for the same trigger key and app id,
+              consecutive requests will be ignored after the first one. Note that the idempotency key is kept for a week before it expires.
+
+              Constraints: `minLength 1`, `maxLength 80`.
+
+            </ParamField>
+
+            <ParamField body="ttlInMilliseconds" type="integer">
+
+              Optional. The time to live (TTL) in milliseconds before the key will expire. Default is a week.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="triggerKey" type="string">
+
+      Trigger key associated with the event.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ResponseField>
+
+    <ResponseField name="results" type="BulkReportEventResult[]">
+
+      List of results for each item in the bulk report event request.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual item in the request.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="eventInfo" type="EventInfo">
+
+          Event details for the item in the request.
+
+          <Expandable title="eventInfo properties">
+
+            <ResponseField name="payload" type="object">
+
+              Event payload, formatted as key:value pairs.
+              Must comply with the payload schema
+              if you provided one when configuring your trigger.
+
+            </ResponseField>
+
+            <ResponseField name="externalEntityId" type="string">
+
+              ID of the related resource in GUID format.
+
+            </ResponseField>
+
+            <ResponseField name="idempotency" type="Idempotency">
+
+              Idempotency information for the event.
+
+              _Nested structure omitted for brevity — see the `Idempotency` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="activationIds" type="string[]" deprecated>
+
+          The activation IDs of triggered ReportEvents.
+          Deprecated: This field is being removed. Activation IDs are no longer returned in bulk operations.
+          Will be removed on 2026-06-30.
+
+          **Deprecated.** Removal: 2026-06-30. Constraints: `format GUID`, `maxItems 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the overall bulk action, including success and failure counts.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl -X POST https://www.wixapis.com/automations/v1/events/bulk-report  \
+        -H 'Content-Type: application/json;charset=UTF-8' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "triggerKey": "appointment_scheduled",
+          "eventsInfo": [
+            {
+              "payload": {
+                "customerName": "John Doe"
+              },
+              "externalEntityId": "16ef8c9c-413e-4d5f-b77d-8c67c3c8ae0c"
+            },
+            {
+              "payload": {
+                "customerName": "Jane Smith"
+              },
+              "externalEntityId": "2c0a8f4b-9d6e-4a1f-bc23-7e5d1a2b3c4d"
+            }
+          ]
+        }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+        "triggerKey": "appointment_scheduled",
+        "results": [
+          {
+            "itemMetadata": {
+              "originalIndex": 0,
+              "success": true
+            },
+            "eventInfo": {
+              "payload": {
+                "customerName": "John Doe"
+              },
+              "externalEntityId": "16ef8c9c-413e-4d5f-b77d-8c67c3c8ae0c"
+            }
+          },
+          {
+            "itemMetadata": {
+              "originalIndex": 1,
+              "success": true
+            },
+            "eventInfo": {
+              "payload": {
+                "customerName": "Jane Smith"
+              },
+              "externalEntityId": "2c0a8f4b-9d6e-4a1f-bc23-7e5d1a2b3c4d"
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Reports multiple events at once, activating site automations configured with the specified trigger key.
+
+    Each event in `eventsInfo` is processed independently and asynchronously, so some events can succeed while others fail. Check `bulkActionMetadata` for the success and failure totals.
+
+    To report a single event, call [Report Event](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-event).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CRM.SETUP-AUTOMATIONS">Set Up Automations</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { activations } from '@wix/automations';
+
+    activations.bulkReportEvent(triggerKey, eventsInfo): Promise<BulkReportEventResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="triggerKey" type="string" required>
+
+      Trigger key as defined in your app's trigger configuration
+      in the app dashboard.
+      For example, `form_submitted` or `invoice_due`.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="eventsInfo" type="EventInfo[]" required>
+
+      Repeated list of event details for bulk reporting.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="eventsInfo properties">
+
+        <ParamField body="payload" type="object">
+
+          Event payload, formatted as key:value pairs.
+          Must comply with the payload schema
+          if you provided one when configuring your trigger.
+
+        </ParamField>
+
+        <ParamField body="externalEntityId" type="string">
+
+          ID of the related resource in GUID format.
+
+        </ParamField>
+
+        <ParamField body="idempotency" type="Idempotency">
+
+          Idempotency information for the event.
+
+          <Expandable title="idempotency properties">
+
+            <ParamField body="key" type="string">
+
+              A unique identifier for the event.
+              If you send the same idempotency key in multiple report event requests, for the same trigger key and app id,
+              consecutive requests will be ignored after the first one. Note that the idempotency key is kept for a week before it expires.
+
+              Constraints: `minLength 1`, `maxLength 80`.
+
+            </ParamField>
+
+            <ParamField body="ttlInMilliseconds" type="integer">
+
+              Optional. The time to live (TTL) in milliseconds before the key will expire. Default is a week.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkReportEventResponse>`.
+
+    <ResponseField name="triggerKey" type="string">
+
+      Trigger key associated with the event.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ResponseField>
+
+    <ResponseField name="results" type="BulkReportEventResult[]">
+
+      List of results for each item in the bulk report event request.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual item in the request.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="eventInfo" type="EventInfo">
+
+          Event details for the item in the request.
+
+          <Expandable title="eventInfo properties">
+
+            <ResponseField name="payload" type="object">
+
+              Event payload, formatted as key:value pairs.
+              Must comply with the payload schema
+              if you provided one when configuring your trigger.
+
+            </ResponseField>
+
+            <ResponseField name="externalEntityId" type="string">
+
+              ID of the related resource in GUID format.
+
+            </ResponseField>
+
+            <ResponseField name="idempotency" type="Idempotency">
+
+              Idempotency information for the event.
+
+              _Nested structure omitted for brevity — see the `Idempotency` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="activationIds" type="string[]" deprecated>
+
+          The activation IDs of triggered ReportEvents.
+          Deprecated: This field is being removed. Activation IDs are no longer returned in bulk operations.
+          Will be removed on 2026-06-30.
+
+          **Deprecated.** Removal: 2026-06-30. Constraints: `format GUID`, `maxItems 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the overall bulk action, including success and failure counts.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-report-event" id="ex-sdk-bulk-report-event-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-report-event" id="ex-sdk-bulk-report-event-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-report-event" id="ex-sdk-bulk-report-event-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-report-event-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-report-event-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkReportEvent</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkReportEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkReportEvent (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-report-event-0"><span className="wix-picker-name">bulkReportEvent</span></label>
+    <label htmlFor="ex-sdk-bulk-report-event-1"><span className="wix-picker-name">bulkReportEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-report-event-2"><span className="wix-picker-name">bulkReportEvent (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkReportEvent
+    import { activations } from '@wix/automations';
+
+    async function bulkReportEvent(triggerKey,eventsInfo) {
+      const response = await activations.bulkReportEvent(triggerKey,eventsInfo);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkReportEvent (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { activations } from '@wix/automations';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { activations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkReportEvent(triggerKey,eventsInfo) {
+      const response = await myWixClient.activations.bulkReportEvent(triggerKey,eventsInfo);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkReportEvent (with elevated permissions)
+    import { activations } from '@wix/automations';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkReportEventMethod(triggerKey,eventsInfo) {
+      const elevatedBulkReportEvent = auth.elevate(activations.bulkReportEvent);
+      const response = await elevatedBulkReportEvent(triggerKey,eventsInfo);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,469 @@
+---
+title: "Report Event"
+description: "Reports an event and activates site automations with the specified trigger key."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Reports an event and activates site automations with the specified trigger key.
+
+    Only the app that created a trigger can report events for it.
+    This means other apps can't report events for your triggers,
+    and you can't report events for another app's triggers.
+
+    If your app supports canceling events,
+    `externalEntityId` must be provided.
+    `externalEntityId` is required when calling [Cancel Event](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/cancel-event).
+
+    The event is processed asynchronously. A successful response means the event was accepted for processing, not that the automations have finished running.
+
+    To report multiple events in a single call, call [Bulk Report Event](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/bulk-report-event).
+
+    > You cannot try out this endpoint because
+    > it can be called only by the app that created the specified `triggerKey`.
+    > So please ignore the **Try It Out** button.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CRM.SETUP-AUTOMATIONS">Set Up Automations</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/automations/v1/events/report
+    ```
+
+    ## Body Params
+
+    <ParamField body="triggerKey" type="string" required>
+
+      Trigger key as defined in your app's trigger configuration
+      in the app dashboard.
+      For example, `form_submitted` or `invoice_due`.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="payload" type="object">
+
+      Event payload, formatted as key:value pairs.
+      Must comply with the payload schema
+      if you provided one when configuring your trigger.
+
+      Key names can include only alphanumeric characters or underscores
+      (`A-Z`, `a-z`, `0-9`, `_`).
+      They cannot start with an underscore.
+
+      Values can be strings, numbers, integers, booleans, or arrays.
+      If a value is an array, the array items must be objects,
+      and nested object properties must be
+      strings, numbers, integers, or booleans only.
+
+    </ParamField>
+
+    <ParamField body="externalEntityId" type="string">
+
+      ID of the related resource in GUID format.
+      For example, `fc81a355-3429-50fc-a4c7-def486e828f3`.
+
+      Required if your app needs to
+      [cancel the event](https://dev.wix.com/docs/rest/business-management/automations/triggered-events/cancel-event)
+      if the automation becomes no longer relevant.
+
+      Typically, this ID is defined in your system,
+      but you can also use any Wix resource GUID,
+      such as contact ID, member ID, or invoice ID.
+      See
+      [Choose the right `externalEntityId`](https://dev.wix.com/docs/rest/business-management/automations/triggered-events/reporting-and-canceling-events#about-canceling-events)
+      for more information.
+
+    </ParamField>
+
+    <ParamField body="idempotency" type="Idempotency">
+
+      Idempotency information for the event.
+
+      <Expandable title="idempotency properties">
+
+        <ParamField body="key" type="string">
+
+          A unique identifier for the event.
+          If you send the same idempotency key in multiple report event requests, for the same trigger key and app id,
+          consecutive requests will be ignored after the first one. Note that the idempotency key is kept for a week before it expires.
+
+          Constraints: `minLength 1`, `maxLength 80`.
+
+        </ParamField>
+
+        <ParamField body="ttlInMilliseconds" type="integer">
+
+          Optional. The time to live (TTL) in milliseconds before the key will expire. Default is a week.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="activationIds" type="string[]" deprecated>
+
+      The activation IDs of triggered ReportEvents.
+      Deprecated: This field is being removed. Activation IDs are no longer returned in responses.
+      Will be removed on 2026-06-30.
+
+      **Deprecated.** Removal: 2026-06-30. Constraints: `format GUID`, `maxItems 100`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `REQUIRED_PROPERTY` | A required property is missing from the request. |
+    | `428` | `FAILED_PRECONDITION` | `SCHEMA_VALIDATION_FAILED` | The event payload doesn't match the trigger's payload schema. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl -X POST https://www.wixapis.com/automations/v1/events/report  \
+        -H 'Content-Type: application/json;charset=UTF-8' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "triggerKey": "my_trigger",
+          "payload": {
+            "name": "John Doe"
+          },
+          "externalEntityId": "16ef8c9c-413e-4d5f-b77d-8c67c3c8ae0c"
+        }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Reports an event and activates site automations with the specified trigger key.
+
+    Only the app that created a trigger can report events for it.
+    This means other apps can't report events for your triggers,
+    and you can't report events for another app's triggers.
+
+    If your app supports canceling events,
+    `externalEntityId` must be provided.
+    `externalEntityId` is required when calling [Cancel Event](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/cancel-event).
+
+    The event is processed asynchronously. A successful response means the event was accepted for processing, not that the automations have finished running.
+
+    To report multiple events in a single call, call [Bulk Report Event](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/bulk-report-event).
+
+    > You cannot try out this endpoint because
+    > it can be called only by the app that created the specified `triggerKey`.
+    > So please ignore the **Try It Out** button.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CRM.SETUP-AUTOMATIONS">Set Up Automations</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { activations } from '@wix/automations';
+
+    activations.reportEvent(triggerKey, options): Promise<ReportEventResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="triggerKey" type="string" required>
+
+      Trigger key as defined in your app's trigger configuration
+      in the app dashboard.
+      For example, `form_submitted` or `invoice_due`.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="options" type="ReportEventOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="payload" type="object">
+
+          Event payload, formatted as key:value pairs.
+          Must comply with the payload schema
+          if you provided one when configuring your trigger.
+
+          Key names can include only alphanumeric characters or underscores
+          (`A-Z`, `a-z`, `0-9`, `_`).
+          They cannot start with an underscore.
+
+          Values can be strings, numbers, integers, booleans, or arrays.
+          If a value is an array, the array items must be objects,
+          and nested object properties must be
+          strings, numbers, integers, or booleans only.
+
+        </ParamField>
+
+        <ParamField body="externalEntityId" type="string">
+
+          ID of the related resource in GUID format.
+          For example, `fc81a355-3429-50fc-a4c7-def486e828f3`.
+
+          Required if your app needs to
+          [cancel the event](https://dev.wix.com/docs/rest/business-management/automations/triggered-events/cancel-event)
+          if the automation becomes no longer relevant.
+
+          Typically, this ID is defined in your system,
+          but you can also use any Wix resource GUID,
+          such as contact ID, member ID, or invoice ID.
+          See
+          [Choose the right `externalEntityId`](https://dev.wix.com/docs/rest/business-management/automations/triggered-events/reporting-and-canceling-events#about-canceling-events)
+          for more information.
+
+        </ParamField>
+
+        <ParamField body="idempotency" type="Idempotency">
+
+          Idempotency information for the event.
+
+          <Expandable title="idempotency properties">
+
+            <ParamField body="key" type="string">
+
+              A unique identifier for the event.
+              If you send the same idempotency key in multiple report event requests, for the same trigger key and app id,
+              consecutive requests will be ignored after the first one. Note that the idempotency key is kept for a week before it expires.
+
+              Constraints: `minLength 1`, `maxLength 80`.
+
+            </ParamField>
+
+            <ParamField body="ttlInMilliseconds" type="integer">
+
+              Optional. The time to live (TTL) in milliseconds before the key will expire. Default is a week.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ReportEventResponse>`.
+
+    <ResponseField name="activationIds" type="string[]" deprecated>
+
+      The activation IDs of triggered ReportEvents.
+      Deprecated: This field is being removed. Activation IDs are no longer returned in responses.
+      Will be removed on 2026-06-30.
+
+      **Deprecated.** Removal: 2026-06-30. Constraints: `format GUID`, `maxItems 100`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `REQUIRED_PROPERTY` | A required property is missing from the request. |
+    | `428` | `FAILED_PRECONDITION` | `SCHEMA_VALIDATION_FAILED` | The event payload doesn't match the trigger's payload schema. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Activation Activation Status Changed | `wix.automations.v2.activation_activation_status_changed` | activation status changed message |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-report-event" id="ex-sdk-report-event-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-report-event" id="ex-sdk-report-event-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-report-event" id="ex-sdk-report-event-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-report-event-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-report-event-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">reportEvent</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">reportEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">reportEvent (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-report-event-0"><span className="wix-picker-name">reportEvent</span></label>
+    <label htmlFor="ex-sdk-report-event-1"><span className="wix-picker-name">reportEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-report-event-2"><span className="wix-picker-name">reportEvent (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript reportEvent
+    import { activations } from '@wix/automations';
+
+    async function reportEvent(triggerKey,options) {
+      const response = await activations.reportEvent(triggerKey,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript reportEvent (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { activations } from '@wix/automations';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { activations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function reportEvent(triggerKey,options) {
+      const response = await myWixClient.activations.reportEvent(triggerKey,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript reportEvent (with elevated permissions)
+    import { activations } from '@wix/automations';
+    import { auth } from '@wix/essentials';
+
+    async function myReportEventMethod(triggerKey,options) {
+      const elevatedReportEvent = auth.elevate(activations.reportEvent);
+      const response = await elevatedReportEvent(triggerKey,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

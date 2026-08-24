@@ -1,0 +1,555 @@
+---
+title: "Bulk Delete Redirects"
+description: "Deletes up to 500 redirects by ID."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Deletes up to 500 redirects by ID.
+
+    Each ID succeeds or fails on its own. An ID that matches no redirect on the site fails with
+    `REDIRECT_NOT_FOUND` while the rest of the request goes ahead. Read those failures from
+    `results[].itemMetadata.error` in a successful response, matched to the request by
+    `results[].itemMetadata.originalIndex`. A malformed request, such as an empty `redirectIds`
+    list, is rejected as a whole and returns no results.
+
+    A successful item means the redirect was found and its deletion was sent, not that the deletion
+    is confirmed. Call [List Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) if you need to confirm the outcome.
+
+    A redirect scoped to a language stops taking effect but can still appear in [List Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects).
+    [Delete Redirect](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/delete-redirect) behaves the same way.
+
+    To delete a single redirect, call [Delete Redirect](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/delete-redirect).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/seo-redirects-service/v1/bulk/redirects/delete
+    ```
+
+    ## Body Params
+
+    <ParamField body="redirectIds" type="string[]" required>
+
+      IDs of the redirects to delete.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 500`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkRedirectResult[]">
+
+      Outcome of each ID, in request order. `originalIndex` is the ID's position in `redirectIds`.
+
+      A successful item means the redirect was found and its deletion was sent, not that the deletion
+      is confirmed. An ID that matches no redirect on the site fails with `REDIRECT_NOT_FOUND`, and
+      every other ID in the request is still deleted.
+
+      Constraints: `maxItems 500`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether this redirect succeeded, its position in the request as `originalIndex`, and the error
+          if it failed.
+
+          A redirect that already exists on the site is reported as a success with no `id`, and nothing is
+          written for it.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Redirect">
+
+          Created redirect.
+
+          Returned only when `returnFullEntity` is `true` in the request. Never returned by Bulk Delete
+          Redirects.
+
+          See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Number of redirects deleted and number that failed.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | — | The `redirectIds` list is missing or empty. Nothing is deleted and the response carries no per-item results. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    An ID that matches no redirect fails only its own item. A successful item means the deletion was found and sent, not that it's confirmed, so call List Redirects if you need to confirm the outcome.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/seo-redirects-service/v1/bulk/redirects/delete' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "redirectIds": [
+          "5b07d9de-6a9f-494d-8066-a7b66c970270",
+          "7bb02f0a-d0cb-4c75-9a93-905b393f7662",
+          "3f6c1b58-9e42-4a77-8b30-1c5d0a9e7f24"
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "5b07d9de-6a9f-494d-8066-a7b66c970270",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "7bb02f0a-d0cb-4c75-9a93-905b393f7662",
+              "originalIndex": 1,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "3f6c1b58-9e42-4a77-8b30-1c5d0a9e7f24",
+              "originalIndex": 2,
+              "success": false,
+              "error": {
+                "code": "REDIRECT_NOT_FOUND",
+                "description": "Redirect 3f6c1b58-9e42-4a77-8b30-1c5d0a9e7f24 was not found"
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Deletes up to 500 redirects by ID.
+
+    Each ID succeeds or fails on its own. An ID that matches no redirect on the site fails with
+    `REDIRECT_NOT_FOUND` while the rest of the request goes ahead. Read those failures from
+    `results[].itemMetadata.error` in a successful response, matched to the request by
+    `results[].itemMetadata.originalIndex`. A malformed request, such as an empty `redirectIds`
+    list, is rejected as a whole and returns no results.
+
+    A successful item means the redirect was found and its deletion was sent, not that the deletion
+    is confirmed. Call [List Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) if you need to confirm the outcome.
+
+    A redirect scoped to a language stops taking effect but can still appear in [List Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects).
+    [Delete Redirect](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/delete-redirect) behaves the same way.
+
+    To delete a single redirect, call [Delete Redirect](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/delete-redirect).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { redirects } from '@wix/seo';
+
+    redirects.bulkDeleteRedirects(redirectIds): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="redirectIds" type="string[]" required>
+
+      IDs of the redirects to delete.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 500`.
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkRedirectResult[]">
+
+      Outcome of each ID, in request order. `originalIndex` is the ID's position in `redirectIds`.
+
+      A successful item means the redirect was found and its deletion was sent, not that the deletion
+      is confirmed. An ID that matches no redirect on the site fails with `REDIRECT_NOT_FOUND`, and
+      every other ID in the request is still deleted.
+
+      Constraints: `maxItems 500`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether this redirect succeeded, its position in the request as `originalIndex`, and the error
+          if it failed.
+
+          A redirect that already exists on the site is reported as a success with no `id`, and nothing is
+          written for it.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Redirect">
+
+          Created redirect.
+
+          Returned only when `returnFullEntity` is `true` in the request. Never returned by Bulk Delete
+          Redirects.
+
+          See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Number of redirects deleted and number that failed.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | — | The `redirectIds` list is missing or empty. Nothing is deleted and the response carries no per-item results. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-delete-redirects" id="ex-sdk-bulk-delete-redirects-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-delete-redirects" id="ex-sdk-bulk-delete-redirects-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-delete-redirects-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-delete-redirects-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Delete several redirects, with one unknown ID</span><span className="wix-picker-desc">An ID that matches no redirect fails only its own item. A successful item means the deletion was found and sent, not that it's confirmed</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkDeleteRedirects (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-delete-redirects-0"><span className="wix-picker-name">Delete several redirects, with one unknown ID</span><span className="wix-picker-desc">An ID that matches no redirect fails only its own item. A successful item means the deletion was found and sent, not that it's confirmed</span></label>
+    <label htmlFor="ex-sdk-bulk-delete-redirects-1"><span className="wix-picker-name">bulkDeleteRedirects (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Delete several redirects, with one unknown ID
+    import { redirects } from "@wix/seo";
+
+    async function bulkDeleteRedirects() {
+      const response = await redirects.bulkDeleteRedirects([
+        "ceaef61f-387d-47a4-9256-2b17aa1a7f78",
+        "fa19f816-440b-4414-b6c7-828fb13e1639",
+        "3f6c1b58-9e42-4a77-8b30-1c5d0a9e7f24",
+      ]);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 0,
+     *         "success": true,
+     *         "_id": "ceaef61f-387d-47a4-9256-2b17aa1a7f78"
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 1,
+     *         "success": true,
+     *         "_id": "fa19f816-440b-4414-b6c7-828fb13e1639"
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 2,
+     *         "success": false,
+     *         "error": {
+     *           "code": "REDIRECT_NOT_FOUND",
+     *           "description": "Redirect 3f6c1b58-9e42-4a77-8b30-1c5d0a9e7f24 was not found"
+     *         },
+     *         "_id": "3f6c1b58-9e42-4a77-8b30-1c5d0a9e7f24"
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 2,
+     *     "totalFailures": 1,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkDeleteRedirects (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { redirects } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { redirects },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkDeleteRedirects(redirectIds) {
+      const response = await myWixClient.redirects.bulkDeleteRedirects(redirectIds);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

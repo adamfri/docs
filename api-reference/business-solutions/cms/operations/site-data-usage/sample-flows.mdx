@@ -1,0 +1,57 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Monitor a site's data usage and alert before quota is reached
+
+A site that tracks site data usage, for example in an admin dashboard or a notification system, should detect when usage is approaching a limit so the Wix user can act before writes start to fail.
+
+To monitor a site's data usage and raise an alert near the quota:
+
+1. On a periodic schedule, for example, once a day, call [Get Site Data Usage](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/get-site-data-usage).
+1. From the response, compute the percentage used for each resource. Storage is pooled across live and sandbox environments, while item count applies to each environment separately:
+
+    - `storageUsedPct = (totalUsedLive.bytes + totalUsedSandbox.bytes) / storageLimitInBytes`
+    - `liveItemsUsedPct = totalUsedLive.items / itemCountLimit`
+    - `sandboxItemsUsedPct = totalUsedSandbox.items / itemCountLimit`
+    - `collectionsUsedPct = collectionCount / collectionCountLimit`
+
+1. If any of those percentages exceeds the alerting threshold, for example 80%, raise an alert through the channel that fits the integration. For example, email, dashboard banner, or an event to an external monitoring system.
+
+<Note>
+
+If a cached value looks unexpected and you want to be sure, call [Get Site Data Usage](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/get-site-data-usage) again with `consistentRead` set to `true`.
+
+</Note>
+
+## Drive a plan upgrade prompt when a site approaches its quota
+
+Apps that monetize via plan upgrades can detect when a site is at risk of being blocked from writing new data, and surface an upgrade prompt at the right moment.
+
+To trigger an upgrade prompt based on site data usage:
+
+1. When loading the part of your app where the prompt would appear, call [Get Site Data Usage](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/get-site-data-usage).
+1. From the response, check whether the site is close to any limit:
+
+    - **Storage near limit:** `(totalUsedLive.bytes + totalUsedSandbox.bytes) / storageLimitInBytes` exceeds the threshold.
+    - **LIVE items near limit:** `totalUsedLive.items / itemCountLimit` exceeds the threshold.
+    - **SANDBOX items near limit:** `totalUsedSandbox.items / itemCountLimit` exceeds the threshold.
+    - **Collections near limit:** `collectionCount / collectionCountLimit` exceeds the threshold.
+
+1. If any check passes, render the upgrade prompt in the app UI, with messaging tailored to the resource that's at risk.
+1. Cache the limits returned in step 1, `storageLimitInBytes`, `itemCountLimit`, or `collectionCountLimit`, until the next change plan event, so subsequent calls don't need to refetch them.
+
+## Implement data retention based on used resources
+
+3rd-party apps can free up data by deleting old records once a site approaches its storage or item-count limits.
+
+To implement data retention based on used resources:
+
+1. On a daily schedule, call [Get Site Data Usage](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/get-site-data-usage).
+1. Check whether usage is above 80% for storage (`(totalUsedLive.bytes + totalUsedSandbox.bytes) / storageLimitInBytes`) or for item count (`totalUsedLive.items / itemCountLimit` or `totalUsedSandbox.items / itemCountLimit`). If usage doesn't exceed either threshold, stop—no action needed.
+1. Call [Query Data Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/query-data-items) on the affected collections, sorting by updated date and sorted for ascending, to identify the IDs of the oldest records.
+1. Call [Bulk Remove Data Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/bulk-remove-data-items) with those IDs to delete them.

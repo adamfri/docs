@@ -1,0 +1,119 @@
+---
+title: "Example Flow"
+description: "This article shares a possible use case your app could support, as well as an example flow."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article shares a possible use case your app could support, as well as an example flow. You're certainly not limited to this use case, but it can be a helpful jumping off point as you plan your app's implementation.
+
+## Manage Marketing Tags
+
+Your app could help site owners manage their marketing tags after they have updated their site structure. First, you’ll list the existing tags. Then your app will update the associated domains.
+
+### Step 1: List the Embedded Marketing Tags
+
+First, your app will call the [List Marketing Tags](https://dev.wix.com/api/rest/marketing/marketing-tags/list-marketing-tags) to retrieve the marketing tags that the owners have previously embedded. 
+
+<Tabs>
+
+<Tab title="REST">
+
+```bash
+curl -X GET \
+    https://www.wixapis.com/marketing/v1/tags \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: <AUTH>'
+```
+
+</Tab>
+
+<Tab title="SDK">
+
+```js
+import { marketingTags } from "@wix/marketing-tags";
+
+async function listMarketingTags(options) {
+  const response = await marketingTags.listMarketingTags(options);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+In the response of the call, you can see that the associated domains are out-dated, and thus the marketing tags won’t load anymore. 
+
+```json
+{
+    "tags": [
+    {
+        "id": "994ba324-682c-4d81-abd6-84e4be44ba3c",
+        "type": "GOOGLE_ADS",
+        "enabled": true,
+        "googleAds":   {
+            "domain": "old-domain.com",
+            "trackingId": "AW-672490861"
+        }
+    },
+    {
+        "id": "123ba321-678c-4d81-abd6-84e4be44ba3c",
+        "type": "FACEBOOK_PIXEL",
+        "enabled": true,
+        "facebookPixel":   {
+            "domain": "old-domain.com",
+            "trackingId": "123456789"
+        }
+    }
+]}
+```
+
+### Step 2: Update an Embedded Marketing Tag
+
+Then, you’ll do a separate call of [Upsert Marketing Tag](https://dev.wix.com/api/rest/marketing/marketing-tags/upsert-marketing-tag) for each tag to change the associated domain. You’ll need to pass the new domain in the body of each call, as shown in the example below for the Google Ads Conversion tag.
+
+<Tabs>
+
+<Tab title="REST">
+
+```bash
+curl -X POST \
+    https://www.wixapis.com/marketing/v1/tags  \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: <AUTH>'
+    -d '{
+            "tag": {
+                "enabled": true,
+                "googleAds": {
+                    "domain": "new-domain.com",
+                    "trackingId": "AW-672490861"
+                }
+            }
+        }'
+
+```
+
+</Tab>
+
+<Tab title="SDK">
+
+```js
+import { marketingTags } from "@wix/marketing-tags";
+
+const tag = {
+                enabled: true,
+                googleAds: {
+                    domain: "new-domain.com",
+                    trackingId: "AW-672490861"
+                 }
+             }
+
+async function upsertMarketingTag(tag) {
+  const response = await marketingTags.upsertMarketingTag(tag);
+}
+```
+
+</Tab>
+
+</Tabs>

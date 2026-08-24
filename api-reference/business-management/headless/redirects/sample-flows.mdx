@@ -1,0 +1,91 @@
+---
+title: "Sample Flows"
+description: "This article provides common use cases and sample flows for redirecting site visitors to different pages on your Wix Headless site or app."
+icon: "file-lines"
+---
+
+This article provides common use cases and sample flows for redirecting site visitors to different pages on your [Wix Headless](fallback::https://dev.wix.com/docs/go-headless/get-started/about-headless/about-wix-headless) site or app. Redirects are often relevant when integrating with the various Wix business solutions.
+
+## Redirect to a Wix-hosted checkout page
+
+1. Decide which page you want visitors to see after they finish the Wix-hosted checkout. This is called the post flow URL. For example, you might show an order confirmation page at `https://your-site.com/order-confirmation`.
+
+2. Add the domain of your post flow URL as an [allowed redirect domain](fallback::https://dev.wix.com/docs/go-headless/get-started/setup/manage-urls/add-allowed-redirect-domains) in your Headless settings. Wix will only redirect to URLs under authorized domains for security reasons.
+
+3. Call [Create Checkout](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/purchase-flow/checkout/checkout/create-checkout). The response contains the `checkoutId`, which you'll need in the next steps.
+
+4. Call the [Redirects API](fallback::https://dev.wix.com/docs/rest/business-management/headless-authentication/redirects/create-redirect-session) and include the `ecomCheckout` and `callbacks` properties in the request body. Pass in the `checkoutId` from the previous step as `ecomCheckout.checkoutId`, and your post flow URL as `callbacks.postFlowUrl`. The response contains a single-use redirect session URL in `redirectSession.fullURL`.
+
+   Here's an example minimal request body:
+   ```json
+   {
+     "ecomCheckout": {
+       "checkoutId": "<checkoutId>"
+     },
+     "callbacks": {
+       "postFlowUrl": "https://your-site.com/order-confirmation"
+     }
+   }
+   ```
+
+5. Redirect your site visitor to the redirect session URL. The URL contains the information needed for Wix to process the checkout. After checkout, Wix sends the visitor back to your post flow URL.
+
+## Redirect to a Wix-hosted login page
+
+1. Choose a page that you want your site visitor to be redirected to after login and [authorize it as an allowed authorization redirect URI](fallback::https://dev.wix.com/docs/go-headless/get-started/setup/manage-urls/add-allowed-authorization-redirect-uris).
+
+2. Create a [PKCE code verifier and code challenge](fallback::https://www.oauth.com/oauth2-servers/pkce/authorization-request/). These are used to prevent CSRF attacks and authorization code injection attacks.
+
+3. Create a [OAuth2 state parameter](fallback::https://auth0.com/docs/secure/attack-protection/state-parameters) used to mitigate CSRF attacks. 
+
+4. Store the code verifier, code challenge, and state parameter in local storage or a cookie. When a site visitor is redirected back to your site, you'll need this data to verify a successful login.
+
+5. Get the **Client ID** of your OAuth app, which can be found in your [Headless Settings](fallback::https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings). 
+
+6. Call the [Redirects API](fallback::https://dev.wix.com/docs/rest/business-management/headless-authentication/redirects/create-redirect-session) and include the `auth` property in the request body. Pass in the values from the previous steps into the relevant `auth.authRequest` fields. Set `responseMode` to `"fragment"`, `responseType` to `"code"`, and `scope` to `"offline_access"`. It should look like the following example: 
+
+```json
+ "auth": {
+    "authRequest": {
+      "redirectUri": "<redirectUri>",
+      "clientId": "<clientId>",
+      "codeChallenge": "<codeChallenge>",
+      "codeChallengeMethod": "S256",
+      "responseMode": "fragment",
+      "responseType": "code",
+      "scope": "offline_access",
+      "state": "<state>"
+    }
+  }
+```
+The response will contain a full redirect URL in `redirectSession.fullURL`.
+
+7. Redirect your site visitor to the Wix-hosted login page with the returned `fullUrl`.
+
+## Redirect to an external thank you page after an event checkout
+
+1. Create a thank you page on your website that you want visitors to see after they finish the Wix-managed events checkout. This page is your `thankYouPageUrl`. Also, define a `postFlowUrl`, which the site visitors will be redirected to if the checkout flow is abandoned or interrupted.  
+
+2. Add the full URL's for your `thankYouPageUrl` and `postFlowUrl` as [allowed redirect domains](fallback::https://dev.wix.com/docs/go-headless/get-started/setup/manage-urls/add-allowed-redirect-domains) in your Wix Headless settings. Wix only redirects to URLs under authorized domains for security reasons.
+
+3. Call [Create Reservation](fallback::https://dev.wix.com/docs/rest/business-solutions/events/orders/create-reservation) and save the returned `reservationId`. 
+
+4. Call [Get Event](fallback::https://dev.wix.com/docs/rest/business-solutions/events/events-v3/get-event) with the `eventId` and save the returned `eventSlug`. To get your `eventId`, click **CMS** in your dashboard menu, select **Wix App Collections**, then **Events**, and open your events collection. Then, copy the relevant event ID.
+
+5. Call the [Redirects API](fallback::https://dev.wix.com/docs/rest/business-management/headless-authentication/redirects/create-redirect-session) and include the `eventsCheckout` and `callbacks` properties in the request body. Pass in the values from the previous steps into the relevant fields of `eventsCheckout.reservationId`, `eventsCheckout.eventSlug`, `callbacks.postFlowUrl`, and your `callbacks.thankYouPageUrl`. The response will contain a single-use redirect session URL in `redirectSession.fullURL`.
+
+   Example minimal request body:
+   ```json
+   {
+     "eventsCheckout": {
+       "reservationId": "<reservationId>",
+       "eventSlug": "<eventSlug>"
+     },
+     "callbacks": {
+        "thankYouPageUrl": "https://your-site.com/thank-you",
+        "postFlowUrl": "https://your-site.com/home-page"
+     }
+   }
+   ```
+
+6. Redirect your site visitor to the redirect session URL. The URL contains the information needed for Wix to process the checkout. After checkout, Wix sends the visitor back to your `thankYouPageUrl`. If the process is abandoned or interrupted, the visitor is redirected to the URL specified in `postFlowUrl` instead.

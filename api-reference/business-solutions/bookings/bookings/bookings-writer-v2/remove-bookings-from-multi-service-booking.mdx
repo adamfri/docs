@@ -1,0 +1,466 @@
+---
+title: "Remove Bookings From Multi Service Booking"
+description: "Removes single-service bookings from a multi-service booking and converts them to independent single-service bookings."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Removes single-service bookings from a multi-service booking and converts them to independent single-service bookings.
+
+    ### Removal options
+
+    __Remove all permitted bookings__: If you specify an empty `bookings` array, all single-service bookings for which the call's [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) has read permissions are removed from the multi-service booking.
+
+    __Selective removal__: Specify single-service booking IDs and revisions to remove only specific single-service bookings from the package.
+
+    __Sequential scheduling__: To maintain sequential scheduling, remove only first or last single-service bookings. For middle bookings, first reschedule all relevant single-service bookings to eliminate gaps. To do so, call [Reschedule Multi Service Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-multi-service-booking) before removing the unwanted bookings.
+
+    ### Removal behavior
+
+    __Independent bookings__: Removed single-service bookings become independent bookings.
+    You can manage them using single-service booking methods.
+
+    __Automatic cleanup__: Multi-service bookings must contain at least 2 services.
+    If removal results in only 1 remaining single-service booking for the multi-service booking, the entire multi-service booking is deleted and the remaining single-service booking becomes a standalone booking.
+
+    __Revision control__: Specify current revision numbers to prevent conflicting modifications during the removal process.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings/remove_bookings_from_multi_service_booking
+    ```
+
+    ## Body Params
+
+    <ParamField body="multiServiceBookingId" type="string" required>
+
+      ID of the multi-service booking.
+
+    </ParamField>
+
+    <ParamField body="bookings" type="BookingIdAndRevision[]">
+
+      List of single-service booking IDs and their revision.
+
+      Constraints: `maxItems 8`.
+
+      <Expandable title="bookings properties">
+
+        <ParamField body="bookingId" type="string">
+
+          ID of the single-service booking.
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer">
+
+          Revision number, which increments by 1 each time the booking is updated.
+          To prevent conflicting changes, the current revision must be specified when managing the booking.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnFullEntity" type="boolean">
+
+      Whether to return the single-service bookings.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="bookings" type="BookingResult[]">
+
+      Single-service bookings that were removed from the multi-service booking.
+
+      <Expandable title="bookings properties">
+
+        <ResponseField name="bookingId" type="string">
+
+          Single-service booking ID. Always present.
+          This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+        </ResponseField>
+
+        <ResponseField name="booking" type="Booking">
+
+          Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+          See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `MULTI_SERVICE_BOOKING_NOT_FOUND` |  |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_REVISION_MISMATCH` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings/remove_bookings_from_multi_service_booking' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "multiServiceBookingId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "bookings": [
+            {
+              "bookingId": "b9c8d7e6-f5a4-3210-bcde-fa0987654321",
+              "revision": "2"
+            }
+          ],
+          "returnFullEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+        "bookings": [
+          {
+            "bookingId": "b9c8d7e6-f5a4-3210-bcde-fa0987654321",
+            "booking": {
+              "id": "b9c8d7e6-f5a4-3210-bcde-fa0987654321",
+              "status": "CREATED",
+              "paymentStatus": "NOT_PAID",
+              "bookedEntity": {
+                "slot": {
+                  "scheduleId": "facial-schedule-789",
+                  "startDate": "2024-02-15T15:00:00.000Z",
+                  "endDate": "2024-02-15T15:45:00.000Z",
+                  "location": {
+                    "locationType": "OWNER_BUSINESS",
+                    "id": "c3d4e5f6-a7b8-9012-cdef-012345678901"
+                  }
+                }
+              },
+              "contactDetails": {
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "email": "jane.smith@example.com",
+                "phone": "+1-555-123-4567"
+              },
+              "additionalFields": [
+                {
+                  "id": "d4e5f6a7-b8c9-0123-defa-123456789012",
+                  "value": "Deep Cleansing Facial"
+                }
+              ]
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Removes single-service bookings from a multi-service booking and converts them to independent single-service bookings.
+
+    ### Removal options
+
+    __Remove all permitted bookings__: If you specify an empty `bookings` array, all single-service bookings for which the call's [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) has read permissions are removed from the multi-service booking.
+
+    __Selective removal__: Specify single-service booking IDs and revisions to remove only specific single-service bookings from the package.
+
+    __Sequential scheduling__: To maintain sequential scheduling, remove only first or last single-service bookings. For middle bookings, first reschedule all relevant single-service bookings to eliminate gaps. To do so, call [Reschedule Multi Service Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-multi-service-booking) before removing the unwanted bookings.
+
+    ### Removal behavior
+
+    __Independent bookings__: Removed single-service bookings become independent bookings.
+    You can manage them using single-service booking methods.
+
+    __Automatic cleanup__: Multi-service bookings must contain at least 2 services.
+    If removal results in only 1 remaining single-service booking for the multi-service booking, the entire multi-service booking is deleted and the remaining single-service booking becomes a standalone booking.
+
+    __Revision control__: Specify current revision numbers to prevent conflicting modifications during the removal process.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.removeBookingsFromMultiServiceBooking(multiServiceBookingId, options): Promise<RemoveBookingsFromMultiServiceBookingResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="multiServiceBookingId" type="string" required>
+
+      ID of the multi-service booking.
+
+    </ParamField>
+
+    <ParamField body="options" type="RemoveBookingsFromMultiServiceBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="bookings" type="BookingIdAndRevision[]">
+
+          List of single-service booking IDs and their revision.
+
+          Constraints: `maxItems 8`.
+
+          <Expandable title="bookings properties">
+
+            <ParamField body="bookingId" type="string">
+
+              ID of the single-service booking.
+
+            </ParamField>
+
+            <ParamField body="revision" type="integer">
+
+              Revision number, which increments by 1 each time the booking is updated.
+              To prevent conflicting changes, the current revision must be specified when managing the booking.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="returnFullEntity" type="boolean">
+
+          Whether to return the single-service bookings.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<RemoveBookingsFromMultiServiceBookingResponse>`.
+
+    <ResponseField name="bookings" type="BookingResult[]">
+
+      Single-service bookings that were removed from the multi-service booking.
+
+      <Expandable title="bookings properties">
+
+        <ResponseField name="bookingId" type="string">
+
+          Single-service booking ID. Always present.
+          This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+        </ResponseField>
+
+        <ResponseField name="booking" type="Booking">
+
+          Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+          See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `MULTI_SERVICE_BOOKING_NOT_FOUND` |  |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_REVISION_MISMATCH` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-remove-bookings-from-multi-service-booking" id="ex-sdk-remove-bookings-from-multi-service-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-remove-bookings-from-multi-service-booking" id="ex-sdk-remove-bookings-from-multi-service-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-remove-bookings-from-multi-service-booking" id="ex-sdk-remove-bookings-from-multi-service-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-remove-bookings-from-multi-service-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-remove-bookings-from-multi-service-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">removeBookingsFromMultiServiceBooking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">removeBookingsFromMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">removeBookingsFromMultiServiceBooking (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-remove-bookings-from-multi-service-booking-0"><span className="wix-picker-name">removeBookingsFromMultiServiceBooking</span></label>
+    <label htmlFor="ex-sdk-remove-bookings-from-multi-service-booking-1"><span className="wix-picker-name">removeBookingsFromMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-remove-bookings-from-multi-service-booking-2"><span className="wix-picker-name">removeBookingsFromMultiServiceBooking (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript removeBookingsFromMultiServiceBooking
+    import { bookings } from '@wix/bookings';
+
+    async function removeBookingsFromMultiServiceBooking(multiServiceBookingId,options) {
+      const response = await bookings.removeBookingsFromMultiServiceBooking(multiServiceBookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript removeBookingsFromMultiServiceBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function removeBookingsFromMultiServiceBooking(multiServiceBookingId,options) {
+      const response = await myWixClient.bookings.removeBookingsFromMultiServiceBooking(multiServiceBookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript removeBookingsFromMultiServiceBooking (with elevated permissions)
+    import { bookings } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myRemoveBookingsFromMultiServiceBookingMethod(multiServiceBookingId,options) {
+      const elevatedRemoveBookingsFromMultiServiceBooking = auth.elevate(bookings.removeBookingsFromMultiServiceBooking);
+      const response = await elevatedRemoveBookingsFromMultiServiceBooking(multiServiceBookingId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

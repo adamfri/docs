@@ -1,0 +1,111 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Send a transactional email to a contact
+
+When a site visitor completes an action that requires a confirmation or notification
+(for example, submitting a booking, placing an order, or resetting a password),
+your app can send a transactional email directly to their contact record:
+
+1. Retrieve the contact's ID from the Wix Contacts service, or use the contact ID
+   that was provided in the triggering event payload.
+
+2. Call [Send Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/send-email-transmission) with:
+   - `emailTransmission.type` set to `TRANSACTIONAL`.
+   - `emailTransmission.toRecipients` containing a single recipient with `contactId` set to the contact's ID.
+   - `emailTransmission.emailHtmlContent` containing the full HTML body of the email.
+   - `emailTransmission.emailSubject` containing the subject line.
+   - `emailTransmission.senderName` and `emailTransmission.senderEmailAddress` set to your verified sender identity.
+   - An `idempotencyKey` (GUID) if you want safe retries without duplicate sends.
+
+3. Store the returned `emailTransmission.id` in your app for status tracking.
+
+4. Optionally, call [Get Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/get-email-transmission) with the stored ID
+   to confirm the transmission reached `PROCESSED` status.
+   Check each recipient's `failureReason` field to identify any addresses that couldn't be reached.
+
+## Send a marketing email with an unsubscribe link
+
+To send a promotional email such as a newsletter or campaign,
+your app can embed an unsubscribe placeholder in the HTML (to control the link's placement and styling; if no placeholder is provided, the API appends a default unsubscribe link at the end of the email)
+and declare the transmission as `MARKETING`:
+
+1. Build the HTML body of your email. Optionally include an unsubscribe link using a placeholder string such as `{{UNSUBSCRIBE_URL}}` where the link should appear:
+
+    ```html
+    <p>
+      No longer want to receive these emails?
+      <a href="{{UNSUBSCRIBE_URL}}">Unsubscribe here</a>.
+    </p>
+    ```
+
+2. Call [Send Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/send-email-transmission) with:
+   - `emailTransmission.type` set to `MARKETING`.
+   - `emailTransmission.marketingOptions.unsubscribeUrlPlaceholder` set to the exact placeholder string
+     you embedded in the HTML (for example, `"{{UNSUBSCRIBE_URL}}"`).
+   - `emailTransmission.toRecipients` listing your intended recipients.
+     Each recipient may be a `contactId`, a `userId`, or a raw `emailAddress`.
+   - `emailTransmission.emailHtmlContent` containing the full HTML body with the placeholder in place.
+
+3. The API replaces the placeholder with a real, recipient-specific unsubscribe link before delivery.
+   Recipients who haven't given marketing consent are automatically excluded
+   and their `failureReason` is set to `MARKETING_CONSENT_NOT_GIVEN`.
+
+4. Store the returned `emailTransmission.id` for later status checks.
+
+## Track the delivery status of a transmission
+
+After calling [Send Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/send-email-transmission), the email is processed asynchronously.
+To surface the final delivery outcome in your app:
+
+1. Store the `emailTransmission.id` returned by [Send Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/send-email-transmission).
+
+2. Poll [Get Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/get-email-transmission) using that ID at a reasonable interval (for example, every 5 seconds for up to 2 minutes).
+   Alternatively, listen for the `EmailTransmissionUpdated` webhook to receive a notification when the transmission status changes.
+
+3. Check `emailTransmission.status`:
+   - `ACCEPTED`: Queued, not yet processing. Continue polling.
+   - `IN_PROGRESS`: Currently being sent. Continue polling.
+   - `PROCESSED`: Sending is complete. Inspect each recipient's `failureReason` to see which addresses succeeded and which failed.
+   - `REJECTED`: The entire transmission was blocked by an abuse check before any sending occurred.
+     Inspect `rejectedOptions.rejectionReasons` for the specific cause (blacklisted sender, reply-to, link, or text).
+
+4. Decide how to surface the result to your users:
+   - If `PROCESSED`, report per-recipient delivery results from `toRecipients[*].failureReason`.
+   - If `REJECTED`, notify the site owner that their email content or sender identity was flagged. If they believe this is incorrect, they can contact Wix support.
+
+## Query transmission history with filters
+
+To display a list of recent transmissions in a dashboard or audit log:
+
+1. Call [Query Email Transmissions](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/query-email-transmissions) with a filter and sort:
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "updatedDate": { "$gt": "2024-01-01T00:00:00.000Z" },
+          "status": { "$eq": "PROCESSED" }
+        },
+        "sort": [{ "fieldName": "updatedDate", "order": "DESC" }],
+        "paging": { "limit": 50 }
+      }
+    }
+    ```
+
+2. The response includes an array of `emailTransmissions` and a `pagingMetadata` object.
+   Note that `emailHtmlContent` is not returned in query results.
+
+3. If `pagingMetadata.hasNext` is `true`, call [Query Email Transmissions](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/query-email-transmissions) again
+   with `paging.cursor` set to `pagingMetadata.cursors.next` to load the next page.
+
+4. Repeat step 3 until `hasNext` is `false`.
+
+5. To view the full HTML content of a specific transmission,
+   call [Get Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/get-email-transmission) with the transmission's ID.
+   Note that content is only available for 30 days after sending.

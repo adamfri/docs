@@ -1,0 +1,513 @@
+---
+title: "Add Delivery Carrier"
+description: "Adds a delivery carrier to a delivery region."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Adds a delivery carrier to a delivery region.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.MANAGE-ECOM">Manage eCommerce - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/delivery-profiles/add-delivery-carrier
+    ```
+
+    ## Body Params
+
+    <ParamField body="deliveryRegionId" type="string" required>
+
+      Delivery region ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="deliveryCarrier" type="DeliveryCarrier" required>
+
+      Delivery carrier to add.
+
+      <Expandable title="deliveryCarrier properties">
+
+        <ParamField body="appId" type="string">
+
+          Carrier app ID.
+
+          Get app IDs from the [app dashboard](https://dev.wix.com/dc3/my-apps/), or by calling [List Installed Delivery Carriers](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/list-installed-delivery-carriers).
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="backupRate" type="BackupRate">
+
+          Backup rate to use when the carrier doesn't return a rate for a specific shipping option.
+
+          When `active` is `false` and the carrier doesn't return a rate, the carrier's shipping options aren't shown to customers.
+
+          <Expandable title="backupRate properties">
+
+            <ParamField body="title" type="string">
+
+              Title displayed for the backup rate. For example, `"Standard Shipping"`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="string" required>
+
+              Backup rate amount.
+
+            </ParamField>
+
+            <ParamField body="active" type="boolean">
+
+              Whether the backup rate is active.
+
+              The backup rate is used in the following situations:
+              + When `active` is `true`.
+              + When the carrier does not return a cost for any reason.
+
+              If active, and no cost is returned by the carrier, the backup rate will be displayed to customers as the shipping option.
+
+              Default: `false`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalCharges" type="AdditionalCharge[]">
+
+          Additional charges to add to the delivery rate. These charges are combined with the carrier's rate into a single shipping cost and itemized in order details.
+
+          Constraints: `maxItems 10`.
+
+          <Expandable title="additionalCharges properties">
+
+            <ParamField body="description" type="string">
+
+              Description of the additional charge. For example, `"Handling fee of $5 applied for gift wrapping"`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="string">
+
+              Additional fixed charge amount to add to the delivery rate. For example, `"12.50"`.
+
+              Constraints: `maxLength 16`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="deliveryProfile" type="DeliveryProfile">
+
+      Updated delivery profile.
+
+      See the [Delivery Profile Object](/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/delivery-profile-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `DELIVERY_REGION_NOT_FOUND` | Couldn't find the delivery region. |
+    | `409` | `ALREADY_EXISTS` | `CARRIER_ALREADY_EXISTS_IN_REGION` | This delivery carrier is already assigned to the region. |
+    | `428` | `FAILED_PRECONDITION` | `DELIVERY_CARRIER_MISSING_BACKUP_RATE` | The delivery carrier requires a `backupRate` to be set. |
+    | `428` | `FAILED_PRECONDITION` | `UNKNOWN_DELIVERY_CARRIER` | The specified `appId` doesn't exist. |
+    | `400` | `INVALID_ARGUMENT` | `DELIVERY_CARRIER_MISSING_BACKUP_RATE` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Delivery Profile Region Updated | `wix.ecom.v1.delivery_profile_region_updated` | Triggered when a delivery region is updated. |
+    | Delivery Profile Updated | `wix.ecom.v1.delivery_profile_updated` | Triggered when a delivery profile is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Adds a new delivery carrier to an existing delivery region
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/delivery-profiles/add-delivery-carrier' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "deliveryRegionId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+          "deliveryCarrier": {
+            "appId": "45c44b27-ca7b-4891-8c0d-1747d588b835",
+            "backupRate": {
+              "title": "Standard Shipping",
+              "amount": "9.99",
+              "active": true
+            },
+            "additionalCharges": [
+              {
+                "description": "Handling fee for fragile items",
+                "amount": "2.50"
+              },
+              {
+                "description": "Insurance coverage fee",
+                "amount": "1.99"
+              }
+            ]
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "deliveryProfile": {
+          "id": "8046df3c-7575-4098-a5ab-c91ad8f33c47",
+          "name": "Standard Delivery Profile",
+          "default": false,
+          "deliveryRegions": [
+            {
+              "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+              "name": "North America",
+              "active": true,
+              "deliveryCarriers": [
+                {
+                  "appId": "45c44b27-ca7b-4891-8c0d-1747d588b835",
+                  "backupRate": {
+                    "title": "Standard Shipping",
+                    "amount": "9.99",
+                    "active": true
+                  },
+                  "additionalCharges": [
+                    {
+                      "description": "Handling fee for fragile items",
+                      "amount": "2.50"
+                    },
+                    {
+                      "description": "Insurance coverage fee",
+                      "amount": "1.99"
+                    }
+                  ]
+                }
+              ],
+              "destinations": [
+                {
+                  "countryCode": "US",
+                  "subdivisions": ["US-CA", "US-NY", "US-TX"]
+                }
+              ],
+              "createdDate": "2025-10-30T17:22:10.299Z"
+            }
+          ],
+          "revision": "3",
+          "createdDate": "2025-10-30T17:22:10.299Z",
+          "updatedDate": "2025-10-30T17:25:15.450Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Adds a delivery carrier to a delivery region.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.MANAGE-ECOM">Manage eCommerce - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { deliveryProfile } from '@wix/ecom';
+
+    deliveryProfile.addDeliveryCarrier(deliveryRegionId, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="deliveryRegionId" type="string" required>
+
+      Delivery region ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="AddDeliveryCarrierOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="deliveryCarrier" type="DeliveryCarrier" required>
+
+          Delivery carrier to add.
+
+          <Expandable title="deliveryCarrier properties">
+
+            <ParamField body="appId" type="string">
+
+              Carrier app ID.
+
+              Get app IDs from the [app dashboard](https://dev.wix.com/dc3/my-apps/), or by calling [List Installed Delivery Carriers](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/list-installed-delivery-carriers).
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="backupRate" type="BackupRate">
+
+              Backup rate to use when the carrier doesn't return a rate for a specific shipping option.
+
+              When `active` is `false` and the carrier doesn't return a rate, the carrier's shipping options aren't shown to customers.
+
+              _Nested structure omitted for brevity — see the `BackupRate` object._
+
+            </ParamField>
+
+            <ParamField body="additionalCharges" type="AdditionalCharge[]">
+
+              Additional charges to add to the delivery rate. These charges are combined with the carrier's rate into a single shipping cost and itemized in order details.
+
+              Constraints: `maxItems 10`.
+
+              _Nested structure omitted for brevity — see the `AdditionalCharge[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="deliveryProfile" type="DeliveryProfile">
+
+      Updated delivery profile.
+
+      See the [Delivery Profile Object](/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/delivery-profile-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `DELIVERY_REGION_NOT_FOUND` | Couldn't find the delivery region. |
+    | `409` | `ALREADY_EXISTS` | `CARRIER_ALREADY_EXISTS_IN_REGION` | This delivery carrier is already assigned to the region. |
+    | `428` | `FAILED_PRECONDITION` | `DELIVERY_CARRIER_MISSING_BACKUP_RATE` | The delivery carrier requires a `backupRate` to be set. |
+    | `428` | `FAILED_PRECONDITION` | `UNKNOWN_DELIVERY_CARRIER` | The specified `appId` doesn't exist. |
+    | `400` | `INVALID_ARGUMENT` | `DELIVERY_CARRIER_MISSING_BACKUP_RATE` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Delivery Profile Region Updated | `wix.ecom.v1.delivery_profile_region_updated` | Triggered when a delivery region is updated. |
+    | Delivery Profile Updated | `wix.ecom.v1.delivery_profile_updated` | Triggered when a delivery profile is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-add-delivery-carrier" id="ex-sdk-add-delivery-carrier-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-add-delivery-carrier" id="ex-sdk-add-delivery-carrier-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-add-delivery-carrier-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-add-delivery-carrier-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Add delivery carrier to delivery region</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">addDeliveryCarrier (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-add-delivery-carrier-0"><span className="wix-picker-name">Add delivery carrier to delivery region</span></label>
+    <label htmlFor="ex-sdk-add-delivery-carrier-1"><span className="wix-picker-name">addDeliveryCarrier (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Add delivery carrier to delivery region
+    import { deliveryProfile } from "@wix/ecom";
+
+    const deliveryCarrier = {
+      appId: "45c44b27-ca7b-4891-8c0d-1747d588b835",
+      backupRate: {
+        title: "Standard Shipping",
+        amount: "9.99",
+        active: true,
+      },
+      additionalCharges: [
+        { description: "Handling fee for fragile items", amount: "2.50" },
+        { description: "Insurance coverage fee", amount: "1.99" },
+      ],
+    };
+
+    async function addDeliveryCarrier() {
+      const response = await deliveryProfile.addDeliveryCarrier(
+        "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        { deliveryCarrier }
+      );
+      return response;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript addDeliveryCarrier (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { deliveryProfile } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { deliveryProfile },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function addDeliveryCarrier(deliveryRegionId,options) {
+      const response = await myWixClient.deliveryProfile.addDeliveryCarrier(deliveryRegionId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

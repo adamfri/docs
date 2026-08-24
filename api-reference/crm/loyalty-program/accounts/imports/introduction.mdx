@@ -1,0 +1,123 @@
+---
+title: "Introduction"
+description: "The Imports API allows you to import loyalty data for existing customers from external sources into a Wix site's loyalty program."
+icon: "file-lines"
+---
+
+The Imports API allows you to import loyalty data for existing customers from external sources into a Wix site's loyalty program. You can track import progress, handle any errors that may occur during the process, and manage loyalty data efficiently.
+
+With the Imports API, you can:
+
++ [Create a loyalty import](https://dev.wix.com/docs/rest/crm/loyalty-program/imports/create-loyalty-import) to initiate the import process.
++ [Create a loyalty import file URL](https://dev.wix.com/docs/rest/crm/loyalty-program/imports/create-loyalty-import-file-url) to securely upload loyalty data files.
++ [Execute the loyalty import](https://dev.wix.com/docs/rest/crm/loyalty-program/imports/execute-loyalty-import) to begin processing the uploaded file.
++ [Get a loyalty import](https://dev.wix.com/docs/rest/crm/loyalty-program/imports/get-loyalty-import) to retrieve details about a specific import.
++ [Get an error file download URL](https://dev.wix.com/docs/rest/crm/loyalty-program/imports/get-error-file-download-url) to access error information for failed imports.
++ [Query loyalty imports](https://dev.wix.com/docs/rest/crm/loyalty-program/imports/query-loyalty-imports) to retrieve and filter existing loyalty imports.
+
+For more information about managing a site's loyalty program, see the [Wix Loyalty Program API](fallback::https://dev.wix.com/docs/rest/crm/loyalty-program/introduction).
+
+## Before you begin
+
+It's important to note the following before starting to code:
+
+- A site must have the [Wix Loyalty Program](fallback::https://www.wix.com/app-market/loyalty) installed to use this API.
+- The maximum file size for loyalty imports is `10MB`.
+
+## Import process overview
+
+The loyalty import process follows these phases:
+
+1. **Prepare Data File**: Create a CSV file with the required loyalty data fields.
+2. **Create Upload URL**: Generate a secure URL for file upload.
+3. **Upload File**: Upload your prepared loyalty data file to the provided URL.
+4. **Create Import**: Initialize the import process, which includes file parsing.
+5. **Execute Import**: Start the actual import of parsed data.
+6. **Monitor Progress**: Track the import status and handle any errors.
+
+## Preparing the loyalty data file
+
+When creating your loyalty data file for import, consider the following guidelines:
+
+### Required fields
+
+Your import file must contain at least 2 required fields:
+- A field with the customer's email address.
+- A field with the customer's points balance.
+
+### File format
+
+Prepare your data in a CSV (Comma-Separated Values) format. Here's an example of what your import file might look like:
+
+```csv
+Name,Email,Points balance,Redeemed points,Last activity
+Emma Smith,emma.smith@example.com,400,0,2024-08-23T13:19:12.355Z
+Ahmed Hassan,ahmed.hassan@example.com,200,0,2024-08-23T13:18:59.984Z
+Mia Anderson,mia.anderson@example.com,200,0,2024-08-22T10:05:19.967Z
+```
+
+### Additional considerations
+
+- The email addresses in the file must match those of existing contacts in a loyalty program.
+- The import will be successful as long as the required fields are present and formatted correctly.
+
+## Customer identification and error handling
+
+The import process uses the email address as the unique identifier for each customer. If an email address in the import file doesn't match an existing customer, that row is skipped and logged as an error.
+
+During the import:
+- The process continues even if errors are encountered for individual customers.
+- Successful imports and errors are tracked separately.
+- After completion, you can retrieve error details for any failed imports.
+
+The `importResult` property of the loyalty import object contains the results of the import:
+
+  - `successCount`: Number of successfully imported customer records.
+  - `failureCount`: Number of customer records that couldn't be imported.
+  - `errorFileExists`: Indicates whether an error file is available for download.
+
+The `parseResult` property provides information about the initial file parsing:
+- `parsedRowCount`: Total number of rows processed from the import file.
+
+For example, if you import a file with 3 customers and 1 fails to import, the response might look like this:
+
+```json
+{
+    "parseResult": {
+        "parsedRowCount": 3
+    },
+    "importResult": {
+        "errorFileExists": true,
+        "successCount": 2,
+        "failureCount": 1
+    }
+}
+```
+
+This indicates:
+- 3 rows were parsed from the file.
+- Points for 2 customers were successfully imported.
+- Points for 1 customer failed to import.
+
+If errors occur, call Get Error File Download Url to retrieve detailed error information. The error file will contain specific details about why certain rows failed to import, such as unmatched email addresses or invalid point values.
+
+## Use cases
+
+- [Migrate customer data from an external loyalty platform](fallback::https://dev.wix.com/docs/api-reference/crm/loyalty-program/accounts/imports/sample-use-cases-and-flows)
+
+## Terminology
+
++ __Loyalty Import__: A Loyalty Import represents a batch import of loyalty points for existing customers. You can use Loyalty Imports to import loyalty points from 3rd-party providers or update existing customer point balances.
++ __Import Status__: The current state of the import process. Possible values include:
+  + `UNKNOWN`: The status isn't known or specified.
+  + `INITIATED`: The import has initiated.
+  + `PARSING`: The system is currently parsing the import file.
+  + `PARSED`: The import file has been successfully parsed.
+  + `IMPORTING`: The system is currently importing the parsed data.
+  + `IMPORTED`: The import process is complete.
+  + `FAILED`: The import process has failed.
++ __Header Mapping Info__: Information used to map headers in the import file to corresponding fields in the loyalty program.
++ __Error File__: A file containing details about errors encountered during the import process.
++ __Parse__: The process of analyzing the import file to ensure it's in the correct format and contains valid data before continuing with the actual import.
+
+@sdk_package_setup

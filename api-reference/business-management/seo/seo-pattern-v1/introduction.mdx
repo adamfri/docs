@@ -1,0 +1,64 @@
+---
+title: "Introduction"
+description: "The SEO Patterns API allows you to read and write a Wix site's SEO patterns: the templates that generate SEO tags for every item of a page type."
+icon: "file-lines"
+---
+
+The SEO Patterns API allows you to read and write a Wix site's SEO patterns: the templates that generate SEO tags for every item of a page type. A pattern is written once for a page type, such as every store product or every blog post, and its tags contain variables, such as `{{product.name}}`, that are filled in with each item's own values when its page renders. Changing one pattern therefore changes the tags of every page of that type that doesn't have SEO tags set for the item itself.
+
+With the SEO Patterns API, you can:
+
+- Retrieve the pattern in effect for a page type, along with the Wix default it started from.
+- Retrieve the variables a page type offers, so you know what a pattern for it may reference.
+- Create a pattern for a page type that's still on its Wix default.
+- Change a pattern, or reset a page type back to its Wix default.
+- Retrieve the patterns a site has stored.
+
+## How patterns fit with a site's other SEO tags
+
+Wix builds the tags a page renders with by combining several sources, where a later source takes precedence:
+
+1. The site's tags, which apply to every page. See the [Site SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/introduction).
+1. The pattern Wix provides for the page type.
+1. The pattern the Wix user customized for that page type, which this API manages.
+1. The tags of the page that displays the item.
+1. The tags set for the item itself. See the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction).
+
+So a pattern decides an item's tags only where the item has none of its own. To see the tags a specific item is expected to render with, and which source each one came from, read `resolvedTags` on that item with the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction).
+
+A pattern is stored where the live site reads it, so a change takes effect without a site publish.
+
+## Concurrent changes
+
+A pattern has no revision, and a Wix user editing SEO patterns in the dashboard writes to the same patterns as this API. If both change a pattern at once, whichever lands second overwrites the other, with no conflict error. When a Wix user may be editing at the same time, retrieve the pattern immediately before writing it.
+
+## Patterns for a single dynamic page
+
+Pages built from a Wix Data collection are the one case where a page type holds more than one pattern: each such page can have a pattern of its own. To address one of them, specify its ID in `pageId`, with a page type of `WIX_DATA_PAGE_ITEM`.
+
+Every other page type has a single pattern for the whole type, and specifying a page ID for one of those fails rather than being ignored. `collectionName` isn't supported yet, so address a dynamic page by its ID instead.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- **A page type always has a pattern in effect.** [Get SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/get-seo-pattern) for a page type with no pattern of its own reports the Wix default, and `source` says which of the two is in effect.
+- **Create and Set aren't interchangeable.** [Create SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/create-seo-pattern) works only on a page type that has no pattern of its own. [Set SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/set-seo-pattern) changes a pattern that already exists.
+- **A pattern may reference only the variables its page type offers, and variable names differ by page type.** A store product offers `{{product.name}}`, for example, while a page built from a Wix Data collection offers `{{wix-data-page-item.main-collection-primary-field}}`. Call [List SEO Pattern Variables](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables) for each page type rather than reusing a name.
+- **Setting `pattern` replaces the page type's tag templates in full.** Retrieve the pattern first and send back the complete set you want it to have.
+- For a page type provided by a Wix business solution, such as `BLOG_POST` or `STORES_PRODUCT`, **that business solution must be installed on the site.** Get SEO Pattern, List SEO Pattern Variables, and Create SEO Pattern fail when it isn't. Set SEO Pattern and Reset SEO Pattern To Default don't apply that check, so a pattern stored before a business solution was uninstalled stays readable and editable.
+
+## Use cases
+
+- [Apply a title convention to a whole page type](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/sample-flows#apply-a-title-convention-to-a-whole-page-type)
+- [Audit which page types a site has customized](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/sample-flows#audit-which-page-types-a-site-has-customized)
+- [Return a page type to the Wix default](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/sample-flows#return-a-page-type-to-the-wix-default)
+
+## Terminology
+
+- **Pattern:** A template of SEO tags defined for one page type, whose variables are filled in per item.
+- **Page type:** A category of page on a site, such as a store product, a blog post, or a static page. Page types aren't the same set as the item types of the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction): a page type can support a pattern without supporting tags set per item, and the other way round.
+- **Variable:** A placeholder such as `{{product.name}}`, written in double braces, that's replaced with an item's own value when its page renders. Each page type offers its own set.
+- **Wix default:** The pattern Wix supplies for a page type, which applies until a site defines one of its own.
+
+@sdk_package_setup

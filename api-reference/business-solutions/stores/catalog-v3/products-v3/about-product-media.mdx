@@ -1,0 +1,153 @@
+---
+title: "About Product Media"
+description: "Product media in the Products V3 API includes images and videos that showcase your products to customers."
+icon: "file-lines"
+---
+
+Product media in the Products V3 API includes images and videos that showcase your products to customers. Media can be associated with products at multiple levels: at the product level for general product imagery, and at the option choice level to display specific images when customers select different options like colors or materials.
+
+## Media structure
+
+The `media` object in a product contains 2 main components:
+
+- **`main`**: Read-only. The product's primary image, automatically set to the first item in the `itemsInfo.items` array. To change the main media, reorder the items array.
+- **`itemsInfo.items`**: An array of up to 15 media items associated with the product. Supports images and videos.
+
+## Adding media to a product
+
+When creating or updating a product, pass media items in the `media.itemsInfo.items` array. For each media item, provide either:
+
+- **`id`**: The ID of an existing file in [Wix Media Manager](fallback::https://support.wix.com/en/article/wix-media-about-the-media-manager).
+- **`url`**: An external media URL.
+
+## Example media object
+
+The following example shows a product media object with 2 items: one using a Wix Media Manager file ID, and one using an external URL. The first item becomes the product's main media:
+
+```json
+{
+  "itemsInfo": {
+    "items": [
+      {
+        "id": "22e53e_63dba6a8f31a4de7bfb453ed3d0a83dd~mv2.jpg"
+      },
+      {
+        "url": "https://example.com/product-side.jpg"
+      }
+    ]
+  }
+}
+```
+
+When you set media using a Wix Media Manager `id`, the `image` or `video` field is populated with details like the actual URL, dimensions, and file size. This is useful because the `id` alone doesn't give you the URL needed to display the media. When you set media using an external `url`, these fields aren't populated since the system doesn't have metadata for external files.
+
+## Linked media for choices
+
+Option choices and modifier choices can have linked media that displays when a customer selects that choice. This is useful for products with visual variations like color options.
+
+Linked media references images from the product's `media.itemsInfo.items` array. Each choice has a `linkedMedia` array that specifies which images to display when a customer selects that choice.
+
+When a customer selects choices from multiple options, only media that appears in the `linkedMedia` of **all** selected choices is displayed.
+
+For example, consider a product with a Color option and a Gift Wrap modifier:
+
+- Color "Red" has linked media: Images 1, 2, 3
+- Gift Wrap "Premium Box" has linked media: Images 2, 3, 5
+
+When a customer selects both "Red" and "Premium Box", only Images 2 and 3 are displayed because they appear in both linked media arrays.
+
+## Example product with linked media
+
+The following example shows a t-shirt product with a Color swatch option and a Gift Wrap modifier. Each color choice has linked media that displays when selected. The Gift Wrap modifier's "Premium Box" choice also has linked media. Since the product has 2 colors, it includes 2 variants:
+
+```json
+{
+  "name": "Designer T-Shirt",
+  "productType": "PHYSICAL",
+  "media": {
+    "itemsInfo": {
+      "items": [
+        { "url": "https://example.com/red-front.jpg", "altText": "Red shirt front" },
+        { "url": "https://example.com/red-back.jpg", "altText": "Red shirt back" },
+        { "url": "https://example.com/blue-front.jpg", "altText": "Blue shirt front" },
+        { "url": "https://example.com/blue-back.jpg", "altText": "Blue shirt back" }
+      ]
+    }
+  },
+  "options": [
+    {
+      "name": "Color",
+      "optionRenderType": "SWATCH_CHOICES",
+      "choicesSettings": {
+        "choices": [
+          {
+            "name": "Red",
+            "choiceType": "ONE_COLOR",
+            "colorCode": "#FF0000",
+            "linkedMedia": [
+              { "url": "https://example.com/red-front.jpg" },
+              { "url": "https://example.com/red-back.jpg" }
+            ]
+          },
+          {
+            "name": "Blue",
+            "choiceType": "ONE_COLOR",
+            "colorCode": "#0000FF",
+            "linkedMedia": [
+              { "url": "https://example.com/blue-front.jpg" },
+              { "url": "https://example.com/blue-back.jpg" }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "modifiers": [
+    {
+      "name": "Gift Wrap",
+      "modifierRenderType": "TEXT_CHOICES",
+      "choicesSettings": {
+        "choices": [
+          {
+            "name": "Standard Box",
+            "choiceType": "CHOICE_TEXT"
+          },
+          {
+            "name": "Premium Box",
+            "choiceType": "CHOICE_TEXT",
+            "linkedMedia": [
+              { "url": "https://example.com/red-front.jpg" },
+              { "url": "https://example.com/blue-front.jpg" }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "physicalProperties": {},
+  "variantsInfo": {
+    "variants": [
+      {
+        "choices": [{ "optionChoiceNames": { "optionName": "Color", "choiceName": "Red", "renderType": "SWATCH_CHOICES" }}],
+        "price": { "actualPrice": { "amount": "29.99" }}
+      },
+      {
+        "choices": [{ "optionChoiceNames": { "optionName": "Color", "choiceName": "Blue", "renderType": "SWATCH_CHOICES" }}],
+        "price": { "actualPrice": { "amount": "29.99" }}
+      }
+    ]
+  }
+}
+```
+
+## Variant media
+
+Each variant has a read-only `media` object. This is automatically set based on the `linkedMedia` of the variant's option choices, or defaults to the product's main media if no linked media is configured.
+
+## Digital product files
+
+For digital products, each variant can have a `digitalFile` in its `digitalProperties`. This is a `SecuredMedia` object used for downloadable content and is separate from the product's display media.
+
+## See also
+
+- [About the Products API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction)

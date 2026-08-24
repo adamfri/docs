@@ -1,0 +1,93 @@
+---
+title: "About Submission Values"
+description: "A submission's submissions map holds every value a visitor entered, keyed by each field's target."
+icon: "file-lines"
+---
+
+A submission's `submissions` map holds every value a visitor entered, keyed by each field's `target`. Read it to see what someone submitted, or construct it yourself when creating a submission on a visitor's behalf.
+
+The generated reference shows `submissions` only as `map<string, google.protobuf.Value>`, since a map can't declare its own keys or value types. This article covers both: which keys `submissions` accepts, and the value each field type submits.
+
+## Keys come from field targets
+
+Each key must be the `target` of a field in the form's schema: the field's stable storage key, not its `id` or label, so it doesn't change when a Wix user relabels or reorders a field. Read the schema's fields with [Get Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/get-form) to find the targets a given form accepts.
+
+Sending a key that isn't a field's `target` fails the whole submission, not just that value.
+
+## Value shapes
+
+Each value's shape follows the originating field's `inputType`, not the component that renders it:
+
+- `STRING`: A string. Date and time fields are strings too, formatted according to the field's `validation.format`.
+- `NUMBER`: A number.
+- `BOOLEAN`: A boolean.
+- `ARRAY`: An array of the selected option values.
+- `ADDRESS`: An [address object](fallback::#address).
+- `PAYMENT`: An array of [product objects](fallback::#payment), 1 per item bought.
+- `SCHEDULING`: An [appointment object](fallback::#appointment).
+
+This is why a single-line address field and a multi-line address field aren't interchangeable, even though both map to a contact's address: the first submits a string, the second an object.
+
+For how a field declares its `target` and `inputType`, see [About Form Fields](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+### Address
+
+An `ADDRESS` field submits an object. Every property is optional, so send only the subfields the form shows:
+
+- `country`: Country code, in [ISO 3166-1 alpha-2](fallback::https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) format.
+- `subdivision`: State, region, prefecture, or province code, in [ISO 3166-2](fallback::https://en.wikipedia.org/wiki/ISO_3166-2) format.
+- `city`: City name.
+- `postalCode`: Zip or postal code.
+- `addressLine`: Main address line, usually street and number as free text.
+- `addressLine2`: Further detail, such as apartment, suite, or floor.
+- `streetName`: Street name, when the address is captured as separate street parts.
+- `streetNumber`: Street number, when the address is captured as separate street parts.
+
+`country` and `subdivision` are validated against the values allowed for the selected country, so a free-text subdivision is rejected.
+
+```json
+"billing_address_bb91": {
+  "country": "US",
+  "subdivision": "US-NY",
+  "city": "New York",
+  "postalCode": "10011",
+  "addressLine": "235 West 23rd Street"
+}
+```
+
+### Payment
+
+A `PAYMENT` field submits an array with 1 object per item bought:
+
+- `productId`: ID of a product declared in the field's `paymentOptions.validation.products`.
+- `price`: Amount for a single unit, as a decimal string.
+- `quantity`: Number of units bought.
+- `name`: Product name. Read-only: Wix returns it, but doesn't accept it as input.
+
+```json
+"products_e817": [
+  { "productId": "db698a17-fa29-47a2-fb96-7b1dc75e2792", "price": "25", "quantity": 1 }
+]
+```
+
+### Appointment
+
+A `SCHEDULING` field submits the booked slot:
+
+- `startDate`: Start of the appointment, as a local date and time.
+- `endDate`: End of the appointment, as a local date and time.
+- `timeZone`: Time zone the appointment was booked in.
+
+```json
+"consultation_4146": {
+  "startDate": "2025-07-02T14:00:00",
+  "endDate": "2025-07-02T14:30:00",
+  "timeZone": "America/New_York"
+}
+```
+
+## See also
+
+- [About Form Fields](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields)
+- [Create Submission](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/create-submission)
+- [About the Form Submissions API](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/introduction)

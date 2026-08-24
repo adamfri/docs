@@ -1,0 +1,33 @@
+---
+title: "Sample Use Cases and Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Notify members who are reported for spam
+
+You may want to notify members when they are reported for spam. For example, if a member repeatedly posts promotional links in a discussion forum and is reported for spam, sending a notification ensures transparency and provides the reported member an opportunity to appeal or correct their behavior.
+
+To notify reported members:
+
+1. [Create an email template](fallback::https://support.wix.com/en/article/email-marketing-creating-and-sending-a-campaign-from-start-to-finish) to be sent whenever a member is reported for spam.
+1. Use [Member Report Created](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/members/member-reports/member-report-created) to listen for when a new member report is created. When the event is triggered:
+    - Extract the `createdEvent.entity.reason.category` and check for the `"SPAM"` value. 
+    - Save the value from `createdEvent.entity.reportedMemberId`.
+1. Call [Get Member](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/members/members/get-member) passing the saved reported member ID to the `id` field. Retrieve and save the value of `member.loginEmail`.
+1. Send the email template to the saved email address.
+
+## Prevent abuse of the reporting system
+
+You may want to prevent abuse of the reporting system to maintain fairness and avoid overburdening Wix users. For example, a member could exploit the system by submitting false or excessive reports to target other members unfairly. By implementing safeguards, you can discourage misuse and ensure the reporting system is used appropriately.
+
+To prevent abuse of the system:
+
+1. Use [Member Report Created](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/members/member-reports/member-report-created) to listen for when a new member report is created. When the event is triggered extract the value from `createdEvent.entity.reportingMemberId`.
+1. [Query Member Reports](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/members/member-reports/query-member-reports) by the reporting member ID, and track the number of reports submitted by the member within a specific time frame.
+1. If the member exceeds a determined reporting threshold or demonstrates unusual reporting patterns, such as targeting the same individual repeatedly without valid reasons, issue a warning or temporarily [block](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/members/members/block-member) that member.
+1. Optionally, [notify the member](fallback::#notify-members-who-are-reported-for-spam) about the restriction and explain the reason to promote understanding and discourage future misuse.

@@ -1,0 +1,136 @@
+---
+title: "Sample flows"
+description: "This article presents a possible use case and corresponding sample flow that you can support."
+icon: "file-lines"
+---
+
+This article presents a possible use case and corresponding sample flow that you can support.
+
+## Get a package's status with Aria
+
+Your app integrates with a 3rd-party shipping service to track packages. You can expose that tracking capability as a tool so [Aria](fallback::https://dev.wix.com/docs/overview/ai-the-wix-platform/about-aria) can look up shipment status for a Wix user during a chat.
+
+To implement:
+
+1. In the **[App Tools](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/app-tools/about-app-tools-extensions)** extension, define your tool using JSON:
+
+```json
+{
+  "tools": [
+    {
+      "methodName": "getPackageTracking",
+      "description": "Fetches the current tracking status of a package by its tracking number. Returns status, location, and estimated delivery date. Use when the Wix user wants to know where their package is or when it will arrive.",
+      "requestSchema": {
+        "type": "object",
+        "required": ["trackingNumber"],
+        "properties": {
+          "trackingNumber": {
+            "type": "string",
+            "description": "The carrier tracking number for the package, for example '1Z999AA10123456784'."
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "trackingNumber": {
+            "type": "string",
+            "description": "The tracking number this result corresponds to."
+          },
+          "status": {
+            "type": "string",
+            "description": "Current shipment status, for example 'in transit', 'delivered', 'out for delivery', or 'delayed'."
+          },
+          "location": {
+            "type": "string",
+            "description": "Last known location of the package."
+          },
+          "estimatedDelivery": {
+            "type": "string",
+            "description": "Estimated delivery date in ISO 8601 format (YYYY-MM-DD), if available."
+          }
+        }
+      },
+      "activated": true
+    }
+  ]
+}
+```
+
+2. In the **[Tools Provider Config](fallback::https://dev.wix.com/docs/api-reference/app-management/app-tools/tools-provider-v1/extension-config)** extension, set your service plugin base URI. This enables Wix to locate your method implementation and invoke it.
+
+3. Implement `runTool` so Wix can call your package-tracking method. Aria sends a request which includes a `methodName` and `payload`. The `payload` should contain the necessary data for your tool.
+
+<Note>
+
+Wix doesn't validate `payload` against your `requestSchema` before calling your service plugin. Handle missing or unexpected fields in your implementation. If your implementation returns an error or times out, Aria continues the conversation without the tool result.
+
+</Note>
+
+ Your handler routes on `methodName`, looks up the shipment, and returns the result. For example: 
+
+```js
+import { toolsProvider } from '@wix/app-tools/service-plugins';
+
+toolsProvider.provideHandlers({
+  runTool: async ({ request }) => {
+    const { methodName, payload } = request;
+
+    switch (methodName) {
+      case 'getPackageTracking': {
+        // Make sure to validate. Wix doesn't validate the payload against requestSchema.
+        const trackingNumber = payload?.trackingNumber;
+        if (!trackingNumber) {
+          throw new Error('trackingNumber is required');
+        }
+
+        // Look up the shipment in your system or use a 3rd-party API
+        const shipment = await getShipmentByTrackingNumber(trackingNumber);
+
+        return {
+          response: {
+            trackingNumber,
+            status: shipment.status,
+            location: shipment.location,
+            estimatedDelivery: shipment.estimatedDelivery
+          }
+        };
+      }
+      // Handle other tools...
+    }
+  }
+});
+```
+
+### The flow
+
+To track a package when a Wix user asks Aria for shipping status:
+
+1. The Wix user asks Aria a question. For example, "Where's the package?".
+2. Aria reads the active tools and selects `getPackageTracking` based on the tool's description.
+3. Aria uses the request schema to ask the Wix user for a tracking number if they haven't provided one yet.
+4. After the Wix user provides the tracking number, Wix calls [Run Tool](fallback::https://dev.wix.com/docs/api-reference/app-management/app-tools/tools-provider-v1/run-tool) on your service with a request like this:
+
+    ```json
+    {
+      "methodName": "getPackageTracking",
+      "payload": {
+        "trackingNumber": "4455dd"
+      }
+    }
+    ```
+
+5. Your [`runTool`](fallback::https://dev.wix.com/docs/api-reference/app-management/app-tools/tools-provider-v1/run-tool) handler returns a response like this:
+
+    ```json
+    {
+      "response": {
+        "trackingNumber": "4455dd",
+        "status": "In Transit",
+        "location": "Distribution Center, New York",
+        "estimatedDelivery": "2026-07-30"
+      }
+    }
+    ```
+
+6. The service plugin passes the response back to Aria, which tells the Wix user the package is in transit and shares the location and estimated delivery date in natural language.

@@ -1,0 +1,102 @@
+---
+title: "Sample Flow"
+description: "This article presents a sample flow you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents a sample flow you can support. You aren't limited to this exact flow, but it can be a helpful jumping off point as you plan your Additional Fees integration.
+
+## Calculate Additional Fees During Checkout
+
+This flow shows what happens when a site visitor views their cart or proceeds through checkout and additional fees need to be calculated.
+
+### Step 1 | Site Visitor Views Cart or Begins Checkout
+
+A site visitor adds products to their cart and views the cart page, or clicks to begin checkout. This triggers Wix to calculate all fees and costs for the transaction.
+
+### Step 2 | Wix Calls Your Implementation
+
+Wix calls your [Calculate Additional Fees](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/additional-fees/additional-fees-service-plugin/calculate-additional-fees) method. The request includes:
+
++ Line items with product details, quantities, and prices
++ Shipping address (if available)
++ Buyer contact information
++ Applied discounts (coupons, merchant discounts, automatic discount rules)
++ Selected shipping method and costs
++ Purchase flow type identifier
++ Cart subtotal
++ Currency (available in the [request envelope](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest#request-envelope))
+
+### Step 3 | Your Implementation Calculates Fees
+
+Your service plugin processes the request based on your business logic:
+
+1. Review the line items to determine which fees apply
+2. Check the shipping address for location-based fees if needed
+3. Consider the applied discounts when calculating fees
+4. Calculate the fee amounts in the site's currency
+5. Prepare the response with fee details
+
+For example, you might:
++ Charge a fragile packaging fee only for breakable items
++ Add gift wrapping fees based on the number of items
++ Calculate carbon offset fees based on shipping distance
++ Apply insurance fees for high-value orders
+
+### Step 4 | Your Implementation Returns a Response
+
+Your implementation returns within 3 seconds with an array of calculated fees. Each fee includes:
+
++ `code`: Unique identifier for the fee type
++ `name`: Display name shown to the site visitor
++ `price`: Fee amount in the site's currency
++ `taxDetails`: Whether the fee is taxable
++ `lineItemIds` (optional): Specific items the fee applies to
+
+Example response:
+
+```json
+{
+  "currency": "USD",
+  "additionalFees": [
+    {
+      "code": "fragile-fee",
+      "name": "Fragile Packaging Fee",
+      "price": "3",
+      "taxDetails": {
+        "taxable": true
+      },
+      "lineItemIds": ["item-123"]
+    },
+    {
+      "code": "gift-wrap",
+      "name": "Gift Wrapping",
+      "price": "5",
+      "taxDetails": {
+        "taxable": false
+      }
+    }
+  ]
+}
+```
+
+### Step 5 | Wix Displays Fees to Site Visitor
+
+Wix displays each additional fee as a separate line item on the cart or checkout page. The site visitor can review:
+
++ The fee names and amounts
++ How the fees affect the order total
++ Tax calculations that include the taxable fees
+
+If the site visitor makes changes (such as updating quantities, changing the shipping address, or applying a coupon), Wix calls your implementation again with the updated information to recalculate fees.
+
+### Step 6 | Order Completion
+
+When the site visitor completes their purchase, the additional fees you calculated are included in the final order. The fees appear in:
+
++ The order confirmation shown to the customer
++ The order details in the merchant's dashboard
++ Transaction records and reports
++ Tax calculations and filings

@@ -1,0 +1,74 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Import contacts from external systems
+
+Your app needs to synchronize customer data from an external CRM system while preventing duplicate contacts and maintaining data integrity. This is common when migrating from legacy systems or integrating with third-party platforms.
+
+To import contacts from external systems:
+
+1. Prepare contact data with `externalId` values from your source system. If there is no `externalId`, the email and phone are used to check for matching contacts.
+2. Call [Create Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/create-contact) with `allowDuplicates=false` to leverage automatic duplicate detection.
+3. Handle `DUPLICATE_CONTACT_EXISTS` errors by using [Find Matching Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/find-matching-contacts) to identify existing records.
+4. Use [Upsert Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/upsert-contact) with appropriate upsert mode (`OVERWRITE`, `APPEND`, or `OVERWRITE_APPEND_ARRAYS`) to update existing contacts.
+5. For large datasets, use [Bulk Create Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-create-contacts) or [Bulk Upsert Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-upsert-contacts) with batches of up to 100 contacts.
+6. Monitor bulk operation results and handle individual failures appropriately.
+
+## Manage site member contact integration
+
+Your app manages contacts that are also registered site members, requiring special permissions, and deletion restrictions.
+
+To manage site member contact integration:
+
+1. Identify member contacts by checking the `memberInfo` field in contact records.
+2. For updates to member contacts, set `updateMember=true` in [Upsert Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/upsert-contact) requests.
+3. Don't update the main email field for member contacts. It's managed through the [Members API](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/members/member-management/members/introduction).
+4. When deleting member contacts, set `deleteMember=true` in [Delete Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/delete-contact) to remove both contact and member records.
+5. Handle permission errors for member operations by ensuring your app has `CONTACTS.CONTACT_MEMBER_UPDATE` and `MEMBERS.MEMBER_DELETE` permissions.
+6. Note that site owners and contributors can't be deleted even with proper permissions.
+
+## Process bulk contact operations
+
+Your app needs to efficiently handle large volumes of contact data for imports, updates, or cleanup operations while respecting rate limits and handling failures.
+
+To process bulk contact operations:
+
+1. Organize contact data into batches of maximum 100 items per request.
+2. Use appropriate bulk endpoints: [Bulk Create Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-create-contacts), [Bulk Update Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-update-contacts), or [Bulk Delete Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-delete-contacts).
+3. Set `returnEntity=true` if you need the full contact data in responses.
+4. Process the `bulkActionMetadata` to understand success/failure counts.
+5. Handle individual item failures using the `itemMetadata` in results array.
+6. For filter-based operations, use [Bulk Delete Contacts By Filter](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-delete-contacts-by-filter) or [Bulk Update Contact Tags By Filter](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-update-contact-tags-by-filter) for asynchronous processing.
+7. Respect rate limits of 50 requests per minute for bulk operations and 10 requests per minute for bulk operations with a filter.
+
+## Organize contacts with tags and custom data
+
+Your app categorizes contacts for marketing campaigns and stores industry-specific information using tags and extended fields.
+
+To organize contacts with tags and custom data:
+
+1. Create private tags for internal organization using the tags system.
+2. Use [Update Contact Tags](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact-tags) to assign or remove tags from individual contacts.
+3. For bulk tag operations, use [Bulk Update Contact Tags](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-update-contact-tags) with contact IDs or [Bulk Update Contact Tags By Filter](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-update-contact-tags-by-filter) for filter-based updates.
+4. Store custom business data using the `extendedFields` property when creating or updating contacts.
+5. Query contacts by tags using `tags.privateTags.tagIds` in filter expressions with `HAS_SOME` or `HAS_ALL` operators.
+6. Use extended fields in queries to filter contacts by custom properties.
+
+## Handle contact matching and deduplication
+
+Your app implements intelligent contact deduplication to maintain clean customer data and merge duplicate records when necessary.
+
+To handle contact matching and deduplication:
+
+1. Use [Find Matching Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/find-matching-contacts) with `externalId`, `email`, or `phone` to identify potential duplicates before creating contacts.
+2. Understand the matching priority: `externalId` (highest), `email`, then `phone` (lowest priority). See [Matching & Duplicate Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts).
+3. Review matching results ordered by strength: multiple identifier matches first, then single identifier matches.
+4. Use [Merge Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/merge-contacts) to combine duplicate records, specifying up to 5 source contacts to merge into a target.
+5. Set `preview=true` to review merge results before committing the operation.
+6. Handle merge restrictions: source contacts can't be site members, and target contact must remain valid after merge.
+7. Use `allowDuplicates=true` in create operations only when intentionally creating duplicate contacts.

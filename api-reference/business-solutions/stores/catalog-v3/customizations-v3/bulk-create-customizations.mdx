@@ -1,0 +1,475 @@
+---
+title: "Bulk Create Customizations"
+description: "Creates multiple customizations."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    Creates multiple customizations.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/customizations/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="customizations" type="Customization[]" required>
+
+      Customizations to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the full customization entities in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkCustomizationResult[]">
+
+      Customizations created by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for customization.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="customization" type="Customization">
+
+          Full customization entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `OPTIONS_LIMIT_EXCEEDED` | Number of product options exceeded the limit. |
+    | `428` | `FAILED_PRECONDITION` | `MODIFIERS_LIMIT_EXCEEDED` | Number of modifiers exceeded the limit. |
+    | `400` | `INVALID_ARGUMENT` | `DOESNT_SUPPORT_CHOICES` | `FREE_TEXT` render type doesn't support choices. Use `SWATCH_CHOICES` or `TEXT_CHOICES` render type instead. |
+    | `428` | `FAILED_PRECONDITION` | `CHOICES_LIMIT_EXCEEDED` | Number of choices exceeded the limit of 100 per customization. |
+    | `400` | `INVALID_ARGUMENT` | `ONLY_SPACES_STRING_ERROR` | Text field contains only spaces. Provide valid text content. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_TYPE` | Choice type doesn't match the customization type. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_CHOICE_NAME` | Duplicate choice name found. Each choice name must be unique within the customization. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_VALUE` | Choice value doesn't match the choice type. For `SWATCH_CHOICES`, use `ONE_COLOR` choice type. For `TEXT_CHOICES`, use `CHOICE_TEXT` choice type. |
+    | `400` | `INVALID_ARGUMENT` | `CUSTOMIZATION_WITH_ONLY_ID_OR_CHOICE_IDS` | Customization ID provided without choice IDs or vice versa. Provide both customization ID and choice IDs together. |
+    | `400` | `INVALID_ARGUMENT` | `MIXED_CHOICE_IDS_CONSISTENCY` | Some choices have IDs while others don't. All choices must have IDs or none of them can have IDs. |
+    | `400` | `INVALID_ARGUMENT` | `ID_NOT_ALLOWED_IN_REQUEST` | Caller doesn't have the required permissions to pass IDs in the request. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_SELF_REFERENCE` | Choice references itself in `primaryChoiceIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_NOT_FOUND` | `primaryChoiceIds` contains an ID that doesn't match any existing choice in the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_HIERARCHY_VIOLATION` | A choice that is a primary of other choices can't also be a linked choice. Only a single level of grouping is supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Created | `wix.stores.catalog.v3.customization_created` | Triggered when a customization is created. |
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates multiple customizations.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { customizationsV3 } from '@wix/stores';
+
+    customizationsV3.bulkCreateCustomizations(customizations, options): Promise<NonNullablePaths>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="customizations" type="Customization[]" required>
+
+      Customizations to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateCustomizationsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the full customization entities in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<NonNullablePaths>`.
+
+    <ResponseField name="results" type="BulkCustomizationResult[]">
+
+      Customizations created by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for customization.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="customization" type="Customization">
+
+          Full customization entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `OPTIONS_LIMIT_EXCEEDED` | Number of product options exceeded the limit. |
+    | `428` | `FAILED_PRECONDITION` | `MODIFIERS_LIMIT_EXCEEDED` | Number of modifiers exceeded the limit. |
+    | `400` | `INVALID_ARGUMENT` | `DOESNT_SUPPORT_CHOICES` | `FREE_TEXT` render type doesn't support choices. Use `SWATCH_CHOICES` or `TEXT_CHOICES` render type instead. |
+    | `428` | `FAILED_PRECONDITION` | `CHOICES_LIMIT_EXCEEDED` | Number of choices exceeded the limit of 100 per customization. |
+    | `400` | `INVALID_ARGUMENT` | `ONLY_SPACES_STRING_ERROR` | Text field contains only spaces. Provide valid text content. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_TYPE` | Choice type doesn't match the customization type. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_CHOICE_NAME` | Duplicate choice name found. Each choice name must be unique within the customization. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_VALUE` | Choice value doesn't match the choice type. For `SWATCH_CHOICES`, use `ONE_COLOR` choice type. For `TEXT_CHOICES`, use `CHOICE_TEXT` choice type. |
+    | `400` | `INVALID_ARGUMENT` | `CUSTOMIZATION_WITH_ONLY_ID_OR_CHOICE_IDS` | Customization ID provided without choice IDs or vice versa. Provide both customization ID and choice IDs together. |
+    | `400` | `INVALID_ARGUMENT` | `MIXED_CHOICE_IDS_CONSISTENCY` | Some choices have IDs while others don't. All choices must have IDs or none of them can have IDs. |
+    | `400` | `INVALID_ARGUMENT` | `ID_NOT_ALLOWED_IN_REQUEST` | Caller doesn't have the required permissions to pass IDs in the request. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_SELF_REFERENCE` | Choice references itself in `primaryChoiceIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_NOT_FOUND` | `primaryChoiceIds` contains an ID that doesn't match any existing choice in the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_HIERARCHY_VIOLATION` | A choice that is a primary of other choices can't also be a linked choice. Only a single level of grouping is supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Created | `wix.stores.catalog.v3.customization_created` | Triggered when a customization is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-customizations" id="ex-sdk-bulk-create-customizations-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-customizations" id="ex-sdk-bulk-create-customizations-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-create-customizations" id="ex-sdk-bulk-create-customizations-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-customizations-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-customizations-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateCustomizations</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateCustomizations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateCustomizations (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-customizations-0"><span className="wix-picker-name">bulkCreateCustomizations</span></label>
+    <label htmlFor="ex-sdk-bulk-create-customizations-1"><span className="wix-picker-name">bulkCreateCustomizations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-create-customizations-2"><span className="wix-picker-name">bulkCreateCustomizations (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateCustomizations
+    import { customizationsV3 } from '@wix/stores';
+
+    async function bulkCreateCustomizations(customizations,options) {
+      const response = await customizationsV3.bulkCreateCustomizations(customizations,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateCustomizations (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { customizationsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { customizationsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateCustomizations(customizations,options) {
+      const response = await myWixClient.customizationsV3.bulkCreateCustomizations(customizations,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateCustomizations (with elevated permissions)
+    import { customizationsV3 } from '@wix/stores';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkCreateCustomizationsMethod(customizations,options) {
+      const elevatedBulkCreateCustomizations = auth.elevate(customizationsV3.bulkCreateCustomizations);
+      const response = await elevatedBulkCreateCustomizations(customizations,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

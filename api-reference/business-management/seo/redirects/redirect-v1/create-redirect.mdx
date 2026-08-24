@@ -1,0 +1,395 @@
+---
+title: "Create Redirect"
+description: "Creates a redirect."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates a redirect.
+
+    The `from` path can't be the site root, and can't already belong to another redirect unless
+    `options.forceReplace` is `true`. With `options.forceReplace`, the redirect that holds the path
+    is deleted and the new one is created in its place.
+
+    If the redirect would close a loop, meaning an existing redirect starts at the path this one
+    points to, the redirect that closes the loop is deleted and the create proceeds. Both a
+    conflicting redirect replaced this way and a loop-closing redirect are gone for good, so
+    retrieve them first if you need to restore them.
+
+    Creating a redirect that already exists with the same `from`, `to`, and `options.groupRedirect`
+    changes nothing and returns the redirect from the request, without an `id` or a `createdDate`.
+
+    To create multiple redirects in a single API call, call [Bulk Create Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects). Note the
+    difference in how the two handle problems: this method resolves loops and, with
+    `options.forceReplace`, conflicts, while [Bulk Create Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) fails the individual redirect
+    instead.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/seo-redirects-service/v1/create-redirect
+    ```
+
+    ## Body Params
+
+    <ParamField body="redirect" type="Redirect" required>
+
+      Redirect to create.
+
+      See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateRedirectOptions">
+
+      Extra options for creating the redirect.
+
+      <Expandable title="options properties">
+
+        <ParamField body="forceReplace" type="boolean">
+
+          Whether to delete the redirect that already starts from the same `from` path and create the new
+          one in its place. When `false`, a taken `from` path fails the call with `FROM_URL_EXISTS`.
+
+          The replaced redirect is deleted for good, so retrieve it first if you might need to restore it.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="redirect" type="Redirect">
+
+      Created redirect.
+
+      `createdDate` isn't returned. When the site already has an identical redirect, the redirect from
+      the request is returned as is, without an `id`.
+
+      See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | — | The `redirect` is missing, or one of its fields is invalid. The `from` path can't be the site root. Details are in `fieldViolations`. |
+    | `409` | `ALREADY_EXISTS` | `FROM_URL_EXISTS` | There's already a redirect from this `from` path. Nothing is written. The existing redirect's `from`, `to`, and `options` are returned in the error's `data`. To replace it, set `options.forceReplace` to `true`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Redirect Created | `wix.promote.seo.v1.redirect_created` |  |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    A group redirect carries the rest of the URL over to the target, so `/forum/questions/my-post` resolves to `/forum/faqs/my-post`. A trailing slash is dropped from the stored `from` path, and `createdDate` isn't returned. Call Get Redirect to retrieve it.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/seo-redirects-service/v1/create-redirect' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "redirect": {
+          "from": "/forum/questions/",
+          "to": "/forum/faqs/",
+          "options": { "groupRedirect": true }
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "redirect": {
+          "from": "/forum/questions",
+          "to": "/forum/faqs/",
+          "options": {
+            "groupRedirect": true
+          },
+          "id": "583fe7d7-2944-436f-870a-09eb6d2e52fa"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates a redirect.
+
+    The `from` path can't be the site root, and can't already belong to another redirect unless
+    `options.forceReplace` is `true`. With `options.forceReplace`, the redirect that holds the path
+    is deleted and the new one is created in its place.
+
+    If the redirect would close a loop, meaning an existing redirect starts at the path this one
+    points to, the redirect that closes the loop is deleted and the create proceeds. Both a
+    conflicting redirect replaced this way and a loop-closing redirect are gone for good, so
+    retrieve them first if you need to restore them.
+
+    Creating a redirect that already exists with the same `from`, `to`, and `options.groupRedirect`
+    changes nothing and returns the redirect from the request, without an `id` or a `createdDate`.
+
+    To create multiple redirects in a single API call, call [Bulk Create Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects). Note the
+    difference in how the two handle problems: this method resolves loops and, with
+    `options.forceReplace`, conflicts, while [Bulk Create Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) fails the individual redirect
+    instead.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { redirects } from '@wix/seo';
+
+    redirects.createRedirect(redirect, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="redirect" type="Redirect" required>
+
+      Redirect to create.
+
+      See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateRedirectOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="options" type="CreateRedirectOptions">
+
+          Extra options for creating the redirect.
+
+          <Expandable title="options properties">
+
+            <ParamField body="forceReplace" type="boolean">
+
+              Whether to delete the redirect that already starts from the same `from` path and create the new
+              one in its place. When `false`, a taken `from` path fails the call with `FROM_URL_EXISTS`.
+
+              The replaced redirect is deleted for good, so retrieve it first if you might need to restore it.
+
+              Default: `false`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Redirect`.
+
+    See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | — | The `redirect` is missing, or one of its fields is invalid. The `from` path can't be the site root. Details are in `fieldViolations`. |
+    | `409` | `ALREADY_EXISTS` | `FROM_URL_EXISTS` | There's already a redirect from this `from` path. Nothing is written. The existing redirect's `from`, `to`, and `options` are returned in the error's `data`. To replace it, set `options.forceReplace` to `true`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Redirect Created | `wix.promote.seo.v1.redirect_created` |  |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-redirect" id="ex-sdk-create-redirect-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-redirect" id="ex-sdk-create-redirect-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-redirect-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-redirect-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a group redirect for a whole section of a site</span><span className="wix-picker-desc">A group redirect carries the rest of the URL over to the target, so /forum/questions/my-post resolves to /forum/faqs/my-post. A trailing slash is dropped from the stored from path</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createRedirect (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-redirect-0"><span className="wix-picker-name">Create a group redirect for a whole section of a site</span><span className="wix-picker-desc">A group redirect carries the rest of the URL over to the target, so /forum/questions/my-post resolves to /forum/faqs/my-post. A trailing slash is dropped from the stored from path</span></label>
+    <label htmlFor="ex-sdk-create-redirect-1"><span className="wix-picker-name">createRedirect (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a group redirect for a whole section of a site
+    import { redirects } from "@wix/seo";
+
+    async function createRedirect() {
+      const response = await redirects.createRedirect({
+        from: "/forum/questions/",
+        to: "/forum/faqs/",
+        options: { groupRedirect: true },
+      });
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createRedirect (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { redirects } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { redirects },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createRedirect(redirect,options) {
+      const response = await myWixClient.redirects.createRedirect(redirect,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

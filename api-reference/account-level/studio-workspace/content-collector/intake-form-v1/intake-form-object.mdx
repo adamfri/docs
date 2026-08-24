@@ -1,0 +1,543 @@
+---
+title: "Intake Form Object"
+description: "An intake form gathers project information from a partner's client."
+icon: "cube"
+---
+
+An intake form gathers project information from a partner's client. It wraps a
+questionnaire with project context, the source materials used to tailor that
+questionnaire, the clients the form is shared with, and the client's submission
+state.
+
+The questionnaire is generated with AI the first time the form is opened, and
+the resulting `context` is stored on the intake form. This API stores the
+generated content but doesn't perform the generation itself.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Intake form ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the intake form is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the intake form.
+
+      Ignored when creating an intake form.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the IntakeForm was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the IntakeForm was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="context" type="string">
+
+      AI-generated background context for the intake form, stored as free-form
+      text. Used as input when generating the questionnaire; stored and returned
+      as-is and not otherwise interpreted by this service. Returned only when
+      `CONTEXT` is included in the request's `fields`.
+
+    </ResponseField>
+
+    <ResponseField name="clientName" type="string">
+
+      Client name.
+
+    </ResponseField>
+
+    <ResponseField name="project" type="Project">
+
+      Project information.
+
+      <Expandable title="project properties">
+
+        <ResponseField name="name" type="string">
+
+          Project name.
+
+        </ResponseField>
+
+        <ResponseField name="industry" type="string">
+
+          Industry vertical.
+
+          **Supported values:**
+
+          - `BEAUTY_AND_WELLNESS`
+          - `CREATIVE`
+          - `EDUCATION`
+          - `FIELD_AND_CONSTRUCTION`
+          - `FITNESS`
+          - `HEALTH`
+          - `FOOD_AND_BEVERAGE`
+          - `NON_PROFIT_AND_COMMUNITIES`
+          - `REAL_ESTATE`
+          - `SCIENCE_AND_TECHNOLOGY`
+          - `TRAVEL_AND_TOURISM`
+          - `CONSULTING_AND_MARKETING`
+          - `LEGAL_AND_FINANCE`
+          - `FASHION_AND_APPAREL`
+          - `ENTERTAINMENT`
+          - `RESTAURANT`
+          - `TECHNOLOGY`
+          - `WELLNESS`
+          - `CONSULTING`
+          - `HEALTHCARE`
+          - `OTHER`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="userId" type="string">
+
+      Owner user ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="sourceMaterials" type="SourceMaterials">
+
+      Source materials used as input for AI generation.
+
+      <Expandable title="sourceMaterials properties">
+
+        <ResponseField name="projectMaterials" type="string">
+
+          User-provided project description used as input for AI generation.
+
+        </ResponseField>
+
+        <ResponseField name="filesMarkdown" type="string">
+
+          Markdown rendering of the files uploaded by the user, used as input for
+          AI generation.
+
+        </ResponseField>
+
+        <ResponseField name="existingQuestionnaire" type="string">
+
+          Existing questionnaire provided by the user, used as input for AI generation.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="clientFormInteraction" type="ClientFormInteraction">
+
+      The client's interaction with the form: when they last edited it, the
+      submission ID, and when they finally submitted. Populated asynchronously from
+      Wix Forms events — fields may be empty until a submission event is processed.
+      The form is considered submitted only when `submission_date` is set.
+
+      **Read-only.**
+
+      <Expandable title="clientFormInteraction properties">
+
+        <ResponseField name="submissionDate" type="datetime">
+
+          Date and time the client finally submitted the form. When set, the form is considered submitted.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="lastEditDate" type="datetime">
+
+          Date and time the client last edited the form.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      Account ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="teamMemberIds" type="string[]">
+
+      IDs of the team members to notify about the form. Listed team members are
+      notified through Wix Automations when the client submits the form or adds a
+      note to it.
+
+      Constraints: `format GUID`, `maxItems 50`.
+
+    </ResponseField>
+
+    <ResponseField name="clientEmails" type="string[]">
+
+      Email addresses of the clients the form is shared with. Adding the first
+      email shares the form and stamps `publishDate`; removing all emails clears
+      `publishDate` (see `publishDate`). A client can retrieve the form through
+      `GetClientIntakeForm` only if their email is listed here.
+
+      Constraints: `format EMAIL`, `maxItems 20`.
+
+    </ResponseField>
+
+    <ResponseField name="customFields" type="object">
+
+      Free-form custom data stored verbatim with the intake form. Accepts any JSON
+      structure, isn't interpreted or validated by the service, and is returned
+      as-is. Use it to attach your own structured data to an intake form.
+
+    </ResponseField>
+
+    <ResponseField name="publishDate" type="datetime">
+
+      Date and time the form was first shared with clients (the first time client emails were added).
+      Cleared if all client emails are removed; re-stamped if client emails are added again.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="introData" type="IntroData">
+
+      Intro-screen content shown to the client before they sign in (title and
+      message). Stored on the form so the anonymous intro stage can render it
+      without fetching the questionnaire. Returned only when `INTRO_DATA` is
+      included in the request's `fields`.
+
+      <Expandable title="introData properties">
+
+        <ResponseField name="title" type="string">
+
+          Welcome headline shown at the top of the intro screen. Unset means the
+          partner never customized it (the client app falls back to its default
+          headline); an empty string means the partner explicitly cleared it.
+
+        </ResponseField>
+
+        <ResponseField name="message" type="string">
+
+          Welcome message body shown on the intro screen, stored as rich-text HTML.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "intakeForm": {
+          "id": "8046df3c-7575-4098-a5ab-c91ad8f33c47",
+          "revision": "3",
+          "createdDate": "2024-03-18T17:22:10.299Z",
+          "updatedDate": "2024-03-20T11:05:44.000Z",
+          "clientName": "Jane Cohen",
+          "project": {
+            "name": "Bloom Bakery Website",
+            "industry": "FOOD_AND_BEVERAGE"
+          },
+          "context": "Bloom Bakery is a family-run business focused on artisan sourdough...",
+          "sourceMaterials": {
+            "projectMaterials": "Family-run bakery that wants a new website to showcase its seasonal menu and take online orders.",
+            "filesMarkdown": "# Brand guidelines\n- Logo: warm terracotta and cream\n- Tone: friendly, artisanal",
+            "existingQuestionnaire": "1. What products do you sell?\n2. Do you offer delivery?"
+          },
+          "teamMemberIds": ["9c8f0e2a-3b7d-4c1e-8a6f-2d4b1e7c9a05"],
+          "clientEmails": ["jane@bloombakery.com"],
+          "customFields": {
+            "referralSource": "existing-client",
+            "budgetTier": "premium"
+          },
+          "userId": "f1a2b3c4-d5e6-4789-9abc-1234567890ab",
+          "accountId": "a9b8c7d6-e5f4-4321-8765-0fedcba98765",
+          "publishDate": "2024-03-19T09:14:02.118Z",
+          "clientFormInteraction": {
+            "submissionDate": "2024-03-20T11:05:44.000Z",
+            "lastEditDate": "2024-03-20T11:05:44.000Z"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Intake form ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the intake form is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the intake form.
+
+      Ignored when creating an intake form.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the IntakeForm was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the IntakeForm was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="context" type="string">
+
+      AI-generated background context for the intake form, stored as free-form
+      text. Used as input when generating the questionnaire; stored and returned
+      as-is and not otherwise interpreted by this service. Returned only when
+      `CONTEXT` is included in the request's `fields`.
+
+    </ResponseField>
+
+    <ResponseField name="clientName" type="string">
+
+      Client name.
+
+    </ResponseField>
+
+    <ResponseField name="project" type="Project">
+
+      Project information.
+
+      <Expandable title="project properties">
+
+        <ResponseField name="name" type="string">
+
+          Project name.
+
+        </ResponseField>
+
+        <ResponseField name="industry" type="string">
+
+          Industry vertical.
+
+          **Supported values:**
+
+          - `BEAUTY_AND_WELLNESS`
+          - `CREATIVE`
+          - `EDUCATION`
+          - `FIELD_AND_CONSTRUCTION`
+          - `FITNESS`
+          - `HEALTH`
+          - `FOOD_AND_BEVERAGE`
+          - `NON_PROFIT_AND_COMMUNITIES`
+          - `REAL_ESTATE`
+          - `SCIENCE_AND_TECHNOLOGY`
+          - `TRAVEL_AND_TOURISM`
+          - `CONSULTING_AND_MARKETING`
+          - `LEGAL_AND_FINANCE`
+          - `FASHION_AND_APPAREL`
+          - `ENTERTAINMENT`
+          - `RESTAURANT`
+          - `TECHNOLOGY`
+          - `WELLNESS`
+          - `CONSULTING`
+          - `HEALTHCARE`
+          - `OTHER`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="userId" type="string">
+
+      Owner user ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="sourceMaterials" type="SourceMaterials">
+
+      Source materials used as input for AI generation.
+
+      <Expandable title="sourceMaterials properties">
+
+        <ResponseField name="projectMaterials" type="string">
+
+          User-provided project description used as input for AI generation.
+
+        </ResponseField>
+
+        <ResponseField name="filesMarkdown" type="string">
+
+          Markdown rendering of the files uploaded by the user, used as input for
+          AI generation.
+
+        </ResponseField>
+
+        <ResponseField name="existingQuestionnaire" type="string">
+
+          Existing questionnaire provided by the user, used as input for AI generation.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="clientFormInteraction" type="ClientFormInteraction">
+
+      The client's interaction with the form: when they last edited it, the
+      submission ID, and when they finally submitted. Populated asynchronously from
+      Wix Forms events — fields may be empty until a submission event is processed.
+      The form is considered submitted only when `submission_date` is set.
+
+      **Read-only.**
+
+      <Expandable title="clientFormInteraction properties">
+
+        <ResponseField name="submissionDate" type="datetime">
+
+          Date and time the client finally submitted the form. When set, the form is considered submitted.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="lastEditDate" type="datetime">
+
+          Date and time the client last edited the form.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      Account ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="teamMemberIds" type="string[]">
+
+      IDs of the team members to notify about the form. Listed team members are
+      notified through Wix Automations when the client submits the form or adds a
+      note to it.
+
+      Constraints: `format GUID`, `maxItems 50`.
+
+    </ResponseField>
+
+    <ResponseField name="clientEmails" type="string[]">
+
+      Email addresses of the clients the form is shared with. Adding the first
+      email shares the form and stamps `publishDate`; removing all emails clears
+      `publishDate` (see `publishDate`). A client can retrieve the form through
+      `GetClientIntakeForm` only if their email is listed here.
+
+      Constraints: `format EMAIL`, `maxItems 20`.
+
+    </ResponseField>
+
+    <ResponseField name="customFields" type="object">
+
+      Free-form custom data stored verbatim with the intake form. Accepts any JSON
+      structure, isn't interpreted or validated by the service, and is returned
+      as-is. Use it to attach your own structured data to an intake form.
+
+    </ResponseField>
+
+    <ResponseField name="publishDate" type="datetime">
+
+      Date and time the form was first shared with clients (the first time client emails were added).
+      Cleared if all client emails are removed; re-stamped if client emails are added again.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="introData" type="IntroData">
+
+      Intro-screen content shown to the client before they sign in (title and
+      message). Stored on the form so the anonymous intro stage can render it
+      without fetching the questionnaire. Returned only when `INTRO_DATA` is
+      included in the request's `fields`.
+
+      <Expandable title="introData properties">
+
+        <ResponseField name="title" type="string">
+
+          Welcome headline shown at the top of the intro screen. Unset means the
+          partner never customized it (the client app falls back to its default
+          headline); an empty string means the partner explicitly cleared it.
+
+        </ResponseField>
+
+        <ResponseField name="message" type="string">
+
+          Welcome message body shown on the intro screen, stored as rich-text HTML.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

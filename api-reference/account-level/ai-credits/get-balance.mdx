@@ -1,0 +1,624 @@
+---
+title: "Get Balance"
+description: "Retrieves an account's current AI credit balance."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves an account's current AI credit balance.
+
+    The balance includes recurring (periodic) credits, one-time top-up credits, and a per-source
+    breakdown of the same credits. Use it to check an account's available credits before running an
+    AI action, or to display the balance to an account.
+
+    The data returned depends on the caller's access. With account-level access, the response covers
+    all of the account's credits. With site-level access, the response is scoped to the credits and
+    subscription of the site in context. When the caller has both, the account-level balance is returned.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="appmarket:credittransactions:v1:credit_transaction:get_account_credit_balance">appmarket:credittransactions:v1:credit_transaction:get_account_credit_balance</span>
+    <span className="wix-scope" title="appmarket:credittransactions:v1:credit_transaction:get_site_credit_balance">appmarket:credittransactions:v1:credit_transaction:get_site_credit_balance</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/appmarket/credittransactions/v1/credit-transactions/balance
+    ```
+
+    ## Response Object
+
+    <ResponseField name="periodicCredits" type="Periodic">
+
+      An account's recurring (periodic) credits, aggregated across all sources.
+
+      Recurring credits replenish each period, such as monthly.
+
+      Returned only when the account has recurring credits.
+
+      <Expandable title="periodicCredits properties">
+
+        <ResponseField name="balance" type="integer">
+
+          Remaining recurring credits currently available.
+
+          Decreases as credits are consumed and replenishes each period.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="cap" type="integer">
+
+          Maximum recurring credits available per period.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="topUpCredits" type="TopUp">
+
+      An account's one-time top-up credits, aggregated across all purchases.
+
+      Top-up credits supplement recurring credits and don't reset.
+
+      Returned only when the account has top-up credits.
+
+      <Expandable title="topUpCredits properties">
+
+        <ResponseField name="balance" type="integer">
+
+          Remaining one-time top-up credits currently available.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="cap" type="integer">
+
+          Maximum one-time top-up credits available.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="creditBalanceBreakdown" type="CreditBalance[]">
+
+      A per-source breakdown of the account's credit balances.
+
+      Each entry covers a distinct credit allocation and its usage rules, so you can track credits from
+      different sources separately. This is a detailed view of the same credits aggregated in
+      `periodicCredits` and `topUpCredits`, not additional credits.
+
+      Constraints: `maxItems 1000`.
+
+      <Expandable title="creditBalanceBreakdown properties">
+
+        <ResponseField name="subscriptionId" type="string">
+
+          ID of the subscription this credit allocation belongs to.
+
+          Empty for credits that aren't tied to a subscription.
+
+        </ResponseField>
+
+        <ResponseField name="usageRules" type="UsageRule[]">
+
+          Rules that define how the credits in this allocation can be consumed.
+
+          Multiple rules can apply together, such as a daily limit within a monthly allocation.
+
+          Constraints: `maxItems 10`.
+
+          <Expandable title="usageRules properties">
+
+            <ResponseField name="period" type="string">
+
+              How often the credits under this rule replenish, such as daily or monthly.
+
+              Some credits have no period, meaning they're one-time and don't reset.
+
+              **Supported values:**
+
+              - `NO_PERIOD`
+              - `MILLISECOND`
+              - `SECOND`
+              - `MINUTE`
+              - `HOUR`
+              - `DAY`
+              - `WEEK`
+              - `MONTH`
+              - `YEAR`
+
+            </ResponseField>
+
+            <ResponseField name="balance" type="integer">
+
+              Remaining credits available under this rule.
+
+            </ResponseField>
+
+            <ResponseField name="cap" type="integer">
+
+              Maximum credits allowed under this rule per period.
+
+            </ResponseField>
+
+            <ResponseField name="resetDate" type="datetime">
+
+              Date and time when this rule's balance resets to `cap`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="planTierId" type="string">
+
+          Premium product-family id (the plan tier) backing this credit allocation.
+
+          Empty when no active premium asset matches the subscription.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="autoRenew" type="boolean">
+
+          Whether the backing premium subscription renews automatically.
+
+          `false` when no active premium asset matches the subscription.
+
+        </ResponseField>
+
+        <ResponseField name="planName" type="string">
+
+          Display name of the premium plan (product name) backing this credit allocation.
+
+          Empty when no active premium asset matches the subscription.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Retrieves the calling account's current AI credit balance, including recurring credits, top-up credits, and a per-source breakdown.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/appmarket/credittransactions/v1/credit-transactions/balance' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{}'
+      ```
+
+      ```json Response
+      {
+        "periodicCredits": {
+          "balance": 850,
+          "cap": 1000
+        },
+        "topUpCredits": {
+          "balance": 200,
+          "cap": 200
+        },
+        "creditBalanceBreakdown": [
+          {
+            "subscriptionId": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+            "usageRules": [
+              {
+                "period": "MONTH",
+                "balance": 850,
+                "cap": 1000,
+                "resetDate": "2026-07-01T00:00:00.000Z"
+              }
+            ]
+          },
+          {
+            "usageRules": [
+              {
+                "period": "NO_PERIOD",
+                "balance": 200,
+                "cap": 200
+              }
+            ]
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves an account's current AI credit balance.
+
+    The balance includes recurring (periodic) credits, one-time top-up credits, and a per-source
+    breakdown of the same credits. Use it to check an account's available credits before running an
+    AI action, or to display the balance to an account.
+
+    The data returned depends on the caller's access. With account-level access, the response covers
+    all of the account's credits. With site-level access, the response is scoped to the credits and
+    subscription of the site in context. When the caller has both, the account-level balance is returned.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="appmarket:credittransactions:v1:credit_transaction:get_account_credit_balance">appmarket:credittransactions:v1:credit_transaction:get_account_credit_balance</span>
+    <span className="wix-scope" title="appmarket:credittransactions:v1:credit_transaction:get_site_credit_balance">appmarket:credittransactions:v1:credit_transaction:get_site_credit_balance</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Method Declaration
+
+    ```typescript
+    import { aiCredits } from '@wix/ai-credits';
+
+    aiCredits.getBalance(): Promise
+    ```
+
+    ## Returns
+
+    <ResponseField name="periodicCredits" type="Periodic">
+
+      An account's recurring (periodic) credits, aggregated across all sources.
+
+      Recurring credits replenish each period, such as monthly.
+
+      Returned only when the account has recurring credits.
+
+      <Expandable title="periodicCredits properties">
+
+        <ResponseField name="balance" type="integer">
+
+          Remaining recurring credits currently available.
+
+          Decreases as credits are consumed and replenishes each period.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="cap" type="integer">
+
+          Maximum recurring credits available per period.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="topUpCredits" type="TopUp">
+
+      An account's one-time top-up credits, aggregated across all purchases.
+
+      Top-up credits supplement recurring credits and don't reset.
+
+      Returned only when the account has top-up credits.
+
+      <Expandable title="topUpCredits properties">
+
+        <ResponseField name="balance" type="integer">
+
+          Remaining one-time top-up credits currently available.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="cap" type="integer">
+
+          Maximum one-time top-up credits available.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="creditBalanceBreakdown" type="CreditBalance[]">
+
+      A per-source breakdown of the account's credit balances.
+
+      Each entry covers a distinct credit allocation and its usage rules, so you can track credits from
+      different sources separately. This is a detailed view of the same credits aggregated in
+      `periodicCredits` and `topUpCredits`, not additional credits.
+
+      Constraints: `maxItems 1000`.
+
+      <Expandable title="creditBalanceBreakdown properties">
+
+        <ResponseField name="subscriptionId" type="string">
+
+          ID of the subscription this credit allocation belongs to.
+
+          Empty for credits that aren't tied to a subscription.
+
+        </ResponseField>
+
+        <ResponseField name="usageRules" type="UsageRule[]">
+
+          Rules that define how the credits in this allocation can be consumed.
+
+          Multiple rules can apply together, such as a daily limit within a monthly allocation.
+
+          Constraints: `maxItems 10`.
+
+          <Expandable title="usageRules properties">
+
+            <ResponseField name="period" type="string">
+
+              How often the credits under this rule replenish, such as daily or monthly.
+
+              Some credits have no period, meaning they're one-time and don't reset.
+
+              **Supported values:**
+
+              - `NO_PERIOD`
+              - `MILLISECOND`
+              - `SECOND`
+              - `MINUTE`
+              - `HOUR`
+              - `DAY`
+              - `WEEK`
+              - `MONTH`
+              - `YEAR`
+
+            </ResponseField>
+
+            <ResponseField name="balance" type="integer">
+
+              Remaining credits available under this rule.
+
+            </ResponseField>
+
+            <ResponseField name="cap" type="integer">
+
+              Maximum credits allowed under this rule per period.
+
+            </ResponseField>
+
+            <ResponseField name="resetDate" type="datetime">
+
+              Date and time when this rule's balance resets to `cap`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="planTierId" type="string">
+
+          Premium product-family id (the plan tier) backing this credit allocation.
+
+          Empty when no active premium asset matches the subscription.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="autoRenew" type="boolean">
+
+          Whether the backing premium subscription renews automatically.
+
+          `false` when no active premium asset matches the subscription.
+
+        </ResponseField>
+
+        <ResponseField name="planName" type="string">
+
+          Display name of the premium plan (product name) backing this credit allocation.
+
+          Empty when no active premium asset matches the subscription.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-balance" id="ex-sdk-get-balance-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-balance" id="ex-sdk-get-balance-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-balance-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-balance-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Retrieve an account's AI credit balance</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getBalance (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-balance-0"><span className="wix-picker-name">Retrieve an account's AI credit balance</span></label>
+    <label htmlFor="ex-sdk-get-balance-1"><span className="wix-picker-name">getBalance (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Retrieve an account's AI credit balance
+    import { aiCredits } from "@wix/ai-credits";
+
+    async function getBalance() {
+      const response = await aiCredits.getBalance();
+
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "periodicCredits": {
+     *     "balance": 850,
+     *     "cap": 1000
+     *   },
+     *   "topUpCredits": {
+     *     "balance": 200,
+     *     "cap": 200
+     *   },
+     *   "creditBalanceBreakdown": [
+     *     {
+     *       "subscriptionId": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *       "usageRules": [
+     *         {
+     *           "period": "MONTH",
+     *           "balance": 850,
+     *           "cap": 1000,
+     *           "resetDate": "2026-07-01T00:00:00.000Z"
+     *         }
+     *       ]
+     *     },
+     *     {
+     *       "usageRules": [
+     *         {
+     *           "period": "NO_PERIOD",
+     *           "balance": 200,
+     *           "cap": 200
+     *         }
+     *       ]
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getBalance (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { aiCredits } from '@wix/ai-credits';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { aiCredits },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getBalance() {
+      const response = await myWixClient.aiCredits.getBalance();
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

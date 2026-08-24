@@ -1,0 +1,165 @@
+---
+title: "Sample Use Cases and Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Create a category and subcategory
+
+Organize your product catalog by creating categories and subcategories.
+
+To create a category hierarchy:
+
+1. Call [Create Category](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/create-category) with the category details. For top-level categories, omit the `parentCategory` field:
+
+    ```json
+    {
+      "category": {
+        "name": "Drinkware",
+        "description": "Containers designed for holding beverages",
+        "visible": true
+      },
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      }
+    }
+    ```
+
+1. Save the `category.id` from the response.
+
+1. Call [Create Category](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/create-category) again to create a subcategory, including the parent category ID in `parentCategory.id`:
+
+    ```json
+    {
+      "category": {
+        "name": "Mugs",
+        "description": "Containers designed for hot beverages",
+        "visible": true,
+        "parentCategory": {
+          "id": "<PARENT_CATEGORY_ID>"
+        }
+      },
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      }
+    }
+    ```
+
+## Add and arrange products in a category
+
+Add products to a category and specify their display order.
+
+To add and arrange products:
+
+1. Call [Bulk Add Items To Category](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/bulk-add-items-to-category) with the category ID and product references. Use the Wix Stores app ID (`"215238eb-22a5-4c36-9e7b-e7c08025e04e"`) for `appId`:
+
+    ```json
+    {
+      "items": [
+        {
+          "catalogItemId": "<PRODUCT_ID_1>",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        },
+        {
+          "catalogItemId": "<PRODUCT_ID_2>",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        },
+        {
+          "catalogItemId": "<PRODUCT_ID_3>",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        }
+      ],
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      }
+    }
+    ```
+
+1. Call [Set Arranged Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/set-arranged-items) with the products in the desired display order.
+
+    ```json
+    {
+      "items": [
+        {
+          "catalogItemId": "<PRODUCT_ID_3>",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        },
+        {
+          "catalogItemId": "<PRODUCT_ID_1>",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        },
+        {
+          "catalogItemId": "<PRODUCT_ID_2>",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        }
+      ],
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      }
+    }
+    ```
+
+1. To ensure the products are displayed in the arranged order, call [List Items In Category](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/list-items-in-category) with `useCategoryArrangement: true`:
+
+    ```json
+    {
+      "useCategoryArrangement": true,
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      }
+    }
+    ```
+
+## Move a category to a different parent category
+
+Reorganize your category hierarchy by moving a category to a different parent category.
+
+To move a category to a new parent:
+
+1. Identify the category you want to move and the ID of the new parent category.
+
+1. Call [Move Category](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/move-category) with the category ID in the path and the new parent category ID:
+
+    ```json
+    {
+      "parentCategoryId": "<NEW_PARENT_CATEGORY_ID>",
+      "position": "FIRST",
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      }
+    }
+    ```
+
+    The `position` field determines where the category appears among its new siblings. Options include `FIRST`, `LAST`, or a specific index.
+
+## Find all subcategories of a category
+
+Retrieve all subcategories belonging to a parent category in their display order.
+
+To list subcategories:
+
+1. Call [Search Categories](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/categories/search-categories) with a filter for the parent category ID and sort by `parentCategory.index`:
+
+    ```json
+    {
+      "search": {
+        "filter": {
+          "parentCategory.id": {
+            "$eq": "<PARENT_CATEGORY_ID>"
+          }
+        },
+        "sort": [
+          {
+            "fieldName": "parentCategory.index",
+            "order": "ASC"
+          }
+        ]
+      },
+      "treeReference": {
+        "appNamespace": "@wix/stores"
+      },
+      "fields": ["BREADCRUMBS_INFO"]
+    }
+    ```

@@ -1,0 +1,343 @@
+---
+title: "Create Message Stream"
+description: "Creates a message and streams the assistant's response back in real time."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates a message and streams the assistant's response back in real time.
+
+    Use this method to send a site visitor's question and receive the assistant's answer as a stream of frames, so you can display the answer as it's generated instead of waiting for the complete response.
+
+    This method must be called using the [site visitor or site member identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) to identify the site visitor sending the message. The conversation is resolved automatically from the visitor's identity, so you don't need to provide a conversation ID.
+
+    Set the message's `messageType` to `QUESTION` and provide the question text in `body.mainText`.
+
+    Each frame in the response stream contains one of the following:
+    - `inputMessage`: The message you sent, persisted with its server-assigned `id`, `conversationId`, and creation timestamp. Sent as the first frame.
+    - `answerChunk`: A part of the assistant's answer text, streamed as it's generated. Each chunk is additive, so concatenate the chunks in the order received to build the full answer. Sent zero or more times.
+    - `answerMessage`: The complete, persisted assistant answer. Sent as the final frame before the stream completes.
+
+    The message and the assistant's answer are persisted regardless of whether the stream completes. If the connection drops or times out, retrieve both by calling [List Messages](https://dev.wix.com/docs/api-reference/business-management/ai-site-chat/messages/list-messages).
+
+    If the conversation has reached its quota, the answer is a message with `messageType` `OUT_OF_QUOTA`. Behavior outside the assistant's active hours depends on the site's widget settings.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INNOVATION_LAB.USER">Innovation Lab User</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/innovation/widget/v1/messages/stream
+    ```
+
+    ## Body Params
+
+    <ParamField body="message" type="Message" required>
+
+      Message to send. Set `messageType` to `QUESTION` and provide the question text in `body.mainText`. The `conversationId` and other read-only fields are assigned by the server.
+
+      See the [Message Object](/api-reference/business-management/ai-site-chat/messages/message-object) for this object's fields.
+
+    </ParamField>
+
+    ## Response Object
+
+    Returns `CreateMessageStreamResponse`.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `403` | `PERMISSION_DENIED` | `FORBIDDEN_MESSAGE_TYPE` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Sends a site visitor's question and streams the assistant's response back as a sequence of frames.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/innovation/widget/v1/messages/stream' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -H 'Accept: 'application/x-ndjson' \
+      -d '{
+        "message": {
+          "messageType": "QUESTION",
+          "body": {
+            "mainText": "What are your business hours?"
+          }
+        }
+      }'
+
+      {
+        "inputMessage": {
+          "id": "b3f1a7d2-9c14-4e58-8a2b-6d0f5c8e1a44",
+          "createdDate": "2026-07-08T10:30:00.000Z",
+          "sender": "SITE_VISITOR",
+          "conversationId": "0f2c6e91-4a7d-4b3e-9f18-5c2a7e6b1d33",
+          "messageType": "QUESTION",
+          "body": {
+            "mainText": "What are your business hours?"
+          }
+        }
+      }
+      {
+        "answerChunk": "Our business hours are "
+      }
+      {
+        "answerChunk": "9 AM to 5 PM, Monday through Friday."
+      }
+      ```
+
+      ```json Response
+      {
+        "answerMessage": {
+          "id": "a1d9c4e7-2f36-4c81-b5a0-7e3d9f2c6b18",
+          "createdDate": "2026-07-08T10:30:02.000Z",
+          "sender": "ASSISTANT",
+          "conversationId": "0f2c6e91-4a7d-4b3e-9f18-5c2a7e6b1d33",
+          "answerTo": "b3f1a7d2-9c14-4e58-8a2b-6d0f5c8e1a44",
+          "messageType": "ANSWER",
+          "body": {
+            "mainText": "Our business hours are 9 AM to 5 PM, Monday through Friday."
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates a message and streams the assistant's response back in real time.
+
+    Use this method to send a site visitor's question and receive the assistant's answer as a stream of frames, so you can display the answer as it's generated instead of waiting for the complete response.
+
+    This method must be called using the [site visitor or site member identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) to identify the site visitor sending the message. The conversation is resolved automatically from the visitor's identity, so you don't need to provide a conversation ID.
+
+    Set the message's `messageType` to `QUESTION` and provide the question text in `body.mainText`.
+
+    Each frame in the response stream contains one of the following:
+    - `inputMessage`: The message you sent, persisted with its server-assigned `id`, `conversationId`, and creation timestamp. Sent as the first frame.
+    - `answerChunk`: A part of the assistant's answer text, streamed as it's generated. Each chunk is additive, so concatenate the chunks in the order received to build the full answer. Sent zero or more times.
+    - `answerMessage`: The complete, persisted assistant answer. Sent as the final frame before the stream completes.
+
+    The message and the assistant's answer are persisted regardless of whether the stream completes. If the connection drops or times out, retrieve both by calling [List Messages](https://dev.wix.com/docs/api-reference/business-management/ai-site-chat/messages/list-messages).
+
+    If the conversation has reached its quota, the answer is a message with `messageType` `OUT_OF_QUOTA`. Behavior outside the assistant's active hours depends on the site's widget settings.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INNOVATION_LAB.USER">Innovation Lab User</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { messages } from '@wix/ai-site-chat';
+
+    messages.createMessageStream(message): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="message" type="Message" required>
+
+      Message to send. Set `messageType` to `QUESTION` and provide the question text in `body.mainText`. The `conversationId` and other read-only fields are assigned by the server.
+
+      See the [Message Object](/api-reference/business-management/ai-site-chat/messages/message-object) for this object's fields.
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `CreateMessageStreamResponse`.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `403` | `PERMISSION_DENIED` | `FORBIDDEN_MESSAGE_TYPE` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Message Created | `wix.innovation.widget.v1.message_created` |  |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-message-stream" id="ex-sdk-create-message-stream-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-message-stream" id="ex-sdk-create-message-stream-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-message-stream-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-message-stream-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Send a question and stream the assistant's answer</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createMessageStream (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-message-stream-0"><span className="wix-picker-name">Send a question and stream the assistant's answer</span></label>
+    <label htmlFor="ex-sdk-create-message-stream-1"><span className="wix-picker-name">createMessageStream (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Send a question and stream the assistant's answer
+    import { messages } from "@wix/ai-site-chat";
+
+    const message = {
+      messageType: "QUESTION",
+      body: {
+        mainText: "What are your business hours?",
+      },
+    };
+
+    async function createMessageStream() {
+      let answer = "";
+
+      // The stream emits frames: first the persisted question, then additive
+      // answer chunks, and finally the complete persisted answer.
+      for await (const frame of messages.createMessageStream(message)) {
+        if (frame.inputMessage) {
+          // The visitor's question, persisted with its server-assigned ID and conversation ID.
+          console.log("Question sent:", frame.inputMessage._id);
+        } else if (frame.answerChunk) {
+          // Additive text chunk — append it to build the full answer.
+          answer += frame.answerChunk;
+        } else if (frame.answerMessage) {
+          // The complete, persisted answer.
+          answer = frame.answerMessage.body?.mainText ?? answer;
+        }
+      }
+
+      return answer;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createMessageStream (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { messages } from '@wix/ai-site-chat';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { messages },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createMessageStream(message) {
+      const response = await myWixClient.messages.createMessageStream(message);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

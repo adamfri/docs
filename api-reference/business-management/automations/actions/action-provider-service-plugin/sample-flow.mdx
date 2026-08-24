@@ -1,0 +1,121 @@
+---
+title: "Sample Flow"
+description: "This article presents a possible use case and a corresponding sample flow that you can support."
+icon: "file-lines"
+---
+
+This article presents a possible use case and a corresponding sample flow that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Run an invoked action
+
+Wix calls [Invoke](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/invoke) to run your action as part of the automation flow. If your action has an [output schema](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), include the results in your response.
+
+For example, let's say your app manages membership tiers for site members based on how active they are in the site owner's community. When a member contributes regularly to the community, they move up a membership tier.
+
+1. When a member contributes a predetermined number of pieces of content, the automation is triggered by the `contribution-level-reached` trigger. Wix calls [Invoke](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/invoke) with the action parameters as specified in the action's [input schema](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema):
+
+   ```json
+   {
+     "actionParams": {
+       "name": "Stacey Jenkins",
+       "contactId": "749a5725-c0c2-47f9-92f0-cb858697aa63",
+       "totalContributions": 100
+     },
+     "actionKey": "upgrade-member-tier",
+     "activationContext": {
+       "activationId": "ef1378fe-cf40-4e30-b2b7-2883dc6161dd",
+       "triggerKey": "contribution-level-reached",
+       "triggerAppId": "4a3fad8a-962c-4aa8-bbfe-68e868ecd292",
+       "actionId": "42ddeb33-5741-4871-9fb7-f550266db4d9",
+       "payload": {
+         "name": "Stacey Jenkins",
+         "contactId": "749a5725-c0c2-47f9-92f0-cb858697aa63",
+         "totalContributions": 100
+       },
+       "actionAppId": "05848931-7ebd-4b5e-9f3c-2bb9ff974f9f",
+       "invocationToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"
+     }
+   }
+   ```
+
+2. Your action checks the member's total community contributions. If they meet the upgrade criteria, your action updates that member's membership tier. In this case, the action returns the upgraded tier:
+
+   ```json
+   {
+     "result": {
+       "contactId": "749a5725-c0c2-47f9-92f0-cb858697aa63",
+       "membershipTier": "plus"
+     }
+   }
+   ```
+
+   Wix receives the results and continues to the next step in the automation.
+
+## Run an invoked action with a timeout
+
+When Wix calls [Invoke](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/invoke) to run your action, you can tell Wix to [wait for your action to complete](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/introduction#action-timeouts) before continuing to the next step in the automation. This is useful when your action takes time to complete, such as waiting for visitor input or querying large amounts of data.
+
+Let's say your app provides booking services to gyms. When a new client signs up for their first training session, the trainer must first approve them based on their health data. Your app includes an action that notifies trainers of the new client and waits for their approval to confirm the session.
+
+1. When a new client signs up, the automation is triggered by the `new-client-signed-up` trigger. Wix calls Invoke with the action parameters as specified in the action's [input schema](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema):
+
+   ```json
+   {
+     "actionParams": {
+       "name": "Josh Wiggins",
+       "contact": "joshw6801@email.com",
+       "dateScheduled": "2024-03-27T14:15:30.000Z",
+       "dateOfSession": "2024-04-11T08:00:00.000Z",
+       "healthForm": "jw_health.pdf"
+     },
+     "actionKey": "notify-new-signup",
+     "activationContext": {
+       "activationId": "8ad66215-2bc4-4868-9889-ff90268f5282",
+       "triggerKey": "new-client-signed-up",
+       "triggerAppId": "509acb45-080f-4382-98f5-6e74d490bf13",
+       "actionId": "0a002979-8525-435d-9ba9-4e56b137f2fe",
+       "payload": {
+         "contactName": "Josh Wiggins",
+         "healthForm": "jw_health.pdf"
+       },
+       "actionAppId": "7379c49e-624e-453d-9a58-b2582406bce5",
+       "invocationToken": "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0NDI5MjIwNSwiaWF0IjoxNzQ0MjkyMjA1fQ.PEoBkoHLjBwjxBbWWA-ZL3MjpVMTymUC6wrxqjMVnEk"
+     }
+   }
+   ```
+
+   Make sure to save `activationContext.invocationToken` for later use.
+
+2. Because it might take time for a trainer to respond, your response specifies a timeout period during which Wix waits for your action to complete:
+
+   ```json
+   {
+     "result": {},
+     "invokeTimeoutType": "TIMEOUT_LENGTH",
+     "timeoutLengthOptions": {
+       "timeoutInMinutes": 1440
+     }
+   }
+   ```
+
+   Wix now waits 24 hours for you to confirm that the action has completed.
+
+3. Several hours later, a trainer reviews and approves the health form. Your app calls [Report Action Invocation Completed](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) to tell Wix that the action completed successfully.
+
+   Include the invocation token from Wix's original call to [Invoke](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/invoke), as well as any output data defined in your action's [output schema](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema):
+
+   ```json
+   {
+     "status": "SUCCESS",
+     "invocationToken": "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0NDI5MjIwNSwiaWF0IjoxNzQ0MjkyMjA1fQ.PEoBkoHLjBwjxBbWWA-ZL3MjpVMTymUC6wrxqjMVnEk",
+     "successInfo": {
+       "result": {
+         "sessionStatus": "APPROVED"
+       }
+     }
+   }
+   ```
+
+4. Once Wix receives the response, the automation continues to the next action, which might send a confirmation code to the new client. Because the trainer approved the session during the timeout period, Wix sends the confirmation code successfully.
+
+   However, if a trainer doesn't approve the health form in 24 hours, your app doesn't call Report Action Invocation Completed. In this case, Wix [marks the action as failed](fallback::https://support.wix.com/en/article/wix-automations-understanding-run-logs#understanding-statuses) and continues to the next action. The second action may fail if it requires output data from the first action, and the client might not receive a confirmation code.

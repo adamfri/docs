@@ -1,0 +1,64 @@
+---
+title: "Introduction"
+description: "The Item SEO Tags API allows you to read and write the SEO tags of an individual item on a Wix site, such as a static page, a blog post, a store product, a boo…"
+icon: "file-lines"
+---
+
+The Item SEO Tags API allows you to read and write the SEO tags of an individual item on a Wix site, such as a static page, a blog post, a store product, a bookings service, or an event. For each item you can retrieve the tags set for that item alone, the tags it's expected to render with, and where each of those tags came from.
+
+With the Item SEO Tags API, you can:
+
+- Read the tags set for an item, and the tags it actually renders with, including which source each one came from.
+- Set an item's title, description, and other meta tags, and its focus keywords.
+- Set the tags of many items in one call, with a result per item so one invalid item doesn't fail the rest.
+- Remove an item's own tags so that it inherits them again.
+- Find which items have tags of their own and which inherit.
+
+## How an item's tags are decided
+
+An item rarely has all of its tags set directly. Wix builds the tags an item renders with by combining several sources, where a later source takes precedence:
+
+1. The site's tags, which apply to every page. See the [Site SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/introduction).
+1. The pattern Wix provides for the item's type.
+1. The pattern the Wix user customized for that item type. See the [SEO Patterns API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/introduction).
+1. The tags of the page that displays the item.
+1. The item's own tags, set through this API.
+
+`resolvedTags` reports the result of that combination, with each tag marked by the source it came from. This means `hasOverride: false` doesn't imply an item shows Wix's built-in tags: it may be inheriting from a customized pattern or from the site.
+
+Tags that site code, apps, or page components add while a page renders aren't part of this model, so `resolvedTags` isn't a literal copy of the page's rendered head.
+
+## When changes reach the live site
+
+This depends on the item type, and the API decides it for you:
+
+- **Item types that are always live**, such as store products, categories, events, and portfolio collections: every change is live immediately. Setting `publish` has no effect for these.
+- **Static pages** keep a draft separately from the published page. A change is saved to the draft unless you set `publish` to `true`.
+- **Blog posts** have a single version. A change to a post that's already published stays published, matching what happens when a Wix user edits a live post in the dashboard.
+
+`publishStatus` reports whether an item's tags are live.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- An item is addressed by an item type and an item ID together, not by URL. Call [List Item SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/list-item-seo-tags) for an item type to discover the IDs available on a site.
+- Item types are the same on every site, but a site only has items of a type when the Wix business solution that provides that type is installed on it.
+- Setting `tags` replaces an item's tags in full. Retrieve them first and send back the complete set you want the item to have.
+- Tags can currently be written only for the site's primary language, so leave `language` unset on a write.
+- Setting tags for `EVENTS_PAGE` items isn't supported yet, although reading them is.
+
+## Use cases
+
+- [Move a site's page titles and descriptions onto Wix](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/sample-flows#move-a-sites-page-titles-and-descriptions-onto-wix)
+- [Find which items still use inherited tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/sample-flows#find-which-items-still-use-inherited-tags)
+- [Give one page a custom title, then undo it](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/sample-flows#give-one-page-a-custom-title-then-undo-it)
+
+## Terminology
+
+- **Item:** Anything on a site that has its own SEO tags, such as a page, a blog post, or a store product.
+- **Item type:** The kind of item, such as `STATIC_PAGE` or `STORES_PRODUCT`. Together with an item ID it identifies an item.
+- **Pattern:** A template that generates tags for every item of a type, so a Wix user doesn't have to set them item by item. See the [SEO Patterns API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/introduction).
+- **Resolved tags:** The tags an item is expected to render with, after combining every source Wix manages.
+
+@sdk_package_setup

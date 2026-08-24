@@ -1,0 +1,69 @@
+---
+title: "Refund Lifecycle"
+description: "This flow shows how to monitor refunds through their complete lifecycle from creation to final status, handling all possible status transitions."
+icon: "file-lines"
+---
+
+This flow shows how to monitor refunds through their complete lifecycle from creation to final status, handling all possible status transitions. Refunds can be created through the API, by merchants in the Wix dashboard, or synchronized from Payment Service Providers.
+
+## Before you begin
+
+- Set up webhook subscriptions to receive refund status updates in real-time.
+
+## Refund tracking flow
+
+The following steps describe the complete process of monitoring a refund from creation through final status.
+
+### Step 1 | Receive refund creation notification
+
+A refund is created (either through the API, by a merchant in the dashboard, or synchronized from a Payment Service Provider).
+
+**Action:** Receive the [Refund Created](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/refunds/refund-created) event.
+
+**Result:** Refund detected. The initial status is typically `PENDING` for API-created refunds, but can be any status for provider-synchronized refunds. Refunds can transition to any status (`PENDING`, `SUCCEEDED`, `FAILED`, or `REVERSED`) at any time. Continue to Step 2.
+
+### Step 2 | Display initial status
+
+Inform the merchant about the refund and its current status.
+
+**Action:** Display the refund details and current status to the merchant.
+
+**Result:** Merchant notified of refund. Continue to Step 3.
+
+### Step 3 | Monitor for status changes
+
+Set up monitoring to detect when the refund status changes.
+
+**Actions:** Choose one approach:
+
+- **Event-based**: Listen for [Refund Updated](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/refunds/refund-updated) events (recommended).
+- **Polling-based**: Call [Get Refund](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/refunds/get-refund) periodically to check the current status.
+
+**Result:** Status change detected. Continue to Step 4.
+
+### Step 4 | Handle final status
+
+Process the refund's final status and update your system accordingly.
+
+**Possible results:**
+
+- **SUCCEEDED**: Refund completed successfully. Update your system to reflect that funds have been returned to the buyer. Confirm to the merchant that the refund succeeded. Continue monitoring events in case of rare reversal (proceed to Step 5 if reversed).
+- **FAILED**: Refund processing failed. Check the `rejectionReason` field to understand why. Display an appropriate error message to the merchant. Depending on the rejection reason, you may retry by creating a new refund. Flow ends.
+
+### Step 5 | Handle reversal (rare)
+
+In rare cases, a previously successful refund may be reversed by the payment provider.
+
+**Action:** Receive [Refund Updated](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/refunds/refund-updated) event with `REVERSED` status.
+
+**Result:** Update your system to reflect that the refund was reversed. Notify the merchant that the funds have been reclaimed by the payment provider. Flow ends.
+
+## Results
+
+After implementing this flow, your app can reliably monitor refunds through all possible status transitions, providing merchants with accurate real-time refund status information and handling edge cases like reversals.
+
+## See also
+
+- [Refunds API Introduction](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/introduction)
+- [About Preventing Unintended Refunds](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/prevent-unintended-refunds)
+- [Sample Flows](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/sample-flows)

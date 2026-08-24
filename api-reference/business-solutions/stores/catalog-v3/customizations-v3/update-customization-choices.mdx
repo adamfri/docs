@@ -1,0 +1,551 @@
+---
+title: "Update Customization Choices"
+description: "Updates properties of existing choices in a customization."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates properties of existing choices in a customization.
+    Choices are identified by their IDs. Only the fields specified in `fieldMask` are updated.
+
+    Currently supports updating `primaryChoiceIds`.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/customizations/{customizationId}/update-choices
+    ```
+
+    ## Path Params
+
+    <ParamField path="customizationId" type="string" required>
+
+      Customization ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="revision" type="string" required>
+
+      Revision number, which increments by 1 each time the customization is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the customization.
+
+    </ParamField>
+
+    <ParamField body="choices" type="MaskedChoice[]" required>
+
+      Choices to update. Each item must include a `choice` with a valid `id` matching an existing choice in the customization.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="choices properties">
+
+        <ParamField body="choice" type="Choice" required>
+
+          Choice to update.
+
+          <Expandable title="choice properties">
+
+            <ParamField body="id" type="string">
+
+              Choice ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="choiceType" type="string">
+
+              Choice type.
+
+              > **Notes:**
+              > + For `customizationRenderType: SWATCH_CHOICES`, the supported `choiceType` value is: `ONE_COLOR`.
+              > + For a `customizationRenderType` of `TEXT_CHOICES`, the supported `choiceType` value is: `CHOICE_TEXT`.
+
+              Constraints: `immutable`.
+
+              **Supported values:**
+
+              - `CHOICE_TEXT` — For a `customizationRenderType` of `TEXT_CHOICES`.
+              - `ONE_COLOR` — For `customizationRenderType: SWATCH_CHOICES`.
+
+            </ParamField>
+
+            <ParamField body="key" type="string">
+
+              A read-only identifier generated from the choice name.
+
+              Use `key` in the `catalogReference.options` object when [integrating Catalog V3 with eCommerce APIs](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration).
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Choice name.
+
+              Constraints: `minLength 1`, `maxLength 50`.
+
+            </ParamField>
+
+            <ParamField body="defaultAddedPrice" type="string">
+
+              Default amount added to a product's price when this customization is assigned to a modifier.
+
+            </ParamField>
+
+            <ParamField body="displayImage" type="Image">
+
+              Optional image displayed alongside a `ONE_COLOR` choice in the storefront.
+              Only valid for `ONE_COLOR` choices; not populated for other choice types.
+
+              _Nested structure omitted for brevity — see the `Image` object._
+
+            </ParamField>
+
+            <ParamField body="primaryChoiceIds" type="string[]">
+
+              IDs of the primary choices this choice is grouped under.
+
+              A choice that has `primaryChoiceIds` is a "linked" choice; a choice without `primaryChoiceIds` is a "primary" choice.
+              A linked choice can reference up to 4 primary choices and appears nested under each of them on the storefront,
+              rather than in the top-level choice list.
+
+              Only one level of grouping is supported: a primary choice cannot itself be a linked choice.
+
+              **Developer Preview.** Constraints: `format GUID`, `maxItems 4`.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="value" type="value">
+
+              value
+
+              _Nested structure omitted for brevity — see the `value` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Supported values: `ASSIGNED_PRODUCTS_COUNT`
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `ASSIGNED_PRODUCTS_COUNT` — Assigned products count.
+      - `CHOICE_DISPLAY_IMAGE` — Returns display images for choices.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="customization" type="Customization">
+
+      Updated customization.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_FOUND` | Couldn't find 1 or more choices matching the provided IDs. |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_CHOICE_FIELD` | `fieldMask` contains a choice field that isn't supported for update. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_SELF_REFERENCE` | Choice references itself in `primaryChoiceIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_NOT_FOUND` | `primaryChoiceIds` contains an ID that doesn't match any existing choice in the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_HIERARCHY_VIOLATION` | A choice that is a primary of other choices can't also be a linked choice. Only a single level of grouping is supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Updated | `wix.stores.catalog.v3.customization_updated` | Triggered when a customization is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Updates properties of existing choices in a customization.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+       'https://www.wixapis.com/stores/v3/customizations/190facb7-1106-4ded-8ef9-cccad5c747bd/update-choices' \
+       -H 'Content-Type: application/json' \
+       -H 'Authorization: <AUTH>' \
+       -d '{
+        "revision": "2",
+        "choices": [
+          {
+            "choice": {
+              "id": "63423d24-ef4c-4d33-b924-574b525d07e5",
+              "primaryChoiceIds": ["04ed47f1-32fa-4347-8f03-412b88a62fc1"]
+            }
+          }
+        ],
+        "fields": ["ASSIGNED_PRODUCTS_COUNT"]
+       }'
+      ```
+
+      ```json Response
+      {
+          "customization": {
+              "id": "190facb7-1106-4ded-8ef9-cccad5c747bd",
+              "revision": "3",
+              "createdDate": "2026-05-05T11:56:52.577Z",
+              "updatedDate": "2026-05-05T11:57:52.208Z",
+              "key": "Color (demo)",
+              "name": "Color (demo)",
+              "customizationType": "PRODUCT_OPTION",
+              "customizationRenderType": "SWATCH_CHOICES",
+              "choicesSettings": {
+                  "choices": [{
+                      "id": "cb4a9c2d-506d-4f28-b905-5445d526da32",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Green",
+                      "name": "Green",
+                      "colorCode": "#008000",
+                      "primaryChoiceIds": []
+                  }, {
+                      "id": "04ed47f1-32fa-4347-8f03-412b88a62fc1",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Blue",
+                      "name": "Blue",
+                      "colorCode": "#0000FF",
+                      "primaryChoiceIds": []
+                  }, {
+                      "id": "63423d24-ef4c-4d33-b924-574b525d07e5",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Yellow",
+                      "name": "Yellow",
+                      "colorCode": "#FFFF00",
+                      "primaryChoiceIds": [
+                          "04ed47f1-32fa-4347-8f03-412b88a62fc1"
+                      ]
+                  }]
+              },
+              "assignedProductsCount": 0
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates properties of existing choices in a customization.
+    Choices are identified by their IDs. Only the fields specified in `fieldMask` are updated.
+
+    Currently supports updating `primaryChoiceIds`.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { customizationsV3 } from '@wix/stores';
+
+    customizationsV3.updateCustomizationChoices(customizationId, revision, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="customizationId" type="string" required>
+
+      Customization ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="revision" type="string" required>
+
+      Revision number, which increments by 1 each time the customization is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the customization.
+
+    </ParamField>
+
+    <ParamField body="options" type="UpdateCustomizationChoicesOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="choices" type="MaskedChoice[]" required>
+
+          Choices to update. Each item must include a `choice` with a valid `id` matching an existing choice in the customization.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="choices properties">
+
+            <ParamField body="choice" type="Choice" required>
+
+              Choice to update.
+
+              _Nested structure omitted for brevity — see the `Choice` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Supported values: `ASSIGNED_PRODUCTS_COUNT`
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `ASSIGNED_PRODUCTS_COUNT` — Assigned products count.
+          - `CHOICE_DISPLAY_IMAGE` — Returns display images for choices.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="customization" type="Customization">
+
+      Updated customization.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_FOUND` | Couldn't find 1 or more choices matching the provided IDs. |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_CHOICE_FIELD` | `fieldMask` contains a choice field that isn't supported for update. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_SELF_REFERENCE` | Choice references itself in `primaryChoiceIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_NOT_FOUND` | `primaryChoiceIds` contains an ID that doesn't match any existing choice in the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_HIERARCHY_VIOLATION` | A choice that is a primary of other choices can't also be a linked choice. Only a single level of grouping is supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Updated | `wix.stores.catalog.v3.customization_updated` | Triggered when a customization is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-update-customization-choices" id="ex-sdk-update-customization-choices-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-update-customization-choices" id="ex-sdk-update-customization-choices-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-update-customization-choices" id="ex-sdk-update-customization-choices-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-update-customization-choices-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-update-customization-choices-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">updateCustomizationChoices</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">updateCustomizationChoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">updateCustomizationChoices (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-update-customization-choices-0"><span className="wix-picker-name">updateCustomizationChoices</span></label>
+    <label htmlFor="ex-sdk-update-customization-choices-1"><span className="wix-picker-name">updateCustomizationChoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-update-customization-choices-2"><span className="wix-picker-name">updateCustomizationChoices (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript updateCustomizationChoices
+    import { customizationsV3 } from '@wix/stores';
+
+    async function updateCustomizationChoices(customizationId,revision,options) {
+      const response = await customizationsV3.updateCustomizationChoices(customizationId,revision,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript updateCustomizationChoices (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { customizationsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { customizationsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function updateCustomizationChoices(customizationId,revision,options) {
+      const response = await myWixClient.customizationsV3.updateCustomizationChoices(customizationId,revision,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript updateCustomizationChoices (with elevated permissions)
+    import { customizationsV3 } from '@wix/stores';
+    import { auth } from '@wix/essentials';
+
+    async function myUpdateCustomizationChoicesMethod(customizationId,revision,options) {
+      const elevatedUpdateCustomizationChoices = auth.elevate(customizationsV3.updateCustomizationChoices);
+      const response = await elevatedUpdateCustomizationChoices(customizationId,revision,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

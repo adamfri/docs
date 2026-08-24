@@ -1,0 +1,508 @@
+---
+title: "Bulk Upsert Marketing Consent"
+description: "Creates or updates multiple marketing consents."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates or updates multiple marketing consents.
+    Required fields:
+    - `details.type`.
+    - `details.email` OR `details.phone`.
+    - `state`.
+
+    When a marketing consent's `state` is `PENDING` or `CONFIRMED`, the `info.lastConfirmationActivity` field is required.
+    When a marketing consent's `state` is `REVOKED`, the `info.lastRevokeActivity` field is required.
+
+    <Note>
+
+    For existing marketing consents with `{"type": "EMAIL"}`, you can't update the `state` to `UNKNOWN_STATE`. Trying to do so maintains the current state. However, you can create a new marketing consent and set the `state` to `UNKNOWN_STATE`. Note that you can't create more than a single consent per email or phone number.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-MARKETING.CONSENT-MANAGE">Manage Marketing Consents</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/marketing-consent/v1/bulk/marketing-consent/upsert
+    ```
+
+    ## Body Params
+
+    <ParamField body="info" type="MarketingConsent[]">
+
+      List of marketing consent information to update or create.
+
+      Constraints: `minItems 1`, `maxItems 500`.
+
+      See the [Marketing Consent Object](/api-reference/business-management/marketing/marketing-consent/marketing-consent-object) for this object's fields.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkUpsertMarketingConsentResult[]">
+
+      List of created or updated marketing consents.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="originalIndex" type="integer">
+
+          Position of the newly created or updated marketing consent in the array.
+
+        </ResponseField>
+
+        <ResponseField name="marketingConsent" type="MarketingConsent">
+
+          Newly created or updated marketing consent.
+
+          See the [Marketing Consent Object](/api-reference/business-management/marketing/marketing-consent/marketing-consent-object) for this object's fields.
+
+        </ResponseField>
+
+        <ResponseField name="error" type="string">
+
+          Information about the error. Only returns if the action fails.
+
+        </ResponseField>
+
+        <ResponseField name="link" type="Link">
+
+          Marketing consent confirmation or cancelation link.
+
+          <Expandable title="link properties">
+
+            <ResponseField name="type" type="string">
+
+              Link type.
+
+              **Supported values:**
+
+              - `UNKNOWN_LINK_TYPE`
+              - `CONFIRMATION`
+              - `REVOKE_CONFIRMATION`
+
+            </ResponseField>
+
+            <ResponseField name="url" type="string">
+
+              The link's URL.
+
+              Constraints: `format WEB_URL`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="Metadata">
+
+      Numbers of successful and failed actions.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="totalSuccess" type="integer">
+
+          Number of successful actions.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailure" type="integer">
+
+          Number of failed actions.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Marketing Consent Created | `wix.marketing.marketing_consent.v1.marketing_consent_created` | Triggered when a marketing consent is created. |
+    | Marketing Consent Updated | `wix.marketing.marketing_consent.v1.marketing_consent_updated` | Triggered when a marketing consent is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/marketing-consent/v1/bulk/marketing-consent/upsert' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "info" : [
+            {
+              "details": {
+                "type": "EMAIL",
+                "email": "test1@test.com"
+              },
+              "state": "PENDING",
+              "lastConfirmationActivity": {
+                "source": "IN_PERSON",
+                "description": "Person filed a printed document.",
+                "updatedDate": "2023-01-01T00:00:00Z",
+                "optInLevel": "DOUBLE_CONFIRMATION"
+              }
+            },
+            {
+              "details": {
+                "type": "EMAIL",
+                "email": "test2@test.com"
+              },
+              "state": "CONFIRMED",
+              "lastConfirmationActivity": {
+                "source": "LINK_CONFIRMATION",
+                "description": "Person clicked a link.",
+                "updatedDate": "2023-01-03T00:00:00Z",
+                "optInLevel": "SINGLE_CONFIRMATION"
+              }
+            }
+          ]
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "originalIndex": 0,
+            "marketingConsent": {
+              "id": "f5d258dd-64e9-49f6-b8af-2b5b616ddb22",
+              "details": {
+                "type": "EMAIL",
+                "email": "test1@test.com"
+              },
+              "state": "PENDING",
+              "lastConfirmationActivity": {
+                "source": "IN_PERSON",
+                "description": "Person filed a printed document.",
+                "updatedDate": "2023-01-01T00:00:00Z",
+                "optInLevel": "DOUBLE_CONFIRMATION"
+              },
+              "extendedFields": {},
+              "createdDate": "2022-11-16T14:07:50.150Z",
+              "updatedDate": "2022-11-16T14:07:50.150Z"
+            },
+            "link": {
+              "type": "CONFIRMATION",
+              "url": "https://rebeccask.wixsite.com/testing-test-sites/_manage-consent/subscribe?token=JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiZkhJbFA4M1cifQ.UmKgcTrpm13hqOqrrbKBC6sLTK7ZF694DN9ozHFFXhB9l_0TZBIOfw.7Qhmn9yQl99V0z8wzlMHGQ.dpcSFTlxBJeh52asYrarRcYL1KVkDRs8zUTT4jrC7gFhFIHn-S678kDO4FSSwM92Ncg7nrq-A9d5hWkdeg5EQTq4A3Ludxxt3YjQnfVOUWggYXvdsoWcSh6UNqt3FKoXtVDHBJQDRJun2LVJ_IDbBPo8O89Y0bJ72d5S2hlOCrul8bj72nYDY1Mcrc4gSabbM5cRVmJuVSJJwU2ProAwUlC4RCi9bvKM7ZnonbFSsqzO4pfoKOs6Rl0JDTIe-Z0r7vwkq1uhdN5DlQkDN9PD0g.VJAjLxKf0xcIpocwcjZXOA"
+            }
+          },
+          {
+            "originalIndex": 1,
+            "marketingConsent": {
+              "id": "a4f96b5b-1ab6-48e9-91d7-8317466fe801",
+              "details": {
+                "type": "EMAIL",
+                "email": "test2@test.com"
+              },
+              "state": "CONFIRMED",
+              "lastConfirmationActivity": {
+                "source": "LINK_CONFIRMATION",
+                "description": "Person clicked a link",
+                "updatedDate": "2023-01-03T00:00:00Z",
+                "optInLevel": "SINGLE_CONFIRMATION"
+              },
+              "extendedFields": {}
+            },
+            "link": {
+              "type": "REVOKE_CONFIRMATION",
+              "url": "https://rebeccask.wixsite.com/testing-test-sites/_manage-consent/unsubscribe?token=JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiZkhJbFA4M1cifQ.2Rrc2yCSu8hAtQ2R-QVqOowE6VaJ4Tz2CrF9yYahoGylKQhiaxkB9g.t31uuAdT2d__GZ5RhltuwQ._MkLlPHPy05IwOgNFYgH5et8D_ujdheZUa9SLFnTxDfCFGSBXWaE4SxxKKx8hJAFf5qo8s5HnLUHUHCC_T0ve6k8xyzB86dUZTLTt_Y_20xY3Bolxh6e8DC1-0mYS6Ufs9FInvTt4nSP3FtMvItk9DPkOFOaFyHXObGqwW9lXpijCcvVXJemWzsiEwIknc291W8hUSwWnqlvPZG6i05Umq03Mwf8-7Wk0KdYRC5xcY7nzTZ0ax1SQ_zh2LcKTDC2RIKGAkx-m9fTBDAQwBfwfg.jXxMG8F5v3IgtokmQPKD_Q"
+            }
+          }
+        ],
+        "metadata": {
+          "totalSuccess": 2,
+          "totalFailure": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates or updates multiple marketing consents.
+    Required fields:
+    - `details.type`.
+    - `details.email` OR `details.phone`.
+    - `state`.
+
+    When a marketing consent's `state` is `PENDING` or `CONFIRMED`, the `info.lastConfirmationActivity` field is required.
+    When a marketing consent's `state` is `REVOKED`, the `info.lastRevokeActivity` field is required.
+
+    <Note>
+
+    For existing marketing consents with `{"type": "EMAIL"}`, you can't update the `state` to `UNKNOWN_STATE`. Trying to do so maintains the current state. However, you can create a new marketing consent and set the `state` to `UNKNOWN_STATE`. Note that you can't create more than a single consent per email or phone number.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-MARKETING.CONSENT-MANAGE">Manage Marketing Consents</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { marketingConsent } from '@wix/marketing';
+
+    marketingConsent.bulkUpsertMarketingConsent(info): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="info" type="MarketingConsent[]" required>
+
+      List of marketing consent information to update or create.
+
+      Constraints: `minItems 1`, `maxItems 500`.
+
+      See the [Marketing Consent Object](/api-reference/business-management/marketing/marketing-consent/marketing-consent-object) for this object's fields.
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkUpsertMarketingConsentResult[]">
+
+      List of created or updated marketing consents.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="originalIndex" type="integer">
+
+          Position of the newly created or updated marketing consent in the array.
+
+        </ResponseField>
+
+        <ResponseField name="marketingConsent" type="MarketingConsent">
+
+          Newly created or updated marketing consent.
+
+          See the [Marketing Consent Object](/api-reference/business-management/marketing/marketing-consent/marketing-consent-object) for this object's fields.
+
+        </ResponseField>
+
+        <ResponseField name="error" type="string">
+
+          Information about the error. Only returns if the action fails.
+
+        </ResponseField>
+
+        <ResponseField name="link" type="Link">
+
+          Marketing consent confirmation or cancelation link.
+
+          <Expandable title="link properties">
+
+            <ResponseField name="type" type="string">
+
+              Link type.
+
+              **Supported values:**
+
+              - `UNKNOWN_LINK_TYPE`
+              - `CONFIRMATION`
+              - `REVOKE_CONFIRMATION`
+
+            </ResponseField>
+
+            <ResponseField name="url" type="string">
+
+              The link's URL.
+
+              Constraints: `format WEB_URL`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="Metadata">
+
+      Numbers of successful and failed actions.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="totalSuccess" type="integer">
+
+          Number of successful actions.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailure" type="integer">
+
+          Number of failed actions.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Marketing Consent Created | `wix.marketing.marketing_consent.v1.marketing_consent_created` | Triggered when a marketing consent is created. |
+    | Marketing Consent Updated | `wix.marketing.marketing_consent.v1.marketing_consent_updated` | Triggered when a marketing consent is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-upsert-marketing-consent" id="ex-sdk-bulk-upsert-marketing-consent-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-upsert-marketing-consent" id="ex-sdk-bulk-upsert-marketing-consent-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-upsert-marketing-consent-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-upsert-marketing-consent-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpsertMarketingConsent</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpsertMarketingConsent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-upsert-marketing-consent-0"><span className="wix-picker-name">bulkUpsertMarketingConsent</span></label>
+    <label htmlFor="ex-sdk-bulk-upsert-marketing-consent-1"><span className="wix-picker-name">bulkUpsertMarketingConsent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpsertMarketingConsent
+    import { marketingConsent } from '@wix/marketing';
+
+    async function bulkUpsertMarketingConsent(info) {
+      const response = await marketingConsent.bulkUpsertMarketingConsent(info);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpsertMarketingConsent (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { marketingConsent } from '@wix/marketing';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { marketingConsent },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpsertMarketingConsent(info) {
+      const response = await myWixClient.marketingConsent.bulkUpsertMarketingConsent(info);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,155 @@
+---
+title: "Introduction"
+description: "<blockquote class=\"important\" Important: When developing websites or building apps with Blocks, use Velo service plugins."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+<Note>
+
+When developing websites or building apps with Blocks, use [Velo service plugins](fallback::https://dev.wix.com/docs/velo/events-service-plugins/about-events-service-plugins-and-the-sdk).
+
+</Note>
+
+As a form submission provider, you can integrate with Wix to allow Wix users to request and use your services on their Wix sites. By integrating your service with Wix, the service validates and submits a site visitor's form.    
+
+The integration is done via an app in the Wix App Market (created in the [app dashboard](fallback::https://dev.wix.com/apps/my-apps)) and by implementing the Form Submission [service plugin](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions). After the app is installed on a site, Wix triggers a call to your service whenever a form is submitted on the site.   
+
+Learn more about [implementing a service plugin with Wix](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions).
+
+## Before you begin
+
+It's important to note the following before starting to code:
+
+- The Form Submission service plugin only works with the Wix Forms app. Call [GetAppInstance](https://dev.wix.com/docs/rest/api-reference/app-management/apps/app-instance/get-app-instance) to confirm that the app named `wix_forms` is installed on the site.
+- There are several apps that use forms. To validate form submission for a specific Wix app, configure your app in the [app dashboard](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/app-dashboard-setup/about-the-app-dashboard) and define the relevant `namespace` field in the extension. For example, the namespace for the Wix Forms app is `"wix.form_app.form"`.
+
+## Use cases
+
+Using the service plugin, you can design your app to validate a form after a site visitor submits it, including:
+
+- Field validations: Check if the email address is in the correct format or that the name contains only alphabetic characters.
+- Prevent submission of invalid data: Disable the submit button until all fields are correctly filled out.
+- Real-time feedback: Highlight the invalid fields.
+- Prevent duplicate submissions: Check for duplicate submissions based on certain criteria and prevent site visitors from submitting the same form multiple times.
+
+<Tabs>
+
+<Tab title="REST">
+
+## Get started
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right corner.
+1. Filter by **Wix Forms** in the left menu. Then find **Form Submission** and click **Create**.
+1. Provide the following configuration:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `deploymentUri` |string|Required. URI which Wix Forms calls to retrieve the validation. The URI consists of base URI and endpoint path.<br /> For example, `"deploymentUri": "https://my-validations.com/v4/validateSubmission"` where `https://my-validations.com/` is a base and `v4/validateSubmission` is the endpoint path.|
+| `namespaceConfigs` |Array of objects|A collection of Wix apps.|
+| `namespaceConfigs.namespace` |string| The app which the form submissions belong to: <ul> <li> Wix Forms: `wix.form_app.form` </li> <li> Wix Pricing Plans: `wix.pricing_plans.v1.custom_form` </li> <li> Wix Online Programs: `wix.achievements.quizzes.v1.quiz` </li> </ul> |
+| `formId` | string | Form ID which submissions will be validated. This field is optional. If you don't provide the form ID, submissions from all forms in the defined app will be validated. |
+| `namespaceConfigs.submissionValidationEnabled` |boolean| Whether to enable the submission validation in your app.|
+
+</Tab>
+
+<Tab title="SDK">
+
+## Get started
+
+Follow these steps to begin implementing your service plugin.
+
+### Step 1 | Choose a framework
+
+You can implement this service plugin with the following [frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks):
+
++ **Wix CLI:** Learn how to [implement a service plugin with the CLI and the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
++ **Self-hosted:** Learn how to [implement a self-hosted service plugin with the SDK and the Wix Dev Center](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk).
+
+### Step 2 | Configure your service plugin
+
+To configure and customize your plugin, you need to provide important information in the service plugin configuration file. You can [configure your plugin in the Wix Dev Center](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-1--add-a-service-plugin-extension-to-your-app). For details, see [Form Submissions Extension Configuration](fallback::https://dev.wix.com/docs/rest/crm/forms/service-plugins/form-submissions-service-plugin/extension-config).
+
+### Step 3 | Define handler functions
+
+Use [`formSubmissions.provideHandlers()`](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions) to define the following handler functions that implement your custom business logic. Make sure you define all required functions.
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`validateSubmission()`](fallback::https://dev.wix.com/docs/rest/crm/forms/service-plugins/form-submissions-service-plugin/validate-submission)    | Yes            |
+
+## Code examples
+
+Below is an example for implementing the Form Submissions service plugin in your code.
+
+### CLI: Basic code structure
+
+This is the basic code structure for implementing the Form Submissions service plugin with the Wix CLI:
+
+```js
+import { formSubmissions } from '@wix/forms/service-plugins'
+
+formSubmissions.provideHandlers({
+  validateSubmission: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+  
+```
+
+### Self-hosted: Basic code structure
+
+This is the basic code structure for implementing a self-hosted Form Submissions service plugin:
+
+```js
+import { createClient } from '@wix/sdk';
+import { formSubmissions } from '@wix/forms/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { formSubmissions }
+});
+
+wixClient.formSubmissions.provideHandlers({
+  validateSubmission: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+  
+```
+
+</Tab>
+
+</Tabs>
+
+## Terminology
+
+- **Submission:** Data received when a site visitor submits a form.
+- **Validation:** Process that makes sure the information that the site visitor put into a form is correct and meets certain rules.
+- **Form:** Online interface that allows site visitors to input and submit data.
+
+## See also
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)

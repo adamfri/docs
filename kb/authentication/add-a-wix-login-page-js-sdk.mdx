@@ -1,0 +1,233 @@
+---
+title: "Add a Wix Login Page (JS SDK)"
+description: "This article explains how to implement member login with a Wix login page using the JavaScript SDK."
+---
+
+This article explains how to implement member login with [a Wix login page](/kb/authentication/about-member-login) using the JavaScript SDK.
+
+<Note>
+
+If you build with [Wix's Astro integration](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/about-the-astro-integration), you don't need to implement this flow yourself. The integration's built-in routes handle it. See [Add Member Login with the Astro Integration](https://dev.wix.com/docs/go-headless/authentication/members/wix-login-page/add-member-login-with-the-astro-integration).
+
+</Note>
+
+You'll learn how to:
+
+- Generate and store OAuth data for the login flow.
+- Redirect members to the Wix login page.
+- Handle the callback and exchange the authorization code for member tokens.
+- Set tokens for authenticated API calls as the logged-in member.
+- Refresh access tokens using the refresh token.
+- Log out members using the Wix-managed logout URL.
+
+A Wix login page requires the least setup for member authentication, as Wix handles the user experience and the authentication process. The trade-off is that you can't change the look and feel of the Wix login page.
+
+For more control, you have other options:
+
+- To let members sign in with an external identity provider, such as Google, from your own UI, see [Sign In with Google or Facebook (JS SDK)](https://dev.wix.com/docs/go-headless/authentication/members/identity-providers/sign-in-with-google-or-facebook-js-sdk). You control the login interface in your UI, and Wix runs the provider's login.
+- For a fully custom-branded email login experience, [create a custom login page](/kb/authentication/build-a-custom-login-page-js-sdk).
+- To use a provider that isn't available through the Wix login flow, [run the provider's login yourself](https://dev.wix.com/docs/go-headless/authentication/members/identity-providers/bring-your-own-identity-provider).
+
+<Note>
+
+Wix login pages use the OAuth 2.0 protocol with PKCE (Proof Key for Code Exchange) for secure authentication. If you're new to these concepts, see [OAuth 2.0 and PKCE explained](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-proof-key-for-code-exchange-pkce).
+
+</Note>
+
+## Step 1 — Set up a Wix client
+
+To authenticate and interact with Wix APIs, create a [Wix client](https://dev.wix.com/docs/sdk/core-modules/sdk/wix-client) in your code. Install and import any relevant APIs, such as the [Stores Product API](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/introduction?apiView=SDK).
+
+For example:
+
+```js
+import { createClient, OAuthStrategy } from '@wix/sdk';
+import { products } from '@wix/stores';
+
+const myWixClient = createClient({
+  modules: { products },
+  auth: OAuthStrategy({
+    clientId: '<YOUR_CLIENT_ID>',
+  })
+});
+```
+
+Replace `<YOUR_CLIENT_ID>` with your OAuth app's **Client ID** from your [Headless Settings](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+
+## Step 2 — Generate OAuth data
+
+Use your Wix client to generate the data needed for the OAuth flow.
+
+The method takes the following 2 parameters:
+
+- **redirectURI**: The URL to which Wix redirects the member after login. This must exactly match one of your [allowed authorization redirect URIs](https://dev.wix.com/docs/go-headless/authentication/setup/allow-redirect-uris-and-domains) configured in your [**Headless Settings**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings#).
+- **originalURI**: The URL where the member started the login flow. The Wix login page flow returns the member to this location after authentication.
+
+```js
+const loginRequestData = myWixClient.auth.generateOAuthData(
+  "https://www.mysite.com/callback", // Redirect URI
+  "https://www.mysite.com/login"     // Original URI
+);
+```
+
+The method returns an object with the following properties, used for OAuth 2.0 with PKCE (Proof Key for Code Exchange) security:
+
+- **state**: A unique string to verify the login request.
+- **codeVerifier**: A random string for PKCE authentication.
+- **codeChallenge**: A SHA256 hash of `codeVerifier` for PKCE.
+- **redirectURI**: The redirect URI you passed.
+- **originalURI**: The original URI you passed.
+
+Example:
+
+```js
+{
+  state: 'j7E61ySL9AjXP_rTQqP3UKm1y4xUw4fQR8LLKHdGRIo',
+  codeVerifier: '499lUZPnd_pDmj5jiQdRO-Sn5Z4aHSR4UDN_qutI6wq',
+  codeChallenge: 'v3kBNICfxero3SZe1ken2okI0kapJcVYHEL4TeHIVjs',
+  redirectUri: 'https://www.mysite.com/callback',
+  originalUri: 'https://www.mysite.com/login',
+}
+```
+
+## Step 3 — Store OAuth data
+
+Store the OAuth data securely for use after login. For example, use [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) or a [cookie](https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie):
+
+```js
+// Client-side: Store OAuth data securely
+localStorage.setItem("wixOAuthData", JSON.stringify(loginRequestData));
+```
+
+## Step 4 — Redirect members to Wix login
+
+To redirect members to the Wix login:
+
+1. Request the login URL from your Wix client:
+
+   ```js
+   const { authUrl } = await myWixClient.auth.getAuthUrl(loginRequestData);
+   ```
+
+      <Note>
+
+      For this request to succeed, you must publish the Wix site connected to your headless project. Wix uses the published site to display the login page.
+
+      </Note>
+
+1. Redirect the member to the Wix login page:
+
+   ```js
+   window.location.href = authUrl;
+   ```
+
+This redirects site members to the Wix login page, where Wix handles the login process.
+
+## Step 5 — Perform token exchange
+
+Once members log in, Wix redirects them to the [redirect URI you specified](#step-2--generate-oauth-data) along with information you can use to confirm the login and generate member tokens for frontend API calls.
+
+If the login was successful, the page's URL contains a fragment that includes `code=` and `state=`. If the login failed, the URL contains a fragment that includes `error=` and `error_description=`. When the page loads, check for these fragments. If they exist, call a handler function to perform the token exchange.
+
+In your handler function:
+
+1. Retrieve the stored OAuth data:
+
+   ```js
+   // Client-side: Retrieve stored OAuth data
+   const oAuthData = JSON.parse(localStorage.getItem("wixOAuthData"));
+   ```
+
+1. Parse the page's URL:
+
+   ```js
+   const returnedOAuthData = myWixClient.auth.parseFromUrl();
+   if (returnedOAuthData.error) {
+     alert(`Login error: ${returnedOAuthData.errorDescription}`);
+     return;
+   }
+   ```
+
+1. Exchange the code for tokens:
+
+   ```js
+   const tokens = await myWixClient.auth.getMemberTokens(
+     returnedOAuthData.code,
+     returnedOAuthData.state,
+     oAuthData
+   );
+   ```
+
+The returned tokens object includes:
+
+```js
+{
+  accessToken: { value: "string", expiresAt: 1234567890 },
+  refreshToken: { value: "string" }
+}
+```
+
+- **Access token:** Used to make authenticated API calls.
+- **Refresh token:** Used to get a new access token when the current token expires.
+
+## Step 6 — Set and refresh tokens for the client
+
+Set the tokens on your Wix client to authenticate API calls as the logged-in member:
+
+```js
+myWixClient.auth.setTokens(tokens);
+```
+
+Access tokens expire after a short time for security reasons. When this happens, you can use a refresh token to request a new access token without asking the member to log in again.
+
+Your API layer should handle this automatically. Set up your logic to detect when an access token has expired, use the refresh token to get a new one, and then retry the original request.
+
+```js
+// Server-side recommended: Refresh tokens securely
+const newTokens = await myWixClient.auth.renewToken(tokens.refreshToken);
+myWixClient.auth.setTokens(newTokens);
+```
+
+<Tip>
+
+Don't expose refresh tokens to the browser. For best security, handle token refresh on the server.
+
+</Tip>
+
+## Log in with an external identity provider
+
+Wix can also authenticate members with an identity provider such as Google or Facebook, either by sending them straight to the provider or by showing provider buttons on the Wix login page. For both options, see [Sign In with Google or Facebook (JS SDK)](https://dev.wix.com/docs/go-headless/authentication/members/identity-providers/sign-in-with-google-or-facebook-js-sdk).
+
+## Logging a member out
+
+To log a member out:
+
+1. Get the logout URL from your Wix client:
+
+   ```js
+   const { logoutUrl } = await myWixClient.auth.logout(window.location.href);
+   ```
+
+1. Redirect the member to the logout URL:
+
+   ```js
+   window.location.href = logoutUrl;
+   ```
+
+This logs the member out and redirects them back to your app.
+
+## Troubleshooting
+
+If you encounter issues with a Wix login page, make sure that:
+
+- You're using the correct client ID from your [Headless Settings](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+- The `redirectUri` parameter passed to `generateOAuthData()` is listed in your [allowed authorization redirect URIs](https://dev.wix.com/docs/go-headless/authentication/setup/allow-redirect-uris-and-domains), and that the values match exactly.
+- You're using a single shared client instance throughout your app (not creating new instances in components).
+- You haven't set a custom login URL in your OAuth app settings. The **login URL** field should be empty when using a Wix login page. A login URL is only required for [custom login pages](/kb/authentication/about-member-login).
+
+## See also
+
+- [Authenticate Visitors (JS SDK)](/kb/authentication/authenticate-visitors-js-sdk)
+- [Build a Custom Login Page (JS SDK)](/kb/authentication/build-a-custom-login-page-js-sdk)
+- [Sign In with Google or Facebook (JS SDK)](https://dev.wix.com/docs/go-headless/authentication/members/identity-providers/sign-in-with-google-or-facebook-js-sdk)
+- [OAuthStrategy reference](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy)

@@ -1,0 +1,706 @@
+---
+title: "Mark Booking As Pending"
+description: "Updates the booking status to PENDING."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates the booking status to `PENDING`.
+
+    ### Service requirement
+
+    By default, this method only works for [services](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction) with `service.onlineBooking.requireManualApproval` set to `true`.
+    If you attempt to mark a booking as pending for a service that doesn't require approval, the call fails unless you use the `skipPendingApprovalServiceValidation` admin overwrite.
+
+    ### Status requirements
+
+    - __Original status__: Booking must have `CREATED` status.
+    - __Target status__: Booking moves to `PENDING`.
+
+    ### Checkout restrictions
+
+    Only call this method if the customer paid via a custom checkout. For [Wix eCommerce checkouts](https://dev.wix.com/docs/rest/business-solutions/e-commerce/purchase-flow/checkout/introduction), Wix Bookings automatically manages the bookings' statuses based on payment processing.
+
+    When using custom checkouts, you can also update the booking's `paymentStatus` by specifying a new payment status.
+
+    ### Business workflow
+
+    After marking a booking as `PENDING`, the business must manually approve or reject it. You can call these methods:
+    - [Confirm Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-booking).
+    - [Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/decline-booking).
+
+    ### Resource availability and scheduling
+
+    Marking a booking as `PENDING` immediately affects resource availability:
+
+    - **Calendar impact**: The booking appears on the business calendar.
+    - **Availability**: The time slot becomes unavailable for other bookings, even while pending approval.
+    - **Resource assignment**: Available [resources](https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/introduction) are automatically assigned if none were explicitly selected during booking creation.
+
+    ### Double bookings
+
+    By default, the method doesn't check for availability conflicts. To detect and handle double bookings, use the `checkAvailabilityValidation: true` admin overwrite.
+
+    ### Notify customers
+
+    You can specify a `participantNotification.message` for the customer.
+    To send the message, you must also specify `participantNotification.notifyParticipants` as `true`.
+
+    ### Admin overwrites
+
+    There are small but important differences when you specify special
+    `flowControlSettings`:
+
+    - `{"checkAvailabilityValidation": true}`: Checks for double booking conflicts before updating the status.
+    When conflicts exist, the booking is still marked as `PENDING` and `doubleBooked` is set to `true` for the business to resolve manually.
+    - `{"skipPendingApprovalServiceValidation": true}`: Allows marking any booking as pending, even if the service doesn't require manual approval.
+
+    When using special `flowControlSettings`, ensure you have sufficient permissions.
+    If you encounter failed calls due to insufficient permissions, consider the following options:
+
+    - __App developers__ can use a higher
+    [permission](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions), such as `MANAGE BOOKINGS - ALL PERMISSIONS`.
+    - __Site developers__ can utilize
+    [elevation](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/authorization/elevation).
+
+    Granting additional permissions and using elevation permits method calls that would typically fail due to authorization checks.
+    Therefore, you should use them intentionally and securely.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/bookings/{bookingId}/mark_booking_as_pending
+    ```
+
+    ## Path Params
+
+    <ParamField path="bookingId" type="string" required>
+
+      ID of the booking to mark as `PENDING`.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="revision" type="integer" required>
+
+      Revision number, which increments by 1 each time the booking is updated.
+
+      To prevent conflicting changes, the current revision must be specified when
+      managing the booking.
+
+    </ParamField>
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Information about whether to notify the customer and
+      the message to send.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to send a message about the changes to the customer.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Custom message to send to the participants about the changes to the booking.
+
+        </ParamField>
+
+        <ParamField body="metadata" type="object">
+
+          Information about the delivery channels used to send the notification.
+          For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+          Constraints: `format map`.
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="sendSmsReminder" type="boolean">
+
+      Whether to send an SMS reminder to the customer 24 hours before the
+      session starts. The phone number is taken from `contactDetails.phone`.
+
+    </ParamField>
+
+    <ParamField body="paymentStatus" type="string">
+
+      Payment status to set for the booking.
+
+      **Supported values:**
+
+      - `UNDEFINED` — Undefined payment status.
+      - `NOT_PAID` — The booking isn't paid.
+      - `PAID` — The booking is fully paid.
+      - `PARTIALLY_PAID` — The booking is partially paid.
+      - `REFUNDED` — The booking is refunded.
+      - `EXEMPT` — The booking is free of charge.
+      - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+    </ParamField>
+
+    <ParamField body="doubleBooked" type="boolean">
+
+      Whether this booking has a conflict with at least 1 other confirmed booking.
+
+    </ParamField>
+
+    <ParamField body="flowControlSettings" type="MarkBookingAsPendingFlowControlSettings">
+
+      Whether to ignore specific standard procedures of the Wix Bookings flow.
+      For example, whether to check availability before updating the status.
+
+      <Expandable title="flowControlSettings properties">
+
+        <ParamField body="checkAvailabilityValidation" type="boolean">
+
+          Whether to check for double booking conflicts when updating the status.
+
+          - `true`: Checks for availability conflicts and sets `doubleBooked` to `true`
+          if conflicts exist.
+          The booking is still marked as `PENDING` for the business to resolve manually.
+          - `false`: No availability checking is performed.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="skipPendingApprovalServiceValidation" type="boolean">
+
+          Whether to allow marking any booking as pending, even if the service doesn't require manual approval.
+
+          - `true`: Bypasses the validation that checks if the service has `service.onlineBooking.requireManualApproval` set to `true`.
+          - `false`: Only services that require manual approval can have their bookings marked as pending.
+
+          Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="booking" type="Booking">
+
+      Updated booking.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `403` | `PERMISSION_DENIED` | `BOOKING_MARK_BOOKING_AS_PENDING` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` | Couldn't find the booking. |
+    | `428` | `FAILED_PRECONDITION` | `NO_OPEN_SPOTS` | The session or schedule is fully booked. There are no available spots remaining. |
+    | `428` | `FAILED_PRECONDITION` | `NOT_PENDING_APPROVAL_SERVICE` | The service doesn't require manual approval. Set `service.onlineBooking.requireManualApproval` to `true` or use the `skipPendingApprovalServiceValidation` override. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Marked As Pending | `wix.bookings.v2.booking_markedAsPending` | Triggered when a booking is marked as pending. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/bookings/88214716-6ed1-4273-b089-8015c4ab2f4b/mark_booking_as_pending' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "participantNotification": {
+          "notifyParticipants": false
+        },
+        "revision": "2"
+      }'
+      ```
+
+      ```json Response
+      {
+        "booking": {
+          "id": "88214716-6ed1-4273-b089-8015c4ab2f4b",
+          "bookedEntity": {
+            "slot": {
+              "eventId": "65a5776e-37f1-45f7-8e4c-f22d01b23254",
+              "serviceId": "bf7107e7-3223-4d7d-949e-1ed167d3e574",
+              "scheduleId": "d8c97daa-3de4-4fe2-ba74-801d8dfb1208",
+              "startDate": "2022-10-31T11:00:00.000Z",
+              "endDate": "2022-10-31T12:00:00.000Z",
+              "timezone": "Europe/Dublin",
+              "resource": {
+                "id": "64bb860a-eda5-4992-9fc6-538d58e818ec",
+                "name": "dodly",
+                "scheduleId": "2bc4bf60-cccb-42ce-a43d-05d1bbbfac4c"
+              },
+              "location": {
+                "id": "9de094d5-8985-484e-9218-d020d9d17953",
+                "name": "Location Name",
+                "locationType": "OWNER_BUSINESS"
+              }
+            },
+            "title": "In-person Appointment request",
+            "tags": ["INDIVIDUAL"]
+          },
+          "contactDetails": {
+            "contactId": "00fdf65c-e772-4b27-9c5e-8b2b2c289ec7",
+            "firstName": "Carlos",
+            "lastName": "Smith",
+            "email": "Carlos@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "status": "PENDING",
+          "paymentStatus": "UNDEFINED",
+          "selectedPaymentOption": "OFFLINE",
+          "createdDate": "2022-10-30T15:04:52.856Z",
+          "createdBy": {
+            "contactId": "a2ca1bc8-76e4-4295-8803-ab15aa50614a",
+            "memberId": "00fdf65c-e772-4b27-9c5e-8b2b2c289ec7"
+          },
+          "revision": "3",
+          "startDate": "2022-10-31T11:00:00Z",
+          "endDate": "2022-10-31T12:00:00Z",
+          "updatedDate": "2022-10-30T15:07:19.223Z",
+          "doubleBooked": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates the booking status to `PENDING`.
+
+    ### Service requirement
+
+    By default, this method only works for [services](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction) with `service.onlineBooking.requireManualApproval` set to `true`.
+    If you attempt to mark a booking as pending for a service that doesn't require approval, the call fails unless you use the `skipPendingApprovalServiceValidation` admin overwrite.
+
+    ### Status requirements
+
+    - __Original status__: Booking must have `CREATED` status.
+    - __Target status__: Booking moves to `PENDING`.
+
+    ### Checkout restrictions
+
+    Only call this method if the customer paid via a custom checkout. For [Wix eCommerce checkouts](https://dev.wix.com/docs/rest/business-solutions/e-commerce/purchase-flow/checkout/introduction), Wix Bookings automatically manages the bookings' statuses based on payment processing.
+
+    When using custom checkouts, you can also update the booking's `paymentStatus` by specifying a new payment status.
+
+    ### Business workflow
+
+    After marking a booking as `PENDING`, the business must manually approve or reject it. You can call these methods:
+    - [Confirm Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-booking).
+    - [Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/decline-booking).
+
+    ### Resource availability and scheduling
+
+    Marking a booking as `PENDING` immediately affects resource availability:
+
+    - **Calendar impact**: The booking appears on the business calendar.
+    - **Availability**: The time slot becomes unavailable for other bookings, even while pending approval.
+    - **Resource assignment**: Available [resources](https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/introduction) are automatically assigned if none were explicitly selected during booking creation.
+
+    ### Double bookings
+
+    By default, the method doesn't check for availability conflicts. To detect and handle double bookings, use the `checkAvailabilityValidation: true` admin overwrite.
+
+    ### Notify customers
+
+    You can specify a `participantNotification.message` for the customer.
+    To send the message, you must also specify `participantNotification.notifyParticipants` as `true`.
+
+    ### Admin overwrites
+
+    There are small but important differences when you specify special
+    `flowControlSettings`:
+
+    - `{"checkAvailabilityValidation": true}`: Checks for double booking conflicts before updating the status.
+    When conflicts exist, the booking is still marked as `PENDING` and `doubleBooked` is set to `true` for the business to resolve manually.
+    - `{"skipPendingApprovalServiceValidation": true}`: Allows marking any booking as pending, even if the service doesn't require manual approval.
+
+    When using special `flowControlSettings`, ensure you have sufficient permissions.
+    If you encounter failed calls due to insufficient permissions, consider the following options:
+
+    - __App developers__ can use a higher
+    [permission](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions), such as `MANAGE BOOKINGS - ALL PERMISSIONS`.
+    - __Site developers__ can utilize
+    [elevation](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/authorization/elevation).
+
+    Granting additional permissions and using elevation permits method calls that would typically fail due to authorization checks.
+    Therefore, you should use them intentionally and securely.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.markBookingAsPending(bookingId, revision, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="bookingId" type="string" required>
+
+      ID of the booking to mark as `PENDING`.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="revision" type="MarkBookingAsPending" required>
+
+      Revision number, which increments by 1 each time the booking is updated.
+
+      To prevent conflicting changes, the current revision must be specified when
+      managing the booking.
+
+      <Expandable title="revision properties">
+
+        <ParamField body="value" type="string" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="MarkBookingAsPendingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Information about whether to notify the customer and
+          the message to send.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to send a message about the changes to the customer.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Custom message to send to the participants about the changes to the booking.
+
+            </ParamField>
+
+            <ParamField body="metadata" type="object">
+
+              Information about the delivery channels used to send the notification.
+              For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="sendSmsReminder" type="boolean">
+
+          Whether to send an SMS reminder to the customer 24 hours before the
+          session starts. The phone number is taken from `contactDetails.phone`.
+
+        </ParamField>
+
+        <ParamField body="paymentStatus" type="string">
+
+          Payment status to set for the booking.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+        <ParamField body="doubleBooked" type="boolean">
+
+          Whether this booking has a conflict with at least 1 other confirmed booking.
+
+        </ParamField>
+
+        <ParamField body="flowControlSettings" type="MarkBookingAsPendingFlowControlSettings">
+
+          Whether to ignore specific standard procedures of the Wix Bookings flow.
+          For example, whether to check availability before updating the status.
+
+          <Expandable title="flowControlSettings properties">
+
+            <ParamField body="checkAvailabilityValidation" type="boolean">
+
+              Whether to check for double booking conflicts when updating the status.
+
+              - `true`: Checks for availability conflicts and sets `doubleBooked` to `true`
+              if conflicts exist.
+              The booking is still marked as `PENDING` for the business to resolve manually.
+              - `false`: No availability checking is performed.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="skipPendingApprovalServiceValidation" type="boolean">
+
+              Whether to allow marking any booking as pending, even if the service doesn't require manual approval.
+
+              - `true`: Bypasses the validation that checks if the service has `service.onlineBooking.requireManualApproval` set to `true`.
+              - `false`: Only services that require manual approval can have their bookings marked as pending.
+
+              Default: `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="booking" type="Booking">
+
+      Updated booking.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `403` | `PERMISSION_DENIED` | `BOOKING_MARK_BOOKING_AS_PENDING` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` | Couldn't find the booking. |
+    | `428` | `FAILED_PRECONDITION` | `NO_OPEN_SPOTS` | The session or schedule is fully booked. There are no available spots remaining. |
+    | `428` | `FAILED_PRECONDITION` | `NOT_PENDING_APPROVAL_SERVICE` | The service doesn't require manual approval. Set `service.onlineBooking.requireManualApproval` to `true` or use the `skipPendingApprovalServiceValidation` override. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Marked As Pending | `wix.bookings.v2.booking_markedAsPending` | Triggered when a booking is marked as pending. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-mark-booking-as-pending" id="ex-sdk-mark-booking-as-pending-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-mark-booking-as-pending" id="ex-sdk-mark-booking-as-pending-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-mark-booking-as-pending" id="ex-sdk-mark-booking-as-pending-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-mark-booking-as-pending-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-mark-booking-as-pending-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">markBookingAsPending</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">markBookingAsPending (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">markBookingAsPending (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-mark-booking-as-pending-0"><span className="wix-picker-name">markBookingAsPending</span></label>
+    <label htmlFor="ex-sdk-mark-booking-as-pending-1"><span className="wix-picker-name">markBookingAsPending (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-mark-booking-as-pending-2"><span className="wix-picker-name">markBookingAsPending (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript markBookingAsPending
+    import { bookings } from '@wix/bookings';
+
+    async function markBookingAsPending(bookingId,revision,options) {
+      const response = await bookings.markBookingAsPending(bookingId,revision,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript markBookingAsPending (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function markBookingAsPending(bookingId,revision,options) {
+      const response = await myWixClient.bookings.markBookingAsPending(bookingId,revision,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript markBookingAsPending (with elevated permissions)
+    import { bookings } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myMarkBookingAsPendingMethod(bookingId,revision,options) {
+      const elevatedMarkBookingAsPending = auth.elevate(bookings.markBookingAsPending);
+      const response = await elevatedMarkBookingAsPending(bookingId,revision,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,75 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows. These can be a helpful jumping off point as you plan your implementation.
+
+## Power an AI assistant that answers Wix developer questions
+
+A developer is building an AI coding assistant that answers questions about Wix APIs. When a user asks how to do something, the assistant searches the docs and uses the results as context to generate an accurate answer.
+
+## Prerequisites
+
+Your app must be authorized to call the Docs Search API.
+
+## Flows
+
+### Flow 1: Answer a question using the markdown endpoint
+
+Use this flow when you want to pass search results directly to an LLM without additional processing.
+
+1. When the user asks a question, extract a search term from it. For example, from "how do I create a product in Wix Stores?" extract `"create a product"`.
+2. Call [Search Documents Markdown](fallback::https://dev.wix.com/docs/api-reference/tools/semantic-search/search-documents-markdown) with the search term and the relevant `document_type`. You can use GET (query params) or POST (JSON body):
+
+    **GET:**
+    ```
+    GET /v1/docs/search/markdown?search_term=create+a+product&document_type=REST&lines_in_each_result=20
+    ```
+
+    **POST:**
+    ```json
+    {
+      "search_term": "create a product",
+      "document_type": "REST",
+      "lines_in_each_result": 20
+    }
+    ```
+3. Pass the returned `content` string directly as context to your LLM alongside the user's question.
+4. If the LLM needs more detail about a specific method or article, use the "read more" URL from the hint appended to the truncated result to fetch the full content.
+
+<Note>
+
+Use `lines_in_each_result` to keep results concise and stay within your LLM's context window. The endpoint interleaves results in a `method, method, article, article` repeating pattern so the LLM always receives both reference and conceptual content, regardless of individual relevance scores.
+
+</Note>
+
+### Flow 2: Search and select results using the JSON endpoint
+
+Use this flow when you need programmatic control over which results to use — for example, to filter, re-rank, or display results in a UI.
+
+1. Call [Search Documents](fallback::https://dev.wix.com/docs/api-reference/tools/semantic-search/search-documents) with the search term. You can use GET (query params) or POST (JSON body):
+
+    **GET:**
+    ```
+    GET /v1/docs/search?search_term=query+data+collection&document_type=SDK&maximum_results=10&lines_in_each_result=30
+    ```
+
+    **POST:**
+    ```json
+    {
+      "search_term": "query data collection",
+      "document_type": "SDK",
+      "maximum_results": 10,
+      "lines_in_each_result": 30
+    }
+    ```
+2. Iterate over the returned `results` array. Each entry includes:
+    - `title` — display name of the doc entry
+    - `content` — truncated or full content depending on `lines_in_each_result`
+    - `url` — link to the full documentation page
+    - `relevance_score` — use this to filter out low-confidence results (e.g. below `0.5`)
+    - `kb_name` — identifies the source knowledge base (e.g. `SDK_METHODS_KB_ID`)
+3. Filter results by `relevance_score` or `kb_name` as needed for your use case.
+4. Pass the selected results as context to your LLM or display them in your UI.

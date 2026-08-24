@@ -1,0 +1,97 @@
+---
+title: "Sample Use Cases and Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Create inventory for a new product in the default location
+
+After adding a new product to your catalog using the [Create Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product) endpoint, you need to set up inventory tracking. This is a common scenario when expanding your product catalog and preparing items for sale.
+
+<Note>
+
+Alternatively, you can use [Create Product With Inventory](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product-with-inventory) to create both the product and its inventory items in a single call.
+
+</Note>
+
+<Note>
+
+When customers place orders on a Wix Store, inventory automatically deducts from the default location. If you need to deduct stock from specific non-default locations, you can't use Wix's standard checkout functionality. For more details, see [Online Store Product Purchase Flow](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/online-store-product-purchase-flow).
+
+</Note>
+
+To create inventory for a new product in the default location:
+
+1. Create a new product by calling [Create Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product). Note the returned `productId` and `variantId`(s) from the response.
+2. Call [Create Inventory Item](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/create-inventory-item) for each variant. Provide the `productId` and `variantId`, along with the initial quantity or tracking method. When you don't specify a `locationId`, the inventory item is created in the default location.
+
+## Create inventory items in a specific location
+
+You want to add a new inventory item to a specific location in your Wix store. This is useful when you have new stock arriving at a particular warehouse or store location and need to update your inventory system accordingly.
+
+To create an inventory item in a specific location:
+
+1. Call [Query Stores Locations](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/stores-locations-v3/query-stores-locations) to identify the location where you want to update your stock.
+2. Call [Create Inventory Item](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/create-inventory-item) and provide the necessary details such as `variantId`, `productId`, and any other relevant information. Specify the location by including the `locationId` in your request.
+
+## Increment inventory of a variant
+
+When you receive additional stock for a specific variant of a product, or when a customer wants to return or refund an item, you need to update the inventory quantity in your system. This ensures that your stock levels are accurate and customers can see the correct availability.
+
+To increment the inventory of a variant:
+
+1. Identify the variant of the product whose inventory you want to increment. You need the `variantId` for this step.
+2. Call [Bulk Increment Inventory Items By Variant And Location](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/bulk-increment-inventory-items-by-variant-and-location) and include the `IncrementData.variantId` and `IncrementData.locationId` to update the inventory quantity for the specified variant in a specific location.
+
+## Change the tracking method for a product
+
+You want to change the inventory tracking method for a specific product to "In Stock". This is useful when you don't manage stock levels for products that are not physically stored or have continuous inventory.
+
+To change the inventory items tracking method to "In Stock" for a specific product:
+
+1. Call [Bulk Update Inventory Items By Filter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/bulk-update-inventory-items-by-filter) to update the inventory item.
+2. In the request body, set the `inventoryItem.inStock` field to `true`.
+3. Include a `filter` with the product ID, for example: `{"productId": "f54bc047-ea9d-4910-afa0-a9bea33af481"}`.
+
+## Find in-stock products at a specific location
+
+You want to retrieve a list of all products that are currently in stock at a specific location. This is useful for managing inventory, ensuring stock levels are adequate, and making informed business decisions.
+
+To find in-stock products at a specific location:
+
+1. Call [Query Stores Locations](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/stores-locations-v3/query-stores-locations) to identify the location for which you want to check the stock. This ID is necessary to filter the inventory items by location.
+2. Call [Search Inventory Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/search-inventory-items) and include `locationId` and `availabilityStatus` in the `filter` parameter of your request to retrieve inventory items based on their availability status at a specific location:
+
+```json
+{
+  "search": {
+    "filter": {
+      "$and": [
+        {"locationId": "2441a0f8-9e40-4fff-8740-52a7623b0dbd"},
+        {"availabilityStatus": "IN_STOCK"}
+      ]
+    }
+  }
+}
+```
+
+3. To get more information about the products, call [Search Products](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/search-products) and include the list of product IDs retrieved from the previous call in the filter:
+
+```json
+{
+  "search": {
+    "filter": {
+      "id": {
+        "$in": [
+          "b46df258-3242-4f52-8bcd-dad536d45ef4",
+          "f117c5f0-7130-465a-8356-680cd2b80c74"
+        ]
+      }
+    }
+  }
+}
+```

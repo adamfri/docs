@@ -1,0 +1,774 @@
+---
+title: "Get Availability Time Slot"
+description: "Retrieves detailed information about a specific appointment time slot."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves detailed information about a specific appointment time slot.
+
+    Call this method to get complete resource availability after finding a suitable slot with [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots).
+
+    ### Defaults
+
+    Get Availability Time Slot uses the following defaults:
+
+    - Returns all available resources unless filtered by `resourceIds` or `includeResourceTypeIds`.
+    - Includes full booking status and capacity details.
+
+    ### Service type limitations
+
+    Only appointment-based services are supported when calling Get Availability Time Slot.
+
+    To retrieve class session availability, you can call [Get Event Time Slot](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-event-time-slot).
+
+    To retrieve course availability, you can follow the [End-to-End Booking Flow for courses](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+
+    ### Duration-range services
+
+    For services configured with a duration range (`availabilityConstraints.durationRange`), `customerChoices` is not supported. The duration is derived from the `localStartDate` and `localEndDate` specified in the request.
+
+    ### Business hours exception
+
+    Wix Bookings disregards business opening hours when all of the following conditions are met:
+
+    1. 1 or more [staff members](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction) are needed to provide the service.
+    2. No other [resource type](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) is needed to provide the service.
+    3. The service doesn't have duration-based [variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    4. The service doesn't support [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+    In these cases, the working hours of the relevant staff member are used instead for availability calculation.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-CALENDAR">Read Bookings Calendar Availability</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/service-availability/v2/time-slots/get
+    ```
+
+    ## Body Params
+
+    <ParamField body="serviceId" type="string" required>
+
+      Service ID of the time slot.
+      You must specify the ID of an appointment-based service.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="localStartDate" type="string" required>
+
+      Local start date of the time slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+      Constraints: `format LOCAL_DATE_TIME`.
+
+    </ParamField>
+
+    <ParamField body="localEndDate" type="string" required>
+
+      Local end date of the time slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+      Constraints: `format LOCAL_DATE_TIME`.
+
+    </ParamField>
+
+    <ParamField body="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ParamField>
+
+    <ParamField body="location" type="Location">
+
+      Location to filter time slots by.
+
+      For business locations, you must specify a location ID.
+      When specifying a location ID, all other location field filters are ignored.
+
+      <Expandable title="location properties">
+
+        <ParamField body="id" type="string">
+
+          [Location ID](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+          Available only for business locations.
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Location name.
+
+        </ParamField>
+
+        <ParamField body="formattedAddress" type="string">
+
+          Formatted location address.
+
+        </ParamField>
+
+        <ParamField body="locationType" type="string">
+
+          Location type.
+
+          **Supported values:**
+
+          - `BUSINESS` — A business location, either the default business address, or locations defined for the business by the Business Info.
+          - `CUSTOM` — The location is unique to this service and isn't defined as 1 of the business locations.
+          - `CUSTOMER` — The location can be determined by the customer and isn't set up beforehand.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="includeResourceTypeIds" type="string[]">
+
+      IDs of the [resource types](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) to check availability for.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="resourceTypes" type="ResourceType[]">
+
+      Resource types to filter time slots.
+      Only returns time slots that have these specific resource types available.
+      This filters the time slots themselves, unlike `includeResourceTypeIds` which only controls response details.
+
+      Constraints: `maxItems 8`.
+
+      <Expandable title="resourceTypes properties">
+
+        <ParamField body="resourceTypeId" type="string">
+
+          [Resource type ID](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction).
+
+        </ParamField>
+
+        <ParamField body="resourceIds" type="string[]">
+
+          Resource IDs.
+          Available only if there is at least 1 resource available for the slot.
+
+          Constraints: `format GUID`, `maxItems 135`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="timeSlot" type="TimeSlot">
+
+      Retrieved time slot.
+
+      See the [Time Slot Object](/api-reference/business-solutions/bookings/time-slots/time-slots-v2/time-slot-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `SLOT_NOT_FOUND` | Couldn't find a time slot matching the specified criteria. |
+    | `404` | `NOT_FOUND` | `NO_IMPLEMENTERS_FOUND` | No availability provider is installed or configured for this operation. |
+    | `404` | `NOT_FOUND` | `MULTIPLE_IMPLEMENTERS_FOUND` | Multiple availability providers are installed. Only 1 provider can be active at a time. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `428` | `FAILED_PRECONDITION` | `REQUESTED_GENDER_NOT_ALLOWED` | `customerChoices.requestedGender` is specified while `genderPubliclyAccessible` is disabled in the business's [staff member settings](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-member-settings/introduction). |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-get-availability-time-slot" id="ex-rest-get-availability-time-slot-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-get-availability-time-slot" id="ex-rest-get-availability-time-slot-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-get-availability-time-slot-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-get-availability-time-slot-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Check availability with specific staff preference</span><span className="wix-picker-desc">Verifies appointment availability when requesting specific healthcare providers, returning which of the requested doctors are available for the time slot</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Check specific appointment slot availability</span><span className="wix-picker-desc">Verifies availability for a specific appointment time slot and returns which healthcare providers are available to deliver the service</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-get-availability-time-slot-0"><span className="wix-picker-name">Check availability with specific staff preference</span><span className="wix-picker-desc">Verifies appointment availability when requesting specific healthcare providers, returning which of the requested doctors are available for the time slot</span></label>
+    <label htmlFor="ex-rest-get-availability-time-slot-1"><span className="wix-picker-name">Check specific appointment slot availability</span><span className="wix-picker-desc">Verifies availability for a specific appointment time slot and returns which healthcare providers are available to deliver the service</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots/get' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+         "resourceTypes": [
+            {
+               "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+               "resourceIds": [
+                  "167b22cd-0521-47b9-b0c2-baca665351c5",
+                  "b44e0801-223e-4124-bcbc-0eb4c07cba13",
+                  "fd01e7c0-4ffc-42c3-9f7b-73b46c9e1664",
+                  "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                  "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                  "510fc9f3-f291-4155-a3dc-cb96ae06f14f"
+               ]
+            }
+         ],
+         "location":{
+            "id": "b4698671-3412-49b5-bff1-f50d4d0fe3b3",
+            "locationType": "BUSINESS"
+         },
+         "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+         "localStartDate": "2025-09-15T14:00:00",
+         "localEndDate": "2025-09-15T15:00:00",
+         "timeZone": "America/New_York"
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlot": {
+          "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+          "localStartDate": "2025-09-15T14:00:00",
+          "localEndDate": "2025-09-15T15:00:00",
+          "bookable": true,
+          "location": {
+            "id": "b4698671-3412-49b5-bff1-f50d4d0fe3b3",
+            "name": "Downtown Medical Center",
+            "formattedAddress": "456 Health Blvd, New York, NY 10002",
+            "locationType": "BUSINESS"
+          },
+          "totalCapacity": 1,
+          "remainingCapacity": 1,
+          "bookingPolicyViolations": {
+            "tooEarlyToBook": false,
+            "tooLateToBook": false,
+            "bookOnlineDisabled": false
+          },
+          "availableResources": [
+            {
+              "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+              "resources": [
+                {
+                  "id": "510fc9f3-f291-4155-a3dc-cb96ae06f14f",
+                  "name": "Dr. Sarah Johnson"
+                },
+                {
+                  "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                  "name": "Dr. James Wilson"
+                },
+                {
+                  "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                  "name": "Dr. Lisa Thompson"
+                },
+                {
+                  "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                  "name": "Dr. Robert Davis"
+                },
+                {
+                  "id": "b44e0801-223e-4124-bcbc-0eb4c07cba13",
+                  "name": "Dr. Michelle White"
+                },
+                {
+                  "id": "fd01e7c0-4ffc-42c3-9f7b-73b46c9e1664",
+                  "name": "Dr. Nicole Anderson"
+                }
+              ],
+              "hasMoreAvailableResources": false
+            }
+          ],
+          "nestedTimeSlots": []
+        },
+        "timeZone": "America/New_York"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots/get' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+          "location":
+            {
+              "id": "b4698671-3412-49b5-bff1-f50d4d0fe3b3",
+              "locationType": "BUSINESS"
+            },
+          "localStartDate": "2025-09-15T14:00:00",
+          "localEndDate": "2025-09-15T15:00:00",
+          "timeZone": "America/New_York"
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlot": {
+          "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+          "localStartDate": "2025-09-15T14:00:00",
+          "localEndDate": "2025-09-15T15:00:00",
+          "bookable": true,
+          "location": {
+            "id": "b4698671-3412-49b5-bff1-f50d4d0fe3b3",
+            "name": "Downtown Medical Center",
+            "formattedAddress": "456 Health Blvd, New York, NY 10002",
+            "locationType": "BUSINESS"
+          },
+          "totalCapacity": 1,
+          "remainingCapacity": 1,
+          "bookingPolicyViolations": {
+            "tooEarlyToBook": false,
+            "tooLateToBook": false,
+            "bookOnlineDisabled": false
+          },
+          "availableResources": [
+            {
+              "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+              "resources": [
+                {
+                  "id": "510fc9f3-f291-4155-a3dc-cb96ae06f14f",
+                  "name": "Dr. Sarah Johnson"
+                },
+                {
+                  "id": "43eb802c-0491-43de-8b60-ab0f036213a1",
+                  "name": "Dr. Michael Chen"
+                },
+                {
+                  "id": "423f5e66-ebb6-402e-952d-c00ff2f5eb79",
+                  "name": "Dr. Emily Rodriguez"
+                },
+                {
+                  "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                  "name": "Dr. James Wilson"
+                },
+                {
+                  "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                  "name": "Dr. Lisa Thompson"
+                },
+                {
+                  "id": "38f06a80-c44c-464a-95ee-01f0f58c04d1",
+                  "name": "Dr. David Lee"
+                },
+                {
+                  "id": "57347352-dfc0-4729-a821-28cf734f106b",
+                  "name": "Dr. Amanda Garcia"
+                },
+                {
+                  "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                  "name": "Dr. Robert Davis"
+                },
+                {
+                  "id": "76570209-101f-409b-af97-b445bdb63125",
+                  "name": "Dr. Jennifer Martinez"
+                },
+                {
+                  "id": "a699f4ae-6fcf-41e4-bf57-fbe42aac0ddf",
+                  "name": "Dr. Kevin Brown"
+                },
+                {
+                  "id": "b44e0801-223e-4124-bcbc-0eb4c07cba13",
+                  "name": "Dr. Michelle White"
+                },
+                {
+                  "id": "d5034039-c4f2-4ff6-989d-a3283ede4a22",
+                  "name": "Dr. Christopher Taylor"
+                },
+                {
+                  "id": "fd01e7c0-4ffc-42c3-9f7b-73b46c9e1664",
+                  "name": "Dr. Nicole Anderson"
+                }
+              ],
+              "hasMoreAvailableResources": false
+            }
+          ],
+          "nestedTimeSlots": []
+        },
+        "timeZone": "America/New_York"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves detailed information about a specific appointment time slot.
+
+    Call this method to get complete resource availability after finding a suitable slot with [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots).
+
+    ### Defaults
+
+    Get Availability Time Slot uses the following defaults:
+
+    - Returns all available resources unless filtered by `resourceIds` or `includeResourceTypeIds`.
+    - Includes full booking status and capacity details.
+
+    ### Service type limitations
+
+    Only appointment-based services are supported when calling Get Availability Time Slot.
+
+    To retrieve class session availability, you can call [Get Event Time Slot](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-event-time-slot).
+
+    To retrieve course availability, you can follow the [End-to-End Booking Flow for courses](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+
+    ### Duration-range services
+
+    For services configured with a duration range (`availabilityConstraints.durationRange`), `customerChoices` is not supported. The duration is derived from the `localStartDate` and `localEndDate` specified in the request.
+
+    ### Business hours exception
+
+    Wix Bookings disregards business opening hours when all of the following conditions are met:
+
+    1. 1 or more [staff members](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction) are needed to provide the service.
+    2. No other [resource type](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) is needed to provide the service.
+    3. The service doesn't have duration-based [variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    4. The service doesn't support [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+    In these cases, the working hours of the relevant staff member are used instead for availability calculation.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-CALENDAR">Read Bookings Calendar Availability</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { availabilityTimeSlots } from '@wix/bookings';
+
+    availabilityTimeSlots.getAvailabilityTimeSlot(serviceId, localStartDate, localEndDate, timeZone, location, options): Promise<GetAvailabilityTimeSlotResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="serviceId" type="string" required>
+
+      Service ID of the time slot.
+      You must specify the ID of an appointment-based service.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="localStartDate" type="string" required>
+
+      Local start date of the time slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+      Constraints: `format LOCAL_DATE_TIME`.
+
+    </ParamField>
+
+    <ParamField body="localEndDate" type="string" required>
+
+      Local end date of the time slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+      Constraints: `format LOCAL_DATE_TIME`.
+
+    </ParamField>
+
+    <ParamField body="timeZone" type="string" required>
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ParamField>
+
+    <ParamField body="location" type="Location" required>
+
+      Location to filter time slots by.
+
+      For business locations, you must specify a location ID.
+      When specifying a location ID, all other location field filters are ignored.
+
+      <Expandable title="location properties">
+
+        <ParamField body="_id" type="string">
+
+          [Location ID](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+          Available only for business locations.
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Location name.
+
+        </ParamField>
+
+        <ParamField body="formattedAddress" type="string">
+
+          Formatted location address.
+
+        </ParamField>
+
+        <ParamField body="locationType" type="string">
+
+          Location type.
+
+          **Supported values:**
+
+          - `BUSINESS` — A business location, either the default business address, or locations defined for the business by the Business Info.
+          - `CUSTOM` — The location is unique to this service and isn't defined as 1 of the business locations.
+          - `CUSTOMER` — The location can be determined by the customer and isn't set up beforehand.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="GetAvailabilityTimeSlotOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="includeResourceTypeIds" type="string[]">
+
+          IDs of the [resource types](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) to check availability for.
+
+          Constraints: `format GUID`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="resourceTypes" type="ResourceType[]">
+
+          Resource types to filter time slots.
+          Only returns time slots that have these specific resource types available.
+          This filters the time slots themselves, unlike `includeResourceTypeIds` which only controls response details.
+
+          Constraints: `maxItems 8`.
+
+          <Expandable title="resourceTypes properties">
+
+            <ParamField body="resourceTypeId" type="string">
+
+              [Resource type ID](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction).
+
+            </ParamField>
+
+            <ParamField body="resourceIds" type="string[]">
+
+              Resource IDs.
+              Available only if there is at least 1 resource available for the slot.
+
+              Constraints: `format GUID`, `maxItems 135`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<GetAvailabilityTimeSlotResponse>`.
+
+    <ResponseField name="timeSlot" type="TimeSlot">
+
+      Retrieved time slot.
+
+      See the [Time Slot Object](/api-reference/business-solutions/bookings/time-slots/time-slots-v2/time-slot-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `SLOT_NOT_FOUND` | Couldn't find a time slot matching the specified criteria. |
+    | `404` | `NOT_FOUND` | `NO_IMPLEMENTERS_FOUND` | No availability provider is installed or configured for this operation. |
+    | `404` | `NOT_FOUND` | `MULTIPLE_IMPLEMENTERS_FOUND` | Multiple availability providers are installed. Only 1 provider can be active at a time. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `428` | `FAILED_PRECONDITION` | `REQUESTED_GENDER_NOT_ALLOWED` | `customerChoices.requestedGender` is specified while `genderPubliclyAccessible` is disabled in the business's [staff member settings](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-member-settings/introduction). |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-availability-time-slot" id="ex-sdk-get-availability-time-slot-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-availability-time-slot" id="ex-sdk-get-availability-time-slot-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-availability-time-slot-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-availability-time-slot-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">getAvailabilityTimeSlot</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getAvailabilityTimeSlot (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-availability-time-slot-0"><span className="wix-picker-name">getAvailabilityTimeSlot</span></label>
+    <label htmlFor="ex-sdk-get-availability-time-slot-1"><span className="wix-picker-name">getAvailabilityTimeSlot (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript getAvailabilityTimeSlot
+    import { availabilityTimeSlots } from '@wix/bookings';
+
+    async function getAvailabilityTimeSlot(serviceId,localStartDate,localEndDate,timeZone,location,options) {
+      const response = await availabilityTimeSlots.getAvailabilityTimeSlot(serviceId,localStartDate,localEndDate,timeZone,location,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getAvailabilityTimeSlot (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { availabilityTimeSlots } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { availabilityTimeSlots },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getAvailabilityTimeSlot(serviceId,localStartDate,localEndDate,timeZone,location,options) {
+      const response = await myWixClient.availabilityTimeSlots.getAvailabilityTimeSlot(serviceId,localStartDate,localEndDate,timeZone,location,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

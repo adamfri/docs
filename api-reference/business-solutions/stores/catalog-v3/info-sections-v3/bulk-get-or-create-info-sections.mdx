@@ -1,0 +1,774 @@
+---
+title: "Bulk Get Or Create Info Sections"
+description: "Retrieves multiple info sections by ID or uniqueName, or creates multiple info sections if those with the passed uniqueName don't exist."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves multiple info sections by ID or `uniqueName`, or creates multiple info sections if those with the passed `uniqueName` don't exist.
+
+    <Note>
+
+    If an info section with the passed `uniqueName` doesn't exist, the `uniqueName` and `title` fields are required to create a new info section.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INFO_SECTION_WRITE">Info section write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/info-sections/get-or-create
+    ```
+
+    ## Body Params
+
+    <ParamField body="infoSections" type="InfoSectionForGetOrCreate[]">
+
+      Info sections to retrieve or create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="infoSections properties">
+
+        <ParamField body="id" type="string">
+
+          Info section ID.
+          Pass an ID to retrieve an existing info section.
+
+        </ParamField>
+
+        <ParamField body="uniqueName" type="string">
+
+          Info section unique name.
+
+          > **Note:**
+          > + Pass the `uniqueName` of an existing info section to return it.
+          > + If no such info section exists - pass `uniqueName` and `title` to create an info section.
+
+        </ParamField>
+
+        <ParamField body="title" type="string">
+
+          Info section title.
+
+          Required when passing `uniqueName` to create a new info section.
+
+        </ParamField>
+
+        <ParamField body="description" type="RichContent">
+
+          Info section description using rich content.
+
+          Learn more about [Working with Rich Content](https://dev.wix.com/docs/go-headless/tutorials-templates/other-tutorials/working-with-rich-content).
+
+          <Expandable title="description properties">
+
+            <ParamField body="nodes" type="Node[]">
+
+              Node objects representing a rich content document.
+
+              _Nested structure omitted for brevity — see the `Node[]` object._
+
+            </ParamField>
+
+            <ParamField body="metadata" type="Metadata">
+
+              Object metadata.
+
+              _Nested structure omitted for brevity — see the `Metadata` object._
+
+            </ParamField>
+
+            <ParamField body="documentStyle" type="DocumentStyle">
+
+              Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+              _Nested structure omitted for brevity — see the `DocumentStyle` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="plainDescription" type="string">
+
+          Info section description in HTML.
+
+          When provided on create/update, this string must be a valid HTML. It will then be converted to rich content.
+          `plainDescription` is ignored when value is also passed to the `description` field.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Supported values: `ASSIGNED_PRODUCTS_COUNT`
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `ASSIGNED_PRODUCTS_COUNT`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkInfoSectionItemResult[]">
+
+      Info sections retrieved or created by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InfoSection">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Info Section Object](/api-reference/business-solutions/stores/catalog-v3/info-sections-v3/info-section-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTIONS_LIMIT_EXCEEDED` | Number of info sections exceeded the limit of 200. |
+    | `400` | `INVALID_ARGUMENT` | `ONLY_SPACES_STRING_ERROR` | `uniqueName` contains only spaces. Provide a valid `uniqueName`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Info Section Created | `wix.stores.catalog.v3.info_section_created` | Triggered when an info section is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Fetches info sections by uniqueName, or creates them if they doesn't exist.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+       'https://www.wixapis.com/stores/v3/bulk/info-sections/get-or-create' \
+       -H 'Content-type: application/json' \
+       -H 'Authorization: <AUTH>' \
+       -d '{
+       "infoSections": [
+         {
+           "uniqueName": "Series 4 Cup"
+         },
+         {
+           "uniqueName": "Series 6 Cup",
+           "title": "New cup series"
+         }
+       ],
+        "fields": ["ASSIGNED_PRODUCTS_COUNT"]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "5db34212-4870-4a28-b210-187be25b24cd",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "5db34212-4870-4a28-b210-187be25b24cd",
+              "revision": "1",
+              "createdDate": "2024-06-30T09:07:44.449Z",
+              "updatedDate": "2024-06-30T09:07:44.449Z",
+              "uniqueName": "Series 4 Cup",
+              "title": "Product Features",
+              "description": {
+                "nodes": [
+                  {
+                    "type": "PARAGRAPH",
+                    "id": "ohot5271",
+                    "nodes": [
+                      {
+                        "type": "TEXT",
+                        "id": "",
+                        "nodes": [],
+                        "textData": {
+                          "text": "Dual-wall",
+                          "decorations": [
+                            {
+                              "type": "COLOR",
+                              "colorData": {
+                                "foreground": "#ff0000"
+                              }
+                            },
+                            {
+                              "type": "BOLD",
+                              "fontWeightValue": 700
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "TEXT",
+                        "id": "",
+                        "nodes": [],
+                        "textData": {
+                          "text": " design for the hydration bottle keeps drinks cold for up to 24 hours & hot for up to 12 hours ",
+                          "decorations": []
+                        }
+                      }
+                    ],
+                    "paragraphData": {}
+                  },
+                  {
+                    "type": "TABLE",
+                    "id": "jx3te102",
+                    "nodes": [
+                      {
+                        "type": "TABLE_ROW",
+                        "id": "yysx7107",
+                        "nodes": [
+                          {
+                            "type": "TABLE_CELL",
+                            "id": "gl0nw108",
+                            "nodes": [
+                              {
+                                "type": "PARAGRAPH",
+                                "id": "h0mav109",
+                                "nodes": [
+                                  {
+                                    "type": "TEXT",
+                                    "id": "",
+                                    "nodes": [],
+                                    "textData": {
+                                      "text": "product",
+                                      "decorations": []
+                                    }
+                                  }
+                                ],
+                                "paragraphData": {}
+                              }
+                            ],
+                            "tableCellData": {}
+                          }
+                        ]
+                      }
+                    ],
+                    "tableData": {
+                      "dimensions": {
+                        "colsWidthRatio": [
+                          587
+                        ],
+                        "rowsHeight": [
+                          47
+                        ],
+                        "colsMinWidth": [
+                          120
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "PARAGRAPH",
+                    "id": "cjje5104",
+                    "nodes": [],
+                    "paragraphData": {}
+                  }
+                ],
+                "metadata": {
+                  "version": 1
+                },
+                "documentStyle": {}
+              },
+              "assignedProductsCount": 1
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "54284892-cbac-4bd6-9339-790270250bf7",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "54284892-cbac-4bd6-9339-790270250bf7",
+              "revision": "1",
+              "createdDate": "2024-07-01T07:20:58.709Z",
+              "updatedDate": "2024-07-01T07:20:58.709Z",
+              "uniqueName": "Series 6 Cup",
+              "title": "New cup series",
+              "assignedProductsCount": 0
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves multiple info sections by ID or `uniqueName`, or creates multiple info sections if those with the passed `uniqueName` don't exist.
+
+    <Note>
+
+    If an info section with the passed `uniqueName` doesn't exist, the `uniqueName` and `title` fields are required to create a new info section.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INFO_SECTION_WRITE">Info section write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { infoSectionsV3 } from '@wix/stores';
+
+    infoSectionsV3.bulkGetOrCreateInfoSections(options): Promise<BulkGetOrCreateInfoSectionsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="BulkGetOrCreateInfoSectionsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="infoSections" type="InfoSectionForGetOrCreate[]">
+
+          Info sections to retrieve or create.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="infoSections properties">
+
+            <ParamField body="_id" type="string">
+
+              Info section ID.
+              Pass an ID to retrieve an existing info section.
+
+            </ParamField>
+
+            <ParamField body="uniqueName" type="string">
+
+              Info section unique name.
+
+              > **Note:**
+              > + Pass the `uniqueName` of an existing info section to return it.
+              > + If no such info section exists - pass `uniqueName` and `title` to create an info section.
+
+            </ParamField>
+
+            <ParamField body="title" type="string">
+
+              Info section title.
+
+              Required when passing `uniqueName` to create a new info section.
+
+            </ParamField>
+
+            <ParamField body="description" type="RichContent">
+
+              Info section description using rich content.
+
+              Learn more about [Working with Rich Content](https://dev.wix.com/docs/go-headless/tutorials-templates/other-tutorials/working-with-rich-content).
+
+              _Nested structure omitted for brevity — see the `RichContent` object._
+
+            </ParamField>
+
+            <ParamField body="plainDescription" type="string">
+
+              Info section description in HTML.
+
+              When provided on create/update, this string must be a valid HTML. It will then be converted to rich content.
+              `plainDescription` is ignored when value is also passed to the `description` field.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Supported values: `ASSIGNED_PRODUCTS_COUNT`
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `ASSIGNED_PRODUCTS_COUNT`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkGetOrCreateInfoSectionsResponse>`.
+
+    <ResponseField name="results" type="BulkInfoSectionItemResult[]">
+
+      Info sections retrieved or created by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InfoSection">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Info Section Object](/api-reference/business-solutions/stores/catalog-v3/info-sections-v3/info-section-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTIONS_LIMIT_EXCEEDED` | Number of info sections exceeded the limit of 200. |
+    | `400` | `INVALID_ARGUMENT` | `ONLY_SPACES_STRING_ERROR` | `uniqueName` contains only spaces. Provide a valid `uniqueName`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Info Section Created | `wix.stores.catalog.v3.info_section_created` | Triggered when an info section is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-get-or-create-info-sections" id="ex-sdk-bulk-get-or-create-info-sections-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-get-or-create-info-sections" id="ex-sdk-bulk-get-or-create-info-sections-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-get-or-create-info-sections" id="ex-sdk-bulk-get-or-create-info-sections-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-get-or-create-info-sections-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-get-or-create-info-sections-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkGetOrCreateInfoSections</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkGetOrCreateInfoSections (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkGetOrCreateInfoSections (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-get-or-create-info-sections-0"><span className="wix-picker-name">bulkGetOrCreateInfoSections</span></label>
+    <label htmlFor="ex-sdk-bulk-get-or-create-info-sections-1"><span className="wix-picker-name">bulkGetOrCreateInfoSections (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-get-or-create-info-sections-2"><span className="wix-picker-name">bulkGetOrCreateInfoSections (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkGetOrCreateInfoSections
+    import { infoSectionsV3 } from '@wix/stores';
+
+    async function bulkGetOrCreateInfoSections(options) {
+      const response = await infoSectionsV3.bulkGetOrCreateInfoSections(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkGetOrCreateInfoSections (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { infoSectionsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { infoSectionsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkGetOrCreateInfoSections(options) {
+      const response = await myWixClient.infoSectionsV3.bulkGetOrCreateInfoSections(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkGetOrCreateInfoSections (with elevated permissions)
+    import { infoSectionsV3 } from '@wix/stores';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkGetOrCreateInfoSectionsMethod(options) {
+      const elevatedBulkGetOrCreateInfoSections = auth.elevate(infoSectionsV3.bulkGetOrCreateInfoSections);
+      const response = await elevatedBulkGetOrCreateInfoSections(options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

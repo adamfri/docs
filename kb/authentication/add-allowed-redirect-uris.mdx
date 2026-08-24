@@ -1,0 +1,122 @@
+---
+title: "Allow Redirect URIs and Domains"
+description: "After login, or after a Wix-hosted process such as checkout, Wix redirects a visitor or member back to a site or app."
+---
+
+After login, or after a Wix-hosted process such as checkout, Wix redirects a visitor or member back to a site or app. It only redirects to addresses you approve in advance. You configure allowed redirects in your **Headless Settings**:
+
+- **Authorization redirect URIs**: For login callbacks. These require an exact matching URI.
+- **Redirect domains**: For non-authorization redirects, such as returning from a Wix-hosted checkout. These apply at the domain level, allowing all URLs under that domain.
+
+<Note>
+
+Wix-managed Headless adds the relevant redirect URIs automatically during setup. You can add more as needed using the steps below.
+
+</Note>
+
+## Allowed authorization redirect URIs
+
+Use an authorization redirect URI to allow a login callback. You must provide an exact matching URI.
+
+1. In your project dashboard, go to **Settings** > **Development & integrations** > [**Headless Settings**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+
+1. From **Headless clients**, click the **More Actions** icon to the right of the client you want to edit. Choose **Settings** to open its settings page:
+
+   ![Click OAuth App Settings](/kb/assets/open-oauth-app-settings.png)
+
+1. Under **URLs**, go to the **Allowed authorization redirect URIs** section.
+
+   ![Allowed authorization redirect URIs](/kb/assets/add-redirect-uri.png)
+
+1. Click **Add Redirect URI** and enter a precise URI you authorize Wix to redirect back to from Wix-hosted authentication pages. For example, `https://www.my-site.com/login-callback` authorizes only this path, not other URIs under the same domain. To authorize multiple URIs, click **Add Redirect URI** again as many times as you need.
+
+1. Click **Save** to save your changes and return to **Headless Settings**.
+
+## Allowed redirect domains
+
+Use an allowed redirect domain for non-authorization redirects, such as returning a visitor to a site after a Wix-hosted checkout. A domain authorizes all URLs under it.
+
+> **Already set a frontend link?** When you connect your frontend from the setup page, Wix adds it to your allowed redirect domains automatically, so most projects don't need to set anything here. Add a domain manually when you want visitors to return to a location that differs from your frontend link. For more information, see [Add a Frontend Link](https://dev.wix.com/docs/go-headless/project-management/add-a-frontend-link).
+
+### From the dashboard
+
+1. In your project dashboard, go to **Settings** > **Development & integrations** > [**Headless Settings**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+
+1. From **Headless clients**, click the **More Actions** icon to the right of the client you want to edit. Choose **Settings** to open its settings page:
+
+   ![Click OAuth App Settings](/kb/assets/open-oauth-app-settings.png)
+
+1. Under **URLs**, go to the **Allowed redirect domains** section.
+
+   ![Allowed Redirect Domains Section](/kb/assets/allowed-redirect-domain0.png)
+
+1. Click **Add Redirect Domain** and enter a domain you authorize Wix to redirect back to from Wix-hosted pages. For example, `www.my-site.com` authorizes all URLs under this domain. To authorize multiple domains, click **Add Redirect Domain** again as many times as you need.
+
+1. Click **Save** to save your changes and return to **Headless Settings**.
+
+### With the API
+
+You can also manage allowed redirect domains programmatically with the Update OAuth App method. This is useful in automated or LLM-driven setup flows where the deployment domain isn't known at the time the client is first created.
+
+<Tabs>
+
+<Tab title="SDK">
+
+Call [`oAuthApps.updateOAuthApp()`](https://dev.wix.com/docs/api-reference/business-management/headless/oauth-apps/update-oauth-app?apiView=SDK) from `@wix/auth-management`:
+
+```js
+import { createClient, ApiKeyStrategy } from "@wix/sdk";
+import { oAuthApps } from "@wix/auth-management";
+
+const myWixClient = createClient({
+  auth: ApiKeyStrategy({
+    apiKey: "<API_KEY>",
+    accountId: "<ACCOUNT_ID>",
+  }),
+  modules: {
+    oAuthApps,
+  },
+});
+
+await myWixClient.oAuthApps.updateOAuthApp(
+  "<OAUTH_APP_ID>",
+  { allowedRedirectDomains: ["www.my-site.com"] },
+  { paths: ["allowedRedirectDomains"] },
+);
+```
+
+Replace `<OAUTH_APP_ID>` with your client's ID, `<API_KEY>` with an API key that has the `SCOPE.OAUTH_APP.MANAGE` permission, and `<ACCOUNT_ID>` with your Wix account ID.
+
+</Tab>
+
+<Tab title="REST">
+
+Call the [Update OAuth App](https://dev.wix.com/docs/api-reference/business-management/headless/oauth-apps/update-oauth-app) method:
+
+```bash
+curl -X PATCH \
+  'https://www.wixapis.com/oauth-app/v1/oauth-apps/<OAUTH_APP_ID>' \
+  -H 'Authorization: <API_KEY>' \
+  -H 'wix-account-id: <ACCOUNT_ID>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "oAuthApp": {
+      "allowedRedirectDomains": ["www.my-site.com"]
+    },
+    "mask": {
+      "paths": ["allowedRedirectDomains"]
+    }
+  }'
+```
+
+Replace `<OAUTH_APP_ID>` with your client's ID, `<API_KEY>` with an API key that has the `SCOPE.OAUTH_APP.MANAGE` permission, and `<ACCOUNT_ID>` with your Wix account ID.
+
+</Tab>
+
+</Tabs>
+
+<Note>
+
+The `mask.paths` field is required and specifies which fields to update. Fields not included in the mask are left unchanged. To add domains without overwriting existing ones, first retrieve the current list with [Get OAuth App](https://dev.wix.com/docs/api-reference/business-management/headless/oauth-apps/get-oauth-app), merge your new domains into the existing list, and then send the full merged list in your update request.
+
+</Note>

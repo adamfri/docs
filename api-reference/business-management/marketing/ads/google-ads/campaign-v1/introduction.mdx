@@ -1,0 +1,68 @@
+---
+title: "Introduction"
+description: "The Campaign API creates, updates, launches, pauses, and deletes Google Ads campaigns for a Wix site."
+icon: "file-lines"
+---
+
+The Campaign API creates, updates, launches, pauses, and deletes Google Ads campaigns for a Wix site. It supports Smart campaigns (auto-managed by Google) and Performance Max (PMAX) campaigns (multi-channel using asset groups). PMAX Leads is a Performance Max variant focused on lead generation.
+
+## With the Campaign API, you can:
+
+- Create Smart and Performance Max campaigns (including PMAX Leads).
+- Launch a campaign for the first time or resume one after a pause.
+- Pause a running campaign, optionally scheduling it to auto-resume at a future date.
+- Update campaign settings such as budget, geo targets, and creative assets.
+- Retrieve a campaign's full event history using `GetCampaignChangeLog`.
+- Delete campaigns permanently.
+
+## Campaign lifecycle
+
+`CreateCampaign` creates a campaign immediately in the status you specify, including `DRAFT`. If no status is provided, the campaign defaults to `PAUSED`.
+
+- Use `LaunchCampaign` to activate a campaign for the **first time**. Use `ResumeCampaign` to reactivate a campaign that was previously live and then explicitly paused.
+- Use `PauseCampaign` to stop a running campaign without losing its configuration. Pass a `scheduledResumeDate` to schedule an automatic resume — a job runs at that time and fires a `CampaignAutoResumed` domain event. Pass `null` to cancel an existing scheduled resume.
+- `UpdateCampaign` is a partial update: only the fields you include in the request are sent to Google Ads.
+- Use `GetCampaignChangeLog` to retrieve the full event history for a campaign. `GetCampaignStatusHistory` is a legacy method.
+
+## Campaign statuses
+
+A campaign's `status` is read-only and synced from Google Ads. It may change without developer action — for example, due to a policy violation or billing issue. The possible values are:
+
+- `DRAFT` — The campaign was created but not yet launched.
+- `LIVE` — The campaign is active and serving ads.
+- `PAUSED` — The campaign was paused by the user.
+- `LEARNING` — The campaign is in the learning phase (PMAX Leads only, approximately 28 days after launch).
+- `IN_REVIEW` — Wix is finalizing the payment setup for the campaign.
+- `DISAPPROVED` — The campaign or its assets violate Google Ads policy and will not serve.
+- `NOT_SERVING` — The campaign is not serving due to budget limitations.
+- `ENDED` — The campaign has ended (PMAX campaigns with an `endDate`).
+- `ERROR` — The campaign is in an error state.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The Wix Google Ads app must be installed and a Google Ads account must exist for the site before creating campaigns.
+- A maximum of 5 campaigns can be live simultaneously per site on standard accounts. This limit applies across all campaign types.
+- Each campaign requires at least one geo target and a daily budget. Use the Suggestions API to get AI-generated budget recommendations and geo target suggestions.
+- PMAX Leads campaigns require at least one asset group with headlines, descriptions, and images; asset validation is synchronous, so invalid assets cause the create call to fail immediately. Retail Performance Max campaigns don't have this requirement.
+- Daily budget is expressed in micros: 1,000,000 micros equals 1 unit of the account's currency. Google caps monthly spend at approximately 30.4 times the daily budget.
+- `DeleteCampaign` permanently deletes the campaign. Deleted campaigns cannot be recovered.
+
+## Use cases
+
+- [Create and launch a Smart campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/ads/google-ads/sample-flows#create-and-launch-a-smart-campaign).
+- [Create and launch a Performance Max campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/ads/google-ads/sample-flows#create-and-launch-a-performance-max-campaign).
+- [Pause and resume a campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/ads/google-ads/sample-flows#pause-and-resume-a-campaign).
+
+## Terminology
+
+- **Campaign**: An advertising campaign on Google targeting specific audiences, locations, and budgets.
+- **Smart Campaign**: A simplified campaign type where Google automatically manages bidding and ad delivery based on keyword themes and geo targets.
+- **Performance Max (PMAX)**: A goal-based campaign type that runs across all Google channels (Search, Display, YouTube, etc.) using asset groups.
+- **PMAX Leads**: A Performance Max variant optimized for lead generation, with search theme signals, conversion goals, and a 28-day learning phase.
+- **Asset Group**: A collection of creative assets (headlines, descriptions, images, videos) used by a PMAX campaign to generate ads.
+- **Keyword Theme**: A topic or phrase that guides which search queries a Smart campaign matches.
+- **Reporting Key**: An auto-generated identifier derived from the campaign name, embedded as the `utm_campaign` parameter in the campaign's final URL suffix for analytics attribution.
+
+@sdk_package_setup

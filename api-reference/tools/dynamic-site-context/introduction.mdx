@@ -1,0 +1,63 @@
+---
+title: "Introduction"
+description: "The Dynamic Site Context API provides a consolidated view of the calling user's Wix sites and account information in a single request."
+icon: "file-lines"
+---
+
+The Dynamic Site Context API provides a consolidated view of the calling user's Wix sites and account information in a single request. It aggregates data from multiple internal sources and returns enriched site details including installed apps, editor type, Velo enablement, and account metadata.
+
+## What the API provides
+
+With the Dynamic Site Context API, your app can:
+
+- Retrieve all sites owned by the authenticated user with cursor-based pagination.
+- Get the list of installed and enabled apps on each site.
+- Determine the editor type used to build each site (Classic Editor, Studio, EditorX, etc.).
+- Check whether Velo by Wix (Wix Code) is enabled on a site.
+- Get the Wix Stores catalog version (V1 or V3) when Stores is installed.
+- Access account-level metadata including display name, status, and co-branding info.
+- Filter results to a specific site by ID or display name.
+- Identify a site's headless OAuth apps: entries in `installedApps` carry `oauthApp`, and each site's `oauthApps` list has the details (the OAuth app ID doubles as the OAuth `clientId`).
+- Retrieve the same context rendered as a markdown report (`GetDynamicContextMarkdown`), ready to be passed directly to an LLM. The markdown is identical to the site context the Wix MCP injects.
+
+## Before you begin
+
+- **Authentication**: Call this API with a valid OAuth access token. See [Authentication](https://dev.wix.com/docs/rest/articles/getting-started/authentication) to learn how to obtain one.
+- **Caller-scoped**: The API returns data only for sites and account belonging to the authenticated caller.
+- **Token types**: Both user-level account tokens and app-instance tokens (`client_credentials`) are supported. An app-instance token is scoped to a single site: the response contains only the token's site, account and partner sections are omitted, and requesting a different `site_id` returns a `SITE_SCOPE_ACCESS_DENIED` error.
+- **Pagination**: Results are paginated using cursor-based paging. The default page size is 10 sites. Use the `query.paging.limit` field to adjust (max 100). Not applicable to app-instance tokens, which always return exactly one site.
+
+## Call patterns
+
+| Token | Request | Result |
+|---|---|---|
+| Account token | `{}` | The account's sites, first page (10 by default), plus account info |
+| Account token | `{"siteId": "..."}` | That one site's context |
+| Account token | `{"siteName": "..."}` | The site whose display name matches exactly |
+| App-instance (site) token | `{}` | The token's site — no parameters needed, the token determines the site |
+
+Notes:
+- With a site-scoped token you never need to pass `siteId`. Passing one is allowed only as a self-check: a `siteId` that differs from the token's site returns `SITE_SCOPE_ACCESS_DENIED`.
+- Advanced: `query.filter` accepts a Site-List filter and replaces the default namespace filtering. `query.sort` is not supported and is ignored.
+
+## Use cases
+
+REST:
+
+- Power AI assistants and agents that need to understand a user's site portfolio and capabilities.
+- Build dashboards that show a user's sites with their apps, editor types, and publish status.
+- Determine whether a user's site is ready for a specific integration (e.g., check if Stores V3 is installed).
+
+SDK:
+
+- Integrate with external tools that need Wix site metadata for provisioning or configuration.
+- Build onboarding flows that adapt based on the user's existing sites and installed apps.
+
+## Terminology
+
+- **Site**: A Wix website with its metadata, including display name, publish status, editor type, and installed apps.
+- **Installed App**: An app that is currently installed and enabled on a site (e.g., Wix Stores, Wix Bookings).
+- **Editor Type**: The editor used to build and manage a site (e.g., `WIX` for Classic Editor, `STUDIO` for Wix Studio).
+- **Site Namespace**: The origin or creation source of a site (e.g., `WIX`, `HEADLESS`, `RISE`).
+- **Velo**: Velo by Wix (formerly Wix Code), a development platform for adding custom code to Wix sites.
+- **Catalog Version**: The version of the Wix Stores catalog engine (`V1` or `V3`). Only relevant for sites with Wix Stores installed.

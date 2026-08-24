@@ -1,0 +1,104 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Set up shipping for a new store
+
+A new eCommerce store needs to configure delivery options for its shipments. The store wants to offer shipping to the United States with a single carrier.
+
+To set up shipping for a new store:
+
+1. Call [List Installed Delivery Carriers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/list-installed-delivery-carriers) to discover which carriers are available on a site.
+
+1. Call [Query Delivery Profiles](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/query-delivery-profiles) to retrieve the default delivery profile created when you installed Wix Stores.
+
+1. Call [Add Delivery Region](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/add-delivery-region) to create a region for domestic shipping. Include the destinations (countries and subdivisions) where you want to offer shipping:
+
+    ```json
+    {
+      "deliveryRegion": {
+        "name": "Domestic",
+        "destinations": [
+          {
+            "countryCode": "US"
+          }
+        ]
+      }
+    }
+    ```
+
+1. Call [Add Delivery Carrier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/add-delivery-carrier) to assign a carrier to the region. Use the `deliveryRegionId` returned from the previous step and include a backup rate in case the carrier doesn't return rates:
+
+    ```json
+    {
+      "deliveryRegionId": "<DELIVERY_REGION_ID>",
+      "deliveryCarrier": {
+        "appId": "<CARRIER_APP_ID>",
+        "backupRate": {
+          "title": "Standard Shipping",
+          "amount": "9.99",
+          "active": true
+        }
+      }
+    }
+    ```
+
+## Expand delivery to new regions
+
+An established store wants to expand shipping services to Europe. The store needs to create a new delivery region with carriers that serve European destinations.
+
+To expand delivery to new regions:
+
+1. Call [List Installed Delivery Carriers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/list-installed-delivery-carriers) to check which carriers support European destinations.
+
+1. Call [Get Delivery Profile](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/get-delivery-profile) to retrieve the delivery profile you want to expand.
+
+1. Call [Add Delivery Region](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/add-delivery-region) to create a new region for European shipping:
+
+    ```json
+    {
+      "deliveryRegion": {
+        "name": "Europe",
+        "destinations": [
+          { "countryCode": "DE" },
+          { "countryCode": "FR" },
+          { "countryCode": "GB" },
+          { "countryCode": "IT" },
+          { "countryCode": "ES" }
+        ]
+      }
+    }
+    ```
+
+1. Call [Add Delivery Carrier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/add-delivery-carrier) to assign a carrier that serves European destinations to the new region.
+
+## Configure backup rates for carriers
+
+A store wants to ensure customers always see shipping options, even when a carrier's API doesn't return rates for certain destinations.
+
+To configure backup rates for carriers:
+
+1. Call [Get Delivery Profile](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/get-delivery-profile) to retrieve the delivery profile containing the carrier you want to update.
+
+1. Identify the delivery region and carrier that needs a backup rate from the response.
+
+1. Call [Update Delivery Carrier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/shipping-delivery/delivery-profiles/update-delivery-carrier) with the backup rate configuration:
+
+    ```json
+    {
+      "deliveryCarrier": {
+        "appId": "<CARRIER_APP_ID>",
+        "backupRate": {
+          "title": "Flat Rate Shipping",
+          "amount": "12.99",
+          "active": true
+        }
+      }
+    }
+    ```
+
+    When `active` is `true`, customers see the backup rate if the carrier doesn't return a rate. When `active` is `false`, the system hides the carrier's shipping options if the carrier returns no rate.

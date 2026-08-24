@@ -1,0 +1,84 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Preview invoice totals
+
+You can preview totals, taxes, and available shipping options before creating or updating an invoice. This is useful for building invoice creation flows where Wix users need to see calculated values in real time.
+
+To preview invoice totals:
+
+1. Call [Calculate Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/calculate-invoice) with the invoice data you plan to use, including line items, customer contact information, and shipping details. The response includes the calculated totals, taxes, and available shipping options.
+2. Pass the `correlationId` from the response into the next Calculate Invoice request to optimize incremental recalculations as the Wix user makes changes.
+3. Once the values are confirmed, call [Create Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/create-invoice) with the finalized data.
+
+## Create and send a standalone invoice
+
+Send a standalone invoice to a customer by email and monitor for payment. Use this flow when the customer pays at their own convenience after receiving the invoice—for example, through a payment link in the email. To redirect a customer to an online checkout immediately, see [Initiate online payment for a standalone invoice](fallback::#initiate-online-payment-for-a-standalone-invoice).
+
+To create and send a standalone invoice:
+
+1. Call [Create Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/create-invoice) with the following required fields:
+   - `referenceType`: `STANDALONE`
+   - `customerInfo.contactId`
+   - `currency`
+   - `issueDate`
+   - At least 1 line item
+   
+   Include `dueDate`, billing address, and other details as needed.
+2. Call [Publish Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/publish-invoice) to finalize the invoice and assign an invoice number.
+3. Call [Send Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/send-invoice) to send the invoice to the customer. If no `contactIds` are specified, the invoice is sent to the customer contact on the invoice.
+4. Monitor payment status changes by listening to the [Invoice Updated](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/invoice-updated) event or by polling [Get Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/get-invoice).
+
+## Track invoice activity outside of Wix
+
+If you send or display invoices outside of Wix, you can manually update the invoice's activity status to keep `activityInfo` accurate.
+
+To track invoice activity outside of Wix:
+
+1. Send or display the invoice to your customer using your preferred method.
+2. Call [Mark Invoice as Sent](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/mark-invoice-as-sent) to apply the `SENT` qualifier and record the send timestamp and recipient in `activityInfo`.
+3. When the customer views the invoice, call [Mark Invoice as Viewed](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/mark-invoice-as-viewed) to apply the `VIEWED` qualifier and update `activityInfo`.
+4. Call [Get Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/get-invoice) and check `activityInfo` to confirm the send and view timestamps are recorded.
+
+## Initiate online payment for a standalone invoice
+
+Generate a checkout URL to redirect a customer to pay a standalone invoice immediately. Use this flow instead of sending an invoice by email when you want to direct the customer to complete payment in a specific moment—for example, at the end of a booking or service flow.
+
+To initiate online payment for a standalone invoice:
+
+1. Call [Create Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/create-invoice) with the following required fields:
+   - `referenceType`: `STANDALONE`
+   - `customerInfo.contactId`
+   - `currency`
+   - `issueDate`
+   - At least 1 line item
+2. Call [Publish Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/publish-invoice) to finalize the invoice and assign an invoice number. Payment can only be initiated after an invoice number is assigned.
+3. Call [Initiate Payment](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/initiate-payment) with the invoice ID. This creates a Wix eCommerce order if one doesn't exist yet, and returns a `checkoutUrl` and a `paymentRequestId`.
+4. Redirect the customer to the `checkoutUrl` to complete the payment.
+5. Monitor payment status by listening to the [Invoice Updated](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/invoice-updated) event and checking the `status` field, or by polling [Get Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/get-invoice).
+
+## Generate and download a PDF document
+
+PDF generation is asynchronous. After initiating generation, poll the invoice until the PDF is ready.
+
+To generate and download a PDF for an invoice:
+
+1. Call [Generate PDF Document](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/generate-pdf-document) with the invoice ID to start the generation process.
+2. Poll [Get Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/get-invoice) and check `documentInfo.status`.
+3. When `documentInfo.status` is `AVAILABLE`, use `documentInfo.downloadUrl` to download the PDF. Download links expire after 24 hours. Call [Generate PDF Document](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/standalone-invoice-payment-lifecycle) again if the link has expired.
+
+## Implement bulk invoice processing for recurring billing
+
+You can process multiple invoices efficiently for subscription or recurring billing scenarios.
+
+To implement bulk invoice processing:
+
+1. Collect invoice data for all customers requiring billing in the current cycle, ensuring each has valid contact information and billing details.
+2. Call [Bulk Create Invoices](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/bulk-create-invoices) to process up to 100 invoices simultaneously with the prepared customer and billing data.
+3. Check the `bulkActionMetadata` in the response for success and failure counts, and handle errors for any failed invoices.
+4. For invoice updates across multiple customers, call [Bulk Update Invoices](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/bulk-update-invoices).

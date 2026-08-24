@@ -1,0 +1,618 @@
+---
+title: "Bulk Update Invoices"
+description: "Updates multiple invoices."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates multiple invoices.
+
+    To update a single invoice, call [Update Invoice](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/update-invoice).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INVOICES.MANAGE">Manage Invoices</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/invoices/v4/bulk/invoices/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="invoices" type="MaskedInvoice[]" required>
+
+      Invoices to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="invoices properties">
+
+        <ParamField body="invoice" type="Invoice" required>
+
+          Invoice to update, may be partial.
+
+          See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="fieldMask" type="FieldMask">
+
+          Set of fields to update.
+
+          Fields that aren't included in `fieldMask.paths` are ignored.
+
+          <Expandable title="fieldMask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the updated entities in the response.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkInvoiceResult[]">
+
+      Results of the bulk update operation.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Invoice">
+
+          Updated invoice. Only returned if `returnEntity` was set to `true` in the request.
+
+          See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `SITE_PROPERTIES_FAILED` | Couldn't retrieve business details from the site properties service. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_SETTINGS_IMMUTABLE` | Subscription settings are immutable once the invoice's eCommerce order has been created (after payment is initiated). |
+    | `400` | `INVALID_ARGUMENT` | `ORDER_TOTAL_EXCEEDS_LIMIT` | Invoice total must be less than 10^13. |
+    | `400` | `INVALID_ARGUMENT` | `DUE_DATE_BEFORE_ISSUE_DATE` | Invoice `dueDate` is before `issueDate`. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_DATE_OUT_OF_RANGE` | Invoice `issueDate` is more than 100 years before the current time, or `dueDate` is more than 100 years after the current time. |
+    | `400` | `INVALID_ARGUMENT` | `TIME_ZONE_INVALID` | Invoice `regionalProperties.timeZone` must be a valid time zone. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_MUST_EXIST` | Invoice must have at least one line item. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_IDS_MUST_BE_UNIQUE` | Line item IDs must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_TOO_LARGE` | Rich content object exceeds the maximum allowed size. |
+    | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_INVALID` | Rich content object couldn't be parsed. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_IDS_MUST_BE_UNIQUE` | Invoices contain duplicate invoice IDs. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Invoice Updated | `wix.invoices.invoices.v4.invoice_updated` | Triggered when an invoice is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Updates multiple invoices in a single request.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/invoices/v4/bulk/invoices/update' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "invoices": [
+            {
+              "invoice": {
+                "id": "51be0e68-75c3-4b7a-97e7-3a6643ecf3e2",
+                "revision": "1",
+                "dueDate": "2024-03-15T10:00:00.000Z",
+                "customerInfo": {
+                  "contactDetails": {
+                    "email": "john.updated@techcorp.com"
+                  }
+                }
+              },
+              "fieldMask": {
+                "paths": ["dueDate", "customerInfo.contactDetails.email"]
+              }
+            },
+            {
+              "invoice": {
+                "id": "8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+                "revision": "2",
+                "customerInfo": {
+                  "contactDetails": {
+                    "phone": "+1-555-999-8888"
+                  }
+                }
+              },
+              "fieldMask": {
+                "paths": ["customerInfo.contactDetails.phone"]
+              }
+            }
+          ],
+          "returnEntity": false
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "51be0e68-75c3-4b7a-97e7-3a6643ecf3e2",
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates multiple invoices.
+
+    To update a single invoice, call [Update Invoice](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/update-invoice).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INVOICES.MANAGE">Manage Invoices</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { invoices } from '@wix/get-paid';
+
+    invoices.bulkUpdateInvoices(invoices, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="invoices" type="MaskedInvoice[]" required>
+
+      Invoices to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="invoices properties">
+
+        <ParamField body="invoice" type="Invoice" required>
+
+          Invoice to update, may be partial.
+
+          See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="fieldMask" type="string[]">
+
+          Set of fields to update.
+
+          Fields that aren't included in `fieldMask.paths` are ignored.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdateInvoicesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the updated entities in the response.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkInvoiceResult[]">
+
+      Results of the bulk update operation.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Invoice">
+
+          Updated invoice. Only returned if `returnEntity` was set to `true` in the request.
+
+          See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `SITE_PROPERTIES_FAILED` | Couldn't retrieve business details from the site properties service. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_SETTINGS_IMMUTABLE` | Subscription settings are immutable once the invoice's eCommerce order has been created (after payment is initiated). |
+    | `400` | `INVALID_ARGUMENT` | `ORDER_TOTAL_EXCEEDS_LIMIT` | Invoice total must be less than 10^13. |
+    | `400` | `INVALID_ARGUMENT` | `DUE_DATE_BEFORE_ISSUE_DATE` | Invoice `dueDate` is before `issueDate`. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_DATE_OUT_OF_RANGE` | Invoice `issueDate` is more than 100 years before the current time, or `dueDate` is more than 100 years after the current time. |
+    | `400` | `INVALID_ARGUMENT` | `TIME_ZONE_INVALID` | Invoice `regionalProperties.timeZone` must be a valid time zone. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_MUST_EXIST` | Invoice must have at least one line item. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_IDS_MUST_BE_UNIQUE` | Line item IDs must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_TOO_LARGE` | Rich content object exceeds the maximum allowed size. |
+    | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_INVALID` | Rich content object couldn't be parsed. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_IDS_MUST_BE_UNIQUE` | Invoices contain duplicate invoice IDs. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Invoice Updated | `wix.invoices.invoices.v4.invoice_updated` | Triggered when an invoice is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-invoices" id="ex-sdk-bulk-update-invoices-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-invoices" id="ex-sdk-bulk-update-invoices-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-invoices" id="ex-sdk-bulk-update-invoices-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-invoices-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-invoices-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateInvoices</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateInvoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateInvoices (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-invoices-0"><span className="wix-picker-name">bulkUpdateInvoices</span></label>
+    <label htmlFor="ex-sdk-bulk-update-invoices-1"><span className="wix-picker-name">bulkUpdateInvoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-update-invoices-2"><span className="wix-picker-name">bulkUpdateInvoices (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateInvoices
+    import { invoices } from '@wix/get-paid';
+
+    async function bulkUpdateInvoices(invoices,options) {
+      const response = await invoices.bulkUpdateInvoices(invoices,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateInvoices (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { invoices } from '@wix/get-paid';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { invoices },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateInvoices(invoices,options) {
+      const response = await myWixClient.invoices.bulkUpdateInvoices(invoices,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateInvoices (with elevated permissions)
+    import { invoices } from '@wix/get-paid';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkUpdateInvoicesMethod(invoices,options) {
+      const elevatedBulkUpdateInvoices = auth.elevate(invoices.bulkUpdateInvoices);
+      const response = await elevatedBulkUpdateInvoices(invoices,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

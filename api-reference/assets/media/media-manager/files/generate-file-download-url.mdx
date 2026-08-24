@@ -1,0 +1,593 @@
+---
+title: "Generate File Download Url"
+description: "Generates one or more temporary URLs for downloading a specific file in the Media Manager."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Generates one or more temporary URLs for downloading a specific file in the Media Manager.
+
+    To download different assets of the file, specify the `assetKeys` parameter which generates a download URL for each asset.
+    If no `assetKey` is specified, it defaults to `src`, which generates one download URL in the original file's format and quality.
+
+    Call this endpoint to grant external clients access to a private media file. Specify the `expirationInMinutes` parameter to set the URL expiration time, and the `expirationRedirectUrl` parameter to add a redirect url when the URL expires.
+
+    To generate a permanent URL for downloading a compressed file that contains multiple files in the Media Manager, call the Generate Files Download URL endpoint.
+    Since this is a permanent URL, it is less secure.
+    Therefore, to download private files, call the Generate File Download URL endpoint for each private file that you want to generate a download URL for.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-MEDIA.MANAGE-MEDIAMANAGER">Manage Media Manager</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/site-media/v1/files/generate-file-download-url
+    ```
+
+    ## Body Params
+
+    <ParamField body="fileId" type="string" required>
+
+      File ID.
+
+      You can also specify the file's Wix media URL. For example, `wix:image://v1/0abec0_b291a9349a0b4da59067f76287e386fb~mv2.jpg/leon.jpg#originWidth=3024&originHeight=4032`.
+      Learn more [about the file ID parameter](https://dev.wix.com/docs/api-reference/assets/media/media-manager/files/file-id).
+
+      Constraints: `maxLength 1000`.
+
+    </ParamField>
+
+    <ParamField body="downloadFileName" type="string">
+
+      Temporary file name used to identify the file type. For example, a file named "myFile.jpeg" identifies as an "image/jpeg" file type. &lt;br />
+
+      **Note:** The name that appears in the Media Manager is taken from the `filename` parameter in the Generate File Upload Url call.
+
+    </ParamField>
+
+    <ParamField body="expirationInMinutes" type="integer">
+
+      The time that it takes in minutes for the download URL to expire. &lt;br />
+      Default: `600`. &lt;br />
+      Limit: `525600` (1 year).
+
+    </ParamField>
+
+    <ParamField body="expirationRedirectUrl" type="string">
+
+      The redirect URL for when the temporary download URL with a token expires. &lt;br />
+      Default: A 403 Forbidden response page.
+
+    </ParamField>
+
+    <ParamField body="assetKeys" type="string[]">
+
+      Keys for downloading different assets (format and quality) of a file.
+      Default: `src`, key representing the original file's format and quality.
+
+      Constraints: `maxLength 100`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="contentDisposition" type="string">
+
+      Whether the link downloads the file or opens the file in the browser.
+
+      - `ATTACHMENT`: The link downloads the file.
+      - `INLINE`: The link opens the file in the browser.
+
+      Default: `ATTACHMENT`
+
+      **Supported values:**
+
+      - `ATTACHMENT` — Using the link in the browser will download the file
+      - `INLINE` — Using the link in the browser will open the file in the browser
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="downloadUrls" type="DownloadUrl[]">
+
+      URL for downloading a specific file in the Media Manager.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="downloadUrls properties">
+
+        <ResponseField name="url" type="string">
+
+          The file download URL.
+
+          Constraints: `format WEB_URL`.
+
+        </ResponseField>
+
+        <ResponseField name="assetKey" type="string">
+
+          Key for downloading a different asset (format and quality) of a file.
+          Default: `src`, key representing the original file's format and quality.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ASSET_KEY` | The `assetKey` isn't valid for this file. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/site-media/v1/files/generate-file-download-url' \
+        -H 'Authorization: <AUTH>'
+        -H 'Content-Type: application/json' \
+        --data-binary '{
+          "fileId": "4acbb8_7596aeebcf5c41eca01c0d99667ac967.mp3",
+          "downloadFileName": "Gorillaz - Feel Good Inc.mp3",
+          "expirationInMinutes": 60,
+          "expirationRedirectUrl":"https://www.mysite.com/store",
+          "assetKeys": ["320kbs.mp3"]
+        }'
+      ```
+
+      ```json Response
+      {
+        "downloadUrls": [{
+          "url": "https://download-files.wixmp.com/media/4acbb8_00668eb74c164439951039ca3a2ae54a~mv2_d_6031_4456_s_4_2.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImlhdCI6MTY1MjY0OTY4MCwiZXhwIjoxNjUyNjQ5NzUwLCJqdGkiOiJlODk0MDEzOTJmYzUiLCJvYmoiOlpbeyJwYXRoIjoiL21lZGlhLzJhY2JiOF8wMDY2OGViNzRjMTY0NDM5OTUxMDM5Y2EzYTJhZTU0YX5tdjJfZF82MDMxXzQ0NTZfc180XzIuanBnIn1dXSwicmVkIjoid3d3Lmdvb2dsZS5jb20iLCJhdHRhY2htZW50Ijp7ImZpbGVuYW1lIjoiZWxpcmFuLmpwZyJ9fQ.P9eCCRunJcjxdFyJVOqFwvuutpyjRekAuP67BFBs8Es",
+          "assetKey": "320kbs.mp3"
+        }]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Generates one or more temporary URLs for downloading a specific file in the Media Manager.
+
+    To download different assets of the file, specify the `assetKeys` parameter which generates a download URL for each asset.
+    If no `assetKey` is specified, it defaults to `src`, which generates one download URL in the original file's format and quality.
+
+    Call this endpoint to grant external clients access to a private media file. Specify the `expirationInMinutes` parameter to set the URL expiration time, and the `expirationRedirectUrl` parameter to add a redirect url when the URL expires.
+
+    To generate a permanent URL for downloading a compressed file that contains multiple files in the Media Manager, call the Generate Files Download URL endpoint.
+    Since this is a permanent URL, it is less secure.
+    Therefore, to download private files, call the Generate File Download URL endpoint for each private file that you want to generate a download URL for.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-MEDIA.MANAGE-MEDIAMANAGER">Manage Media Manager</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { files } from '@wix/media';
+
+    files.generateFileDownloadUrl(fileId, options): Promise<GenerateFileDownloadUrlResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="fileId" type="string" required>
+
+      File ID.
+
+      You can also pass the files' Wix media URLs. For example, `["wix:image://v1/0abec0_b291a9349a0b4da59067f76287e386fb~mv2.jpg/leon.jpg#originWidth=3024&originHeight=4032"]`.
+      Learn more in the File and Folder IDs article. 
+
+      Constraints: `maxLength 1000`.
+
+    </ParamField>
+
+    <ParamField body="options" type="GenerateFileDownloadUrlOptions">
+
+      Options to use when generating a file's download URL. 
+
+      <Expandable title="options properties">
+
+        <ParamField body="downloadFileName" type="string">
+
+          Temporary file name used to identify the file type. For example, a file named "myFile.jpeg" identifies as an "image/jpeg" file type. &lt;br />
+
+          **Note:** The name that appears in the Media Manager is taken from the `filename` parameter in the Generate File Upload Url call.
+
+        </ParamField>
+
+        <ParamField body="expirationInMinutes" type="integer">
+
+          The time that it takes in minutes for the download URL to expire. &lt;br />
+          Default: `600`. &lt;br />
+          Limit: `525600` (1 year).
+
+        </ParamField>
+
+        <ParamField body="expirationRedirectUrl" type="string">
+
+          The redirect URL for when the temporary download URL with a token expires. &lt;br />
+          Default: A 403 Forbidden response page.
+
+        </ParamField>
+
+        <ParamField body="assetKeys" type="string[]">
+
+          Keys for downloading different assets (format and quality) of a file.
+          Default: `src`, key representing the original file's format and quality.
+
+          Constraints: `maxLength 100`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="contentDisposition" type="string">
+
+          Whether the link downloads the file or opens the file in the browser.
+
+          - `ATTACHMENT`: The link downloads the file.
+          - `INLINE`: The link opens the file in the browser.
+
+          Default: `ATTACHMENT`
+
+          **Supported values:**
+
+          - `ATTACHMENT` — Using the link in the browser will download the file
+          - `INLINE` — Using the link in the browser will open the file in the browser
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<GenerateFileDownloadUrlResponse>`.
+
+    <ResponseField name="downloadUrls" type="DownloadUrl[]">
+
+      URL for downloading a specific file in the Media Manager.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="downloadUrls properties">
+
+        <ResponseField name="url" type="string">
+
+          The file download URL.
+
+          Constraints: `format WEB_URL`.
+
+        </ResponseField>
+
+        <ResponseField name="assetKey" type="string">
+
+          Key for downloading a different asset (format and quality) of a file.
+          Default: `src`, key representing the original file's format and quality.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ASSET_KEY` | The `assetKey` isn't valid for this file. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-generate-file-download-url" id="ex-sdk-generate-file-download-url-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-generate-file-download-url" id="ex-sdk-generate-file-download-url-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-generate-file-download-url" id="ex-sdk-generate-file-download-url-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-generate-file-download-url" id="ex-sdk-generate-file-download-url-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-generate-file-download-url" id="ex-sdk-generate-file-download-url-4" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-generate-file-download-url-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-generate-file-download-url-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Generate a file download URL</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Generate a file download URL (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Generate a file download URL with options</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Generate a file download URL with options (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">generateFileDownloadUrl (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-generate-file-download-url-0"><span className="wix-picker-name">Generate a file download URL</span></label>
+    <label htmlFor="ex-sdk-generate-file-download-url-1"><span className="wix-picker-name">Generate a file download URL (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-generate-file-download-url-2"><span className="wix-picker-name">Generate a file download URL with options</span></label>
+    <label htmlFor="ex-sdk-generate-file-download-url-3"><span className="wix-picker-name">Generate a file download URL with options (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-generate-file-download-url-4"><span className="wix-picker-name">generateFileDownloadUrl (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Generate a file download URL
+    import { files } from '@wix/media';
+
+    /* Sample fileId value: 'd4dde1_dee18c9ada174a818ccf75c50e72c739~mv2.jpg' */
+
+    async function myGenerateFileDownloadUrlFunction(fileId) {
+      try {
+        const result = await files.generateFileDownloadUrl(fileId);
+
+        return result;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "downloadUrls": [
+     *     {
+     *       "assetKey": "src",
+     *       "url": "https://download-files.wixmp.com/media/d4dde1_dee18c9ada174a818ccf75c50e72c739~mv2.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImlhdCI6MTY5MjAyMTMxNSwiZXhwIjoxNjkyMDU3MzI1LCJqdGkiOiJjZTA1MzUxYy1jNDA4LTRlYmMtYWI0OC04MWM0NWJlZDlkM2IiLCJvYmoiOltbeyJwYXRoIjoiL21lZGlhL2Q0ZGRlMV9kZWUxOGM5YWRhMTc0YTgxOGNjZjc1YzUwZTcyYzczOX5tdjIuanBnIn1dXSwiZGlzIjp7ImZpbGVuYW1lIjoibmVvbS1BZGtKLUxncFRyRS11bnNwbGFzaC5qcGciLCJ0eXBlIjoiYXR0YWNobWVudCJ9fQ.HfZiuG7UFavOpgh2T0lVn56oZ9NpLoV3z9Gmnqptt8Y"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Generate a file download URL (with elevated permissions)
+    import { files } from '@wix/media';
+    import { auth } from '@wix/essentials';
+
+    const elevatedGenerateFileDownloadUrl = auth.elevate(files.generateFileDownloadUrl);
+
+    /* Sample fileId value: 'd4dde1_dee18c9ada174a818ccf75c50e72c739~mv2.jpg' */
+
+    async function myGenerateFileDownloadUrlFunction(fileId) {
+      try {
+        const result = await elevatedGenerateFileDownloadUrl(fileId);
+
+        return result;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "downloadUrls": [
+     *     {
+     *       "assetKey": "src",
+     *       "url": "https://download-files.wixmp.com/media/d4dde1_dee18c9ada174a818ccf75c50e72c739~mv2.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImlhdCI6MTY5MjAyMTMxNSwiZXhwIjoxNjkyMDU3MzI1LCJqdGkiOiJjZTA1MzUxYy1jNDA4LTRlYmMtYWI0OC04MWM0NWJlZDlkM2IiLCJvYmoiOltbeyJwYXRoIjoiL21lZGlhL2Q0ZGRlMV9kZWUxOGM5YWRhMTc0YTgxOGNjZjc1YzUwZTcyYzczOX5tdjIuanBnIn1dXSwiZGlzIjp7ImZpbGVuYW1lIjoibmVvbS1BZGtKLUxncFRyRS11bnNwbGFzaC5qcGciLCJ0eXBlIjoiYXR0YWNobWVudCJ9fQ.HfZiuG7UFavOpgh2T0lVn56oZ9NpLoV3z9Gmnqptt8Y"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Generate a file download URL with options
+    import { files } from '@wix/media';
+
+    /* Sample fileId value: 'd4dde1_dee18c9ada174a818ccf75c50e72c739~mv2.jpg'
+     * 
+     * Sample options value: 
+     * {
+     *   assetKeys: ['320kbs.mp3'],
+     *   downloadFileName: 'MyAudio.mp3',
+     *   expirationInMinutes: '60',
+     *   expirationRedirectUrl: 'www.example.com/store'
+     * }
+     */
+
+    export async function myGenerateFileDownloadUrlFunction(fileId, options) {
+      try {
+        const result = await files.generateFileDownloadUrl(fileId, options);
+
+        const url = result.downloadUrls[0].url;
+        return url;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "downloadUrls": [
+     *     {
+     *       "assetKey": "320kbs.mp3",
+     *       "url": "https://download-files.wixmp.com/mp3/d4dde1_by0oqi7mrlyvhnodnhoywu6rr2egzujz-320.mp3?token=eyJhmHWBeilpRrgQGkzYAMcWQsyoISC4MSuG.eyJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImlhdCI6MTY5MjI3MTQzMCwiZXhwIjoxNjkyMjcxNTYwLCJqdGkiOiJlZmZjZjdmMy1hZTdiLTQwMTUtYmIyZi00ZmE3ZDYzMGVlMTkiLCJvYmoiOltbeyJwYXRoIjoiL21wMy9kNGRkZTFfMjM2YzhlMDJmMTdlNDkyMjhlMjE3N2RjMjlkOWJkNzEtMzIwLm1wMyJ9XV0sInJlZCI6Imh0dHBzOi8vd3d3LmpodS5lZHUvIiwiZGlzIjp7ImZpbGVuYW1lIjoiR29yaWxsYXogLSBGZWVsIEdvb2QgSW5jLm1wMyIsInR5cGUiOiJhdHRhY2htZW50In19.qczf9WH3nz-tZ65D_RE8tzW-7o_cuq3b-oXX7QSYeAw"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Generate a file download URL with options (with elevated permissions)
+    import { files } from '@wix/media';
+    import { auth } from '@wix/essentials';
+
+    /* Sample fileId value: 'd4dde1_dee18c9ada174a818ccf75c50e72c739~mv2.jpg'
+     * 
+     * Sample options value: 
+     * {
+     *   assetKeys: ['320kbs.mp3'],
+     *   downloadFileName: 'MyAudio.mp3',
+     *   expirationInMinutes: '60',
+     *   expirationRedirectUrl: 'www.example.com/store'
+     * }
+     */
+
+    export async function myGenerateFileDownloadUrlFunction(fileId, options) {
+      try {
+        const elevatedGenerateFileDonwloadUrl = auth.elevate(files.generateFileDownloadUrl)
+        const result = await elevatedGenerateFileDonwloadUrl(fileId, options);
+
+        const url = result.downloadUrls[0].url;
+        return url;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "downloadUrls": [
+     *     {
+     *       "assetKey": "320kbs.mp3",
+     *       "url": "https://download-files.wixmp.com/mp3/d4dde1_by0oqi7mrlyvhnodnhoywu6rr2egzujz-320.mp3?token=eyJhmHWBeilpRrgQGkzYAMcWQsyoISC4MSuG.eyJpc3MiOiJ1cm46YXBwOmU2NjYzMGU3MTRmMDQ5MGFhZWExZjE0OWIzYjY5ZTMyIiwic3ViIjoidXJuOmFwcDplNjY2MzBlNzE0ZjA0OTBhYWVhMWYxNDliM2I2OWUzMiIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sImlhdCI6MTY5MjI3MTQzMCwiZXhwIjoxNjkyMjcxNTYwLCJqdGkiOiJlZmZjZjdmMy1hZTdiLTQwMTUtYmIyZi00ZmE3ZDYzMGVlMTkiLCJvYmoiOltbeyJwYXRoIjoiL21wMy9kNGRkZTFfMjM2YzhlMDJmMTdlNDkyMjhlMjE3N2RjMjlkOWJkNzEtMzIwLm1wMyJ9XV0sInJlZCI6Imh0dHBzOi8vd3d3LmpodS5lZHUvIiwiZGlzIjp7ImZpbGVuYW1lIjoiR29yaWxsYXogLSBGZWVsIEdvb2QgSW5jLm1wMyIsInR5cGUiOiJhdHRhY2htZW50In19.qczf9WH3nz-tZ65D_RE8tzW-7o_cuq3b-oXX7QSYeAw"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateFileDownloadUrl (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { files } from '@wix/media';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { files },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function generateFileDownloadUrl(fileId,options) {
+      const response = await myWixClient.files.generateFileDownloadUrl(fileId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

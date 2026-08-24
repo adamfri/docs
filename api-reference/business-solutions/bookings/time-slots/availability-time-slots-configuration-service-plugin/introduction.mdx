@@ -1,0 +1,147 @@
+---
+title: "Introduction"
+description: "The Availability Time Slots Configuration service plugin allows you to customize how Wix calculates available time slots for booking services."
+icon: "file-lines"
+---
+
+The Availability Time Slots Configuration service plugin allows you to customize how Wix calculates available time slots for booking services.
+
+With this service plugin, you can:
+
+- Configure service duration, split intervals, and buffer times.
+- Specify which locations the service is offered at.
+- Define which [resources](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) are required and available for booking.
+- Calculate duration based on the customer's selected duration variant from [service options and variants](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction) and/or selected [add-ons](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+- Configure a bookable duration range for services where the customer selects how long to book. Use the `durationUnit` field to define the unit of time (`HOUR` or `DAY`) and the minimum and maximum durations a customer can choose.
+
+Learn more about [service plugin extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions).
+
+## Before you begin
+
+It's important to note the following point before starting to code:
+
+- [Resources](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) must exist before time slot calculation.
+
+## Use cases
+
+- [Provide custom time slot configurations during booking](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/availability-time-slots-configuration-service-plugin/sample-flows#provide-custom-time-slot-configurations-during-booking).
+- [Provide duration range configurations for flexible-duration services](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/availability-time-slots-configuration-service-plugin/sample-flows#provide-duration-range-configurations-for-flexible-duration-services).
+
+<Tabs>
+
+<Tab title="REST">
+
+## Get started
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **Bookings** in the left menu, then find **Availability Time Slots Configuration service plugin** and click **Create**.
+1. Provide the following configuration in the JSON editor and then click **Save**.
+
+    | Name | Type | Description |
+    | --- | --- | --- |
+    | `deploymentUri`|string|**Required.** Base URI where your service plugin endpoints are deployed. For example, to call the List Availability Time Slot Configurations endpoint at `https://my-availability-provider.com/v2/list-availability-time-slot-configurations`, the base URI you provide here is `https://my-availability-provider.com/`. |
+    | `providerName`|string|**Required.** Display name for your provider. |
+
+</Tab>
+
+<Tab title="SDK">
+
+## Get started
+
+Follow these steps to begin implementing your service plugin.
+
+### Step 1 | Choose a framework
+
+You can implement this service plugin with the following [frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks):
+
++ **Wix CLI:** Learn how to [implement a service plugin with the CLI and the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
++ **Self-hosted:** Learn how to [implement a self-hosted service plugin with the SDK and the app dashboard](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk).
+
+### Step 2 | Configure your service plugin
+
+To configure and customize your plugin, you need to provide important information in the service plugin configuration file. You can [configure your plugin in your app's dashboard](##step-1--add-a-service-plugin-extension-to-your-app*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-1--add-a-service-plugin-extension-to-your-app). For details, see [Availability Time Slots Configuration Extension Configuration](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/availability-time-slots-configuration-service-plugin/extension-config).
+
+### Step 3 | Define handler functions
+
+Use [`availabilityTimeSlotsConfiguration.provideHandlers()`](##step-4--define-handler-functions*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions) to define the following handler functions that implement your custom business logic. Make sure you define all required functions.
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`listAvailabilityTimeSlotConfigurations()`](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/availability-time-slots-configuration-service-plugin/list-availability-time-slot-configurations)    | Yes            |
+
+## Code examples
+
+Below is an example for implementing the Availability Time Slots Configuration service plugin in your code.
+
+### CLI: Basic code structure
+
+This is the basic code structure for implementing the Availability Time Slots Configuration service plugin with the Wix CLI:
+
+```js
+import { availabilityTimeSlotsConfiguration } from '@wix/bookings/service-plugins'
+
+availabilityTimeSlotsConfiguration.provideHandlers({
+  listAvailabilityTimeSlotConfigurations: async (payload) => {
+
+    const {request, metadata} = payload;
+
+    // Add your logic here
+
+  }
+});
+  
+```
+
+### Self-hosted: Basic code structure
+
+This is the basic code structure for implementing a self-hosted Availability Time Slots Configuration service plugin:
+
+```js
+import { createClient } from '@wix/sdk';
+import { availabilityTimeSlotsConfiguration } from '@wix/bookings/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { availabilityTimeSlotsConfiguration }
+});
+
+wixClient.availabilityTimeSlotsConfiguration.provideHandlers({
+  listAvailabilityTimeSlotConfigurations: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+  
+```
+
+</Tab>
+
+</Tabs>
+
+## Terminology
+
+For a comprehensive glossary of Wix Bookings terms, see [Terminology](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/terminology).
+
+## See also
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)
++ [Time Slots V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/introduction)
++ [Booking Policy service plugin](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policy-service-plugin/introduction)
+
+@sdk_package_setup

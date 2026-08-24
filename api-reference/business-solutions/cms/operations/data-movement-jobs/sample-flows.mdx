@@ -1,0 +1,418 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Export data from a collection to a file
+
+Submit a job to export selected products from a [Wix data collection](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-collections/introduction) to a CSV file:
+
+1. Call [Submit Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/submit-job) with the following parameters:
+
+   ```json
+   {
+     "name": "Export Christmas products",
+     "source": {
+       "wixDataCollection": {
+         "collectionId": "products",
+         "filter": {
+           "holidays": {
+             "$in": ["xmas"]
+           }
+         }
+       }
+     },
+     "destination": {
+       "file": {
+         "format": "CSV",
+         "fileName": "xmasProducts.csv"
+       }
+     }
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Export Christmas products",
+     "startedAt": "2024-03-15T14\:30\:29.162Z",
+     "status": "INITIALIZING",
+     "source": {
+       "wixDataCollection": {
+         "collectionId": "products",
+         "filter": {
+           "holidays": {
+             "$in": ["xmas"]
+           }
+         }
+       }
+     },
+     "destination": {
+       "file": {
+         "format": "CSV",
+         "fileName": "xmasProducts.csv",
+         "url": "http://example.com/files/xmasProducts.csv"
+       }
+     }
+   }
+   ```
+
+2. To check the job's status, call the [Get Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/get-job) method with the job's `id`.
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Export Christmas products",
+     "startedAt": "2024-03-15T14\:32\:14.753Z",
+     "status": "IN_PROGRESS",
+     "progress": {
+       "current": 15,
+       "total": 25,
+       "itemsRejected": 1,
+       "itemsSuccessful": 14
+     },
+     "source": {
+       "wixDataCollection": {
+         "collectionId": "products",
+         "filter": {
+           "holidays": {
+             "$in": ["xmas"]
+           }
+         }
+       }
+     },
+     "destination": {
+       "file": {
+         "format": "CSV",
+         "fileName": "xmasProducts.csv",
+         "url": "http://example.com/files/xmasProducts.csv"
+       }
+     },
+     "logsRecorded": 1
+   }
+   ```
+
+   A job is completed when its `status` updates to `COMPLETED` or `PARTIALLY_SUCCESSFUL`.
+
+   <Note>
+
+   To respond in real time when a job's `status` is updated, you can subscribe to the [Job Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/job-updated) webhook. Learn more [about webhooks](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/api-integrations/events-and-webhooks/about-webhooks).
+
+   </Note>
+
+3. When the job completes, download the file from the URL in the response's `destination.file.url` property.
+
+4. To know more about the job's results, view the job's logs by calling [List Movement Jobs](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/list-movement-logs).
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "logs": [
+       {
+         "sourceItemId": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+         "failure": {
+           "code": "WDE0074",
+           "description": "An item with _id 5331fc15-9441-4fd4-bc7b-7f6870c69228 already exists."
+         }
+       }
+     ],
+     "pagingMetadata": {
+       "count": 1,
+       "hasNext": false
+     }
+   }
+   ```
+
+## Import data from a file to a collection
+
+Submit a job to import products from a CSV file into a Wix data collection. If a product already exists in the destination collection, the job skips it:
+
+1. Call [Create File Upload Url](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/create-file-upload-url) to generate a file upload URL.
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "fileId": "temporary-files/1234567.dat",
+     "uploadUrl": "http://example.com/temporary-files/1234567.dat"
+   }
+   ```
+
+   Save `fileId` and `uploadUrl` for later use.
+
+2. Upload the source file to the `uploadUrl` you saved in the previous step. For example:
+
+   ```bash
+   curl --request PUT --upload-file "./newProducts.csv" "http://example.com/temporary-files/1234567.dat"
+   ```
+
+   <Note>
+
+   The upload URL is valid for 15 minutes.
+
+   </Note>
+
+3. Call [Submit Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/submit-job) with the following parameters. In the request's `source.file.fileId` property, specify the `fileId` you saved earlier:
+
+   ```json
+   {
+     "name": "Import new products",
+     "source": {
+       "file": {
+         "format": "CSV",
+         "fileId": "temporary-files/1234567.dat"
+       }
+     },
+     "destination": {
+       "wixDataCollection": {
+         "collectionId": "products",
+         "writePolicy": "SKIP_EXISTING"
+       }
+     }
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Import new products",
+     "startedAt": "2024-03-15T14\:30\:29.162Z",
+     "status": "INITIALIZING",
+     "source": {
+       "file": {
+         "format": "CSV",
+         "fileName": "temporary-files/1234567.dat",
+         "url": "http://example.com/temporary-files/1234567.dat"
+       }
+     },
+     "destination": {
+       "wixDataCollection": {
+         "collectionId": "products",
+         "writePolicy": "SKIP_EXISTING"
+       }
+     }
+   }
+   ```
+
+   Wix Data now begins importing the data from the file into the specified collection.
+
+4. To check the job's status, call the [Get Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/get-job) method with the job's `id`.
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Import new products",
+     "startedAt": "2024-03-15T14\:30\:29.162Z",
+     "status": "COMPLETED",
+     "source": {
+       "file": {
+         "format": "CSV",
+         "fileId": "temporary-files/1234567.dat",
+         "url": "http://example.com/files/xmasProducts.csv"
+       }
+     },
+     "destination": {
+       "wixDataCollection": {
+         "collectionId": "products",
+         "writePolicy": "SKIP_EXISTING"
+       }
+     },
+     "finished_at": "2024-03-15T14\:32\:16.867Z"
+   }
+   ```
+
+   A job is completed when its `status` updates to `COMPLETED` or `PARTIALLY_SUCCESSFUL`.
+
+   <Note>
+
+   To respond in real time when a job's `status` is updated, you can subscribe to the [Job Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/job-updated) webhook. Learn more [about webhooks](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/api-integrations/events-and-webhooks/about-webhooks).
+
+   </Note>
+
+When the job completes, you can access the imported items in the [CMS](fallback::https://support.wix.com/en/article/cms-content-management-system-an-overview) and with [Wix Data APIs](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/introduction).
+
+## Export, edit, and import localized CMS content
+
+Submit a job to export localized CMS content to a CSV file. After editing its content, import it back to the site:
+
+1. Call [Submit Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/submit-job) with the following parameters:
+
+   ```json
+   {
+     "source": {
+       "localization": {
+         "languages": ["EN-US", "DE", "HE"]
+       }
+     },
+     "destination": {
+       "file": {
+         "format": "CSV",
+         "fileName": "xmasProducts.csv"
+       }
+     },
+     "name": "Export product translations"
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Export xmas product translations",
+     "startedAt": "2024-03-15T14\:30\:29.162Z",
+     "status": "INITIALIZING",
+     "source": {
+       "localization": {
+         "languages": ["EN-US", "DE", "HE"]
+       }
+     },
+     "destination": {
+       "file": {
+         "format": "CSV",
+         "fileName": "xmasProducts.csv",
+         "url": "http://example.com/files/xmasProducts.csv"
+       }
+     }
+   }
+   ```
+
+2. To check the job's status, call [Get Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/get-job) with the job's `id`:
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Export xmas product translations",
+     "startedAt": "2024-03-15T14\:30\:29.162Z",
+     "status": "COMPLETED",
+     "source": {
+       "localization": {
+         "languages": ["EN-US", "DE", "HE"]
+       }
+     },
+     "destination": {
+       "file": {
+         "format": "CSV",
+         "fileName": "xmasProducts.csv",
+         "url": "http://example.com/files/xmasProducts.csv"
+       }
+     },
+     "finishedAt": "2024-03-15T14\:33\:10.007Z"
+   }
+   ```
+
+   A job is completed when its `status` updates to `COMPLETED` or `PARTIALLY_SUCCESSFUL`
+
+   <Note>
+
+   To respond in real time when a job's `status` is updated, you can subscribe to the [Job Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/job-updated) webhook. Learn more [about webhooks](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/api-integrations/events-and-webhooks/about-webhooks).
+
+   </Note>
+
+3. Download the file from the URL in the response's `destination.file.url` property and edit its content.
+
+4. Call [Create File Upload Url](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/create-file-upload-url) to generate a file upload URL:
+
+   ```json
+   {
+     "fileName": "xmasProducts"
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "fileId": "temporary-files/xmasProducts.dat",
+     "uploadUrl": "http://example.com/temporary-files/xmasProducts.dat"
+   }
+   ```
+
+   Save `fileId` and `uploadUrl` for later use.
+
+5. Upload the edited file to the `uploadUrl` you saved in the previous step. For example:
+
+   ```bash
+   curl --request PUT --upload-file "./xmasProducts.csv" "http://example.com/temporary-files/xmasProducts.dat"
+   ```
+
+   <Note>
+
+   The upload URL is valid for 15 minutes.
+
+   </Note>
+
+6. Call [Submit Job](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/submit-job) again to import the edited product translations back into the site's CMS. In the request's `source.file.fileId`, specify the `fileId` you saved earlier. In the request's `destination.localization.languages` array, specify the languages you want to import:
+
+   <Note>
+
+   The first language in the `destination.localization.languages` array is considered the main CMS language.
+
+   </Note>
+
+   ```json
+   {
+     "name": "Import edited product translations",
+     "source": {
+       "file": {
+         "format": "CSV",
+         "fileId": "temporary-files/xmasProducts.dat"
+       }
+     },
+     "destination": {
+       "localization": {
+         "languages": ["EN-US", "DE", "HE"]
+       }
+     }
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "id": "8646fc6e-58f3-4d78-b3ab-6a63a5a46400",
+     "name": "Import edited product translations",
+     "startedAt": "2024-03-15T14\:30\:29.162Z",
+     "status": "INITIALIZING",
+     "source": {
+       "file": {
+         "format": "CSV",
+         "fileId": "temporary-files/xmasProducts.dat"
+       }
+     },
+     "destination": {
+       "localization": {
+         "languages": ["EN-US", "DE", "HE"]
+       }
+     }
+   }
+   ```
+
+   A job is completed when its `status` is updated to `COMPLETED` or `PARTIALLY_SUCCESSFUL`.
+
+   <Note>
+
+   To respond in real time when a job's `status` is updated, you can subscribe to the [Job Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-movement-jobs/job-updated) webhook. Learn more [about webhooks](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/api-integrations/events-and-webhooks/about-webhooks).
+
+   </Note>
+
+   When the job completes, you can access the imported items using:
+
+   - The [Translation Manager](fallback::https://support.wix.com/en/article/wix-multilingual-using-the-translation-manager).
+   - The [Wix Data](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/introduction) APIs.
+   - The [Wix Multilingual](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/introduction) APIs.

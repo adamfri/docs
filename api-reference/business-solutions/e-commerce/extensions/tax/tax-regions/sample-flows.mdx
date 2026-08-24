@@ -1,0 +1,22 @@
+---
+title: "Sample Flows"
+description: "This article presents common use cases and sample flows you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents common use cases and sample flows you can support. They're a helpful jumping-off point as you plan your implementation.
+
+## Set up a manual tax rate in a new region
+
+When a business expands, it needs to start charging tax in a new region. Each call in this flow depends on the previous one, so run them in order:
+
+1. Call [List Tax Calculators](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-calculation/list-tax-calculators) to get the `appId` of the **Wix manual tax calculator**. Never hardcode this value.
+2. Call [Create Tax Region](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-regions/create-tax-region) with the region's `country` (and `subdivision`, where supported), passing the manual calculator `appId`. If a region already exists for that location, reuse it instead of creating a duplicate.
+3. Call [List Default Tax Groups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-groups/list-default-tax-groups) on the Tax Groups API to get the ID of the system tax group you want to charge for (for example, `Products`). Default tax groups aren't returned by [Query Tax Groups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-groups/query-tax-groups).
+4. Call [Create Manual Tax Mapping](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/create-manual-tax-mapping) with the `taxGroupId` from step 3, the `taxRegionId` from step 2, and the rate as a decimal string `taxRate` (for example, `"0.18"` for 18%).
+
+## Stop charging tax in a region
+
+Call [Delete Tax Region](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-regions/delete-tax-region) for the target region. After deletion, zero tax is returned for addresses in that region. Wix also removes the region's manual tax mappings, but this cleanup isn't guaranteed for every site yet, so to be safe delete the region's manual tax mappings yourself first.

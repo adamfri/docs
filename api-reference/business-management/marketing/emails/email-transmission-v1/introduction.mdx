@@ -1,0 +1,48 @@
+---
+title: "Introduction"
+description: "The Email Transmissions API lets you send and track emails to Wix site contacts, users, or arbitrary email addresses."
+icon: "file-lines"
+---
+
+The Email Transmissions API lets you send and track emails to Wix site contacts, users, or arbitrary email addresses. It supports both transactional emails (order confirmations, booking reminders, account notifications) and marketing emails (newsletters, promotional campaigns). It gives you a full audit trail of what was sent and to whom.
+
+Emails sent through this API count toward your site's Email Marketing quota. When you reach the quota, upgrade to a paid Email Marketing plan to keep sending. Check your current usage and remaining quota with the [Account Details API](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/account-details/get-account-details).
+
+With the Email Transmissions API, you can:
+
+- Send transactional or marketing emails to one or more recipients in a single call.
+- Address recipients by contact ID, user ID, or raw email address. The API resolves identities and creates contacts automatically.
+- Track status for each transmission (Accepted, In Progress, Processed, or Rejected).
+- Query the transmission history with filters and cursor-based pagination.
+- Retrieve the full email content of a specific transmission (available for 30 days after sending).
+- Delete a transmission record once it has been processed or rejected.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- **`emailHtmlContent` is not returned in Query.** To retrieve the full HTML body of a specific transmission, use [Get Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/get-email-transmission). The content is stored for 30 days; after that, the field returns `"<expired>"`.
+- **Marketing emails support an unsubscribe URL placeholder.** When `type` is `MARKETING`, set `marketingOptions.unsubscribeUrlPlaceholder` to the placeholder string you embedded in `emailHtmlContent`. The API replaces it with a real unsubscribe link before delivery.
+- **Sender email must be verified.** If the provided `senderEmailAddress` isn't yet verified, you can do that using the [Sender Emails API](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sender-emails). If the provided `senderEmailAddress` can't be used as a FROM address (for example, addresses from free email providers such as gmail.com), the API falls back to `no-reply@wixsitemail.com` and sets the provided address as `reply-to` instead.
+- **`userId` recipients are limited to site collaborators.** The user must be a collaborator on the site. Non-collaborators are skipped with `failureReason` set to `NOT_SITE_COLLABORATOR`.
+- **Recipient failures don't stop the transmission.** Each recipient is validated independently at send time. A transmission reaches `PROCESSED` status even if some recipients are skipped. Check each recipient's `failureReason` to identify any that weren't reached.
+- **Idempotent sends.** Pass an `idempotencyKey` (GUID) in [Send Email Transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/send-email-transmission) to safely retry without risking duplicate sends.
+- **Deletion is only allowed for finished transmissions.** You can delete a transmission only when its status is `PROCESSED` or `REJECTED`. Attempting to delete an `ACCEPTED` or `IN_PROGRESS` transmission returns an error.
+
+## Use cases
+
+- [Send a transactional email to a contact](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/sample-flows#send-a-transactional-email-to-a-contact)
+- [Send a marketing email with an unsubscribe link](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/sample-flows#send-a-marketing-email-with-an-unsubscribe-link)
+- [Track the delivery status of a transmission](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/sample-flows#track-the-delivery-status-of-a-transmission)
+- [Query transmission history with filters](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-transmission-v1/sample-flows#query-transmission-history-with-filters)
+
+## Terminology
+
+- **Email transmission**: A single email send request, including its recipients, content, sender information, type, and current delivery status.
+- **Recipient**: A target for the email, specified as a contact ID, a Wix user ID, or a raw email address. The API resolves the identity and checks validity for each recipient independently.
+- **Type**: `TRANSACTIONAL` for system-triggered emails (order confirmations, reminders) or `MARKETING` for promotional content (newsletters, campaigns). Marketing emails enforce additional consent and unsubscribe requirements.
+- **Status**: The lifecycle state of a transmission: `ACCEPTED` (queued), `IN_PROGRESS` (being processed), `PROCESSED` (completed, even if individual recipients failed), or `REJECTED` (blocked by an abuse check before any sending occurred).
+- **Rejection reason**: The specific reason a transmission was rejected outright (before any sending attempt), such as a blacklisted sender email, sender name, reply-to address, or prohibited link or text in the content.
+- **Failure reason**: A per-recipient reason why an individual recipient couldn't be reached, such as a missing or invalid email address, an email that has previously bounced, or a lack of marketing consent.
+
+@sdk_package_setup

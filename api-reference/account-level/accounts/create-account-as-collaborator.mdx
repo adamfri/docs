@@ -1,0 +1,676 @@
+---
+title: "Create Account As Collaborator"
+description: "Creates a new Wix account with a user as the account owner and immediately assigns the account as a collaborator on a specified site with defined roles."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a new Wix account with a user as the account owner and immediately assigns the account as a collaborator on a specified site with defined roles.
+
+    This method combines account creation, user registration, and site collaboration assignment in a single operation. The newly created account becomes a child account of the requesting account, establishing a parent-child relationship that allows for centralized management and inherited configurations like custom branding.
+
+    <Note>
+
+    This call requires an account level API key.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="ACCOUNT.ACCOUNT_CREATE_AS_COLLABORATOR">ACCOUNT.ACCOUNT_CREATE_AS_COLLABORATOR</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/accounts/v1/accounts/create-as-collaborator
+    ```
+
+    ## Body Params
+
+    <ParamField body="user" type="User" required>
+
+      User details for creating the new account. When parent_as_owner is omitted, this user is the account owner.
+      When parent_as_owner is set, the parent account's owner is the account owner and this user is added as a team member.
+      The created account is then assigned as a collaborator on the specified site.
+
+      <Expandable title="user properties">
+
+        <ParamField body="email" type="Email">
+
+          User's unique email address details. Required.
+
+          <Expandable title="email properties">
+
+            <ParamField body="emailAddress" type="string">
+
+              User's email address.
+
+              Constraints: `format EMAIL`.
+
+            </ParamField>
+
+            <ParamField body="isVerified" type="boolean">
+
+              Whether the caller has verified the user's email address.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="ssoIdentities" type="SsoIdentity[]">
+
+          User's single sign on identity, when the user is identified via SSO authentication response token params, as specified by [OpenID Connect](https://openid.net/developers/how-connect-works/) (aka. OIDC) protocol.
+
+          <Expandable title="ssoIdentities properties">
+
+            <ParamField body="ssoId" type="string">
+
+              An SSO setting (URLs, clientId, secret, etc. as required by OIDC protocol) for a specific Identity-Provider (aka. IdP) for a specific Wix account.
+
+            </ParamField>
+
+            <ParamField body="userId" type="string">
+
+              User ID as stored in IdP. For example a "sub" claim of OIDC protocol,
+              or any other alternative, specified by IdP (Identity Provider).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="userDetails" type="UserDetails">
+
+          Additional user details.
+
+          <Expandable title="userDetails properties">
+
+            <ParamField body="firstName" type="string">
+
+              User's first name.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              User's last name.
+
+            </ParamField>
+
+            <ParamField body="profilePictureUrl" type="string">
+
+              URL to location of user's profile picture.
+
+            </ParamField>
+
+            <ParamField body="language" type="string">
+
+              User's preferred language in [ISO 639-1:2002](https://en.wikipedia.org/wiki/ISO_639-1) format. For example, "en", "es".
+
+            </ParamField>
+
+            <ParamField body="clientIp" type="string">
+
+              Original Client IP from which a request was made.
+              This is useful in case where a createUser API is called by some server call, which, in turn, has been called by some client from another IP.
+              Wix checks this IP against the [OFAC sanctioned countries](https://ofac.treasury.gov/sanctions-programs-and-country-information).
+
+            </ParamField>
+
+            <ParamField body="contactEmail" type="string">
+
+              if defined then emails to the user will be sent to this email instead of the user's primary email
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="siteId" type="string" required>
+
+      Site ID where the created account will be assigned as a collaborator.
+      The site must exist and the requesting account must have permission to add collaborators to this site.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="collaboratorRoles" type="string[]" required>
+
+      Role IDs to assign to the account for the specified site.
+      These roles define the collaborator's permissions and access level on the site.
+      To retrieve available roles, call [Get Roles Info](https://dev.wix.com/docs/api-reference/account-level/user-management/accounts/users/get-roles-info).
+      Minimum: 1 role, Maximum: 5 roles.
+
+      Constraints: `maxLength 100`, `minItems 1`, `maxItems 5`.
+
+    </ParamField>
+
+    <ParamField body="useExistingAccount" type="boolean">
+
+      Whether to assign the existing child account as the collaborator, if one already exists for the specified email address.
+
+    </ParamField>
+
+    <ParamField body="parentAsOwner" type="ParentAsOwnerWithRoles">
+
+      When omitted: user in request is account owner. When set: parent account's owner is account owner; user in request is team member with user_roles.
+
+      <Expandable title="parentAsOwner properties">
+
+        <ParamField body="userRoles" type="string[]">
+
+          Role IDs for the user (team member) on the created account. At least one required when using parent-as-owner flow.
+
+          Constraints: `maxLength 100`, `minItems 1`, `maxItems 5`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="account" type="AccountV2">
+
+      Created account. When parent_as_owner was omitted, the user from the request is the account owner.
+      When parent_as_owner was set, the parent account's owner is the account owner and the user was added as a team member.
+      This account is a child of the requesting account and inherits applicable configurations.
+
+      <Expandable title="account properties">
+
+        <ResponseField name="accountId" type="string">
+
+          Account ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="assignedCollaboratorRoles" type="SiteRoleAssignment[]">
+
+      Site role assignments for each requested collaborator role.
+
+      <Expandable title="assignedCollaboratorRoles properties">
+
+        <ResponseField name="assignmentId" type="string">
+
+          Unique identifier mapping the role to the contributor on the site.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="roleId" type="string">
+
+          Role ID that was successfully assigned to the account for the site.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/accounts/v1/accounts/create-as-collaborator' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+            "user": {
+              "ssoIdentities": [
+                {
+                  "ssoId": "b2a01868-3438-44a3-b6ad-3f1ea47ea6b0",
+                  "userId": "73d3dcf3-afba-423d-86e0-c8d3d04b99b8"
+                }
+              ],
+              "email": {
+                "isVerified": true,
+                "emailAddress": "collaborator@example.com"
+              },
+              "userDetails": {
+                "firstName": "John",
+                "lastName": "Collaborator",
+                "profilePictureUrl": "https://example.com/profile.jpg",
+                "clientIp": "192.168.1.100",
+                "language": "en"
+              }
+            },
+            "siteId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "collaboratorRoles": [
+              "website_manager_role_id",
+              "content_editor_role_id"
+            ],
+            "parentAsOwner": {
+              "userRoles": [
+                "member_role_id"
+              ]
+            }
+          }'
+      ```
+
+      ```json Response
+      {
+          "account": {
+              "accountId": "f1e2d3c4-b5a6-9807-fedc-ba9876543210"
+          },
+          "assignedCollaboratorRoles": [
+              {
+                  "assignmentId": "assign_123abc456def",
+                  "roleId": "website_manager_role_id"
+              },
+              {
+                  "assignmentId": "assign_789ghi012jkl",
+                  "roleId": "content_editor_role_id"
+              }
+          ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a new Wix account with a user as the account owner and immediately assigns the account as a collaborator on a specified site with defined roles.
+
+    This method combines account creation, user registration, and site collaboration assignment in a single operation. The newly created account becomes a child account of the requesting account, establishing a parent-child relationship that allows for centralized management and inherited configurations like custom branding.
+
+    <Note>
+
+    This call requires an account level API key.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="ACCOUNT.ACCOUNT_CREATE_AS_COLLABORATOR">ACCOUNT.ACCOUNT_CREATE_AS_COLLABORATOR</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Method Declaration
+
+    ```typescript
+    import { accounts } from '@wix/user-management';
+
+    accounts.createAccountAsCollaborator(user, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="user" type="User" required>
+
+      User details for creating the new account. When parent_as_owner is omitted, this user is the account owner.
+      When parent_as_owner is set, the parent account's owner is the account owner and this user is added as a team member.
+      The created account is then assigned as a collaborator on the specified site.
+
+      <Expandable title="user properties">
+
+        <ParamField body="email" type="Email">
+
+          User's unique email address details. Required.
+
+          <Expandable title="email properties">
+
+            <ParamField body="emailAddress" type="string">
+
+              User's email address.
+
+              Constraints: `format EMAIL`.
+
+            </ParamField>
+
+            <ParamField body="isVerified" type="boolean">
+
+              Whether the caller has verified the user's email address.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="ssoIdentities" type="SsoIdentity[]">
+
+          User's single sign on identity, when the user is identified via SSO authentication response token params, as specified by [OpenID Connect](https://openid.net/developers/how-connect-works/) (aka. OIDC) protocol.
+
+          <Expandable title="ssoIdentities properties">
+
+            <ParamField body="ssoId" type="string">
+
+              An SSO setting (URLs, clientId, secret, etc. as required by OIDC protocol) for a specific Identity-Provider (aka. IdP) for a specific Wix account.
+
+            </ParamField>
+
+            <ParamField body="userId" type="string">
+
+              User ID as stored in IdP. For example a "sub" claim of OIDC protocol,
+              or any other alternative, specified by IdP (Identity Provider).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="userDetails" type="UserDetails">
+
+          Additional user details.
+
+          <Expandable title="userDetails properties">
+
+            <ParamField body="firstName" type="string">
+
+              User's first name.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              User's last name.
+
+            </ParamField>
+
+            <ParamField body="profilePictureUrl" type="string">
+
+              URL to location of user's profile picture.
+
+            </ParamField>
+
+            <ParamField body="language" type="string">
+
+              User's preferred language in [ISO 639-1:2002](https://en.wikipedia.org/wiki/ISO_639-1) format. For example, "en", "es".
+
+            </ParamField>
+
+            <ParamField body="clientIp" type="string">
+
+              Original Client IP from which a request was made.
+              This is useful in case where a createUser API is called by some server call, which, in turn, has been called by some client from another IP.
+              Wix checks this IP against the [OFAC sanctioned countries](https://ofac.treasury.gov/sanctions-programs-and-country-information).
+
+            </ParamField>
+
+            <ParamField body="contactEmail" type="string">
+
+              if defined then emails to the user will be sent to this email instead of the user's primary email
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateAccountAsCollaboratorOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="siteId" type="string" required>
+
+          Site ID where the created account will be assigned as a collaborator.
+          The site must exist and the requesting account must have permission to add collaborators to this site.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="collaboratorRoles" type="string[]" required>
+
+          Role IDs to assign to the account for the specified site.
+          These roles define the collaborator's permissions and access level on the site.
+          To retrieve available roles, call [Get Roles Info](https://dev.wix.com/docs/api-reference/account-level/user-management/accounts/users/get-roles-info).
+          Minimum: 1 role, Maximum: 5 roles.
+
+          Constraints: `maxLength 100`, `minItems 1`, `maxItems 5`.
+
+        </ParamField>
+
+        <ParamField body="useExistingAccount" type="boolean">
+
+          Whether to assign the existing child account as the collaborator, if one already exists for the specified email address.
+
+        </ParamField>
+
+        <ParamField body="parentAsOwner" type="ParentAsOwnerWithRoles">
+
+          When omitted: user in request is account owner. When set: parent account's owner is account owner; user in request is team member with user_roles.
+
+          <Expandable title="parentAsOwner properties">
+
+            <ParamField body="userRoles" type="string[]">
+
+              Role IDs for the user (team member) on the created account. At least one required when using parent-as-owner flow.
+
+              Constraints: `maxLength 100`, `minItems 1`, `maxItems 5`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="account" type="AccountV2">
+
+      Created account. When parent_as_owner was omitted, the user from the request is the account owner.
+      When parent_as_owner was set, the parent account's owner is the account owner and the user was added as a team member.
+      This account is a child of the requesting account and inherits applicable configurations.
+
+      <Expandable title="account properties">
+
+        <ResponseField name="accountId" type="string">
+
+          Account ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="assignedCollaboratorRoles" type="SiteRoleAssignment[]">
+
+      Site role assignments for each requested collaborator role.
+
+      <Expandable title="assignedCollaboratorRoles properties">
+
+        <ResponseField name="assignmentId" type="string">
+
+          Unique identifier mapping the role to the contributor on the site.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="roleId" type="string">
+
+          Role ID that was successfully assigned to the account for the site.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-account-as-collaborator" id="ex-sdk-create-account-as-collaborator-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-account-as-collaborator" id="ex-sdk-create-account-as-collaborator-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-account-as-collaborator" id="ex-sdk-create-account-as-collaborator-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-account-as-collaborator-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-account-as-collaborator-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">createAccountAsCollaborator</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createAccountAsCollaborator (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createAccountAsCollaborator (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-account-as-collaborator-0"><span className="wix-picker-name">createAccountAsCollaborator</span></label>
+    <label htmlFor="ex-sdk-create-account-as-collaborator-1"><span className="wix-picker-name">createAccountAsCollaborator (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-create-account-as-collaborator-2"><span className="wix-picker-name">createAccountAsCollaborator (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript createAccountAsCollaborator
+    import { accounts } from '@wix/user-management';
+
+    async function createAccountAsCollaborator(user,options) {
+      const response = await accounts.createAccountAsCollaborator(user,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createAccountAsCollaborator (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { accounts } from '@wix/user-management';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { accounts },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createAccountAsCollaborator(user,options) {
+      const response = await myWixClient.accounts.createAccountAsCollaborator(user,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createAccountAsCollaborator (with elevated permissions)
+    import { accounts } from '@wix/user-management';
+    import { auth } from '@wix/essentials';
+
+    async function myCreateAccountAsCollaboratorMethod(user,options) {
+      const elevatedCreateAccountAsCollaborator = auth.elevate(accounts.createAccountAsCollaborator);
+      const response = await elevatedCreateAccountAsCollaborator(user,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

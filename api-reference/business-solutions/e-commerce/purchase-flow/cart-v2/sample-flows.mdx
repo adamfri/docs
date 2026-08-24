@@ -1,0 +1,353 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Create a cart and add products
+
+A custom storefront or POS system needs to create carts and add products for customers. This is the foundational flow for any e-commerce integration.
+
+To create a cart with products:
+
+1. Call [Create Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-cart) with initial catalog items:
+
+   ```json
+   {
+     "catalogItems": [
+       {
+         "catalogReference": {
+           "catalogItemId": "product-123",
+           "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+         },
+         "quantity": 2
+       }
+     ]
+   }
+   ```
+
+2. Save the returned `cart.id` for future operations on this cart.
+
+3. To add more items later, call [Add Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-line-items) with the saved cart ID:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "catalogItems": [
+       {
+         "catalogReference": {
+           "catalogItemId": "product-456",
+           "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+         },
+         "quantity": 1
+       }
+     ]
+   }
+   ```
+
+4. The response includes the updated cart with all line items and their current prices.
+
+## Apply a coupon and calculate cart totals
+
+Customers often have discount coupons they want to apply before checkout. This flow shows how to apply a coupon and display updated pricing.
+
+To apply a coupon and calculate totals:
+
+1. Call [Add Coupon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-coupon) with the coupon code:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "coupon": {
+       "code": "SUMMER20"
+     }
+   }
+   ```
+
+   If the coupon is valid, it's added to the cart. If invalid, you'll receive an error with details.
+
+2. Call [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) to get the detailed pricing breakdown:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "refreshCart": true
+   }
+   ```
+
+3. The response includes:
+   - `summary.priceSummary`: Subtotal, discount amount, delivery cost, tax, and total
+   - `summary.discounts`: Applied discounts including the coupon
+   - `summary.priceVerificationToken`: Save this token for checkout
+   - `summary.violations`: Any business rule violations
+
+4. Display the pricing summary to the customer, showing original price, discount, and final total.
+
+## Complete the checkout process
+
+When a customer is ready to buy, the cart needs to be validated, calculated, and placed as an order. This flow covers the full checkout sequence.
+
+To complete the checkout process:
+
+1. Ensure the cart has all required information:
+   - Customer info (name, email, phone)
+   - Delivery address and selected delivery method
+   - Line items are in stock
+
+2. Call [Update Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-cart) to set customer information if not already set:
+
+   ```json
+   {
+     "cart": {
+       "id": "abc-123-def",
+       "customerInfo": {
+         "firstName": "John",
+         "lastName": "Doe",
+         "email": "john@example.com",
+         "phone": "+1-555-0123"
+       },
+       "deliveryInfo": {
+         "address": {
+           "addressLine1": "123 Main St",
+           "city": "New York",
+           "subdivision": "NY",
+           "postalCode": "10001",
+           "country": "US"
+         }
+       }
+     }
+   }
+   ```
+
+3. Call [Set Delivery Method](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/set-delivery-method) to select shipping:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "deliveryMethod": {
+       "code": "standard_shipping"
+     }
+   }
+   ```
+
+4. Call [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) to get the full pricing breakdown, including delivery, taxes, fees, and gift cards:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "refreshCart": true
+   }
+   ```
+
+5. Check for violations in `summary.violations`. If any exist, display them to the customer and don't proceed.
+
+6. Save the `summary.priceVerificationToken` from the calculation response.
+
+7. Display the final pricing to the customer for confirmation.
+
+8. Call [Place Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/place-order) to complete checkout:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "priceVerificationToken": "<token-from-calculate>"
+   }
+   ```
+
+9. The response includes:
+   - `orderId`: The created order ID
+   - `completed`: Whether the order was created and payment completed
+   - `paymentGatewayOrderId`: Payment gateway order ID, returned when money needs to be charged. Pass it as the `paymentId` parameter to the Wix Pay [`startPayment()`](fallback::https://www.wix.com/velo/reference/wix-pay-frontend/startpayment) function to collect payment. This requires Velo; if your app can't run Velo code, send the customer to the Wix-hosted checkout page with [Get Checkout URL](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-checkout-url) instead.
+
+10. If `completed` is `true`, redirect the customer to your order confirmation page. Otherwise, handle the pending payment state.
+
+## Manage session-based shopping with the current cart
+
+For standard e-commerce shopping flows, the Current Cart service lets you manage the customer's cart without tracking cart IDs. The cart is automatically associated with the customer's session.
+
+To build a session-based shopping experience:
+
+1. Call [Add Line Items To Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-line-items-to-current-cart) when a customer clicks "Add to Cart":
+
+   ```json
+   {
+     "catalogItems": [
+       {
+         "catalogReference": {
+           "catalogItemId": "product-789",
+           "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+         },
+         "quantity": 1
+       }
+     ]
+   }
+   ```
+
+   <Note>
+
+   If no current cart exists, this method automatically creates one. If a current cart already exists, items are added to it.
+
+   </Note>
+
+2. Call [Get Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-current-cart) to display the cart:
+
+   ```json
+   {}
+   ```
+
+   This retrieves the customer's current cart without needing a cart ID. The cart is automatically associated with the customer's session (visitor ID or member ID).
+
+3. To update quantities, call [Update Line Items In Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-line-items-in-current-cart):
+
+   ```json
+   {
+     "lineItems": [
+       {
+         "lineItemId": "line-item-abc",
+         "quantity": {
+           "newQuantity": 3
+         }
+       }
+     ]
+   }
+   ```
+
+4. To remove items, call [Remove Line Items From Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-line-items-from-current-cart):
+
+   ```json
+   {
+     "lineItemIds": ["line-item-xyz"]
+   }
+   ```
+
+5. For checkout, call [Calculate Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-current-cart) to get pricing, then retrieve the cart ID from the response and call [Place Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/place-order) with that cart ID.
+
+## Handle out-of-stock and partially available items
+
+Products can become unavailable or have reduced stock while they're in a customer's cart. This flow shows how to detect and handle inventory changes.
+
+To handle out-of-stock items:
+
+1. Call [Refresh Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/refresh-cart) to sync with current inventory:
+
+   ```json
+   {
+     "cartId": "abc-123-def"
+   }
+   ```
+
+2. Check each line item's status in the response:
+   - `IN_STOCK`: Full requested quantity is available
+   - `PARTIALLY_IN_STOCK`: Some quantity is available (check `quantityInfo.confirmedQuantity`)
+   - `OUT_OF_STOCK`: No stock available (`confirmedQuantity` is 0)
+   - `REMOVED_FROM_CATALOG`: Product no longer exists
+
+3. For partially available items, compare `confirmedQuantity` to `requestedQuantity`:
+
+   ```javascript
+   cart.lineItems.forEach(item => {
+     if (item.status === 'PARTIALLY_IN_STOCK') {
+       const missing = item.quantityInfo.requestedQuantity - item.quantityInfo.confirmedQuantity;
+       // Notify customer: "Only {confirmedQuantity} of {requestedQuantity} available"
+     }
+   });
+   ```
+
+4. For out-of-stock items, either:
+   - Keep them in the cart with `confirmedQuantity: 0` (customer can see what's unavailable)
+   - Remove them with [Remove Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-line-items).
+
+5. When items are restocked, `confirmedQuantity` doesn't automatically increase. To allow customers to purchase more after restocking:
+   - Call [Refresh Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/refresh-cart) to update `availableQuantity`.
+   - Check if `availableQuantity` now exceeds `confirmedQuantity`.
+   - Call [Update Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-line-items) to increase the quantity:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "lineItems": [
+       {
+         "lineItemId": "line-item-abc",
+         "quantity": {
+           "newQuantity": 5
+         }
+       }
+     ]
+   }
+   ```
+
+## Add a gift card as payment
+
+Customers may have gift cards they want to apply toward their purchase. This flow shows how to add a gift card and check the remaining balance due.
+
+To add a gift card as payment:
+
+1. Call [Add Gift Card](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-gift-card) with the gift card code:
+
+   ```json
+   {
+     "cartId": "abc-123-def",
+     "giftCard": {
+       "code": "GIFT-1234-5678"
+     }
+   }
+   ```
+
+2. The API validates the gift card and adds it to `paymentInfo.giftCards` if valid.
+
+3. Call [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) to get the full pricing breakdown including gift card deductions:
+
+   ```json
+   {
+     "cartId": "abc-123-def"
+   }
+   ```
+
+   <Note>
+
+   Calculate Cart always includes gift cards in the calculation. To selectively include or exclude components like gift cards, use [Estimate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/estimate-cart) instead.
+
+   </Note>
+
+4. Check the payment summary in the response:
+   - `paymentSummary.totalAfterGiftCards`: Amount due after applying gift card balance
+   - `paymentSummary.giftCards[0].amount`: Amount deducted from gift card
+   - `paymentSummary.requiresPaymentAfterGiftCard`: Whether additional payment is needed
+
+5. If the gift card fully covers the cart total, `totalAfterGiftCards` will be 0 and no additional payment is required.
+
+6. During [Place Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/place-order), the gift card balance is automatically applied before charging the payment method.
+
+## Build a cart recovery flow
+
+Cart abandonment is common in e-commerce. This flow shows how to detect abandoned carts and bring customers back to complete their purchase.
+
+To build a cart recovery flow:
+
+1. Set up a webhook or scheduled job to detect abandoned carts (carts not checked out after a certain time).
+
+2. Call [Get Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-cart) to retrieve the cart details:
+
+   ```json
+   {
+     "cartId": "abc-123-def"
+   }
+   ```
+
+3. Check if the cart is still valid:
+   - `orderPlaced` should be `false` (not yet checked out).
+   - Line items should exist.
+   - Cart should not be too old (for example, less than 30 days).
+
+4. Send a recovery email to the customer using `cart.customerInfo.email` with:
+   - Link to resume checkout: Include the cart ID in the URL.
+   - Cart summary: List products, quantities, and total price.
+   - Incentive: Optional discount code to encourage completion.
+
+5. When the customer clicks the link, call [Get Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-cart) again to load their cart. The API automatically refreshes it with current prices and inventory.
+
+6. If items are no longer available, use the flow in "Handle out-of-stock items" above to notify the customer.
+
+7. Guide the customer through the checkout process using the flow in "Complete the checkout process" above.

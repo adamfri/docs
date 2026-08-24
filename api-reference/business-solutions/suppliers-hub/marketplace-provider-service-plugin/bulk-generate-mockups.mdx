@@ -1,0 +1,581 @@
+---
+title: "Bulk Generate Mockups"
+description: "Generates product mockup images showing the site owner's logo or custom image on the provider's products."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Generates product mockup images showing the site owner's logo or custom image on the provider's products.
+
+    Wix calls this method when a site owner requests mockup previews for products from the marketplace provider.
+
+    The generated mockup images are delivered asynchronously. Once generation is complete, the provider notifies Wix by calling [Submit Generated Mockups](https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/submit-generated-mockups).
+
+    ## Endpoint
+
+    ```http
+    POST /v2/bulk/mockups/generate
+    ```
+
+    ## Body Params
+
+    <ParamField body="mockups" type="Mockup[]">
+
+      Mockups to generate.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="mockups properties">
+
+        <ParamField body="providerProductId" type="string">
+
+          Unique product identifier on the provider's platform.
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+        <ParamField body="image" type="Image">
+
+          Image to overlay on the product mockup.
+
+          <Expandable title="image properties">
+
+            <ParamField body="url" type="string">
+
+              Image URL.
+
+              Constraints: `format WEB_URL`.
+
+            </ParamField>
+
+            <ParamField body="imageType" type="string">
+
+              Type of image used for mockup generation.
+
+              **Supported values:**
+
+              - `UNKNOWN_IMAGE_TYPE` — Unknown image type.
+              - `SITE_LOGO` — The site's logo.
+              - `CUSTOM` — A custom image provided by the site owner.
+              - `FALLBACK` — Default product mockup image used when a site logo or custom image mockup is not available.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkGenerateMockupResult[]">
+
+      Results of the mockup generation for each product.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MOCKUP_GENERATION_NOT_SUPPORTED` | Product doesn't support mockup generation. |
+    | `428` | `FAILED_PRECONDITION` | `IMAGE_NOT_SUPPORTED` | Provided image format or type isn't supported for mockup generation. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Generates mockup images by compositing provided images onto product photos
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://provider.example.com/v2/bulk/mockups/generate' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "mockups": [
+          {
+            "providerProductId": "73cfa507-221b-417a-bd62-c7b62065068e",
+            "image": {
+              "url": "https://static.wixstatic.com/media/2bb3219153c347daf475067d763be40d.png",
+              "imageType": "SITE_LOGO"
+            }
+          },
+          {
+            "providerProductId": "ced405ed-fc48-4ace-987c-3677656e2fa7",
+            "image": {
+              "url": "https://static.wixstatic.com/media/152e4032e12c41c2b20f49ffee41a67f.png",
+              "imageType": "CUSTOM"
+            }
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "73cfa507-221b-417a-bd62-c7b62065068e",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "ced405ed-fc48-4ace-987c-3677656e2fa7",
+              "originalIndex": 1,
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Generates product mockup images showing the site owner's logo or custom image on the provider's products.
+
+    Wix calls this method when a site owner requests mockup previews for products from the marketplace provider.
+
+    The generated mockup images are delivered asynchronously. Once generation is complete, the provider notifies Wix by calling [Submit Generated Mockups](https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/submit-generated-mockups).
+
+    ## Method Declaration
+
+    ```typescript
+    import { marketplaceProvider } from '@wix/suppliers-hub';
+
+    marketplaceProvider.bulkGenerateMockups(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="BulkGenerateMockupsRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="mockups" type="Mockup[]">
+
+          Mockups to generate.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="mockups properties">
+
+            <ParamField body="providerProductId" type="string">
+
+              Unique product identifier on the provider's platform.
+
+              Constraints: `minLength 1`, `maxLength 36`.
+
+            </ParamField>
+
+            <ParamField body="image" type="Image">
+
+              Image to overlay on the product mockup.
+
+              _Nested structure omitted for brevity — see the `Image` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkGenerateMockupResult[]">
+
+      Results of the mockup generation for each product.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MOCKUP_GENERATION_NOT_SUPPORTED` | Product doesn't support mockup generation. |
+    | `428` | `FAILED_PRECONDITION` | `IMAGE_NOT_SUPPORTED` | Provided image format or type isn't supported for mockup generation. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-generate-mockups" id="ex-sdk-bulk-generate-mockups-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-generate-mockups" id="ex-sdk-bulk-generate-mockups-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-generate-mockups" id="ex-sdk-bulk-generate-mockups-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-generate-mockups-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-generate-mockups-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkGenerateMockups</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkGenerateMockups (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkGenerateMockups (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-generate-mockups-0"><span className="wix-picker-name">bulkGenerateMockups</span></label>
+    <label htmlFor="ex-sdk-bulk-generate-mockups-1"><span className="wix-picker-name">bulkGenerateMockups (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-generate-mockups-2"><span className="wix-picker-name">bulkGenerateMockups (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkGenerateMockups
+    import { marketplaceProvider } from '@wix/suppliers-hub/service-plugins';
+
+    async function bulkGenerateMockups(request,metadata) {
+      const response = await marketplaceProvider.bulkGenerateMockups(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkGenerateMockups (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { marketplaceProvider } from '@wix/suppliers-hub/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { marketplaceProvider },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkGenerateMockups(request,metadata) {
+      const response = await myWixClient.marketplaceProvider.bulkGenerateMockups(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkGenerateMockups (with elevated permissions)
+    import { marketplaceProvider } from '@wix/suppliers-hub/service-plugins';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkGenerateMockupsMethod(request,metadata) {
+      const elevatedBulkGenerateMockups = auth.elevate(marketplaceProvider.bulkGenerateMockups);
+      const response = await elevatedBulkGenerateMockups(request,metadata);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

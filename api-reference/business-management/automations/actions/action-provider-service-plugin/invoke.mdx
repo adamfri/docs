@@ -1,0 +1,701 @@
+---
+title: "Invoke"
+description: "Runs your action."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Runs your action.
+
+    Wix calls Invoke when an automation that uses your action is triggered. The request includes parameters as specified in the action's [input schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema), as well as metadata about the current automation run.
+
+    If your action has an [output schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), return your action's output parameters. Your action can return its results immediately, or it can tell Wix to wait for your action to complete by [specifying a timeout](https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/introduction#action-timeouts) and calling [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) to let Wix know that the action has completed.
+
+    <Note>
+
+    When your response includes a timeout, save the `activationContext.invocationToken` and include it in your call to Report Action Invocation Completed. This ensures that Wix associates your action's results with the correct automation run.
+
+    </Note>
+
+    ## Endpoint
+
+    ```http
+    POST /v1/invoke
+    ```
+
+    ## Body Params
+
+    <ParamField body="actionParams" type="object" required>
+
+      Action parameters as specified in your action's [input schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema). Wix validates the parameters it sends against your action's schema, so you don't need to validate them yourself.
+
+    </ParamField>
+
+    <ParamField body="actionKey" type="string" required>
+
+      Action key specified when you [added the action to your app](https://dev.wix.com/docs/api-reference/business-management/automations/actions/add-an-action-to-your-app).
+
+    </ParamField>
+
+    <ParamField body="activationContext" type="ActivationContext">
+
+      Activation context that includes metadata about the current automation run.
+
+      <Expandable title="activationContext properties">
+
+        <ParamField body="activationId" type="string">
+
+          Activation ID. Wix uses this to identify the current automation run.
+
+        </ParamField>
+
+        <ParamField body="triggerKey" type="string">
+
+          Trigger key you specified when you [added the trigger to your app](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/add-a-trigger-to-your-app).
+
+        </ParamField>
+
+        <ParamField body="triggerAppId" type="string">
+
+          [ID of the app](https://dev.wix.com/docs/build-apps/get-started/overview/glossary#app-id) that set up the trigger.
+
+          Learn more about [adding a trigger to your app](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/add-a-trigger-to-your-app).
+
+        </ParamField>
+
+        <ParamField body="actionId" type="string">
+
+          ID of the action in the current automation.
+
+          Learn more about [configuring your action](https://dev.wix.com/docs/api-reference/business-management/automations/automations/automations-v2/configure-your-automation#configuring-actions).
+
+        </ParamField>
+
+        <ParamField body="payload" type="object">
+
+          Full aggregated payload passed to the action being invoked. The payload includes the complete [trigger payload](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/the-trigger-payload-schema) as well as any additional [output parameters](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema) passed from previous actions.
+
+          Learn more about Wix Automations [architecture and data flow](https://dev.wix.com/docs/api-reference/business-management/automations/architecture-data-flow).
+
+        </ParamField>
+
+        <ParamField body="actionAppId" type="string">
+
+          [ID of the app](https://dev.wix.com/docs/build-apps/get-started/overview/glossary#app-id) that set up the action.
+
+          Learn more about [adding an action to your app](https://dev.wix.com/docs/api-reference/business-management/automations/actions/add-an-action-to-your-app).
+
+        </ParamField>
+
+        <ParamField body="invocationToken" type="string">
+
+          Invocation token.
+
+          When your action [includes a timeout](https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/introduction#action-timeouts), specify this token when you call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) to let Wix know that the action has completed. This ensures that Wix associates your action's results with the correct automation run.
+
+          Learn more about [running an invoked action with a timeout](https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/sample-flow#run-an-invoked-action-with-a-timeout).
+
+        </ParamField>
+
+        <ParamField body="activationSourceInfo" type="ActivationInitiationSourceInfo">
+
+          Information about how this activation was initiated (e.g., event-driven or manual activation)
+
+          <Expandable title="activationSourceInfo properties">
+
+            <ParamField body="activationInitiationSource" type="string">
+
+              The source type of this activation.
+
+              **Supported values:**
+
+              - `TRIGGER_PROVIDER_EVENT` — Activation triggered by a provider event (e.g., reportEvent, bulkReportEvent).
+              The automation runs in response to a business event. Uses published automations only.
+              - `MANUAL_ACTIVATION` — Activation triggered by manual execution (e.g., testAutomation, ReRunAutomation).
+              Explicitly initiated by user or API caller with explicit payload.
+              - `RERUN_ACTIVATION` — Activation triggered by re-running a previous activation.
+
+            </ParamField>
+
+            <ParamField body="initiatorInfo" type="InitiatorInfo">
+
+              Information about the user who initiated the activation.
+
+              _Nested structure omitted for brevity — see the `InitiatorInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="initiationSourceInfo" type="initiationSourceInfo">
+
+              initiationSourceInfo
+
+              _Nested structure omitted for brevity — see the `initiationSourceInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="preinstalledInfo" type="PreinstalledInfo">
+
+          Information about the preinstalled automation, if applicable.
+
+          <Expandable title="preinstalledInfo properties">
+
+            <ParamField body="appId" type="string">
+
+              ID of the app that added the preinstalled automation.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="componentId" type="string">
+
+              App component ID of the preinstalled automation.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="forceSync" type="boolean">
+
+          Whether this invocation is in force-sync mode (e.g., from a Functions automation).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="result" type="object">
+
+      Your action's results.
+
+      When your action has an [output schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), return an object with the action's output parameters in the structure specified by the output schema. Otherwise, return an empty object.
+
+    </ResponseField>
+
+    <ResponseField name="invokeTimeoutType" type="string">
+
+      Timeout period between when Wix invokes your action and when it continues to the next step in the automation. You can tell Wix to continue immediately, wait a specified amount of time, or wait until a certain date.
+
+      When you want Wix to continue immediately to the next step in the automation, specify `IMMEDIATE`. If your action has an [output schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), include your action's results in `result`.
+
+      However, when you want Wix to wait for your action to complete, specify `TIMEOUT_LENGTH` or `TIMEOUT_DATE` and their respective options. Then, call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) in that timeout period to let Wix know that the action has completed. If you don't call this method by the end of the period, Wix [marks the action as failed](https://support.wix.com/en/article/wix-automations-understanding-run-logs#understanding-statuses) and continues to the next step in the automation.
+
+      Default: `IMMEDIATE`.
+
+      **Developer Preview.**
+
+      **Supported values:**
+
+      - `UNKNOWN_INVOKE_TIMEOUT_TYPE`
+      - `IMMEDIATE` — Action completes immediately and Wix can continue to the next step in the automation.
+      - `TIMEOUT_LENGTH` — Wix waits the specified length of time for your app to call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed).
+      - `TIMEOUT_DATE` — Wix waits until the specified date for your app to call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed).
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `429` | `RESOURCE_EXHAUSTED` | `QUOTA_EXCEEDED` | Action quota (email, sms, etc) or AI credits has been exceeded. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Invoke request with a sample response body
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://provider.example.com/v1/invoke \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "actionParams": {
+          "to": "my@email.com",
+          "subject": "Your registration to 2022 Event is Confirmed",
+          "body": "Hi Jane, you are confirmed for the event"
+        },
+        "actionKey": "email-client"
+      }'
+      ```
+
+      ```json Response
+      {
+        "result": {}
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Runs your action.
+
+    Wix calls Invoke when an automation that uses your action is triggered. The request includes parameters as specified in the action's [input schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema), as well as metadata about the current automation run.
+
+    If your action has an [output schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), return your action's output parameters. Your action can return its results immediately, or it can tell Wix to wait for your action to complete by [specifying a timeout](https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/introduction#action-timeouts) and calling [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) to let Wix know that the action has completed.
+
+    <Note>
+
+    When your response includes a timeout, save the `activationContext.invocationToken` and include it in your call to Report Action Invocation Completed. This ensures that Wix associates your action's results with the correct automation run.
+
+    </Note>
+
+    ## Method Declaration
+
+    ```typescript
+    import { actionProvider } from '@wix/automations';
+
+    actionProvider.invoke(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="InvokeRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="actionParams" type="object">
+
+          Action parameters as specified in your action's [input schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema). Wix validates the parameters it sends against your action's schema, so you don't need to validate them yourself.
+
+        </ParamField>
+
+        <ParamField body="actionKey" type="string">
+
+          Action key specified when you [added the action to your app](https://dev.wix.com/docs/api-reference/business-management/automations/actions/add-an-action-to-your-app).
+
+        </ParamField>
+
+        <ParamField body="activationContext" type="ActivationContext">
+
+          Activation context that includes metadata about the current automation run.
+
+          <Expandable title="activationContext properties">
+
+            <ParamField body="activationId" type="string">
+
+              Activation ID. Wix uses this to identify the current automation run.
+
+            </ParamField>
+
+            <ParamField body="triggerKey" type="string">
+
+              Trigger key you specified when you [added the trigger to your app](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/add-a-trigger-to-your-app).
+
+            </ParamField>
+
+            <ParamField body="triggerAppId" type="string">
+
+              [ID of the app](https://dev.wix.com/docs/build-apps/get-started/overview/glossary#app-id) that set up the trigger.
+
+              Learn more about [adding a trigger to your app](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/add-a-trigger-to-your-app).
+
+            </ParamField>
+
+            <ParamField body="actionId" type="string">
+
+              ID of the action in the current automation.
+
+              Learn more about [configuring your action](https://dev.wix.com/docs/api-reference/business-management/automations/automations/automations-v2/configure-your-automation#configuring-actions).
+
+            </ParamField>
+
+            <ParamField body="payload" type="object">
+
+              Full aggregated payload passed to the action being invoked. The payload includes the complete [trigger payload](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/the-trigger-payload-schema) as well as any additional [output parameters](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema) passed from previous actions.
+
+              Learn more about Wix Automations [architecture and data flow](https://dev.wix.com/docs/api-reference/business-management/automations/architecture-data-flow).
+
+            </ParamField>
+
+            <ParamField body="actionAppId" type="string">
+
+              [ID of the app](https://dev.wix.com/docs/build-apps/get-started/overview/glossary#app-id) that set up the action.
+
+              Learn more about [adding an action to your app](https://dev.wix.com/docs/api-reference/business-management/automations/actions/add-an-action-to-your-app).
+
+            </ParamField>
+
+            <ParamField body="invocationToken" type="string">
+
+              Invocation token.
+
+              When your action [includes a timeout](https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/introduction#action-timeouts), specify this token when you call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) to let Wix know that the action has completed. This ensures that Wix associates your action's results with the correct automation run.
+
+              Learn more about [running an invoked action with a timeout](https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-provider-service-plugin/sample-flow#run-an-invoked-action-with-a-timeout).
+
+            </ParamField>
+
+            <ParamField body="activationSourceInfo" type="ActivationInitiationSourceInfo">
+
+              Information about how this activation was initiated (e.g., event-driven or manual activation)
+
+              _Nested structure omitted for brevity — see the `ActivationInitiationSourceInfo` object._
+
+            </ParamField>
+
+            <ParamField body="preinstalledInfo" type="PreinstalledInfo">
+
+              Information about the preinstalled automation, if applicable.
+
+              _Nested structure omitted for brevity — see the `PreinstalledInfo` object._
+
+            </ParamField>
+
+            <ParamField body="forceSync" type="boolean">
+
+              Whether this invocation is in force-sync mode (e.g., from a Functions automation).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="result" type="object">
+
+      Your action's results.
+
+      When your action has an [output schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), return an object with the action's output parameters in the structure specified by the output schema. Otherwise, return an empty object.
+
+    </ResponseField>
+
+    <ResponseField name="invokeTimeoutType" type="string">
+
+      Timeout period between when Wix invokes your action and when it continues to the next step in the automation. You can tell Wix to continue immediately, wait a specified amount of time, or wait until a certain date.
+
+      When you want Wix to continue immediately to the next step in the automation, specify `IMMEDIATE`. If your action has an [output schema](https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#the-output-schema), include your action's results in `result`.
+
+      However, when you want Wix to wait for your action to complete, specify `TIMEOUT_LENGTH` or `TIMEOUT_DATE` and their respective options. Then, call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed) in that timeout period to let Wix know that the action has completed. If you don't call this method by the end of the period, Wix [marks the action as failed](https://support.wix.com/en/article/wix-automations-understanding-run-logs#understanding-statuses) and continues to the next step in the automation.
+
+      Default: `IMMEDIATE`.
+
+      **Developer Preview.**
+
+      **Supported values:**
+
+      - `UNKNOWN_INVOKE_TIMEOUT_TYPE`
+      - `IMMEDIATE` — Action completes immediately and Wix can continue to the next step in the automation.
+      - `TIMEOUT_LENGTH` — Wix waits the specified length of time for your app to call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed).
+      - `TIMEOUT_DATE` — Wix waits until the specified date for your app to call [Report Action Invocation Completed](https://dev.wix.com/docs/api-reference/business-management/automations/triggers/triggered-events/report-action-invocation-completed).
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `429` | `RESOURCE_EXHAUSTED` | `QUOTA_EXCEEDED` | Action quota (email, sms, etc) or AI credits has been exceeded. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-invoke" id="ex-sdk-invoke-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-invoke" id="ex-sdk-invoke-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-invoke" id="ex-sdk-invoke-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-invoke-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-invoke-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Self-hosted: Execute an action with no output schema @description:</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Self-hosted: Execute an action with an output schema @description:</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">invoke (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-invoke-0"><span className="wix-picker-name">Self-hosted: Execute an action with no output schema @description:</span></label>
+    <label htmlFor="ex-sdk-invoke-1"><span className="wix-picker-name">Self-hosted: Execute an action with an output schema @description:</span></label>
+    <label htmlFor="ex-sdk-invoke-2"><span className="wix-picker-name">invoke (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Self-hosted: Execute an action with no output schema @description:
+    import { createClient } from '@wix/sdk';
+    import { actionProvider } from "@wix/automations/service-plugins";
+
+    const wixClient = createClient({
+      auth: {
+        appId: <YOUR_APP_ID>,
+        publicKey: <YOUR_APP_PUBLIC_KEY>
+      },
+      modules: { actionProvider }
+    });
+
+    wixClient.actionProvider.provideHandlers({
+      invoke: async (payload) => {
+        const { request, metadata } = payload;
+        // Write your action code here using the `request` and `metadata` received from Wix
+        return {
+          // Return your response exactly as documented to integrate with Wix.
+          // The result should be empty if you didn't define an output schema.
+          // Return value example:
+          "result": {}
+        }
+      }    
+    });
+
+    // Implement a router to process all requests
+    express.post('/plugins-and-webhooks/*', (req, res) => {
+      wixClient.process(req);
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Self-hosted: Execute an action with an output schema @description:
+    import { createClient } from '@wix/sdk';
+    import { actionProvider } from "@wix/automations/service-plugins";
+
+    const wixClient = createClient({
+      auth: {
+        appId: <YOUR_APP_ID>,
+        publicKey: <YOUR_APP_PUBLIC_KEY>
+      },
+      modules: { actionProvider }
+    });
+
+    wixClient.actionProvider.provideHandlers({
+      invoke: async (payload) => {
+        const { request, metadata } = payload;
+        // Write your action code here using the `request` and `metadata` received from Wix
+        return {
+          // Return your response exactly as documented to integrate with Wix.
+          // The result object should match the output schema you defined.
+          // Return value example:
+          result: {
+            contact: {
+              address: {
+                addressLine: "197 Bluebridge Rd",
+                city: "Fairbanks",
+                country: "U.S.A.",
+                postalCode: 99703
+              },
+              birthdate: "2001-10-10",
+              company: "Walton Smith Inc.",
+              email: "bally@wsinc.com",
+              jobTitle: "Engineer",
+              name: {
+                firstName: "Bridget",
+                lastName: "Ally"
+              },
+              phone: "17619980673"
+            },
+            contactId: "2e306f80-a6e3-db18-8ede-08bcde1f9081",
+            result: "CONTACT_CREATED"
+          }
+        }
+      }    
+    });
+
+    // Implement a router to process all requests
+    express.post('/plugins-and-webhooks/*', (req, res) => {
+      wixClient.process(req);
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript invoke (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { actionProvider } from '@wix/automations/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { actionProvider },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function invoke(request,metadata) {
+      const response = await myWixClient.actionProvider.invoke(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

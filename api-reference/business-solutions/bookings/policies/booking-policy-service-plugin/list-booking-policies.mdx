@@ -1,0 +1,590 @@
+---
+title: "List Booking Policies"
+description: "Retrieves booking policies for the specified services."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves booking policies for the specified services.
+
+    Wix calls this method when a customer views available booking times or books a service. For example:
+    - When a customer loads the Bookings calendar to select a time slot, [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) calls this method.
+    - When a customer books a service, [Get Availability Time Slot](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) calls this method.
+
+    Wix uses the returned policies to calculate the `bookingPolicyViolations` property, considering:
+    - Limits on how early or late a customer can book.
+    - Whether online bookings are allowed.
+
+    Your implementation must return a policy for each service in the request, in the same order.
+    All fields in the response must be returned unless explicitly marked as optional.
+
+    ## Endpoint
+
+    ```http
+    POST /v2/list-booking-policies
+    ```
+
+    ## Body Params
+
+    <ParamField body="serviceIds" type="string[]" required>
+
+      IDs of services to retrieve booking policies for.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 8`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="bookingPolicies" type="BookingPolicy[]">
+
+      Booking policies for the requested services.
+
+      <Expandable title="bookingPolicies properties">
+
+        <ResponseField name="serviceId" type="string">
+
+          Service ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="limitEarlyBooking" type="LimitEarlyBooking">
+
+          Policy for limiting early bookings.
+
+          <Expandable title="limitEarlyBooking properties">
+
+            <ResponseField name="enabled" type="boolean">
+
+              Whether there's a limit on how early a customer can book. If `false`, customers can book as far in advance as they want.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="earliestBookingInMinutes" type="integer">
+
+              Maximum number of minutes before the slot start time that a booking can be made. Must be greater than `latestBookingInMinutes`.
+
+              Default: `10080` (7 days)
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="limitLateBooking" type="LimitLateBooking">
+
+          Policy for limiting late bookings.
+
+          <Expandable title="limitLateBooking properties">
+
+            <ResponseField name="enabled" type="boolean">
+
+              Whether there's a limit on how late a customer can book. If `false`, customers can book up to the last minute.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="latestBookingInMinutes" type="integer">
+
+              Minimum number of minutes before the slot start time that a booking can be made. Must be less than `earliestBookingInMinutes`.
+
+              Default: `1440` (1 day)
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="onlineBooking" type="OnlineBooking">
+
+          Policy for allowing online bookings.
+
+          <Expandable title="onlineBooking properties">
+
+            <ResponseField name="enabled" type="boolean">
+
+              Whether the service can be booked online.
+
+              Default: `true`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="intakeFormPolicy" type="IntakeFormPolicy">
+
+          Rules for Intake Form integration
+
+          <Expandable title="intakeFormPolicy properties">
+
+            <ResponseField name="formId" type="string">
+
+              ID of the form used as an intake form for the service.
+
+            </ResponseField>
+
+            <ResponseField name="requireBeforeBook" type="boolean">
+
+              Whether the intake form must be completed before booking. If `false`, the form is handled after booking.
+
+              Default: `false`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \ 'https://provider.example.com/v2/list-booking-policies' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "data": {
+          "request": {
+            "serviceIds": [
+              "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714"
+            ]
+          },
+          "metadata": {
+            "requestId": "1674480822.92546993606315181",
+            "identity": {
+              "identityType": "ANONYMOUS_VISITOR",
+              "anonymousVisitorId": "c7808c1d-e6a5-49e5-bcbe-b3fcf2f72d28"
+            },
+            "instanceId": "bb2b1658-9855-4598-b1e0-48e8cdb7f98a"
+          }
+        },
+        "aud": "3467d501-9004-498d-9b5c-d50f6d4ede66",
+        "iss": "wix.com",
+        "iat": 1674480823,
+        "exp": 1678080823
+      }'
+      ```
+
+      ```json Response
+      {
+        "bookingPolicies": [
+          {
+            "serviceId": "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714",
+            "limitEarlyBooking": {
+              "enabled": true,
+              "earliestBookingInMinutes": 10080
+            },
+            "limitLateBooking": {
+              "enabled": false
+            },
+            "onlineBooking": {
+              "enabled": true
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves booking policies for the specified services.
+
+    Wix calls this method when a customer views available booking times or books a service. For example:
+    - When a customer loads the Bookings calendar to select a time slot, [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) calls this method.
+    - When a customer books a service, [Get Availability Time Slot](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) calls this method.
+
+    Wix uses the returned policies to calculate the `bookingPolicyViolations` property, considering:
+    - Limits on how early or late a customer can book.
+    - Whether online bookings are allowed.
+
+    Your implementation must return a policy for each service in the request, in the same order.
+    All fields in the response must be returned unless explicitly marked as optional.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookingPolicy } from '@wix/bookings';
+
+    bookingPolicy.listBookingPolicies(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="ListBookingPoliciesRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="serviceIds" type="string[]">
+
+          IDs of services to retrieve booking policies for.
+
+          Constraints: `format GUID`, `minItems 1`, `maxItems 8`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="bookingPolicies" type="BookingPolicy[]">
+
+      Booking policies for the requested services.
+
+      <Expandable title="bookingPolicies properties">
+
+        <ResponseField name="serviceId" type="string">
+
+          Service ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="limitEarlyBooking" type="LimitEarlyBooking">
+
+          Policy for limiting early bookings.
+
+          <Expandable title="limitEarlyBooking properties">
+
+            <ResponseField name="enabled" type="boolean">
+
+              Whether there's a limit on how early a customer can book. If `false`, customers can book as far in advance as they want.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="earliestBookingInMinutes" type="integer">
+
+              Maximum number of minutes before the slot start time that a booking can be made. Must be greater than `latestBookingInMinutes`.
+
+              Default: `10080` (7 days)
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="limitLateBooking" type="LimitLateBooking">
+
+          Policy for limiting late bookings.
+
+          <Expandable title="limitLateBooking properties">
+
+            <ResponseField name="enabled" type="boolean">
+
+              Whether there's a limit on how late a customer can book. If `false`, customers can book up to the last minute.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="latestBookingInMinutes" type="integer">
+
+              Minimum number of minutes before the slot start time that a booking can be made. Must be less than `earliestBookingInMinutes`.
+
+              Default: `1440` (1 day)
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="onlineBooking" type="OnlineBooking">
+
+          Policy for allowing online bookings.
+
+          <Expandable title="onlineBooking properties">
+
+            <ResponseField name="enabled" type="boolean">
+
+              Whether the service can be booked online.
+
+              Default: `true`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="intakeFormPolicy" type="IntakeFormPolicy">
+
+          Rules for Intake Form integration
+
+          <Expandable title="intakeFormPolicy properties">
+
+            <ResponseField name="formId" type="string">
+
+              ID of the form used as an intake form for the service.
+
+            </ResponseField>
+
+            <ResponseField name="requireBeforeBook" type="boolean">
+
+              Whether the intake form must be completed before booking. If `false`, the form is handled after booking.
+
+              Default: `false`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-booking-policies" id="ex-sdk-list-booking-policies-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-booking-policies" id="ex-sdk-list-booking-policies-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-booking-policies" id="ex-sdk-list-booking-policies-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-booking-policies-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-booking-policies-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">listBookingPolicies</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listBookingPolicies (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listBookingPolicies (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-booking-policies-0"><span className="wix-picker-name">listBookingPolicies</span></label>
+    <label htmlFor="ex-sdk-list-booking-policies-1"><span className="wix-picker-name">listBookingPolicies (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-list-booking-policies-2"><span className="wix-picker-name">listBookingPolicies (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript listBookingPolicies
+    import { bookingPolicy } from '@wix/bookings/service-plugins';
+
+    async function listBookingPolicies(request,metadata) {
+      const response = await bookingPolicy.listBookingPolicies(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listBookingPolicies (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookingPolicy } from '@wix/bookings/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookingPolicy },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listBookingPolicies(request,metadata) {
+      const response = await myWixClient.bookingPolicy.listBookingPolicies(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listBookingPolicies (with elevated permissions)
+    import { bookingPolicy } from '@wix/bookings/service-plugins';
+    import { auth } from '@wix/essentials';
+
+    async function myListBookingPoliciesMethod(request,metadata) {
+      const elevatedListBookingPolicies = auth.elevate(bookingPolicy.listBookingPolicies);
+      const response = await elevatedListBookingPolicies(request,metadata);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

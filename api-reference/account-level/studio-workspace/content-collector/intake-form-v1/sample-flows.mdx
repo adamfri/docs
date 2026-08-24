@@ -1,0 +1,97 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you
+can support. It provides a useful starting point as you plan your implementation.
+
+## Create an intake form and share it with a client
+
+Collect project information from a new client by creating an intake form and
+sharing it with them.
+
+To collect project information from a new client:
+
+1. Call [Create Intake Form](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/create-intake-form) with the client's name and project
+   details. The owner (`userId`) and `accountId` are set automatically from the
+   caller's identity.
+
+1. Share the form by calling [Update Intake Form](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/update-intake-form) with the
+   client's email addresses in `clientEmails`. Adding the first email stamps
+   `publishDate`.
+
+1. The client fills out the form in Content Collector. The questionnaire is
+   generated with AI the first time the form is opened. The client must be
+   signed in with an email listed in `clientEmails` to access it, and the
+   signed-in client view uses
+   [Get Client Intake Form](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/get-client-intake-form).
+
+1. Once the client submits, the intake form's `clientFormInteraction.submissionDate`
+   is populated automatically. Poll [Get Intake Form](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/get-intake-form) or
+   [Query Intake Forms](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/query-intake-forms) to detect the submission.
+
+## Export submitted intake forms to an external system
+
+Periodically sync newly submitted intake forms to an external CRM or tracker.
+
+To periodically sync submitted intake forms:
+
+1. For the first run, call [Query Intake Forms](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/query-intake-forms) to get all intake
+   forms in the partner's account. Set `cursorPaging.limit` to `100` (the maximum). If you
+   receive a full page, follow `pagingMetadata.cursors.next` to retrieve the next
+   page.
+
+1. Filter for submitted forms and order them by submission time:
+
+    ```json
+    {
+      "filter": {
+        "clientFormInteraction.submissionDate": { "$exists": true }
+      },
+      "sort": [
+        { "fieldName": "clientFormInteraction.submissionDate", "order": "ASC" }
+      ],
+      "cursorPaging": { "limit": 100 }
+    }
+    ```
+
+1. Upload the returned intake forms to the external system.
+
+1. Save the timestamp of the most recent submission you processed.
+
+1. On each subsequent run, query for forms submitted since that timestamp:
+
+    ```json
+    {
+      "filter": {
+        "clientFormInteraction.submissionDate": { "$gt": "<LAST_PROCESSED_DATETIME>" }
+      },
+      "sort": [
+        { "fieldName": "clientFormInteraction.submissionDate", "order": "ASC" }
+      ]
+    }
+    ```
+
+1. Repeat steps 3 to 5 for each run. You can let the user configure the interval
+   to fit their needs.
+
+## Find a client's intake forms for an AI assistant
+
+Let an AI assistant work with a partner's own intake forms by searching for the
+forms a user asks about.
+
+To find a client's intake forms for an AI assistant:
+
+1. Call [Search Intake Forms](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/search-intake-forms) with a free-text expression to
+   match against the client name and project name, for example the client the
+   user asked about. Results are scoped to the partner's account.
+
+1. From the results, read each form's `project`, `context`, and
+   `clientFormInteraction` state to summarize status or surface the details the user
+   requested.
+
+1. To act on a specific form, use its `id` with [Get Intake Form](https://dev.wix.com/docs/api-reference/account-level/partners/content-collector/intake-form-v1/get-intake-form),
+   requesting `CONTEXT` or `SOURCE_MATERIALS` in `fields` when the assistant needs
+   that data.

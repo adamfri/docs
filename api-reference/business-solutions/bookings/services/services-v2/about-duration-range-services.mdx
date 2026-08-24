@@ -1,0 +1,63 @@
+---
+title: "About Duration Range Services"
+description: "Duration range services let customers choose how long to book within a minimum and maximum range, instead of selecting from fixed session durations."
+icon: "file-lines"
+---
+
+Duration range services let customers choose how long to book within a minimum and maximum range, instead of selecting from fixed session durations. This is useful for bookable resources such as conference rooms, equipment, or vehicles, where the customer decides the booking length.
+
+You configure a duration range on a service using the [Services V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction). The duration range replaces the standard `sessionDurations` field and can't be combined with it.
+
+## Hourly vs daily services
+
+Duration range services support two unit types, configured in `schedule.availabilityConstraints.durationRange.unitType`:
+
+- **Hourly (`HOUR`)**: The customer picks a start time and end time, measured in minutes. Configure the range with `durationRange.hourOptions.minDurationInMinutes` and `maxDurationInMinutes`.
+  - For example, a conference room bookable for 1 to 8 hours (60 to 480 minutes).
+- **Daily (`DAY`)**: The customer picks a start date and end date, measured in full days. Configure the range with `durationRange.dayOptions.minDurationInDays` and `maxDurationInDays`.
+  - For example, equipment rentable for 1 to 5 days.
+
+A single service uses one unit type. To offer both hourly and daily options for the same resource, create separate services.
+
+## Resources and location
+
+Duration range services are typically used with bookable resources rather than staff members. Setting `primaryResourceType` on the service to the ID of the relevant [resource type](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) makes the system calculate availability from the resources' schedules instead of staff schedules.
+
+When the service itself doesn't have a fixed location, each resource can operate at its own [business location](fallback::https://dev.wix.com/docs/rest/business-management/locations/introduction).
+For example, "Room A" might be on Floor 2, while "Room B" is on Floor 3. Availability can be filtered by location to show only resources at a specific location.
+
+## Availability for hourly services
+
+The system uses the configured minimum duration to determine available start times. After the customer picks a start, the available end times are based on actual resource availability, ranging from the minimum up to the maximum duration.
+
+## Availability for daily services
+
+The system returns one slot per available day. A day is considered available when the resource's entire working period is free. Any gap in consecutive working days limits the end date.
+
+## Working hours vs 24/7 resources
+
+The resource's schedule configuration affects both availability and how bookings are created.
+
+### Resources with working hours
+
+When a resource has configured working hours (for example, 9 AM to 6 PM), each day's availability is bounded by those hours. For daily services, the system creates one booking per day, with each booking spanning the full working period. The bookings are linked as consecutive bookings.
+
+### 24/7 resources
+
+When a resource has no configured working hours (operates 24/7), availability is calculated per calendar day from midnight to midnight. Since there's no gap between days, consecutive days form a single continuous block. The system creates a single booking covering the full date range, rather than one booking per day.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Duration range services are appointment-based services (`type` set to `APPOINTMENT`). Classes and courses don't support duration ranges.
+- `durationRange` and `sessionDurations` are mutually exclusive. A service uses one or the other.
+- For 24/7 resources, pickup and return times within business hours aren't enforced by the system.
+
+## See also
+
+- [About Service Types](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-types)
+- [About Service Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-payments)
+- [Time Slots V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/introduction)
+- [Resources V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction)
+- [Services V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction)

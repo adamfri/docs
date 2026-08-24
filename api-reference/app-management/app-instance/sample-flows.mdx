@@ -1,0 +1,48 @@
+---
+title: "Sample Flows"
+description: "This article shares some possible use cases you could support, as well as a sample flow that could support each use case."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article shares some possible use cases you could support, as well as
+a sample flow that could support each use case. This can be a helpful jumping
+off point as you plan your implementation.
+
+## Reach out to new users
+
+When a Wix user installs your app, you can collect their email address and send them a welcome email.
+
+To retrieve new users' email:
+
+1. Ensure your app requests the __Read Site Owner Email__ permission scope. 
+1. Listen to [App Instance Installed](https://dev.wix.com/docs/rest/api-reference/app-management/apps/app-instance/instance-app-installed) to be notified when a new user installs your app. Save the `data.instanceId` value from the webhook payload.
+1. Call [Get App Instance](https://dev.wix.com/docs/rest/api-reference/app-management/apps/app-instance/get-app-instance) with the `instanceId` collected above. This returns an object containing data about a specific app instance. Inside the object, you'll find the site owner's email in `site.ownerInfo.email`.  
+Note that you'll need to [create an access token](fallback::https://dev.wix.com/docs/rest/app-management/oauth-2/create-access-token) using the OAuth 2 API with your `APP_ID` and `APP_SECRET_KEY` from your app's **OAuth** page, as well as the instance ID you collected above. This will generate an access token you can use to communicate with the user's site.
+1. Send your email.
+
+<Note>
+
++ If the `ownerInfo` object returns empty, check to make sure you've added the correct permission scope to your app.
++ You'll need to check on your end whether the user has opted in to communications from your app.
+
+</Note>
+
+## Identify a site's installed apps made by Wix 
+
+Your app may be dependant on a specific
+[app made by Wix](https://dev.wix.com/docs/rest/articles/getting-started/wix-business-solutions). In this case, you can use the App Management API to verify that the relevant app is installed on a site. If so, Wix recommends marking one or more apps made by Wix as
+[requirements](fallback::https://dev.wix.com/docs/build-apps/launch-your-app/market-listing/add-your-app-audience-info). This will block the installation of your app and prompt the Wix user to install the required app.
+
+However, if your app supports different use cases depending on which app is installed, we recommend following the steps below. For example, your app may offer one flow for a site that includes Wix Stores, and a different flow for a site that includes Wix Bookings. 
+
+To identify a site's installed apps made by Wix:
+
+1. Listen to [App Instance Installed](https://dev.wix.com/docs/rest/api-reference/app-management/apps/app-instance/instance-app-installed) to be notified when a Wix user installs your app. Save the `data.instanceId` value from the webhook payload.
+1. Call [Get App Instance](https://dev.wix.com/docs/rest/api-reference/app-management/apps/app-instance/get-app-instance) with the `instanceId` collected above to retrieve a list of the site's installed apps made by Wix. You can find this list in the `site.installedWixApps` array.
+Note that you'll need to [create an access token](fallback::https://dev.wix.com/docs/rest/app-management/oauth-2/create-access-token) using the OAuth 2 API with your `APP_ID` and `APP_SECRET_KEY` from your app's **OAuth** page, as well as the instance ID you collected above. This will generate an access token you can use to communicate with the user's site.
+
+With this data, your app can now perform any logic on your end to adjust your app's flows to the installed Wix apps. If the user has installed multiple apps made by Wix for which you support different flows, you can present them with a modal that lets them choose their preference.
+
+You can call Get App Instance regularly to stay up to date on a site's installed apps. If a Wix user no longer has a required Wix app installed, you may want to adjust your flow, or ask them to reinstall it. This is important to prevent getting errors when calling APIs that rely on an app made by Wix being installed.

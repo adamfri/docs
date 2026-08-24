@@ -1,0 +1,1291 @@
+---
+title: "List Files"
+description: "Retrieves a list of files in the Media Manager."
+icon: "download"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of files in the Media Manager.
+
+    To retrieve a list of files within a specific folder in the Media Manager, specify the folder's ID in the `parentFolderId` parameter. If no folder is specified, the method retrieves the list of files in the root folder of the Media Manager.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-MEDIA.READ-MEDIAMANAGER">Read Media Manager</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/site-media/v1/files
+    ```
+
+    ## Query Params
+
+    <ParamField query="parentFolderId" type="string">
+
+      ID of the file's parent folder.
+
+      Default: `media-root`.
+
+    </ParamField>
+
+    <ParamField query="mediaTypes" type="string[]">
+
+      File media type.
+
+      Constraints: `maxItems 30`.
+
+      **Supported values:**
+
+      - `IMAGE`
+      - `VIDEO`
+      - `AUDIO`
+      - `DOCUMENT`
+      - `VECTOR`
+      - `ARCHIVE`
+      - `MODEL3D`
+      - `OTHER`
+
+    </ParamField>
+
+    <ParamField query="private" type="boolean">
+
+      Whether to return only private or only public files.
+      + `true`: Returns only private files.
+      + `false`: Returns only public files.
+      + `undefined`: Returns public and private files.
+
+      Learn more about [private files](https://dev.wix.com/docs/rest/assets/media/media-manager/files/private-files).
+
+    </ParamField>
+
+    <ParamField query="sort" type="Sorting">
+
+      Field name and order to sort by. One of:
+
+      `displayName`
+      `updatedDate`
+      `sizeInBytes`
+
+      Default: `updatedDate` in `desc` order.
+
+      <Expandable title="sort properties">
+
+        <ParamField query="fieldName" type="string">
+
+          Name of the field to sort by.
+
+          Constraints: `maxLength 512`.
+
+        </ParamField>
+
+        <ParamField query="order" type="string">
+
+          Sort order.
+
+          **Supported values:**
+
+          - `ASC`
+          - `DESC`
+
+        </ParamField>
+
+        <ParamField query="origin" type="AddressLocation">
+
+          Origin point for geo-distance sorting on a GEO field
+          results are ordered by distance from this point (ASC = nearest first, DESC = farthest first).
+
+          <Expandable title="origin properties">
+
+            <ParamField query="latitude" type="number">
+
+              Address latitude.
+
+            </ParamField>
+
+            <ParamField query="longitude" type="number">
+
+              Address longitude.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField query="paging" type="CursorPaging">
+
+      Cursor and paging information.
+
+      <Expandable title="paging properties">
+
+        <ParamField query="limit" type="integer">
+
+          Maximum number of items to return in the results.
+
+        </ParamField>
+
+        <ParamField query="cursor" type="string">
+
+          Pointer to the next or previous page in the list of results.
+
+          Pass the relevant cursor token from the `pagingMetadata` object in the previous call's response.
+          Not relevant for the first request.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="files" type="FileDescriptor[]">
+
+      List of files in the Media Manager.
+
+      Constraints: `maxItems 200`.
+
+      See the [File Descriptor Object](/api-reference/assets/media/media-manager/files/file-descriptor-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="nextCursor" type="PagingMetadataV2">
+
+      The next cursor if it exists.
+
+      <Expandable title="nextCursor properties">
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the query. Returned if offset paging is used and the `tooManyToCount` flag is not set.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors to navigate through the result pages using `next` and `prev`. Returned if cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_MEDIA_TYPE` | Media type isn't supported for filtering. |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_SORT_VALUE` | Sort value isn't supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    This example sorts by `updatedDate` in `DESC` order with a paging limit of 2.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+        'https://www.wixapis.com/site-media/v1/files?parentFolderId=25284aa06584441ea94338fdcfbaba12&sort.fieldName=updatedDate&mediaTypes=IMAGE&sort.order=DESC&paging.limit=2' \
+        -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "files": [
+          {
+            "createdDate": "2022-06-06T12:45:29.000Z",
+            "displayName": "space.jpg",
+            "hash": "df55f859485ab04453e6afacf259ac98",
+            "id": "6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a~mv2.jpg",
+            "labels": [
+              "Brown",
+              "Spiral galaxy",
+              "Atmosphere",
+              "Nebula",
+              "Milky way",
+              "Galaxy",
+              "Atmospheric phenomenon",
+              "Astronomical object",
+              "Science",
+              "Star"
+            ],
+            "media": {
+              "image": {
+                "colors": {
+                  "palette": [
+                    {
+                      "rgb": {
+                        "b": 28,
+                        "g": 28,
+                        "r": 25
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 156,
+                        "g": 163,
+                        "r": 163
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 111,
+                        "g": 111,
+                        "r": 107
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 152,
+                        "g": 150,
+                        "r": 136
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 90,
+                        "g": 87,
+                        "r": 73
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 149,
+                        "g": 138,
+                        "r": 124
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 85,
+                        "g": 74,
+                        "r": 66
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 46,
+                        "g": 63,
+                        "r": 160
+                      }
+                    }
+                  ],
+                  "prominent": {
+                    "rgb": {
+                      "b": 31,
+                      "g": 30,
+                      "r": 26
+                    }
+                  }
+                },
+                "faces": [
+                  {
+                    "confidence": 0.9979932308197021,
+                    "height": 64,
+                    "width": 46,
+                    "x": 50,
+                    "y": 5
+                  }
+                ],
+                "image": {
+                  "filename": "space.jpg",
+                  "height": 4456,
+                  "id": "6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a~mv2.jpg",
+                  "url": "https://static.wixstatic.com/media/6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a~mv2.jpg",
+                  "width": 6031
+                },
+                "previewImage": {
+                  "height": 591,
+                  "id": "image.preview",
+                  "url": "https://static.wixstatic.com/media/6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a~mv2.jpg",
+                  "width": 800
+                }
+              }
+            },
+            "mediaType": "IMAGE",
+            "operationStatus": "READY",
+            "parentFolderId": "media-root",
+            "private": true,
+            "sizeInBytes": "2608831",
+            "thumbnailUrl": "https://static.wixstatic.com/media/6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a~mv2.jpg",
+            "updatedDate": "2022-06-06T12:45:29.000Z",
+            "url": "https://static.wixstatic.com/media/6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a~mv2.jpg",
+            "state": "OK"
+          },
+          {
+            "createdDate": "2021-07-06T12:28:20.000Z",
+            "displayName": "astronaut.jpg",
+            "hash": "bf65f859485ab04453e6afacf259ac03",
+            "id": "4b5bb8_7a7bd9193ffc4130ab8ff74f5dcedf97~mv2.jpg",
+            "labels": [
+              "Black",
+              "Straight galaxy",
+              "Air",
+              "UFO",
+              "Stars",
+              "Universe",
+              "Bold",
+              "Human",
+              "Science",
+              "Saturn"
+            ],
+            "media": {
+              "image": {
+                "colors": {
+                  "palette": [
+                    {
+                      "rgb": {
+                        "b": 28,
+                        "g": 28,
+                        "r": 25
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 156,
+                        "g": 163,
+                        "r": 163
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 222,
+                        "g": 111,
+                        "r": 17
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 12,
+                        "g": 150,
+                        "r": 16
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 9,
+                        "g": 7,
+                        "r": 73
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 149,
+                        "g": 18,
+                        "r": 122
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 25,
+                        "g": 74,
+                        "r": 66
+                      }
+                    },
+                    {
+                      "rgb": {
+                        "b": 46,
+                        "g": 23,
+                        "r": 10
+                      }
+                    }
+                  ],
+                  "prominent": {
+                    "rgb": {
+                      "b": 31,
+                      "g": 10,
+                      "r": 26
+                    }
+                  }
+                },
+                "faces": [
+                  {
+                    "confidence": 0.9979932308197021,
+                    "height": 64,
+                    "width": 6,
+                    "x": 50,
+                    "y": 5
+                  }
+                ],
+                "image": {
+                  "filename": "astronaut.jpg",
+                  "height": 2956,
+                  "id": "4b5bb8_7a7bd9193ffc4130ab8ff74f5dcedf97~mv2.jpg",
+                  "url": "https://static.wixstatic.com/media/4b5bb8_7a7bd9193ffc4130ab8ff74f5dcedf97~mv2.jpg",
+                  "width": 3031
+                },
+                "previewImage": {
+                  "height": 201,
+                  "id": "image.preview",
+                  "url": "https://static.wixstatic.com/media/4b5bb8_7a7bd9193ffc4130ab8ff74f5dcedf97~mv2.jpg",
+                  "width": 400
+                }
+              }
+            },
+            "mediaType": "IMAGE",
+            "operationStatus": "READY",
+            "parentFolderId": "media-root",
+            "private": true,
+            "sizeInBytes": "2508841",
+            "thumbnailUrl": "https://static.wixstatic.com/media/4b5bb8_7a7bd9193ffc4130ab8ff74f5dcedf97~mv2.jpg",
+            "updatedDate": "2022-06-06T12:45:29.000Z",
+            "url": "https://static.wixstatic.com/media/4b5bb8_7a7bd9193ffc4130ab8ff74f5dcedf97~mv2.jpg",
+            "state": "OK"
+          }
+        ],
+        "nextCursor": {
+          "cursors": {
+            "next": ""
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of files in the Media Manager.
+
+    To retrieve a list of files within a specific folder in the Media Manager, specify the folder's ID in the `parentFolderId` parameter. If no folder is specified, the method retrieves the list of files in the root folder of the Media Manager.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-MEDIA.READ-MEDIAMANAGER">Read Media Manager</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { files } from '@wix/media';
+
+    files.listFiles(options): Promise<ListFilesResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="ListFilesOptions">
+
+      Options to use when listing media files.
+
+      <Expandable title="options properties">
+
+        <ParamField body="parentFolderId" type="string">
+
+          ID of the file's parent folder.
+
+          Default: `media-root`.
+
+        </ParamField>
+
+        <ParamField body="mediaTypes" type="string[]">
+
+          File media type.
+
+          Constraints: `maxItems 30`.
+
+          **Supported values:**
+
+          - `IMAGE`
+          - `VIDEO`
+          - `AUDIO`
+          - `DOCUMENT`
+          - `VECTOR`
+          - `ARCHIVE`
+          - `MODEL3D`
+          - `OTHER`
+
+        </ParamField>
+
+        <ParamField body="private" type="boolean">
+
+          Whether to return only private or only public files.
+          + `true`: Returns only private files.
+          + `false`: Returns only public files.
+          + `undefined`: Returns public and private files.
+
+          Learn more about [private files](https://dev.wix.com/docs/rest/assets/media/media-manager/files/private-files).
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting">
+
+          Field name and order to sort by. One of:
+
+          `displayName`
+          `updatedDate`
+          `sizeInBytes`
+
+          Default: `updatedDate` in `desc` order.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+              Constraints: `maxLength 512`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+            <ParamField body="origin" type="AddressLocation">
+
+              Origin point for geo-distance sorting on a GEO field
+              results are ordered by distance from this point (ASC = nearest first, DESC = farthest first).
+
+              _Nested structure omitted for brevity — see the `AddressLocation` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="paging" type="CursorPaging">
+
+          Cursor and paging information.
+
+          <Expandable title="paging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Maximum number of items to return in the results.
+
+            </ParamField>
+
+            <ParamField body="cursor" type="string">
+
+              Pointer to the next or previous page in the list of results.
+
+              Pass the relevant cursor token from the `pagingMetadata` object in the previous call's response.
+              Not relevant for the first request.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ListFilesResponse>`.
+
+    <ResponseField name="files" type="FileDescriptor[]">
+
+      List of files in the Media Manager.
+
+      Constraints: `maxItems 200`.
+
+      See the [File Descriptor Object](/api-reference/assets/media/media-manager/files/file-descriptor-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="nextCursor" type="PagingMetadataV2">
+
+      The next cursor if it exists.
+
+      <Expandable title="nextCursor properties">
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the query. Returned if offset paging is used and the `tooManyToCount` flag is not set.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors to navigate through the result pages using `next` and `prev`. Returned if cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_MEDIA_TYPE` | Media type isn't supported for filtering. |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_SORT_VALUE` | Sort value isn't supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-4" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-5" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-files" id="ex-sdk-list-files-6" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-files-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-files-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">List files in a specific folder (backend page code)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List files in a specific folder (backend page code) (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List files in a specific folder</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List files in a specific folder (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Generate a download url for all images in media (with $w)</span><span className="wix-picker-desc">This is an example of a function running on page ready. The function lists all the images from media, and then uses their IDs to create a download url</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Update a file's display name from visitor input (with $w)</span><span className="wix-picker-desc">This code uses the visitor's input on the page to update the display name of an image which they choose from a dropdown list on the page</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listFiles (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-files-0"><span className="wix-picker-name">List files in a specific folder (backend page code)</span></label>
+    <label htmlFor="ex-sdk-list-files-1"><span className="wix-picker-name">List files in a specific folder (backend page code) (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-list-files-2"><span className="wix-picker-name">List files in a specific folder</span></label>
+    <label htmlFor="ex-sdk-list-files-3"><span className="wix-picker-name">List files in a specific folder (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-list-files-4"><span className="wix-picker-name">Generate a download url for all images in media (with $w)</span><span className="wix-picker-desc">This is an example of a function running on page ready. The function lists all the images from media, and then uses their IDs to create a download url</span></label>
+    <label htmlFor="ex-sdk-list-files-5"><span className="wix-picker-name">Update a file's display name from visitor input (with $w)</span><span className="wix-picker-desc">This code uses the visitor's input on the page to update the display name of an image which they choose from a dropdown list on the page</span></label>
+    <label htmlFor="ex-sdk-list-files-6"><span className="wix-picker-name">listFiles (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript List files in a specific folder (backend page code)
+    import { files } from '@wix/media';
+
+    /* Sample listOptions value:
+     * {
+     *   parentFolderId : 'igje5u22nij3qkltzsnol37j3dnthvvh'
+     * }
+     */
+
+    async function myListFilesFunction(listOptions) {
+      try {
+        const fileList = await files.listFiles(listOptions);
+
+        console.log('Files in folder:', fileList);
+        return fileList;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "files": [
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file1.pdf",
+     *       "hash": "z3bxokp79p04ok6iiu9ao8srx5lrynfh",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf/file1.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "187199",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf"
+     *     },
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file2.pdf",
+     *       "hash": "g6x41coggaystn596ndb09q1ecg036gk",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf/file2.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "81624",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf"
+     *     }
+     *   ],
+     *   "nextCursor": {
+     *     "cursors": {
+     *       "next": ""
+     *     },
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List files in a specific folder (backend page code) (with elevated permissions)
+    import { files } from '@wix/media';
+    import { auth } from '@wix/essentials';
+
+    /* Sample listOptions value:
+     * {
+     *   parentFolderId : 'igje5u22nij3qkltzsnol37j3dnthvvh'
+     * }
+     */
+
+    async function myListFilesFunction(listOptions) {
+      try {
+        const elevatedListFiles = auth.elevate(files.listFiles);
+        const fileList = await elevatedListFiles(listOptions);
+
+        console.log('Files in folder:', fileList);
+        return fileList;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "files": [
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file1.pdf",
+     *       "hash": "z3bxokp79p04ok6iiu9ao8srx5lrynfh",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf/file1.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "187199",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf"
+     *     },
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file2.pdf",
+     *       "hash": "g6x41coggaystn596ndb09q1ecg036gk",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf/file2.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "81624",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf"
+     *     }
+     *   ],
+     *   "nextCursor": {
+     *     "cursors": {
+     *       "next": ""
+     *     },
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List files in a specific folder
+    import { files } from '@wix/media';
+
+    /* Sample listOptions value:
+     * {
+     *   parentFolderId : 'igje5u22nij3qkltzsnol37j3dnthvvh'
+     * }
+     */
+
+    export async function myListFilesFunction(listOptions) {
+      try {
+        const fileList = await files.listFiles(listOptions);
+
+        console.log('Files in folder:', fileList);
+        return fileList;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "files": [
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file1.pdf",
+     *       "hash": "z3bxokp79p04ok6iiu9ao8srx5lrynfh",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf/file1.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "187199",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf"
+     *     },
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file2.pdf",
+     *       "hash": "g6x41coggaystn596ndb09q1ecg036gk",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf/file2.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "81624",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf"
+     *     }
+     *   ],
+     *   "nextCursor": {
+     *     "cursors": {
+     *       "next": ""
+     *     },
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript List files in a specific folder (with elevated permissions)
+    import { files } from '@wix/media';
+    import { auth } from '@wix/essentials';
+
+    /* Sample listOptions value:
+     * {
+     *   parentFolderId : 'igje5u22nij3qkltzsnol37j3dnthvvh'
+     * }
+     */
+
+    export async function myListFilesFunction(listOptions) {
+      try {
+        const elevatedListFiles = auth.elevate(files.listFiles);
+        const fileList = await elevatedListFiles(listOptions);
+
+        console.log('Files in folder:', fileList);
+        return fileList;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "files": [
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file1.pdf",
+     *       "hash": "z3bxokp79p04ok6iiu9ao8srx5lrynfh",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf/file1.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "187199",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_f4dRFF610cKd7zkjVbaNddXgb181lXfg.pdf"
+     *     },
+     *     {
+     *       "_createdDate": "2023-07-16T08:56:07.000Z",
+     *       "_id": "w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf",
+     *       "_updatedDate": "2023-07-16T08:56:07.000Z",
+     *       "displayName": "file2.pdf",
+     *       "hash": "g6x41coggaystn596ndb09q1ecg036gk",
+     *       "internalTags": [
+     *         "_fileOrigin_uploaded"
+     *       ],
+     *       "labels": [],
+     *       "media": {
+     *         "document": "wix:document://v1/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf/file2.pdf"
+     *       },
+     *       "mediaType": "DOCUMENT",
+     *       "operationStatus": "READY",
+     *       "parentFolderId": "igje5u22nij3qkltzsnol37j3dnthvvh",
+     *       "private": false,
+     *       "siteId": "3ecba886-4267-11ee-be56-0242ac120002",
+     *       "sizeInBytes": "81624",
+     *       "state": "OK",
+     *       "thumbnailUrl": "https://static.wixstatic.com/media/it7ucst133nc8d9e0ff4d0nay1ucksc6.png",
+     *       "url": "https://3ecba886-4267-11ee-be56-0242ac120002.usrfiles.com/ugd/w8ide0_170y03n3akmstnpt5jmsju89wvgs9tg4.pdf"
+     *     }
+     *   ],
+     *   "nextCursor": {
+     *     "cursors": {
+     *       "next": ""
+     *     },
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Generate a download url for all images in media (with $w)
+    /***********************************************
+     * Backend code - download-files-url.web.js/ts *
+     **********************************************/
+
+    import { Permissions, webMethod } from '@wix/web-methods';
+    import { files } from '@wix/media';
+    import { auth } from '@wix/essentials';
+
+    export const generateDownloadUrl = webMethod(Permissions.Anyone, async (fileIds) => {
+      try {
+        const elevatedGenerateFilesDownloadUrl = auth.elevate(files.generateFilesDownloadUrl)
+        const generatedUrl = await elevatedGenerateFilesDownloadUrl(fileIds);
+
+        return generatedUrl.downloadUrl;
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    export const listImages = webMethod(Permissions.Anyone, async () => {
+      const listOptions = {
+        mediaTypes: ["IMAGE"]
+      }
+
+      try {
+        const elevatedListFiles = auth.elevate(files.listFiles)
+        const images = await elevatedListFiles(listOptions);
+
+        return images.files;
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    /*************
+     * Page code *
+     ************/
+
+    import { listImages, generateDownloadUrl } from 'backend/download-files-url.web';
+
+    $w.onReady(() => {
+      $w('#downloadFiles').disable();
+      getDownloadUrl();
+    });
+
+    async function getDownloadUrl() {
+      const images = await listImages();
+
+      const imageIds = images.map((image) => {
+        return image._id;
+      });
+      const downloadUrl = await generateDownloadUrl(imageIds);
+
+      $w('#downloadFiles').link = downloadUrl;
+      await $w('#downloadFiles').enable();
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Update a file's display name from visitor input (with $w)
+    /****************************************
+     * Backend code - update-file.web.js/ts *
+     ***************************************/
+
+    import { Permissions, webMethod } from '@wix/web-methods';
+    import { files } from '@wix/media';
+    import { auth } from '@wix/essentials';
+
+    export const updateFile = webMethod(Permissions.Anyone, async (fileId, file) => {
+      try {
+        const elevatedUpdateFileDescriptor = auth.elevate(files.updateFileDescriptor);
+        const updatedDescriptor = await elevatedUpdateFileDescriptor({
+          _id: fileId, 
+          ...file 
+        });
+
+        return updatedDescriptor;
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    export const listImages = webMethod(Permissions.Anyone, async () => {
+      const listOptions = {
+        mediaTypes: ["IMAGE"]
+      }
+
+      try {
+        const elevatedListFiles = auth.elevate(files.listFiles)
+        const images = await elevatedListFiles(listOptions);
+
+        return images.files;
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    /*************
+     * Page code *
+     ************/
+
+    import { updateFile, listImages } from 'backend/update-file.web';
+
+    $w.onReady(async () => {
+      await populateImagesDropdown();
+
+      $w('#update').onClick(async () => {
+        const imageId = $w('#imagesDropdown').value;
+
+        const fileUpdates = {
+          displayName: $w('#newDisplayName').value
+        }
+
+        const updatedLocation = await updateFile(imageId, fileUpdates);
+        console.log('Display name successfully updated to:', updatedLocation.displayName)
+        $w('#updateSuccessMsg').show();
+      });
+    });
+
+    async function populateImagesDropdown() {
+      const images = await listImages();
+      const dropdownOptions = images.map((image) => {
+        return {
+          label: image.displayName,
+          value: image._id
+        };
+      });
+
+      $w('#imagesDropdown').options = dropdownOptions;
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listFiles (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { files } from '@wix/media';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { files },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listFiles(options) {
+      const response = await myWixClient.files.listFiles(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

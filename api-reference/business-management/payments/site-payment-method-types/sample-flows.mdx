@@ -1,0 +1,59 @@
+---
+title: "Sample Flows"
+description: "This article presents a possible use case and corresponding sample flow that you can support."
+icon: "file-lines"
+---
+
+This article presents a possible use case and corresponding sample flow that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Import payment method type properties into external accounting software
+
+A company wants to build an app that imports payment method type names and icons for transactions from their Wix site into their external accounting software.
+
+### Prerequisites
+
+- The Wix user must have onboarded to [accept payments through Wix](fallback::https://support.wix.com/en/article/accepting-payments-an-overview).
+- You must [subscribe your app](https://dev.wix.com/docs/build-apps/develop-your-app/api-integrations/events-and-webhooks/handle-events-with-webhooks) to the [Payment webhook](https://dev.wix.com/docs/rest/business-management/payments/cashier/cashier-pay/payment-event/payment) in the [app dashboard](fallback::https://dev.wix.com/app-selector?title=Select+an+App&primaryButtonText=Select+Site&actionUrl=https%3A%2F%2Fdev.wix.com%2Fapps%2F%7BappId%7D%2Fwebhooks-page).
+
+### Flow
+
+To import payment method type data, retrieve it using the API.
+
+There are two parts to this flow:
+
+1. Retrieve payment method type properties for existing transactions.
+2. Retrieve payment method type properties for new and updated transactions.
+
+## Retrieve payment method type properties for existing transactions
+
+To retrieve the display names and icons of payment method types for existing transactions:
+
+1. Call [List Site Payment Method Types](fallback::https://dev.wix.com/docs/rest/business-management/payments/site-payment-method-types/list-site-payment-method-types) to get all payment method types. The total number of objects received should be no more than several hundred, so you can keep them all in memory.
+
+1. Call [Transactions List](fallback::https://dev.wix.com/docs/rest/business-management/payments/cashier/payments/transaction/transactions-list) to load a portion of existing transactions by setting `limit` to `1000`. Save the returned `pagination` object for later use.
+
+1. For each [transaction](fallback::https://dev.wix.com/docs/rest/business-management/payments/cashier/payments/transaction/transaction-object) retrieved in step 2:
+
+   a. Save the transaction's `id`.
+
+   b. Find the transaction's payment method type by comparing it's `paymentMethod` property with the `id` or `legacyId` property of each [site payment method type](fallback::https://dev.wix.com/docs/rest/business-management/payments/site-payment-method-types/site-payment-method-type-object) loaded in step 1.
+   
+   c. Read the `displayName` and `merchantFlow.icons` properties of the identified payment method type. Check the icon's `format` and `tag` properties to determine which icon image you want to use.
+   
+   d. Save the `displayName`, and the `image` of the selected icon from the `merchantFlow.icons` along with the transaction's `id`. Use the retrieved display name and image in your accounting software.
+
+1. Read the values in the the `pagination` object received in step 2. If the sum of `offset` and `limit` is less than the `total`, repeat the flow starting from step 2, passing the sum of`offset` and `limit` as a new `offset`.
+
+## Retrieve payment method type properties for new and updated transations
+
+For each payment event your app receives via the Payment webhook:
+
+1. Check the data from the event. If the event has a `transactionCreatedEvent` or a `transactionUpdatedEvent` property, save the value of the `transaction` object's `id` and `paymentMethod`. Otherwise, ignore the event.
+
+2. Call [List Site Payment Method Types](fallback::https://dev.wix.com/docs/rest/business-management/payments/site-payment-method-types/list-site-payment-method-types), specifying the `paymentMethod` value saved in step 1 as the `ids` parameter.
+
+3. Read the `displayName` and `merchantFlow.icons` properties from the returned [site payment method type](fallback::https://dev.wix.com/docs/rest/business-management/payments/site-payment-method-types/site-payment-method-type-object). Check the icon's `format` and `tag` properties to determine which icon image you want to use.
+
+4. Save the `displayName`, and the `image` of the selected icon from the `merchantFlow.icons` along with the transaction's `id`. Use the retrieved display name and image in your accounting software.
+
+You now have a continuously updating record of every transaction `id`, along with it's associated `displayName` and `image`.

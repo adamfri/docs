@@ -1,0 +1,79 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Import products from the marketplace provider
+
+When a site owner selects products to import from a marketplace provider, Wix calls your service plugin to retrieve the full product details and add them to the site's store catalog.
+
+To import products:
+
+### Step 1 | Wix calls Bulk Add Products To Store
+
+Wix calls your [Bulk Add Products To Store](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-add-products-to-store) method with an array of product references. Each reference contains a `providerProductId` identifying the product in your system, an optional `options` object for provider-specific data, and a `visibleInStore` flag indicating whether the site owner wants the product visible in their store immediately.
+
+### Step 2 | Your implementation retrieves product details
+
+Your service looks up each product in your catalog using the `providerProductId`, retrieves the full product details (name, description, price, images, variants), and prepares the response.
+
+### Step 3 | Your implementation creates store catalog products
+
+Your implementation uses the received product details to create or update products in the site's [Wix Stores catalog](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction).
+
+### Step 4 | Your implementation returns the results
+
+Your implementation returns a result for each product, including item metadata indicating success or failure. For each successful product, include the product reference in the result.
+
+## Generate product mockups
+
+When a site owner requests mockup previews, Wix calls your service plugin to generate composite images showing the site owner's logo or custom image on the products.
+
+To generate mockups:
+
+### Step 1 | Wix calls Bulk Generate Mockups
+
+Wix calls your [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) method with an array of mockup requests. Each request contains a `providerProductId` and an image to overlay on the product. The image includes a URL and a type indicating whether it's the site's logo, a custom image, or a fallback placeholder.
+
+### Step 2 | Your implementation acknowledges the request
+
+Your service validates the request and returns a response with item metadata indicating whether mockup generation was accepted for each product. If a product doesn't support mockup generation, return a `MOCKUP_GENERATION_NOT_SUPPORTED` error. If the image isn't supported, return an `IMAGE_NOT_SUPPORTED` error.
+
+### Step 3 | Your implementation generates the mockups
+
+Your service generates the composite mockup images asynchronously. This involves overlaying the provided image onto product templates for each requested product.
+
+### Step 4 | Your implementation notifies Wix
+
+Once the mockup images are ready, call [Submit Generated Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/submit-generated-mockups) on the Marketplace Provider Submissions API to deliver the generated images to Wix.
+
+### Step 5 | Wix displays the mockups
+
+Wix receives the generated mockup images and makes them available for the site owner to preview and use in their store.
+
+## Get product mockups
+
+When a site owner views product mockups in the Suppliers Hub Marketplace, Wix calls your service plugin to retrieve your existing, ready-made mockup images for the selected products. Unlike the [Generate product mockups](fallback::#generate-product-mockups) flow, this flow returns images you already offer — it doesn't generate new images or apply the site owner's logo or custom image, and there's no asynchronous callback.
+
+> **Prerequisite:** Set `toggleGetProductMockupsEnabled` to `true` in your marketplace provider config. Otherwise, Wix doesn't call this method.
+
+To get product mockups:
+
+1. Wix calls your [Get Product Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-product-mockups) method with up to 100 `providerProductId` values.
+2. Your service looks up the ready-made mockup images for each requested product.
+3. Your implementation returns a mockup entry for each product that has one, including the `providerProductId` and its ready-made mockup image URLs in `mockupImageUrls`. Omit products that don't have an available mockup.
+4. Wix displays the returned mockup images to the site owner.
+
+## Check product inventory
+
+When a site owner opens a product details page, Wix calls your service plugin to retrieve current stock levels for the product's variants.
+
+To check inventory:
+
+1. Wix calls your [Get Inventory](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-inventory) method with a `providerProductId` and optional `choices` to filter by specific variants.
+2. Your service looks up the current inventory levels for the requested product. If `choices` are provided, only return inventory for matching variants. If `choices` is empty, return inventory for all available variants.
+3. Your implementation returns an array of inventory variants, each containing the variant's choices and available quantity.
+4. Wix displays the inventory data on the product details page so the site owner can see current stock levels.

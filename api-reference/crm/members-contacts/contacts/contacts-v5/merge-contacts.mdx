@@ -1,0 +1,525 @@
+---
+title: "Merge Contacts"
+description: "Merges up to 5 source contacts into a target contact."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Merges up to 5 source contacts into a target contact.
+
+    The current target contact revision must be passed as `targetContactRevision`. This ensures you're working with the latest contact and prevents unintended overwrites.
+
+    The merge behaves in one of two ways, depending on whether you provide `targetContact` in the request:
+
+    - Without `targetContact`: The source contacts are merged into the existing target contact. Non-empty fields from the sources fill empty fields on the target, and array fields (emails, phones, and addresses) are combined and deduplicated. When you provide multiple sources, they're merged in order: the first source into the second, that result into the third, and so on, and finally into the target. Earlier sources take precedence over later ones.
+    - With `targetContact`: The provided `targetContact` overwrites the target according to `fieldMask`, and the source contacts are deleted without their data being merged in.
+
+    In both cases, the source contacts are permanently deleted after a successful merge.
+
+    Set `preview` to `true` to return the merged result without applying it, so you can review the outcome before committing.
+
+    Restrictions:
+    - Source contacts can't be site members. The target contact can be a site member.
+    - `externalId` can be set only once and can't be changed if it already has a value.
+    - The target contact must remain valid after the merge, keeping at least one of `name`, `email`, or `phone`.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/contacts/v5/contacts/{targetContactId}/merge
+    ```
+
+    ## Path Params
+
+    <ParamField path="targetContactId" type="string" required>
+
+      Target contact ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="targetContactRevision" type="integer" required>
+
+      Revision number of the target contact, which increments by 1 each time the contact is updated.
+      The current revision must be passed to prevent conflicting changes.
+
+    </ParamField>
+
+    <ParamField body="targetContact" type="Contact">
+
+      Contact to overwrite the target with, instead of merging in the source contacts' data. See the endpoint description for details.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="sourceContactIds" type="string[]">
+
+      IDs of up to 5 contacts to merge into the target contact.
+      If merging more than one source contact,
+      the first source is given precedence, then the second, and so on.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 5`.
+
+    </ParamField>
+
+    <ParamField body="preview" type="boolean">
+
+      Whether to return a preview of the merged contact instead of performing the actual merge.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="allowDuplicates" type="boolean">
+
+      Whether to update the target contact even if it becomes a duplicate of another contact. Relevant only when `targetContact` is provided.
+      More about duplicate contacts can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts).
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="contact" type="Contact">
+
+      Updated target contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_MERGE_SOURCE_MEMBER` | Source contact can't be a site member. |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_UPDATE_MEMBER_EMAIL` | A contact that is a site member can't have its email updated. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CONTACT_MERGE` | Contact can't be merged into itself. |
+    | `404` | `NOT_FOUND` | `SOURCE_NOT_FOUND` | Couldn't find one of the source contacts. |
+    | `400` | `INVALID_ARGUMENT` | `INSUFFICIENT_CONTACT_DATA` | The target contact must have a name, phone number or email address. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_EMAIL` | The target contact has duplicate emails. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_PHONE` | The target contact has duplicate phones. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS` | The target contact has duplicate addresses. |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_DEFAULT_ADDRESSES` | The target contact has more than one address marked as default. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS_ID` | A contact has multiple addresses with the same ID. |
+    | `400` | `INVALID_ARGUMENT` | `EMAIL_REQUIRED` | The target contact has additional emails but no email. |
+    | `400` | `INVALID_ARGUMENT` | `PHONE_REQUIRED` | The target contact has additional phones but no phone. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_CHANGE_EXTERNAL_ID` | The contact's external ID can't be changed. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_CONTACT_EXISTS` | A contact with the same identifier already exists. More about identifiers can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts). |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The contact time zone is not in valid IANA format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_IMAGE_URL` | The contact image URL is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Merges source contacts into a target contact. Source contacts are deleted and their data fills empty fields on the target.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/contacts/v5/contacts/89b3c12c-0f74-4ddb-a844-db3446291e71/merge' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "targetContactRevision": "1",
+        "sourceContactIds": [
+          "e9dfd4fe-1b1a-4083-b397-4a08885a7290"
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "contact": {
+          "id": "89b3c12c-0f74-4ddb-a844-db3446291e71",
+          "revision": "2",
+          "createdDate": "2026-07-01T18:17:55.756Z",
+          "updatedDate": "2026-07-01T18:19:44.324Z",
+          "name": {
+            "first": "Emily",
+            "last": "Carter"
+          },
+          "email": {
+            "email": "emily.carter@example.com",
+            "subscriptionStatus": {
+              "status": "NOT_SET"
+            },
+            "deliverabilityStatus": "NOT_SET"
+          },
+          "additionalEmails": [
+            {
+              "email": "charlie.brown@example.com"
+            }
+          ],
+          "phone": {
+            "tag": "MOBILE",
+            "phone": "+14155552671",
+            "e164": "+14155552671",
+            "subscriptionStatus": {
+              "status": "NOT_SET"
+            },
+            "deliverabilityStatus": "NOT_SET"
+          },
+          "additionalPhones": [
+            {
+              "tag": "OTHER",
+              "phone": "+1-555-0105"
+            }
+          ],
+          "addresses": [],
+          "company": {
+            "name": "Bright Ideas Co.",
+            "jobTitle": "Marketing Director"
+          },
+          "locale": "en-us",
+          "birthdate": "1990-06-15",
+          "locationIds": [],
+          "source": {
+            "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+          },
+          "lastActivity": {
+            "date": "2026-07-01T18:17:55.756Z",
+            "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+          },
+          "segmentIds": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Merges up to 5 source contacts into a target contact.
+
+    The current target contact revision must be passed as `targetContactRevision`. This ensures you're working with the latest contact and prevents unintended overwrites.
+
+    The merge behaves in one of two ways, depending on whether you provide `targetContact` in the request:
+
+    - Without `targetContact`: The source contacts are merged into the existing target contact. Non-empty fields from the sources fill empty fields on the target, and array fields (emails, phones, and addresses) are combined and deduplicated. When you provide multiple sources, they're merged in order: the first source into the second, that result into the third, and so on, and finally into the target. Earlier sources take precedence over later ones.
+    - With `targetContact`: The provided `targetContact` overwrites the target according to `fieldMask`, and the source contacts are deleted without their data being merged in.
+
+    In both cases, the source contacts are permanently deleted after a successful merge.
+
+    Set `preview` to `true` to return the merged result without applying it, so you can review the outcome before committing.
+
+    Restrictions:
+    - Source contacts can't be site members. The target contact can be a site member.
+    - `externalId` can be set only once and can't be changed if it already has a value.
+    - The target contact must remain valid after the merge, keeping at least one of `name`, `email`, or `phone`.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsV5 } from '@wix/crm';
+
+    contactsV5.mergeContacts(targetContactId, targetContactRevision, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="targetContactId" type="string" required>
+
+      Target contact ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="targetContactRevision" type="MergeContacts" required>
+
+      Revision number of the target contact, which increments by 1 each time the contact is updated.
+      The current revision must be passed to prevent conflicting changes.
+
+      <Expandable title="targetContactRevision properties">
+
+        <ParamField body="value" type="string" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="MergeContactsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="targetContact" type="Contact">
+
+          Contact to overwrite the target with, instead of merging in the source contacts' data. See the endpoint description for details.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="sourceContactIds" type="string[]">
+
+          IDs of up to 5 contacts to merge into the target contact.
+          If merging more than one source contact,
+          the first source is given precedence, then the second, and so on.
+
+          Constraints: `format GUID`, `minItems 1`, `maxItems 5`.
+
+        </ParamField>
+
+        <ParamField body="preview" type="boolean">
+
+          Whether to return a preview of the merged contact instead of performing the actual merge.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="allowDuplicates" type="boolean">
+
+          Whether to update the target contact even if it becomes a duplicate of another contact. Relevant only when `targetContact` is provided.
+          More about duplicate contacts can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="contact" type="Contact">
+
+      Updated target contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_MERGE_SOURCE_MEMBER` | Source contact can't be a site member. |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_UPDATE_MEMBER_EMAIL` | A contact that is a site member can't have its email updated. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CONTACT_MERGE` | Contact can't be merged into itself. |
+    | `404` | `NOT_FOUND` | `SOURCE_NOT_FOUND` | Couldn't find one of the source contacts. |
+    | `400` | `INVALID_ARGUMENT` | `INSUFFICIENT_CONTACT_DATA` | The target contact must have a name, phone number or email address. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_EMAIL` | The target contact has duplicate emails. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_PHONE` | The target contact has duplicate phones. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS` | The target contact has duplicate addresses. |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_DEFAULT_ADDRESSES` | The target contact has more than one address marked as default. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS_ID` | A contact has multiple addresses with the same ID. |
+    | `400` | `INVALID_ARGUMENT` | `EMAIL_REQUIRED` | The target contact has additional emails but no email. |
+    | `400` | `INVALID_ARGUMENT` | `PHONE_REQUIRED` | The target contact has additional phones but no phone. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_CHANGE_EXTERNAL_ID` | The contact's external ID can't be changed. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_CONTACT_EXISTS` | A contact with the same identifier already exists. More about identifiers can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts). |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The contact time zone is not in valid IANA format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_IMAGE_URL` | The contact image URL is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Merged | `wix.contacts.v5.contact_merged` | Triggered when one or more source contacts are merged into a target contact. |
+    | Contact Updated | `wix.contacts.v5.contact_updated` | Triggered when a contact is updated. |
+    | Contact Deleted | `wix.contacts.v5.contact_deleted` | Triggered when a contact is deleted. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-merge-contacts" id="ex-sdk-merge-contacts-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-merge-contacts" id="ex-sdk-merge-contacts-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-merge-contacts-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-merge-contacts-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Merge duplicate contacts</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">mergeContacts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-merge-contacts-0"><span className="wix-picker-name">Merge duplicate contacts</span></label>
+    <label htmlFor="ex-sdk-merge-contacts-1"><span className="wix-picker-name">mergeContacts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Merge duplicate contacts
+    import { contactsV5 } from "@wix/crm";
+
+    const targetContactId = "085ccffa-6686-427f-a310-9b5e3058ebbc";
+    const targetContactRevision = "1";
+
+    const options = {
+      sourceContactIds: ["7f07970b-223e-45cc-9835-f3e08984ccf9"],
+    };
+
+    async function mergeContacts() {
+      const response = await contactsV5.mergeContacts(
+        targetContactId,
+        targetContactRevision,
+        options,
+      );
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "contact": {
+     *     "revision": "2",
+     *     "name": { "first": "John", "last": "Doe" },
+     *     "email": {
+     *       "email": "john.doe@example.com",
+     *       "subscriptionStatus": { "status": "NOT_SET" },
+     *       "deliverabilityStatus": "NOT_SET"
+     *     },
+     *     "additionalEmails": [{ "email": "charlie.brown@example.com" }],
+     *     "phone": {
+     *       "tag": "OTHER",
+     *       "phone": "+1-555-0101",
+     *       "subscriptionStatus": { "status": "NO_SUBSCRIPTION_STATUS" },
+     *       "deliverabilityStatus": "NO_PHONE_DELIVERABILITY_STATUS"
+     *     },
+     *     "additionalPhones": [{ "tag": "OTHER", "phone": "+1-555-0105" }],
+     *     "company": { "name": "Acme Corp", "jobTitle": "Software Engineer" },
+     *     "source": { "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438" },
+     *     "_id": "085ccffa-6686-427f-a310-9b5e3058ebbc",
+     *     "_createdDate": "2026-07-01T18:31:58.331Z",
+     *     "_updatedDate": "2026-07-01T18:35:14.101Z"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript mergeContacts (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsV5 } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsV5 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function mergeContacts(targetContactId,targetContactRevision,options) {
+      const response = await myWixClient.contactsV5.mergeContacts(targetContactId,targetContactRevision,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

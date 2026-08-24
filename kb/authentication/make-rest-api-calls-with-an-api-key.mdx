@@ -1,0 +1,189 @@
+---
+title: "Make REST API Calls with an API Key"
+description: "Once you've generated an API key and obtained the IDs for your Wix account or site, you can authenticate and perform admin operations."
+---
+
+Once you've [generated an API key](/kb/authentication/generate-an-api-key) and obtained the IDs for your Wix account or site, you can authenticate and perform admin operations.
+
+<Tabs>
+
+<Tab title="REST">
+
+## Step 1 — Set authorization headers
+
+To make an API call using an API key, include the key from the [API Keys Manager](https://manage.wix.com/account/api-keys) in the `Authorization` header. You must also include one of the following headers, depending on the type of call:
+
+- `wix-account-id`: The ID of the Wix account that owns the API key. Required for account-level API calls.
+- `wix-site-id`: The ID of the Wix site or project you're working with. Required for site-level API calls.
+
+<Note>
+
+- API calls require either the `wix-account-id` header or the `wix-site-id` header, but not both. Most APIs are site-level, while account-level APIs are specified as such in the reference documentation.
+- Site-level calls only work with API keys that belong to the account that owns the site.
+
+</Note>
+
+A complete header for an account-level API request looks like this:
+
+```sh
+curl <GET/POST> \
+  '<endpoint>' \
+  -H 'Authorization: <API_KEY>' \
+  -H 'wix-account-id: <ACCOUNT_ID>'
+```
+
+A complete header for a site-level API request looks like this:
+
+```sh
+curl <GET/POST> \
+  '<endpoint>' \
+  -H 'Authorization: <API_KEY>' \
+  -H 'wix-site-id: <SITE_ID>'
+```
+
+## Step 2 — Make a REST API call
+
+With your headers set up, call Wix APIs. The following example calls [Query Product](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/query-products) and retrieves a list of visible [products](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction) from a specific site:
+
+```sh
+curl -X POST \
+  'https://www.wixapis.com/stores/v3/products/query' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: <API_KEY>' \
+  -H 'wix-site-id: <SITE_ID>' \
+  -d '{
+    "query": {
+      "filter": { "visible": { "$eq": true } },
+      "sort": [{ "fieldName": "createdDate", "order": "DESC" }],
+      "cursorPaging": { "limit": 10 }
+    }
+  }'
+```
+
+</Tab>
+
+<Tab title="SDK">
+
+<Note>
+
+To implement this flow, you must install Node.js version 18 or higher.
+
+</Note>
+
+## Step 1 — Install packages
+
+Install `@wix/sdk` and the packages for the domain-specific APIs you wish to work with. Domain-specific packages follow the naming convention `@wix/{domain}`. For example:
+
+```bash
+npm install @wix/sdk @wix/stores
+```
+
+Or, with Yarn:
+
+```bash
+yarn add @wix/sdk @wix/stores
+```
+
+## Step 2 — Import modules
+
+To use the APIs you have installed, import `createClient` and `ApiKeyStrategy` from the `@wix/sdk` package, and import functionality from the desired domain-specific packages. For example:
+
+```js
+import { createClient, ApiKeyStrategy } from "@wix/sdk";
+import { productsV3 } from "@wix/stores";
+```
+
+## Step 3 — Create a client
+
+Use the [`createClient()`](https://dev.wix.com/docs/sdk/core-modules/sdk/wix-client) method to connect an external client with a Wix site:
+
+```js
+const myWixClient = createClient({
+  auth: ApiKeyStrategy({
+    apiKey: "<API_KEY>",
+    siteId: "<SITE_ID>",
+    accountId: "<ACCOUNT_ID>",
+  }),
+  modules: {
+    productsV3,
+  },
+});
+```
+
+The `createClient()` method returns a new Wix client.
+
+- The `modules` parameter contains key:value pairs. Each value is an imported module, and the key defines the name to use when working with that module.
+- The `auth` parameter contains the authentication method and credentials. Pass `ApiKeyStrategy()` with an object containing:
+  - `apiKey`: An API key generated in the [API Keys Manager](https://manage.wix.com/account/api-keys).
+  - `siteId`: ID of the Wix site or project you are working with. Required for site-level calls.
+  - `accountId`: ID of the Wix account the API key belongs to. Required for account-level calls.
+
+## Step 4 — Call an SDK method
+
+The following code example retrieves a list of visible [products](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction) from a specific site:
+
+```js
+import { createClient, ApiKeyStrategy } from "@wix/sdk";
+import { productsV3 } from "@wix/stores";
+
+const myWixClient = createClient({
+  auth: ApiKeyStrategy({
+    apiKey: "<API_KEY>",
+    siteId: "<SITE_ID>",
+    accountId: "<ACCOUNT_ID>",
+  }),
+  modules: {
+    productsV3,
+  },
+});
+
+const { products } = await myWixClient.productsV3.queryProducts({
+  filter: { visible: { $eq: true } },
+  cursorPaging: { limit: 10 },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## Common errors
+
+### 403 forbidden
+
+<Tabs>
+
+<Tab title="REST">
+
+If you receive a `403 Forbidden` error, check that you have:
+
+- An `Authorization` header with your API key.
+- The correct [permissions](https://dev.wix.com/docs/api-reference/articles/authentication/api-keys/about-api-keys#permissions) configured for your API key.
+- A `wix-site-id` header for site-level methods, or a `wix-account-id` header for account-level methods.
+- An API key that can access the site you're calling. A key scoped to specific sites only works for those sites.
+- An API key that belongs to the account that owns the site you're calling. A key works only for sites in its own account, no matter which account member generated it.
+
+</Tab>
+
+<Tab title="SDK">
+
+If you receive a `403 Forbidden` error, check that you have:
+
+- The correct [permissions](https://dev.wix.com/docs/api-reference/articles/authentication/api-keys/about-api-keys#permissions) configured for your API key.
+- A `siteId` value in `ApiKeyStrategy` for site-level calls, or an `accountId` value for account-level calls.
+- An API key that can access the site you're calling. A key scoped to specific sites only works for those sites.
+- An API key that belongs to the account that owns the site you're calling. A key works only for sites in its own account, no matter which account member generated it.
+
+</Tab>
+
+</Tabs>
+
+### Unable to generate a key
+
+If you don't receive an SMS for 2-step verification when generating a key, [contact Wix Support](https://support.wix.com/en/article/contacting-wix-support).
+
+## See also
+
+- [About API Keys](https://dev.wix.com/docs/api-reference/articles/authentication/api-keys/about-api-keys)
+- [Generate an API Key](/kb/authentication/generate-an-api-key)
+- [About Admin Operations](/kb/authentication/about-admin-operations)

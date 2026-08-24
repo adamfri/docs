@@ -1,0 +1,481 @@
+---
+title: "Bulk Update Contact Tags By Filter"
+description: "Adds or removes tags on multiple contacts that match the provided filter."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds or removes tags on multiple contacts that match the provided filter. Works asynchronously. An empty filter matches all contacts.
+
+    Specify which tags to assign and which to unassign. A tag that appears in both the list to assign and the list to unassign is assigned. At least one tag must be specified to assign or unassign.
+
+    To check the status of the bulk update, pass the returned `jobId` to [Get Async Job](https://dev.wix.com/docs/api-reference/business-management/async-job/get-async-job).
+
+    To update tags for a single contact, call [Update Contact Tags](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact-tags).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/contacts/v5/bulk/contacts/update-tags-by-filter
+    ```
+
+    ## Body Params
+
+    <ParamField body="filter" type="object" required>
+
+      Filter object. See documentation [here](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language#filters).
+
+    </ParamField>
+
+    <ParamField body="search" type="SearchDetails">
+
+      Free text to match in searchable fields.
+
+      <Expandable title="search properties">
+
+        <ParamField body="mode" type="string">
+
+          How separate search terms in `expression` are combined.
+
+          **Supported values:**
+
+          - `OR` — Any of the search terms must be present.
+          - `AND` — All search terms must be present.
+
+        </ParamField>
+
+        <ParamField body="expression" type="string">
+
+          Search term or expression.
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to search in. If empty, searches all searchable fields. Use dot notation to specify the JSON path.
+
+          Constraints: `maxLength 200`, `maxItems 20`.
+
+        </ParamField>
+
+        <ParamField body="fuzzy" type="boolean">
+
+          Whether to use fuzzy search, which allows typos using a managed proximity algorithm.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="assignTags" type="PrivateTags">
+
+      Tags to assign to the matching contacts.
+
+      <Expandable title="assignTags properties">
+
+        <ParamField body="privateTags" type="TagList">
+
+          Tags that require an additional permission to access, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ParamField body="tagIds" type="string[]">
+
+              A list of tag IDs.
+              To create a tag, use the [Tags API](https://dev.wix.com/docs/api-reference/business-management/tags/introduction) with the contacts FQDN: `wix.contacts.*.contact`.
+
+              Constraints: `maxLength 5`, `maxItems 1000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="unassignTags" type="PrivateTags">
+
+      Tags to unassign from the matching contacts.
+
+      <Expandable title="unassignTags properties">
+
+        <ParamField body="privateTags" type="TagList">
+
+          Tags that require an additional permission to access, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ParamField body="tagIds" type="string[]">
+
+              A list of tag IDs.
+              To create a tag, use the [Tags API](https://dev.wix.com/docs/api-reference/business-management/tags/introduction) with the contacts FQDN: `wix.contacts.*.contact`.
+
+              Constraints: `maxLength 5`, `maxItems 1000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="jobId" type="string">
+
+      Job ID. Pass this ID to [Get Async Job](https://dev.wix.com/docs/api-reference/business-management/async-job/get-async-job) to retrieve the status of the asynchronous operation.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `EMPTY_ASSIGN_AND_UNASSIGN_LISTS` | No tags were specified to assign or unassign. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Asynchronously assigns tags to all contacts matching a filter. Returns a job ID to poll for status.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/contacts/v5/bulk/contacts/update-tags-by-filter' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "filter": {
+          "company.name": "ExampleCo"
+        },
+        "assignTags": {
+          "privateTags": {
+            "tagIds": ["zsdCR"]
+          }
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "jobId": "dbaebb5d-d91f-42ba-828d-803209f75f60"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds or removes tags on multiple contacts that match the provided filter. Works asynchronously. An empty filter matches all contacts.
+
+    Specify which tags to assign and which to unassign. A tag that appears in both the list to assign and the list to unassign is assigned. At least one tag must be specified to assign or unassign.
+
+    To check the status of the bulk update, pass the returned `jobId` to [Get Async Job](https://dev.wix.com/docs/api-reference/business-management/async-job/get-async-job).
+
+    To update tags for a single contact, call [Update Contact Tags](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact-tags).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsV5 } from '@wix/crm';
+
+    contactsV5.bulkUpdateContactTagsByFilter(filter, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="filter" type="object" required>
+
+      Filter object. See documentation [here](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language#filters).
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdateContactTagsByFilterOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="search" type="SearchDetails">
+
+          Free text to match in searchable fields.
+
+          <Expandable title="search properties">
+
+            <ParamField body="mode" type="string">
+
+              How separate search terms in `expression` are combined.
+
+              **Supported values:**
+
+              - `OR` — Any of the search terms must be present.
+              - `AND` — All search terms must be present.
+
+            </ParamField>
+
+            <ParamField body="expression" type="string">
+
+              Search term or expression.
+
+            </ParamField>
+
+            <ParamField body="fields" type="string[]">
+
+              Fields to search in. If empty, searches all searchable fields. Use dot notation to specify the JSON path.
+
+              Constraints: `maxLength 200`, `maxItems 20`.
+
+            </ParamField>
+
+            <ParamField body="fuzzy" type="boolean">
+
+              Whether to use fuzzy search, which allows typos using a managed proximity algorithm.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="assignTags" type="PrivateTags">
+
+          Tags to assign to the matching contacts.
+
+          <Expandable title="assignTags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission to access, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="unassignTags" type="PrivateTags">
+
+          Tags to unassign from the matching contacts.
+
+          <Expandable title="unassignTags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission to access, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="jobId" type="string">
+
+      Job ID. Pass this ID to [Get Async Job](https://dev.wix.com/docs/api-reference/business-management/async-job/get-async-job) to retrieve the status of the asynchronous operation.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `EMPTY_ASSIGN_AND_UNASSIGN_LISTS` | No tags were specified to assign or unassign. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-contact-tags-by-filter" id="ex-sdk-bulk-update-contact-tags-by-filter-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-contact-tags-by-filter" id="ex-sdk-bulk-update-contact-tags-by-filter-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-contact-tags-by-filter-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-contact-tags-by-filter-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Update contact tags by filter</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateContactTagsByFilter (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-contact-tags-by-filter-0"><span className="wix-picker-name">Update contact tags by filter</span></label>
+    <label htmlFor="ex-sdk-bulk-update-contact-tags-by-filter-1"><span className="wix-picker-name">bulkUpdateContactTagsByFilter (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Update contact tags by filter
+    import { contactsV5 } from "@wix/crm";
+
+    const filter = {
+      "company.name": "ExampleCo",
+    };
+
+    const options = {
+      assignTags: {
+        privateTags: { tagIds: ["zsdCR"] },
+      },
+    };
+
+    async function bulkUpdateContactTagsByFilter() {
+      const response = await contactsV5.bulkUpdateContactTagsByFilter(filter, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "jobId": "a7181099-e638-4359-b1c2-7e7a7f94ba68"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateContactTagsByFilter (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsV5 } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsV5 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateContactTagsByFilter(filter,options) {
+      const response = await myWixClient.contactsV5.bulkUpdateContactTagsByFilter(filter,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,655 @@
+---
+title: "Bulk Update Contacts"
+description: "Updates multiple contacts in a single request."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple contacts in a single request. Works synchronously.
+
+    When you provide an image URL for a contact, the image is uploaded in the background and the returned contact temporarily keeps its previous image. Once the upload succeeds, the contact's image is updated.
+
+    `externalId` can be set only once. If it already has a value, it can't be updated.
+
+    To update a single contact, call [Update Contact](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/contacts/v5/bulk/contacts/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="contacts" type="MaskedContact[]" required>
+
+      Contacts to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="contacts properties">
+
+        <ParamField body="contact" type="Contact">
+
+          Contact to update. May be partial.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to include the updated contacts in the response.
+
+    </ParamField>
+
+    <ParamField body="allowDuplicates" type="boolean">
+
+      Whether to update the contact even if it becomes a duplicate of another contact.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkContactResult[]">
+
+      Results of the update for each contact.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata regarding the update of this specific contact.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Contact">
+
+          Returned only when `returnEntity` is `true` in the request.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata regarding the bulk update operation.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Updates several contacts in a single request. Each contact requires its current revision.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/contacts/v5/bulk/contacts/update' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "contacts": [
+          {
+            "contact": {
+              "id": "3078e8d6-6bfc-4304-9a84-bbc3fa64ffdb",
+              "revision": "1",
+              "company": {
+                "name": "ExampleCo",
+                "jobTitle": "Senior Operations Manager"
+              }
+            }
+          },
+          {
+            "contact": {
+              "id": "e6b00217-e1f0-4b4c-89a1-6c635ed66e68",
+              "revision": "1",
+              "company": {
+                "name": "ExampleCo",
+                "jobTitle": "Senior Account Executive"
+              }
+            }
+          }
+        ],
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "3078e8d6-6bfc-4304-9a84-bbc3fa64ffdb",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "3078e8d6-6bfc-4304-9a84-bbc3fa64ffdb",
+              "revision": "2",
+              "createdDate": "2026-07-01T18:24:15.364Z",
+              "updatedDate": "2026-07-01T18:24:53.140Z",
+              "name": {
+                "first": "Maria",
+                "last": "Hill"
+              },
+              "email": {
+                "email": "maria.hill@example.com",
+                "subscriptionStatus": {
+                  "status": "SUBSCRIBED",
+                  "updatedDate": "2026-06-29T10:33:17.590Z"
+                },
+                "deliverabilityStatus": "NOT_SET"
+              },
+              "additionalEmails": [],
+              "additionalPhones": [],
+              "addresses": [],
+              "company": {
+                "name": "ExampleCo",
+                "jobTitle": "Senior Operations Manager"
+              },
+              "locationIds": [],
+              "source": {
+                "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+              },
+              "lastActivity": {
+                "date": "2026-07-01T18:24:15.364Z",
+                "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+              },
+              "segmentIds": []
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "e6b00217-e1f0-4b4c-89a1-6c635ed66e68",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "e6b00217-e1f0-4b4c-89a1-6c635ed66e68",
+              "revision": "2",
+              "createdDate": "2026-07-01T18:24:15.364Z",
+              "updatedDate": "2026-07-01T18:24:53.142Z",
+              "name": {
+                "first": "Daniel",
+                "last": "Reyes"
+              },
+              "email": {
+                "email": "daniel.reyes@example.com",
+                "subscriptionStatus": {
+                  "status": "SUBSCRIBED",
+                  "updatedDate": "2026-06-29T10:33:17.590Z"
+                },
+                "deliverabilityStatus": "NOT_SET"
+              },
+              "additionalEmails": [],
+              "additionalPhones": [],
+              "addresses": [],
+              "company": {
+                "name": "ExampleCo",
+                "jobTitle": "Senior Account Executive"
+              },
+              "locationIds": [],
+              "source": {
+                "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+              },
+              "lastActivity": {
+                "date": "2026-07-01T18:24:15.364Z",
+                "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+              },
+              "segmentIds": []
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple contacts in a single request. Works synchronously.
+
+    When you provide an image URL for a contact, the image is uploaded in the background and the returned contact temporarily keeps its previous image. Once the upload succeeds, the contact's image is updated.
+
+    `externalId` can be set only once. If it already has a value, it can't be updated.
+
+    To update a single contact, call [Update Contact](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsV5 } from '@wix/crm';
+
+    contactsV5.bulkUpdateContacts(contacts, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="contacts" type="MaskedContact[]" required>
+
+      Contacts to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="contacts properties">
+
+        <ParamField body="contact" type="Contact">
+
+          Contact to update. May be partial.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdateContactsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to include the updated contacts in the response.
+
+        </ParamField>
+
+        <ParamField body="allowDuplicates" type="boolean">
+
+          Whether to update the contact even if it becomes a duplicate of another contact.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkContactResult[]">
+
+      Results of the update for each contact.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata regarding the update of this specific contact.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Contact">
+
+          Returned only when `returnEntity` is `true` in the request.
+
+          See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata regarding the bulk update operation.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Updated | `wix.contacts.v5.contact_updated` | Triggered when a contact is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-contacts" id="ex-sdk-bulk-update-contacts-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-contacts" id="ex-sdk-bulk-update-contacts-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-contacts-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-contacts-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Update multiple contacts in bulk</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateContacts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-contacts-0"><span className="wix-picker-name">Update multiple contacts in bulk</span></label>
+    <label htmlFor="ex-sdk-bulk-update-contacts-1"><span className="wix-picker-name">bulkUpdateContacts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Update multiple contacts in bulk
+    import { contactsV5 } from "@wix/crm";
+
+    const contacts = [
+      {
+        contact: {
+          _id: "55022a00-b54c-4ccc-a131-020cbb1b45e8",
+          revision: "1",
+          company: { name: "ExampleCo", jobTitle: "Senior Operations Manager" },
+        },
+      },
+      {
+        contact: {
+          _id: "d1ce3067-5344-4a50-8eda-c720fb0e726d",
+          revision: "1",
+          company: { name: "ExampleCo", jobTitle: "Senior Account Executive" },
+        },
+      },
+    ];
+
+    const options = {
+      returnEntity: true,
+    };
+
+    async function bulkUpdateContacts() {
+      const response = await contactsV5.bulkUpdateContacts(contacts, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 0,
+     *         "success": true,
+     *         "_id": "55022a00-b54c-4ccc-a131-020cbb1b45e8"
+     *       },
+     *       "item": {
+     *         "revision": "2",
+     *         "name": { "first": "Maria", "last": "Hill" },
+     *         "company": { "name": "ExampleCo", "jobTitle": "Senior Operations Manager" },
+     *         "_id": "55022a00-b54c-4ccc-a131-020cbb1b45e8"
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 1,
+     *         "success": true,
+     *         "_id": "d1ce3067-5344-4a50-8eda-c720fb0e726d"
+     *       },
+     *       "item": {
+     *         "revision": "2",
+     *         "name": { "first": "Daniel", "last": "Reyes" },
+     *         "company": { "name": "ExampleCo", "jobTitle": "Senior Account Executive" },
+     *         "_id": "d1ce3067-5344-4a50-8eda-c720fb0e726d"
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 2,
+     *     "totalFailures": 0,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateContacts (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsV5 } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsV5 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateContacts(contacts,options) {
+      const response = await myWixClient.contactsV5.bulkUpdateContacts(contacts,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

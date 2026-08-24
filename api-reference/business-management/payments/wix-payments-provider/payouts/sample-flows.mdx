@@ -1,0 +1,39 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Browse a merchant's payout history
+
+The merchant wants to review the payouts that have been sent from their Wix Payments balance to their bank account over a date range.
+
+To browse a merchant's payout history:
+
+1. Call [List Payouts](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/payouts/list-payouts) with the Wix Payments `accountId`. Optionally restrict the result with `createdAfter` and `createdBefore`, and scope to a single profile with `accountProfileId`. For example:
+
+    ```json
+    {
+      "accountId": "<account-id>",
+      "createdAfter": "2020-01-01T00:00:00Z",
+      "createdBefore": "2020-12-31T23:59:59Z",
+      "paging": { "limit": 20, "offset": 0 },
+      "sort": { "fieldName": "created_date", "order": "DESC" }
+    }
+    ```
+
+1. Render each payout's `amount`, `createdDate`, `status`, and `estimatedArrivalDateV2`. A `SENT` status means the bank rail accepted the transfer. A `FAILED` status means the receiving bank rejected it, in which case `failureReason.code` carries the cause.
+1. Use `metadata.total` and `metadata.offset` to page through the rest of the history.
+
+## Retrieve a single payout
+
+The merchant clicks a payout to see its full detail, including the failure reason if it failed, the bank transfer reference for reconciliation, and whether the payout included a Wix Capital cash advance.
+
+To retrieve a single payout:
+
+1. Call [Get Payout](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/payouts/get-payout) with the Wix Payments `accountId` and the `payoutId`.
+1. Read `bankTransferReference` to reconcile against the merchant's bank statement. The field is populated once the bank rail returns a reference and is empty until then.
+1. If `status` is `FAILED`, surface `failureReason.code` to the merchant so they can address the underlying issue. For example, `ACCOUNT_CLOSED` or `INVALID_ACCOUNT_NUMBER`. The funds remain in the merchant's Wix Payments balance.
+1. If `cashAdvanceIncluded` is `true`, indicate that the payout `amount` includes funds from a Wix Capital cash advance taken out by the merchant.

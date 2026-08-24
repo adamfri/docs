@@ -1,0 +1,37 @@
+---
+title: "Lifecycle, Calculations, and Totals"
+description: "Draft Order Lifecycle + After a draft order is created, its status begins as DRAFT."
+icon: "file-lines"
+---
+
+## Draft Order Lifecycle
+
++ After a draft order is created, its status begins as `DRAFT`.
++ For every action performed on a draft order, a corresponding Draft Order [Created](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-created)/[Updated](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-updated)/[Deleted](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-deleted) webhook is triggered.
++ Once a draft order is committed by calling [Commit Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/commit-draft-order), its status changes to `COMMITTED`, and the [Order Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/orders/order-updated) webhook is triggered. The payload includes the changes made to the original order.
++ When a draft order is converted into a new approved order by calling [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft), the [Order Approved](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/orders/order-approved) webhook is triggered. This initiates order-related side effects, including inventory updates, tax calculations, and relevant notifications.
+
+![Draft Order Lifecycle](https://wixmp-833713b177cebf373f611808.wixmp.com/images/74ad0ea3491e7349e677d82d3d68f144.png)
+
+## Order Calculation
+
+When editing an order, the draft order is re-calculated after each action, and reflects the most up-to-date totals and prices.
+
++ Newly added items, fees, and discounts are fetched with the latest prices.
++ Existing items, discounts, shipping methods and prices, as well as additional fees, keep their original price and are not automatically updated.
++ Taxes are recalculated automatically, unless the order is marked as tax-exempt.
++ Automatic discount rules and app-defined additional fees aren't re-evaluated while editing a draft order. Their applied state stays as it was when the draft was created.
+
+## Order Total and Balance
+
+When a draft order is committed, there are three possible outcomes that can affect the order's total:
+1. Order total *increases*.
+2. Order total *decreases*.
+3. Order total remains *unchanged*.
+
+Changes to the order’s total can affect the order balance, which represents the remaining amount to be paid. This is calculated as the order total minus any paid amounts.
+
+When the order’s balance changes, there are 3 possible outcomes:
+1. **Negative balance:** New order total is less than the amount paid. In this case, merchants can refund the difference back to their customers.
+2. **Positive balance**: New order total is greater than the amount paid. Merchants can then charge the remaining order amount using appropriate methods.
+3. **Zero balance**: New order total equals the amount paid, resulting in no further payment needed. Refunds or adjustments remain possible if applicable.

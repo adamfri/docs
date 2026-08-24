@@ -1,0 +1,272 @@
+---
+title: "Sample Flows"
+description: "This article provides sample flows focusing on the technical details of managing services using the Services V2 API."
+icon: "file-lines"
+---
+
+This article provides sample flows focusing on the technical details of managing services using the Services V2 API. These flows demonstrate common integration patterns and can serve as a foundation for your implementation. You can combine different service types with various payment options to meet business needs.
+
+## Export new services to an external catalog
+
+If a business manages services in an external catalog, you can periodically export new services from Wix to the external catalog. This ensures that the external system stays synchronized with the latest service information in Wix Bookings.
+
+To export services and maintain synchronization with an external catalog:
+
+1. For the initial export, call [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services) to retrieve all services.
+   By default, it's `100` for the initial paging limit.
+1. Save the request's date and time to use as a filter in the next query.
+1. Optional: If the response contains 100 services, additional services may exist.
+   Call Query Services again, specifying `100` as `paging.offset`.
+   Continue retrieving services while increasing the offset, until the system retrieves all services.
+1. Upload the retrieved services to the external catalog.
+1. When it's time for the next export, call Query Services.
+   Save the request's date and time. Specify this `filter`:
+
+    ::::tabs
+    :::REST
+    ```json
+    {
+      "sort": {
+        "fieldName": "createdDate",
+        "order": "ASC"
+      },
+      "filter": {
+        "createdDate": {
+            "$gt": "<PREVIOUS_LOAD_DATETIME>"
+        }
+      }
+    }
+    ```
+    :::
+    :::SDK
+    ```js
+    import { services } from '@wix/bookings';
+    
+    const result = await services.queryServices({
+      query: {
+        filter: {
+          _createdDate: { $gt: "<PREVIOUS_LOAD_DATETIME>" }
+        },
+        sort: [
+          { fieldName: "_createdDate", order: "ASC" }
+        ]
+      }
+    });
+    ```
+    :::
+    ::::
+
+1. Upload the retrieved services to the external catalog.
+1. Repeat steps 5 to 6 for each subsequent export.
+   You may allow business owners to configure the export's time interval.
+
+## Create a free class
+
+You can create a class-based service offered at no cost to customers.
+You could allow customers to book online without requiring the business to individually review and then confirm or decline booking requests.
+This approach works well for promotional events, community classes, or trial sessions that don't require payment.
+
+To create a free class-based service:
+
+1. Call [Create Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/create-service), specifying:
+   - The required fields for class-based services:
+     - `type` set to `CLASS`.
+     - `name`.
+     - `defaultCapacity` set to a value typically higher than `1`.
+   - Additionally, the following fields needed in this use case:
+     - `onlineBooking.enabled` set to `true`.
+     - `onlineBooking.requireManualApproval` set to `false`.
+     - `payment.rateType` set to `NO_FEE`.
+     - `payment.options.inPerson` set to `true` even though the service is offered for free.
+
+   For the returned service, save `id` and `schedule.id`.
+1. To add class events, call [Create Event](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/create-event), specifying:
+   - `schedule.id` from the previous step as `event.scheduleId`.
+   - `{"type": "CLASS"}`.
+   - `start.localDate` and `end.localDate`.
+   Learn more about how to set up [recurring events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/recurring-events).
+
+Customers can now book the free class without any payment required.
+
+## Create a fixed price course
+
+You can create a course-based service with a single fixed price for the entire course.
+To reduce no-show rates, you could require customers to pay upfront online for access to all course events. You could also prevent bookings after the course has started.
+This approach works well for structured learning programs, workshops, or multi-session training courses.
+
+To create a course-based service that's offered for a standard price:
+
+1. Call [Create Booking Policy](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policies/create-booking-policy), specifying:
+   - A policy `name`.
+   - `limitLateBookingPolicy.enabled` as `true`.
+   - `limitLateBookingPolicy.latestBookingInMinutes` as `1`.
+     This prevents customers from booking the course later than 1 minute before the start of the first course event.
+   Save the policy ID.
+1. Call [Create Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/create-service), specifying:
+   - The required fields for course-based services:
+     - `type` set to `COURSE`.
+     - `name`.
+     - `defaultCapacity` set to a value typically higher than `1`.
+   - Additionally, the following fields needed in this use case:  
+     - `bookingPolicy.id` set to the value from the previous step.
+     - `onlineBooking.enabled` set to `true`.
+     - `payment.rateType` set to `FIXED`.
+     - `payment.fixed.price.value` and optionally a `formattedValue`.
+     - `payment.options.online` set to `true`.
+
+   For the returned service, save `id` and `schedule.id`.
+1. To add course events, call [Create Event](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/create-event), specifying:
+   - `schedule.id` from the previous step as `event.scheduleId`.
+   - `{"type": "COURSE"}`.
+   - `start.localDate` and `end.localDate`.
+   Learn more about how to set up [recurring events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/recurring-events).
+
+Customers can now book the course and pay the standard price when they book online.
+
+## Create an appointment service with varied pricing
+
+You could set up a hair cutting service with different prices based on the customer's age with custom [variants](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction). For example, a hair cut for adults could cost more than a children's or senior's hair cut. The service would be offered at the main business location with designated staff members.
+
+To create an appointment-based service with varied pricing:
+
+1. Call [Query Staff Members](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members),
+   specifying `RESOURCE_DETAILS` in the `fields` parameter, and identify who can provide the service.
+   Save the relevant staff member `resourceId` values.
+1. Call [List Locations](fallback::https://dev.wix.com/docs/rest/business-management/locations/list-locations).
+   Save the ID of the location with `{"default": true}`.
+1. Call [Create Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/create-service), specifying:
+   - The required fields for appointment-based services:
+     - `type` set to `APPOINTMENT`.
+     - `name`.
+     - `defaultCapacity` set to `1`.
+     - The `schedule.availabilityConstraints.sessionDurations` array set to the only supported service duration in minutes.
+       For example, `30` minutes for the hair cut.
+     - At least one entry in `staffMemberIds`, using the `resourceId` values from step 1.
+       Note that despite the field name, `staffMemberIds` contains resource IDs, not staff member IDs.
+   - Additionally, the following fields needed in this use case:
+     - Additional `staffMemberIds` beyond the required minimum.
+     - A single element in the `locations` array with `{"type": "BUSINESS"}` and `business.id` set to the location ID from the previous step.
+     - `onlineBooking.enabled` set to `true`.
+     - `payment.rateType` set to `VARIED`.
+     - `payment.fixed.price.value` and optionally a `formattedValue`.
+       Depending on the business needs, you can choose either the adult, senior, or children's price as default.
+     - At least one of `payment.options.inPerson` or `payment.options.online` set to `true`.
+
+   Save the service ID from the response.
+1. Call [Create Service Options And Variants](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/create-service-options-and-variants), specifying:
+   - The service ID from the previous step.
+   - An `options.values` array with a single option value for all supported customer choices.
+     For the option, specify `{"type": "custom"}`, its unique option ID in UUID format, `customData.name` set to `age group`, and a `customData.choices` array with the 3 elements `child`, `adult`, and `senior`.
+   - A `variants.values` array with 3 elements: each element specifying the single `optionId` from above, `custom` set to either `child`, `adult`, or `senior`, and a corresponding `price` object with a `value` and optionally a `formattedValue`.
+
+Customers can now book appointments and choose from different age group options, each with its corresponding price.
+
+## Add pricing plan payment option to an existing service
+
+To expand payment options for an existing service that only accepts online payments, add pricing plan support to provide customers with package-based payment alternatives. This allows customers to purchase class packages or service bundles instead of paying per individual booking.
+
+To add pricing plan payment option to an existing service:
+
+1. Call [Create Plan](https://dev.wix.com/docs/rest/business-solutions/pricing-plans/pricing-plans/plans-v3/create-plan) to create a class package plan, specifying:
+   - `name` set to a descriptive plan name, such as `10-Class Pass`.
+   - A single object in the `pricingVariants` array:
+     - `id` set to a unique UUID.
+     - `name` set to a descriptive variant name, such as `Single payment`.
+     - `pricingStrategies` array with a single `flatRate` object containing the appropriate `amount` value.
+     - `billingTerms` object with `billingCycle` set to `null`, `startType` set to `ON_PURCHASE`, and `endType` set to `UNTIL_CANCELLED`.
+   - `visibility` set to `PUBLIC`, so customers can buy the plan.
+   - `status` set to `ACTIVE`.
+
+   Save the plan ID from the response.
+1. Call [Update Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/update-service) to enable pricing plan payments, specifying `payment.options.pricingPlan` set to `true`.
+1. Call [Enable Pricing Plans For Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/enable-pricing-plans-for-service) to add the pricing plan, specifying the plan ID from step 1 in the `pricingPlanIds` array.
+
+Customers can now book the service using either online payment or the class package plan.
+
+## Retrieve staff members for a class or course
+
+For classes and courses, the service's `staffMemberIds` field is read-only and is automatically derived from staff assigned to the service's recurring scheduled sessions. Staff assigned only to single, non-recurring events are not included. Once all of a staff member's upcoming recurring sessions have ended, their ID is removed from `staffMemberIds`.
+
+Note that despite the field name, `staffMemberIds` contains resource IDs, not staff member IDs. Each staff member has an associated [resource](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction), and the service references the resource ID.
+
+If the class or course has upcoming recurring sessions, you can use the `staffMemberIds` from the service directly:
+
+1. Call [Get Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/get-service) and read the `staffMemberIds` array.
+1. Call [Query Staff Members](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members) with a `filter` of `{"resourceId": {"$in": ["<resource-id-1>", "<resource-id-2>"]}}` using the IDs from the previous step. This returns the full staff member details, including names and contact information.
+
+If `staffMemberIds` is empty or incomplete, for example because all recurring sessions have ended or staff were only assigned to single events, retrieve the full staff list from calendar events instead:
+
+1. Call [Get Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/get-service) and save `schedule.id`.
+1. Call [Query Events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/query-events) with a `filter` of `{"scheduleId": "<schedule-id>"}`. Set `fromLocalDate` to a date far enough in the past to cover the service's sessions and `toLocalDate` to the current date.
+1. Collect all unique resource IDs from the `resources` array across the returned events.
+1. Call [Query Staff Members](https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members) with a `filter` of `{"resourceId": {"$in": ["<resource-id-1>", "<resource-id-2>"]}}` to retrieve the staff member details.
+
+Non-staff resources, such as rooms or equipment, are naturally filtered out because they don't match any staff member record.
+
+## Create a course with subscription pricing
+
+You can create a course service that charges customers recurring monthly payments instead of a one-time fee. This works well for ongoing programs where businesses prefer to collect payments over time, such as a 6-month training course billed monthly.
+
+To create a course with subscription pricing:
+
+1. Call [Create Booking Policy](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policies/create-booking-policy), specifying:
+   - A policy `name`.
+   - `limitLateBookingPolicy.enabled` as `true`.
+   - `limitLateBookingPolicy.latestBookingInMinutes` as `1`.
+     This prevents customers from booking the course later than 1 minute before the start of the first course event.
+
+   Save the policy ID.
+1. Call [Create Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/create-service), specifying:
+   - The required fields for course-based services:
+     - `type` set to `COURSE`.
+     - `name`.
+     - `defaultCapacity` set to a value typically higher than `1`.
+   - Additionally, the following fields needed in this use case:
+     - `bookingPolicy.id` set to the value from the previous step.
+     - `onlineBooking.enabled` set to `true`.
+     - `payment.rateType` set to `SUBSCRIPTION`.
+     - `payment.subscription.amountPerBillingCycle` with the monthly price `value` and `currency`.
+     - `payment.subscription.frequency` set to `MONTHLY`.
+     - `payment.subscription.totalPayments` set to the number of monthly billing cycles. For example, `6` for a 6-month course.
+     - `payment.subscription.firstChargeDate` set to `CHECKOUT` to charge the first payment immediately, or `SCHEDULED` to charge the first payment on the `recurringStartDate`.
+     - `payment.subscription.recurringStartDate` set to the date when recurring billing starts.
+     - `payment.options.online` set to `true`.
+
+   For the returned service, save `id` and `schedule.id`.
+1. To add course events, call [Create Event](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/create-event), specifying:
+   - `schedule.id` from the previous step as `event.scheduleId`.
+   - `{"type": "COURSE"}`.
+   - `start.localDate` and `end.localDate`.
+   Learn more about how to set up [recurring events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/recurring-events).
+
+Customers can now book the course and pay through recurring monthly billing.
+
+## Create an appointment service with a duration range
+
+You can create an appointment service where the customer chooses how long to book within a
+minimum and maximum range, instead of selecting from fixed session durations. This is useful
+for bookable resources such as conference rooms or equipment, where the customer decides the
+booking length. Availability is calculated based on the minimum duration in the range.
+
+To create an appointment service with a duration range:
+
+1. Call [List Locations](fallback::https://dev.wix.com/docs/rest/business-management/locations/list-locations).
+   Save the ID of the location with `{"default": true}`.
+1. Call [Create Service](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/create-service), specifying:
+   - The required fields for appointment-based services:
+     - `type` set to `APPOINTMENT`.
+     - `name`.
+     - `defaultCapacity` set to `1`.
+   - Duration range configuration instead of `sessionDurations`:
+     - `schedule.availabilityConstraints.durationRange.unitType` set to `HOUR` or `DAY`.
+     - For hourly services, `schedule.availabilityConstraints.durationRange.hourOptions.minDurationInMinutes` and `maxDurationInMinutes`. For example, `60` and `480` for a 1 to 8 hour range.
+     - For daily services, `schedule.availabilityConstraints.durationRange.dayOptions.minDurationInDays` and `maxDurationInDays`. For example, `1` and `5` for a 1 to 5 day range.
+   - A single element in the `locations` array with `{"type": "BUSINESS"}` and `business.id` set to the location ID from the previous step.
+   - If booking resources instead of staff, set `primaryResourceType` to the ID of the relevant resource type. When not set, availability defaults to staff schedules.
+   - At least one of `payment.options.inPerson` or `payment.options.online` set to `true`.
+   - `payment.rateType` set to `FIXED` with `payment.fixed.price` as the per-unit price (per hour or per day).
+   - `onlineBooking.enabled` set to `true`.
+
+   Save the service ID from the response.
+
+Customers can now book the service by selecting a start time and then choosing an end time within the allowed duration range.

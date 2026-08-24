@@ -1,0 +1,4454 @@
+---
+title: "Commit Draft Order"
+description: "Finalizes a draft order and applies its modifications to the associated order."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Finalizes a draft order and applies its modifications to the associated order.
+    You can also control which side-effects are executed on commit.
+
+    <Note>
+
+    + The draft order's status is set to `COMMITTED`.
+    + Committing a draft order cannot be undone or reverted.
+    + A committed draft order does not allow for further modifications. However, it is kept for reference and can be retrieved.
+    + Only drafts created for an existing order can be committed. To convert a draft order created from scratch into an order, call [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft).
+    + Inventory levels change only for line items passed in `commitSettings.updateInventory`.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.MANAGE-ECOM">Manage eCommerce - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/draft-orders/{draftOrderId}/commit
+    ```
+
+    ## Path Params
+
+    <ParamField path="draftOrderId" type="string" required>
+
+      Draft order ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="commitSettings" type="DraftOrderCommitSettings">
+
+      Optional side effects to trigger.
+
+      <Expandable title="commitSettings properties">
+
+        <ParamField body="sendNotificationsToBuyer" type="boolean">
+
+          Whether to send notifications to the buyer.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="sendNotificationsToBusiness" type="boolean">
+
+          Whether to send notifications to the business.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="addActivitiesToOrder" type="boolean">
+
+          Whether to add activities to the order.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="sendNotificationsToCustomFulfillers" type="boolean">
+
+          Whether to send email notifications to custom fulfillers when there is a change in the shippable items they fulfill.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="updateInventory" type="InventoryUpdate[]">
+
+          Line item IDs for which to perform an inventory change.
+          When not provided, inventory will not change.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="updateInventory properties">
+
+            <ParamField body="lineItemId" type="string">
+
+              Line item ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="reason" type="string">
+
+      Reason for edit, provided by user (optional).
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="committedDraftOrder" type="DraftOrder">
+
+      Draft order after commit.
+
+      See the [Draft Order Object](/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="orderAfterCommit" type="Order">
+
+      Updated order after commit.
+
+      <Expandable title="orderAfterCommit properties">
+
+        <ResponseField name="id" type="string">
+
+          Order ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="number" type="number">
+
+          Order number displayed in the site owner's dashboard.
+
+          Auto-generated for orders created through the regular order flow. When importing an order, you can provide the original number to preserve it. See [Set Order Number Counter](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/set-order-number-counter) to control numbering of orders created after a migration.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the order was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="updatedDate" type="datetime">
+
+          Date and time the order was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="lineItems" type="OrderLineItem[]">
+
+          Order line items.
+
+          **Read-only.** Constraints: `minItems 1`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ResponseField name="id" type="string">
+
+              Line item ID.
+
+              Constraints: `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="productName" type="ProductName">
+
+              Item name.
+
+              + Stores - `product.name`
+              + Bookings - `service.info.name`
+              + Events - `ticket.name`
+
+              _Nested structure omitted for brevity — see the `ProductName` object._
+
+            </ResponseField>
+
+            <ResponseField name="catalogReference" type="CatalogReference">
+
+              References to the line item's origin catalog. Empty for custom line items.
+
+              _Nested structure omitted for brevity — see the `CatalogReference` object._
+
+            </ResponseField>
+
+            <ResponseField name="quantity" type="integer">
+
+              Line item quantity.
+
+              Constraints: `min 1`, `max 100000`.
+
+            </ResponseField>
+
+            <ResponseField name="totalDiscount" type="Price">
+
+              Total discount for this line item's entire quantity.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="descriptionLines" type="DescriptionLine[]">
+
+              Line item description lines. Used for display purposes for the cart, checkout and order.
+
+              Constraints: `minItems 0`, `maxItems 20`.
+
+              _Nested structure omitted for brevity — see the `DescriptionLine[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="image" type="Image">
+
+              Line item image.
+
+              _Nested structure omitted for brevity — see the `Image` object._
+
+            </ResponseField>
+
+            <ResponseField name="physicalProperties" type="PhysicalProperties">
+
+              Physical properties of the item. When relevant, contains information such as SKU and item weight.
+
+              _Nested structure omitted for brevity — see the `PhysicalProperties` object._
+
+            </ResponseField>
+
+            <ResponseField name="itemType" type="ItemType">
+
+              Item type. Either a preset type or custom.
+
+              _Nested structure omitted for brevity — see the `ItemType` object._
+
+            </ResponseField>
+
+            <ResponseField name="fulfillerId" type="string">
+
+              Fulfiller ID. Field is empty when the line item is self-fulfilled.
+              To get fulfillment information, pass the order ID to [List Fulfillments For Single Order](https://dev.wix.com/docs/rest/api-reference/wix-e-commerce/order-fulfillments/list-fulfillments-for-single-order).
+
+            </ResponseField>
+
+            <ResponseField name="refundQuantity" type="integer">
+
+              Number of items that were refunded.
+
+            </ResponseField>
+
+            <ResponseField name="restockQuantity" type="integer">
+
+              Number of items restocked.
+
+              For a per-location breakdown, see `restockLocations`.
+
+            </ResponseField>
+
+            <ResponseField name="price" type="Price">
+
+              Line item price after line item discounts for display purposes.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceBeforeDiscounts" type="Price">
+
+              Line item price before line item discounts for display purposes. Defaults to `price` when not provided.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalPriceBeforeTax" type="Price">
+
+              Total price after discounts, and before tax.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalPriceAfterTax" type="Price">
+
+              Total price after all discounts and tax.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="paymentOption" type="string">
+
+              Type of selected payment option for current item.
+
+              Default: `FULL_PAYMENT_ONLINE`
+
+              **Supported values:**
+
+              - `FULL_PAYMENT_ONLINE` — The entire payment for this item happens as part of the checkout.
+              - `FULL_PAYMENT_OFFLINE` — The entire payment for this item happens after checkout. For example, when using cash, check, or other offline payment methods.
+              - `MEMBERSHIP` — Payment for this item is done by charging a membership. Any remaining amount not covered by the membership, such as item modifiers, is paid online.
+              - `DEPOSIT_ONLINE` — Partial payment to be paid upfront during checkout. The initial amount to be paid for each line item is specified in `depositAmount`.
+              - `MEMBERSHIP_OFFLINE` — Payment for this item can only be done by charging a membership and must be manually redeemed in the dashboard by the site admin. When selected, `price` is `0`.
+              - `MEMBERSHIP_ONLINE_WITH_OFFLINE_REMAINDER` — Item price is charged to online membership. Any remaining amount not covered by the membership, such as item modifiers, is paid offline.
+
+            </ResponseField>
+
+            <ResponseField name="taxDetails" type="ItemTaxFullDetails" deprecated>
+
+              Deprecated. Use `taxInfo` instead.
+              This field will be removed on September 30, 2024.
+              Tax details for this line item.
+
+              **Deprecated.** Deprecated. Use `taxInfo` instead.
+              This field will be removed on September 30, 2024.
+              Tax details for this line item. Use `tax_info` instead. Removal: 2024-09-30.
+
+              _Nested structure omitted for brevity — see the `ItemTaxFullDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxInfo" type="LineItemTaxInfo">
+
+              Represents all the relevant tax details for a specific line item.
+
+              _Nested structure omitted for brevity — see the `LineItemTaxInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="digitalFile" type="DigitalFile">
+
+              Digital file identifier, relevant only for items with type DIGITAL.
+
+              _Nested structure omitted for brevity — see the `DigitalFile` object._
+
+            </ResponseField>
+
+            <ResponseField name="subscriptionInfo" type="SubscriptionInfo">
+
+              Subscription info.
+
+              _Nested structure omitted for brevity — see the `SubscriptionInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceDescription" type="PriceDescription">
+
+              Additional description for the price. For example, when price is 0 but additional details about the actual price are needed - "Starts at $67".
+
+              _Nested structure omitted for brevity — see the `PriceDescription` object._
+
+            </ResponseField>
+
+            <ResponseField name="depositAmount" type="Price">
+
+              Item's price amount to be charged during checkout. Relevant for items with a `paymentOption` value of `"DEPOSIT_ONLINE"`.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="locations" type="LocationAndQuantity[]">
+
+              Line item locations.
+
+              The location's total quantity must not exceed the line item quantity.
+
+              **Developer Preview.** Constraints: `minItems 0`, `maxItems 5`.
+
+              _Nested structure omitted for brevity — see the `LocationAndQuantity[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="lineItemPrice" type="Price">
+
+              Total price **after** catalog discounts and line item discounts.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Address used for tax calculation.
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceUndetermined" type="boolean">
+
+              Whether the price is not yet defined, and will be updated after the order is created.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="fixedQuantity" type="boolean">
+
+              Whether the line item quantity is fixed and cannot be changed.
+
+              Default: `false`
+
+              **Developer Preview.**
+
+            </ResponseField>
+
+            <ResponseField name="decimalQuantity" type="DecimalQuantity">
+
+              Decimal-quantity metadata. Set when the line represents a
+              non-integer purchase (e.g. 2.75 m² of fake grass).
+
+              When set, the line item must have `fixedQuantity` = true and be set with `quantity` = 1.
+              The decimal value lives in `decimalQuantity.value`.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `DecimalQuantity` object._
+
+            </ResponseField>
+
+            <ResponseField name="extendedFields" type="ExtendedFields">
+
+              Custom extended fields for the line item object.
+
+              [Extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) must be configured in the app dashboard before they can be accessed with API calls.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `ExtendedFields` object._
+
+            </ResponseField>
+
+            <ResponseField name="modifierGroups" type="ModifierGroup[]">
+
+              Modifier groups that were added to the item.
+
+              **Read-only.** **Developer Preview.** Constraints: `maxItems 10`.
+
+              _Nested structure omitted for brevity — see the `ModifierGroup[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="buyerInfo" type="BuyerInfo">
+
+          Buyer information.
+
+          <Expandable title="buyerInfo properties">
+
+            <ResponseField name="contactId" type="string">
+
+              Contact ID. Automatically created if one doesn't exist. For more information, see [Contacts API](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts/contact-v4/introduction).
+
+            </ResponseField>
+
+            <ResponseField name="email" type="string">
+
+              Buyer's email address.
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="paymentStatus" type="string">
+
+          Order payment status.
+
+          **Supported values:**
+
+          - `UNSPECIFIED`
+          - `NOT_PAID` — `NOT_PAID` can apply to an order made online, but not yet paid. In such cases `order.status` will be `INITIALIZED`.
+          This status also applies when an offline order needs to be manually marked as paid. In such cases `order.status` will be `APPROVED`.
+          - `PAID` — All required payments associated with this order are paid.
+          - `PARTIALLY_REFUNDED` — Order partially refunded, but the refunded amount is less than the order's total price. See `order.balanceSummary` for more details.
+          - `FULLY_REFUNDED` — Order fully refunded. Refund amount equals total price. See `order.balanceSummary` for more details.
+          - `PENDING` — All payments pending.
+
+          This can happen with two-step payments, when a payment requires manual review, or when a payment is in progress and will be concluded shortly.
+          Learn more about [pending orders](https://support.wix.com/en/article/pending-orders).
+          - `PARTIALLY_PAID` — At least one payment received and approved, but it covers less than the order's total price. See `order.balanceSummary` for more details.
+          - `PENDING_MERCHANT` — Payment received, but not yet confirmed by the payment provider.
+
+          In most cases, when a payment provider is holding payment it's because setup hasn't been successfully completed by the merchant/site owner.
+          To solve this, the merchant/site owner should log in to the payment provider's dashboard and make sure their account is set up correctly, or contact their support for further assistance.
+          - `CANCELED` — One or more payments canceled.
+          - `DECLINED` — One or more payments declined.
+
+        </ResponseField>
+
+        <ResponseField name="fulfillmentStatus" type="string">
+
+          Order fulfillment status.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NOT_FULFILLED` — None of the order items are fulfilled or the order was manually marked as unfulfilled.
+          - `FULFILLED` — All of the order items are fulfilled or the order was manually marked as fulfilled.
+          Orders without shipping info are fulfilled automatically.
+          - `PARTIALLY_FULFILLED` — Some, but not all, of the order items are fulfilled.
+
+        </ResponseField>
+
+        <ResponseField name="buyerLanguage" type="string">
+
+          Language for communication with the buyer. Defaults to the site language.
+          For a site that supports multiple languages, this is the language the buyer selected.
+
+        </ResponseField>
+
+        <ResponseField name="weightUnit" type="string">
+
+          Weight measurement unit - defaults to site's weight unit.
+
+          **Supported values:**
+
+          - `UNSPECIFIED_WEIGHT_UNIT` — Weight unit can't be classified due to an error.
+          - `KG` — Kilograms.
+          - `LB` — Pounds.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency used for the pricing of this order in [ISO-4217](https://en.wikipedia.org/wiki/ISO_4217#List_of_ISO_4217_currency_codes) format.
+
+          Default: The site's currency.
+
+        </ResponseField>
+
+        <ResponseField name="currencyConversionDetails" type="CurrencyConversionDetails">
+
+          Currency conversion details. For use with multi-currency sites.
+
+          **Developer Preview.**
+
+          <Expandable title="currencyConversionDetails properties">
+
+            <ResponseField name="originalCurrency" type="string">
+
+              Currency used for the pricing of this order, in [ISO-4217](https://en.wikipedia.org/wiki/ISO_4217#List_of_ISO_4217_currency_codes) format.
+
+              This currency is used to calculate the pricing before conversion to the buyer's payment currency.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="conversionRate" type="string">
+
+              The rate used for converting the original currency to the currency used for payment.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxIncludedInPrices" type="boolean">
+
+          Whether tax is included in line item prices.
+
+          Constraints: `immutable`.
+
+        </ResponseField>
+
+        <ResponseField name="siteLanguage" type="string">
+
+          Site language in which original values are shown.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="priceSummary" type="PriceSummary">
+
+          Order price summary.
+
+          **Read-only.**
+
+          <Expandable title="priceSummary properties">
+
+            <ResponseField name="subtotal" type="Price">
+
+              Subtotal of all line items, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="Price">
+
+              Total shipping price, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="tax" type="Price">
+
+              Total tax applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="discount" type="Price">
+
+              Total discount amount applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="total" type="Price">
+
+              Order's total price after discounts and tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalAdditionalFees" type="Price">
+
+              Total additional fees before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="billingInfo" type="AddressWithContact">
+
+          Billing address and contact details.
+
+          <Expandable title="billingInfo properties">
+
+            <ResponseField name="address" type="Address">
+
+              Address.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ResponseField>
+
+            <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+              Contact details.
+
+              _Nested structure omitted for brevity — see the `FullAddressContactDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="shippingInfo" type="ShippingInformation">
+
+          Shipping info and selected shipping option details.
+
+          <Expandable title="shippingInfo properties">
+
+            <ResponseField name="carrierId" type="string">
+
+              App Def Id of external provider which was a source of shipping info
+
+            </ResponseField>
+
+            <ResponseField name="code" type="string">
+
+              Unique code (or ID) of selected shipping option. For example, `"usps_std_overnight"`.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Shipping option title.
+              For example, `"USPS Standard Overnight Delivery"`, `"Standard"` or `"First-Class Package International"`.
+
+              Constraints: `maxLength 250`.
+
+            </ResponseField>
+
+            <ResponseField name="logistics" type="DeliveryLogistics">
+
+              Shipping logistics.
+
+              _Nested structure omitted for brevity — see the `DeliveryLogistics` object._
+
+            </ResponseField>
+
+            <ResponseField name="cost" type="ShippingPrice">
+
+              Shipping costs.
+
+              _Nested structure omitted for brevity — see the `ShippingPrice` object._
+
+            </ResponseField>
+
+            <ResponseField name="region" type="ShippingRegion">
+
+              Shipping region.
+
+              _Nested structure omitted for brevity — see the `ShippingRegion` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="buyerNote" type="string">
+
+          [Buyer note](https://support.wix.com/en/article/wix-stores-viewing-buyer-notes) left by the customer.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Order status.
+
+          **Supported values:**
+
+          - `INITIALIZED` — Order created, but not yet approved or canceled.
+          - `APPROVED` — Order approved.
+
+          This happens when either an online payment is received **or** when `priceSummary.total` is `0` (a zero-total order).
+          Offline orders (cash payment) are automatically approved.
+          - `CANCELED` — Order canceled by the merchant or buyer.
+          - `PENDING` — Order is waiting for the buyer to complete checkout.
+          - `REJECTED` — Order rejected.
+
+          This happens when pending payments fail.
+
+        </ResponseField>
+
+        <ResponseField name="archived" type="boolean">
+
+          Whether the order is archived. Archived orders are hidden from the main orders view in the dashboard, but remain retrievable through the API.
+
+          To archive or unarchive an order, call [Update Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/update-order) and set `archived` to `true` or `false`.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="taxSummary" type="TaxSummary" deprecated>
+
+          Tax summary.
+          Deprecated. Use `taxInfo` instead.
+          This field will be removed on September 30, 2024.
+
+          **Deprecated.** Tax summary.
+          Deprecated. Use `taxInfo` instead.
+          This field will be removed on September 30, 2024. Use `tax_info` instead. Removal: 2024-09-30.
+
+          <Expandable title="taxSummary properties">
+
+            <ResponseField name="totalTax" type="Price">
+
+              Total tax.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxInfo" type="OrderTaxInfo">
+
+          Tax information.
+
+          <Expandable title="taxInfo properties">
+
+            <ResponseField name="totalTax" type="Price">
+
+              Calculated tax, added from line items.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxBreakdown" type="OrderTaxBreakdown[]">
+
+              The summary of the tax breakdown for all the line items. It will hold for each tax name, the aggregated tax amount paid for it and the tax rate.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `OrderTaxBreakdown[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxExempt" type="boolean">
+
+              Whether the order is exempt from tax calculations.
+
+              Default: `false`
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="appliedDiscounts" type="AppliedDiscount[]">
+
+          Applied discounts.
+
+          Constraints: `maxItems 320`.
+
+          <Expandable title="appliedDiscounts properties">
+
+            <ResponseField name="discountType" type="string">
+
+              Type of discount.
+
+              **Supported values:**
+
+              - `GLOBAL` — Discount applies to the entire order.
+              - `SPECIFIC_ITEMS` — Discount applies to specific items.
+              - `SHIPPING` — Discount applies to shipping. For example, free shipping.
+
+            </ResponseField>
+
+            <ResponseField name="lineItemIds" type="string[]" deprecated>
+
+              __Deprecated.__ Use `lineItemDiscounts` instead.
+
+              IDs of line items the discount applies to.
+
+              **Deprecated.** __Deprecated.__ Use `lineItemDiscounts` instead.
+
+              IDs of line items the discount applies to. Use `line_item_discounts` instead. Removal: 2024-10-30. Constraints: `format GUID`, `minItems 0`, `maxItems 300`.
+
+            </ResponseField>
+
+            <ResponseField name="id" type="string">
+
+              Discount ID.
+
+            </ResponseField>
+
+            <ResponseField name="lineItemDiscounts" type="LineItemDiscount[]">
+
+              Line items the discount applies to, including the discount amount for each.
+
+              **Developer Preview.** Constraints: `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `LineItemDiscount[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="activities" type="Activity[]">
+
+          Order activities.
+
+          **Read-only.** Constraints: `maxItems 1000`.
+
+          <Expandable title="activities properties">
+
+            <ResponseField name="id" type="string">
+
+              Activity ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="authorEmail" type="string">
+
+              Activity author's email.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Activity creation date and time.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="type" type="string" deprecated>
+
+              Activity type.
+
+              **Deprecated.** Activity type. Use `activity_type` instead. Removal: 2026-03-01.
+
+              **Supported values:**
+
+              - `ORDER_REFUNDED` — Order was refunded, either partially or fully.
+              - `ORDER_PLACED` — New order was created and placed.
+              - `ORDER_PAID` — Order payment was completed and confirmed.
+              - `ORDER_FULFILLED` — Order items were marked as fulfilled (shipped or ready for pickup).
+              - `ORDER_NOT_FULFILLED` — Order fulfillment status was changed to not fulfilled.
+              - `ORDER_CANCELED` — Order was canceled by merchant or customer.
+              - `DOWNLOAD_LINK_SENT` — Download link was sent for digital items in the order.
+              - `TRACKING_NUMBER_ADDED` — Shipping tracking number was added to the order.
+              - `TRACKING_NUMBER_EDITED` — Existing shipping tracking number was modified.
+              - `TRACKING_LINK_ADDED` — Tracking link for shipment was added to the order.
+              - `SHIPPING_CONFIRMATION_EMAIL_SENT` — Email confirming shipment was sent to the customer.
+              - `INVOICE_ADDED` — Invoice document was added to the order.
+              - `INVOICE_REMOVED` — Invoice was removed from the order.
+              - `INVOICE_SENT` — Invoice was sent to the customer via email.
+              - `FULFILLER_EMAIL_SENT` — Notification email was sent to the order fulfiller.
+              - `SHIPPING_ADDRESS_EDITED` — Order's shipping address was modified.
+              - `EMAIL_EDITED` — Order's contact email address was changed.
+              - `PICKUP_READY_EMAIL_SENT` — Email notification for pickup readiness was sent.
+              - `CUSTOM_ACTIVITY` — Custom activity created by a third-party application.
+              - `MERCHANT_COMMENT` — Comment added to the order by a merchant.
+              - `ORDER_PARTIALLY_PAID` — Partial payment was received for the order.
+              - `DRAFT_ORDER_CHANGES_APPLIED` — Changes were applied to a draft order.
+              - `SAVED_PAYMENT_METHOD` — Payment method was saved for future use.
+              - `AUTHORIZED_PAYMENT_CREATED` — Payment was authorized but not yet captured.
+              - `AUTHORIZED_PAYMENT_CAPTURED` — Previously authorized payment was captured.
+              - `AUTHORIZED_PAYMENT_VOIDED` — Previously authorized payment was voided.
+              - `REFUND_INITIATED` — Refund process was initiated.
+              - `PAYMENT_REFUNDED` — Payment was successfully refunded.
+              - `PAYMENT_REFUND_FAILED` — Attempt to refund payment failed.
+              - `REFUNDED_AS_STORE_CREDIT` — Refund was issued as store credit.
+              - `PAYMENT_PENDING` — Payment is awaiting processing or confirmation.
+              - `PAYMENT_CANCELED` — Payment was canceled before completion.
+              - `PAYMENT_DECLINED` — Payment was declined by payment provider.
+              - `ORDER_PENDING` — Order is awaiting approval or processing.
+              - `ORDER_REJECTED` — Order was rejected by merchant.
+              - `RECEIPT_CREATED` — Receipt was generated for a payment.
+              - `RECEIPT_SENT` — Receipt was sent to the customer.
+              - `CHARGEBACK_CREATED` — Chargeback was created for one of the order's payments.
+              - `CHARGEBACK_REVERSED` — Chargeback was resolved in merchant's favor.
+
+            </ResponseField>
+
+            <ResponseField name="activityType" type="string">
+
+              Activity type.
+
+              **Supported values:**
+
+              - `ORDER_PLACED` — New order was created and placed.
+              - `ORDER_PAID` — Order payment was completed and confirmed.
+              - `ORDER_FULFILLED` — Order items were marked as fulfilled (shipped or ready for pickup).
+              - `ORDER_NOT_FULFILLED` — Order fulfillment status was changed to not fulfilled.
+              - `ORDER_CANCELED` — Order was canceled by merchant or customer.
+              - `DOWNLOAD_LINK_SENT` — Download link was sent for digital items in the order.
+              - `TRACKING_NUMBER_ADDED` — Shipping tracking number was added to the order.
+              - `TRACKING_NUMBER_EDITED` — Existing shipping tracking number was modified.
+              - `TRACKING_LINK_ADDED` — Tracking link for shipment was added to the order.
+              - `SHIPPING_CONFIRMATION_EMAIL_SENT` — Email confirming shipment was sent to the customer.
+              - `INVOICE_ADDED` — Invoice document was added to the order.
+              - `INVOICE_REMOVED` — Invoice was removed from the order.
+              - `INVOICE_SENT` — Invoice was sent to the customer via email.
+              - `FULFILLER_EMAIL_SENT` — Notification email was sent to the order fulfiller.
+              - `SHIPPING_ADDRESS_EDITED` — Order's shipping address was modified.
+              - `EMAIL_EDITED` — Order's contact email address was changed.
+              - `PICKUP_READY_EMAIL_SENT` — Email notification for pickup readiness was sent.
+              - `MERCHANT_COMMENT` — Comment added to the order by a merchant.
+              - `ORDER_PARTIALLY_PAID` — Partial payment was received for the order.
+              - `DRAFT_ORDER_CHANGES_APPLIED` — Changes were applied to a draft order.
+              - `SAVED_PAYMENT_METHOD` — Payment method was saved for future use.
+              - `AUTHORIZED_PAYMENT_CREATED` — Payment was authorized but not yet captured.
+              - `AUTHORIZED_PAYMENT_CAPTURED` — Previously authorized payment was captured.
+              - `AUTHORIZED_PAYMENT_VOIDED` — Previously authorized payment was voided.
+              - `REFUND_INITIATED` — Refund process was initiated.
+              - `PAYMENT_REFUNDED` — Payment was successfully refunded.
+              - `PAYMENT_REFUND_FAILED` — Attempt to refund payment failed.
+              - `REFUNDED_AS_STORE_CREDIT` — Refund was issued as store credit.
+              - `PAYMENT_PENDING` — Payment is awaiting processing or confirmation.
+              - `PAYMENT_CANCELED` — Payment was canceled before completion.
+              - `PAYMENT_DECLINED` — Payment was declined by payment provider.
+              - `ORDER_PENDING` — Order is awaiting approval or processing.
+              - `ORDER_REJECTED` — Order was rejected by merchant.
+              - `RECEIPT_CREATED` — Receipt was generated for a payment.
+              - `RECEIPT_SENT` — Receipt was sent to the customer.
+              - `CHARGEBACK_CREATED` — Chargeback was created for one of the order's payments.
+              - `CHARGEBACK_REVERSED` — Chargeback was resolved in merchant's favor.
+              - `ORDER_REFUNDED` — Order was refunded, either partially or fully.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="attributionSource" type="string">
+
+          Order attribution source.
+
+          **Supported values:**
+
+          - `UNSPECIFIED`
+          - `FACEBOOK_ADS`
+
+        </ResponseField>
+
+        <ResponseField name="createdBy" type="CreatedBy">
+
+          ID of the order's initiator.
+
+          **Read-only.**
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="string" type="string">
+
+              string
+
+              _Nested structure omitted for brevity — see the `string` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="channelInfo" type="ChannelInfo">
+
+          Information about the sales channel that submitted this order.
+
+          <Expandable title="channelInfo properties">
+
+            <ResponseField name="type" type="string">
+
+              Sales channel that submitted the order.
+
+              When creating an order via the API to record an external order, use the channel type that matches the original source. If no matching type exists, use `OTHER_PLATFORM`.
+
+              **Supported values:**
+
+              - `UNSPECIFIED` — Unspecified sales channel. This value is not supported.
+              - `WEB` — A web client.
+              - `POS` — [Point of sale solutions](https://support.wix.com/en/wix-mobile-pos-2196395).
+              - `EBAY` — [eBay shop](https://support.wix.com/en/article/wix-stores-connecting-and-setting-up-an-ebay-shop).
+              - `AMAZON` — [Amazon shop](https://support.wix.com/en/article/wix-stores-connecting-and-setting-up-an-amazon-shop).
+              - `OTHER_PLATFORM` — Other sales platform.
+              - `WIX_APP_STORE` — [Wix Owner app](https://support.wix.com/article/wix-owner-app-an-overview).
+              - `WIX_INVOICES` — Wix Invoices app in [your dashboard](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Finvoices/settings/general-settings)
+              - `BACKOFFICE_MERCHANT` — Wix merchant backoffice.
+              - `WISH` — Wish sales channel.
+              - `CLASS_PASS` — [ClassPass sales channel](https://support.wix.com/en/article/wix-bookings-letting-clients-book-your-services-with-classpass).
+              - `GLOBAL_E` — Global-E sales channel.
+              - `FACEBOOK` — [Facebook shop](https://support.wix.com/en/article/wix-stores-changes-to-facebook-shops).
+              - `ETSY` — [Etsy sales channel](https://support.wix.com/en/article/wix-stores-request-adding-etsy-as-a-sales-channel).
+              - `TIKTOK` — [TikTok sales channel](https://support.wix.com/en/article/wix-stores-request-adding-tiktok-as-a-sales-channel).
+              - `FAIRE_COM` — [Faire marketplace integration](https://support.wix.com/en/article/wix-stores-creating-a-faire-store-using-the-faire-integration-app).
+              - `PAYPAL_AGENTIC_CHECKOUT` — PayPal Agentic Checkout sales channel.
+              - `STRIPE_AGENTIC_CHECKOUT` — Stripe Agentic Checkout sales channel.
+
+            </ResponseField>
+
+            <ResponseField name="externalOrderId" type="string">
+
+              Reference to an order ID from an external system. Relevant when recording orders from external platforms.
+
+            </ResponseField>
+
+            <ResponseField name="externalOrderUrl" type="string">
+
+              URL to the order in the external system. Relevant when recording orders from external platforms.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="seenByAHuman" type="boolean">
+
+          Whether a human has seen the order. Set when an order is clicked on in the dashboard.
+
+        </ResponseField>
+
+        <ResponseField name="checkoutId" type="string">
+
+          Checkout ID.
+
+        </ResponseField>
+
+        <ResponseField name="customFields" type="CustomField[]">
+
+          Custom fields.
+
+          <Expandable title="customFields properties">
+
+            <ResponseField name="value" type="any">
+
+              Custom field value.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Custom field title.
+
+              Constraints: `minLength 1`, `maxLength 500`.
+
+            </ResponseField>
+
+            <ResponseField name="translatedTitle" type="string">
+
+              Translated custom field title.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="balanceSummary" type="BalanceSummary">
+
+          Balance summary.
+
+          **Read-only.**
+
+          <Expandable title="balanceSummary properties">
+
+            <ResponseField name="balance" type="Balance">
+
+              Current amount left to pay.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Balance` object._
+
+            </ResponseField>
+
+            <ResponseField name="paid" type="Price">
+
+              Sum of all approved and successful payments.
+
+              The value includes payments that have subsequently been fully or partially refunded.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Sum of all successfully refunded payments.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="authorized" type="Price">
+
+              Sum of all authorized payments.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pendingRefund" type="Price">
+
+              Sum of all pending refund transactions.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pending" type="Price">
+
+              Sum of all pending transactions.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="chargeback" type="Price">
+
+              Sum of all transaction chargebacks.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="chargebackReversal" type="Price">
+
+              Sum of all chargeback reversals.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="platformFees" type="Price">
+
+              Total platform fees actually charged across all payments.
+              This reflects amounts collected, which may differ from the expected fees in `order.platformFeeSummary`.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalMinusPlatformFees" type="Price">
+
+              Order total after deducting platform fees. Represents the net amount payable to the merchant.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="cashRoundingAdjustment" type="CashRounding">
+
+              The total adjustment applied to the cash payment due to rounding.
+
+              Positive values indicate the total was rounded up; negative values indicate it was rounded down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFees" type="AdditionalFee[]">
+
+          Additional fees applied to the order.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="additionalFees properties">
+
+            <ResponseField name="code" type="string">
+
+              Additional fee's unique code for future processing.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Name of additional fee.
+
+              Constraints: `minLength 1`, `maxLength 50`.
+
+            </ResponseField>
+
+            <ResponseField name="price" type="Price">
+
+              Additional fee's price.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxDetails" type="ItemTaxFullDetails" deprecated>
+
+              Tax details.
+
+              **Deprecated.** Tax details. Use `tax_info` instead. Removal: 2026-03-30.
+
+              _Nested structure omitted for brevity — see the `ItemTaxFullDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxInfo" type="LineItemTaxInfo">
+
+              Represents all the relevant tax details for additional fee.
+
+              _Nested structure omitted for brevity — see the `LineItemTaxInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="providerAppId" type="string">
+
+              SPI implementer's `appId`.
+
+            </ResponseField>
+
+            <ResponseField name="priceBeforeTax" type="Price">
+
+              Additional fee's price before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceAfterTax" type="Price">
+
+              Additional fee's price after tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="id" type="string">
+
+              Additional fee's id.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="lineItemIds" type="string[]">
+
+              Optional - Line items associated with this additional fee.
+              If no `lineItemIds` are provided, the fee will be associated with the whole cart/checkout/order.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="source" type="string">
+
+              Specifies the entity that added the additional fee.
+
+              **Developer Preview.**
+
+              **Supported values:**
+
+              - `SERVICE_PLUGIN` — The additional fee was added by an additional fee service plugin.
+              - `ITEM` — The additional fee was added to the item by a catalog or custom line item.
+              - `MANUAL` — The additional fee was added manually on request.
+              - `SHIPPING` — The additional fee was added by the shipping provider.
+              - `PLATFORM` — The additional fee was added by the Wix eCommerce platform.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Address type tax was calculated against for this fee.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="extendedFields" type="ExtendedFields">
+
+          Custom field data for the order object.
+
+          [Extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) must be configured in the app dashboard before they can be accessed with API calls.
+
+          <Expandable title="extendedFields properties">
+
+            <ResponseField name="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="purchaseFlowId" type="string">
+
+          Persistent ID that correlates between the various eCommerce elements: cart, checkout, and order.
+
+        </ResponseField>
+
+        <ResponseField name="recipientInfo" type="AddressWithContact">
+
+          Final recipient's address and contact details.
+
+          This field represents who will ultimately receive the order. It may differ from `shippingInfo.logistics.shippingDestination` when:
+          + The chosen shipping option is a pickup point or store pickup, where `shippingDestination` contains the pickup location.
+          + No shipping option is selected.
+
+          <Expandable title="recipientInfo properties">
+
+            <ResponseField name="address" type="Address">
+
+              Address.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ResponseField>
+
+            <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+              Contact details.
+
+              _Nested structure omitted for brevity — see the `FullAddressContactDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="tags" type="Tags">
+
+          Order tags.
+
+          [Tags](https://dev.wix.com/docs/rest/business-management/tags/introduction) are labels attached to entities, allowing for flexible categorization and data management.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="privateTags" type="TagList">
+
+              Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ResponseField>
+
+            <ResponseField name="tags" type="TagList">
+
+              Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="purchasedDate" type="datetime">
+
+          Date and time the order was originally purchased in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+          Used for migration from external systems.
+
+        </ResponseField>
+
+        <ResponseField name="businessLocation" type="Location">
+
+          Order location.
+
+          **Developer Preview.**
+
+          <Expandable title="businessLocation properties">
+
+            <ResponseField name="id" type="string">
+
+              Location ID.
+              Learn more about the [Wix Locations API](https://dev.wix.com/docs/rest/business-management/locations/introduction).
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Location name.
+
+              **Read-only.** Constraints: `minLength 1`, `maxLength 500`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="payAfterFreeTrial" type="PriceSummary">
+
+          Pay after free trial price summary. Price summary that should be paid for subscriptions after free trial period.
+
+          **Read-only.** **Developer Preview.**
+
+          <Expandable title="payAfterFreeTrial properties">
+
+            <ResponseField name="subtotal" type="Price">
+
+              Subtotal of all line items, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="Price">
+
+              Total shipping price, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="tax" type="Price">
+
+              Total tax applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="discount" type="Price">
+
+              Total discount amount applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="total" type="Price">
+
+              Order's total price after discounts and tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalAdditionalFees" type="Price">
+
+              Total additional fees before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="platformFeeSummary" type="PlatformFeeSummary">
+
+          Summary of platform fees for this order, including totals by charge type and a breakdown of individual fees.
+
+          **Developer Preview.**
+
+          <Expandable title="platformFeeSummary properties">
+
+            <ResponseField name="total" type="Price">
+
+              Total sum of all platform fees.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalPassOn" type="Price">
+
+              Total amount of platform fees with `PASS_ON` charge type.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalAbsorbed" type="Price">
+
+              Total amount of platform fees with `ABSORBED` charge type.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="fees" type="PlatformFee[]">
+
+              Specific information about each platform fee.
+
+              Constraints: `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `PlatformFee[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imported" type="boolean">
+
+          Whether the order was imported from an external system using the Order Import API.
+
+          When `true`, the order originated outside of Wix (for example, during a migration from another
+          eCommerce platform) rather than being placed through the Wix checkout flow or created manually.
+          Imported orders trigger the dedicated `OrderImported` and `ImportedOrderDeleted` domain events.
+
+          Set automatically at import time and cannot be changed afterwards.
+
+          Default: `false`
+
+          **Read-only.** **Developer Preview.** Constraints: `immutable`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `DRAFT_ORDER_DOES_NOT_EXIST` | Couldn't find the draft order. |
+    | `428` | `FAILED_PRECONDITION` | `DRAFT_ORDER_COMMIT_FAILED_VALIDATIONS` | Draft order isn't valid. Check `calculationErrors` for details. |
+    | `409` | `ALREADY_EXISTS` | `DRAFT_ORDER_ALREADY_COMMITTED` | Draft order was already committed. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Draft Order Updated | `wix.ecom.v1.draft_order_updated` | Triggered when a draft order is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Commit a draft order to an order
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+          'https://www.wixapis.com/ecom/v1/draft-orders/3f6ebd30-3dc5-4889-b60a-cffad65a7bac/commit' \
+          -H 'Authorization:  <AUTH>' \
+          -H 'Content-type: application/json' \
+          -d '{
+                "commitSettings": {
+                  "updateInventory": [],
+                  "sendNotificationsToBuyer": true
+                },
+                "reason": "Added shoe"
+              }'
+      ```
+
+      ```json Response
+      {
+        "committedDraftOrder": {
+          "id": "3f6ebd30-3dc5-4889-b60a-cffad65a7bac",
+          "orderId": "15d18c8e-44cd-4790-85a6-c0ebc1dc5ace",
+          "lineItems": [
+            {
+              "lineItem": {
+                "id": "00000000-0000-0000-0000-000000000003",
+                "productName": {
+                  "original": "Shirt"
+                },
+                "quantity": 1,
+                "totalDiscount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "descriptionLines": [
+                  {
+                    "name": {
+                      "original": "note"
+                    },
+                    "plainText": {
+                      "original": "Size L"
+                    }
+                  }
+                ],
+                "price": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "priceBeforeDiscounts": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "totalPriceBeforeTax": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "totalPriceAfterTax": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "paymentOption": "FULL_PAYMENT_OFFLINE",
+                "taxDetails": {
+                  "taxableAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxRate": "0.0000",
+                  "totalTax": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  }
+                },
+                "taxInfo": {
+                  "taxAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxableAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxRate": "0.0000",
+                  "taxIncludedInPrice": false,
+                  "taxBreakdown": []
+                },
+                "locations": [],
+                "lineItemPrice": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "taxableAddress": {
+                  "addressType": "BILLING"
+                }
+              }
+            },
+            {
+              "lineItem": {
+                "id": "00000000-0000-0000-0000-000000000004",
+                "productName": {
+                  "original": "Shoe",
+                  "translated": "Shoe"
+                },
+                "catalogReference": {
+                  "catalogItemId": "02590717-4da2-14c5-f9a8-aab79c2af0a3",
+                  "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+                },
+                "quantity": 1,
+                "totalDiscount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "descriptionLines": [],
+                "physicalProperties": {
+                  "sku": "",
+                  "shippable": true
+                },
+                "itemType": {
+                  "preset": "PHYSICAL"
+                },
+                "price": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "priceBeforeDiscounts": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "totalPriceBeforeTax": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "totalPriceAfterTax": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "paymentOption": "FULL_PAYMENT_ONLINE",
+                "taxDetails": {
+                  "taxableAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxRate": "0.0000",
+                  "totalTax": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  }
+                },
+                "taxInfo": {
+                  "taxAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxableAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxRate": "0.0000",
+                  "taxIncludedInPrice": false,
+                  "taxBreakdown": []
+                },
+                "locations": [],
+                "lineItemPrice": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "taxableAddress": {
+                  "addressType": "SHIPPING"
+                }
+              },
+              "added": true
+            }
+          ],
+          "shippingInfo": {
+            "shippingInfo": {
+              "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+              "code": "17b15dc5-c0a2-4cab-ad57-286e8c716736",
+              "title": "Standard US Shipping",
+              "logistics": {
+                "deliveryTime": "",
+                "shippingDestination": {
+                  "address": {
+                    "country": "US",
+                    "subdivision": "US-NY",
+                    "city": "New York"
+                  }
+                }
+              },
+              "cost": {
+                "price": {
+                  "amount": "10",
+                  "formattedAmount": "$10.00"
+                },
+                "totalPriceBeforeTax": {
+                  "amount": "10",
+                  "formattedAmount": "$10.00"
+                },
+                "totalPriceAfterTax": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "taxDetails": {
+                  "taxableAmount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "taxRate": "0.0000",
+                  "totalTax": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  }
+                }
+              },
+              "region": {
+                "name": "International"
+              }
+            }
+          },
+          "buyerInfo": {
+            "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+            "email": "example@example.com",
+            "visitorId": "887f5d8c-133d-413b-b8e7-097e58128bee"
+          },
+          "billingInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Ave",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "phone": "0555555555",
+              "company": ""
+            }
+          },
+          "additionalFees": [],
+          "discounts": [],
+          "createdDate": "2024-10-22T13:30:42.706Z",
+          "updatedDate": "2024-10-22T13:31:49.991Z",
+          "createdBy": {
+            "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+          },
+          "status": "COMMITTED",
+          "weightUnit": "LB",
+          "currency": "USD",
+          "priceSummary": {
+            "subtotal": {
+              "amount": "35.00",
+              "formattedAmount": "$35.00"
+            },
+            "shipping": {
+              "amount": "10.00",
+              "formattedAmount": "$10.00"
+            },
+            "tax": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "discount": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "total": {
+              "amount": "45.00",
+              "formattedAmount": "$45.00"
+            },
+            "totalAdditionalFees": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "taxSummary": {
+            "totalTax": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "balanceSummary": {
+            "balance": {
+              "amount": "35.00",
+              "formattedAmount": "$35.00"
+            },
+            "paid": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "refunded": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "authorized": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "commitSettings": {
+            "sendNotificationsToBuyer": true,
+            "updateInventory": []
+          },
+          "recipientInfo": {
+            "recipientInfo": {
+              "address": {
+                "country": "US",
+                "subdivision": "US-NY",
+                "city": "New York",
+                "postalCode": "10173",
+                "addressLine": "525 5th Ave",
+                "countryFullname": "United States",
+                "subdivisionFullname": "New York"
+              },
+              "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "0555555555",
+                "company": ""
+              }
+            }
+          },
+          "taxInfo": {
+            "totalTax": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "taxBreakdown": []
+          },
+          "buyerDetails": {
+            "buyerInfo": {
+              "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+              "email": "example@example.com",
+              "visitorId": "887f5d8c-133d-413b-b8e7-097e58128bee"
+            }
+          },
+          "billingDetails": {
+            "billingInfo": {
+              "address": {
+                "country": "US",
+                "subdivision": "US-NY",
+                "city": "New York",
+                "postalCode": "10173",
+                "addressLine": "525 5th Ave",
+                "countryFullname": "United States",
+                "subdivisionFullname": "New York"
+              },
+              "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "0555555555",
+                "company": ""
+              }
+            }
+          }
+        },
+        "orderAfterCommit": {
+          "id": "15d18c8e-44cd-4790-85a6-c0ebc1dc5ace",
+          "number": "10031",
+          "createdDate": "2024-10-22T06:27:05.071Z",
+          "updatedDate": "2024-10-22T13:31:49.497Z",
+          "lineItems": [
+            {
+              "id": "00000000-0000-0000-0000-000000000003",
+              "productName": {
+                "original": "Shirt"
+              },
+              "quantity": 1,
+              "totalDiscount": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "descriptionLines": [
+                {
+                  "name": {
+                    "original": "note"
+                  },
+                  "plainText": {
+                    "original": "Size L"
+                  }
+                }
+              ],
+              "price": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              },
+              "priceBeforeDiscounts": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              },
+              "paymentOption": "FULL_PAYMENT_OFFLINE",
+              "taxDetails": {
+                "taxableAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0.0000",
+                "totalTax": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "taxInfo": {
+                "taxAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxableAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0.0000",
+                "taxIncludedInPrice": false,
+                "taxBreakdown": []
+              },
+              "locations": [],
+              "lineItemPrice": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              }
+            },
+            {
+              "id": "00000000-0000-0000-0000-000000000004",
+              "productName": {
+                "original": "Shoe",
+                "translated": "Shoe"
+              },
+              "catalogReference": {
+                "catalogItemId": "02590717-4da2-14c5-f9a8-aab79c2af0a3",
+                "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+              },
+              "quantity": 1,
+              "totalDiscount": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "descriptionLines": [],
+              "physicalProperties": {
+                "sku": "",
+                "shippable": true
+              },
+              "itemType": {
+                "preset": "PHYSICAL"
+              },
+              "price": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "priceBeforeDiscounts": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "paymentOption": "FULL_PAYMENT_OFFLINE",
+              "taxDetails": {
+                "taxableAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0.0000",
+                "totalTax": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "taxInfo": {
+                "taxAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxableAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0.0000",
+                "taxIncludedInPrice": false,
+                "taxBreakdown": []
+              },
+              "locations": [],
+              "lineItemPrice": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              }
+            }
+          ],
+          "buyerInfo": {
+            "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+            "email": "example@example.com",
+            "visitorId": "887f5d8c-133d-413b-b8e7-097e58128bee"
+          },
+          "paymentStatus": "NOT_PAID",
+          "fulfillmentStatus": "NOT_FULFILLED",
+          "buyerLanguage": "en",
+          "weightUnit": "LB",
+          "currency": "USD",
+          "taxIncludedInPrices": false,
+          "siteLanguage": "en",
+          "priceSummary": {
+            "subtotal": {
+              "amount": "35.00",
+              "formattedAmount": "$35.00"
+            },
+            "shipping": {
+              "amount": "10.00",
+              "formattedAmount": "$10.00"
+            },
+            "tax": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "discount": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "total": {
+              "amount": "45.00",
+              "formattedAmount": "$45.00"
+            },
+            "totalAdditionalFees": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "billingInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Ave",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "phone": "0555555555",
+              "company": ""
+            }
+          },
+          "shippingInfo": {
+            "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+            "code": "17b15dc5-c0a2-4cab-ad57-286e8c716736",
+            "title": "Standard US Shipping",
+            "logistics": {
+              "deliveryTime": "",
+              "shippingDestination": {
+                "address": {
+                  "country": "US",
+                  "subdivision": "US-NY",
+                  "city": "New York"
+                }
+              }
+            },
+            "cost": {
+              "price": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "taxDetails": {
+                "taxableAmount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0.0000",
+                "totalTax": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                }
+              }
+            },
+            "region": {
+              "name": "International"
+            }
+          },
+          "status": "APPROVED",
+          "archived": false,
+          "taxSummary": {
+            "totalTax": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "taxInfo": {
+            "totalTax": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "taxBreakdown": []
+          },
+          "appliedDiscounts": [],
+          "activities": [
+            {
+              "id": "b6a92413-778e-4892-8dd5-90c548e29c61",
+              "createdDate": "2024-10-22T06:17:41.753Z",
+              "type": "ORDER_PLACED"
+            },
+            {
+              "id": "9d91b13b-f447-4dea-bbab-cc36e0ad6521",
+              "createdDate": "2024-10-22T06:35:33.951Z",
+              "draftOrderChangesApplied": {
+                "draftOrderId": "8b463200-bdb7-43ae-905e-45452dd66854",
+                "changes": [
+                  {
+                    "lineItemRemoved": {
+                      "id": "00000000-0000-0000-0000-000000000001",
+                      "name": {
+                        "original": "AI Sales Analytics",
+                        "translated": "AI Sales Analytics"
+                      },
+                      "quantity": 1
+                    }
+                  },
+                  {
+                    "lineItemAdded": {
+                      "id": "00000000-0000-0000-0000-000000000002",
+                      "name": {
+                        "original": "Shoe"
+                      },
+                      "quantity": 1
+                    }
+                  },
+                  {
+                    "totalPriceChanged": {
+                      "originalTotal": {
+                        "amount": "60.00",
+                        "formattedAmount": "$60.00"
+                      },
+                      "newTotal": {
+                        "amount": "20.00",
+                        "formattedAmount": "$20.00"
+                      }
+                    }
+                  },
+                  {
+                    "shippingInformationChanged": {
+                      "originalShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      },
+                      "newShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": "DRAFT_ORDER_CHANGES_APPLIED"
+            },
+            {
+              "id": "f97670c5-4f7d-4d90-a570-1eb35e283cd4",
+              "createdDate": "2024-10-22T07:21:40.710Z",
+              "draftOrderChangesApplied": {
+                "draftOrderId": "e8c88a8c-171c-4a3f-b4e2-74d2413c7018",
+                "changes": [
+                  {
+                    "lineItemChanged": {
+                      "id": "00000000-0000-0000-0000-000000000002",
+                      "name": {
+                        "original": "Shoe"
+                      },
+                      "price": {
+                        "originalPrice": {
+                          "amount": "10.00",
+                          "formattedAmount": "$10.00"
+                        },
+                        "newPrice": {
+                          "amount": "150.00",
+                          "formattedAmount": "$150.00"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "totalPriceChanged": {
+                      "originalTotal": {
+                        "amount": "20.00",
+                        "formattedAmount": "$20.00"
+                      },
+                      "newTotal": {
+                        "amount": "160.00",
+                        "formattedAmount": "$160.00"
+                      }
+                    }
+                  },
+                  {
+                    "shippingInformationChanged": {
+                      "originalShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      },
+                      "newShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": "DRAFT_ORDER_CHANGES_APPLIED"
+            },
+            {
+              "id": "05d26afb-14d8-4d95-bd60-5e05fd8ee3b4",
+              "createdDate": "2024-10-22T10:48:30.587Z",
+              "draftOrderChangesApplied": {
+                "draftOrderId": "2163c198-6c85-4d30-b317-48714f627e4c",
+                "changes": [
+                  {
+                    "lineItemAdded": {
+                      "id": "00000000-0000-0000-0000-000000000003",
+                      "name": {
+                        "original": "Shirt"
+                      },
+                      "quantity": 1
+                    }
+                  },
+                  {
+                    "totalPriceChanged": {
+                      "originalTotal": {
+                        "amount": "160.00",
+                        "formattedAmount": "$160.00"
+                      },
+                      "newTotal": {
+                        "amount": "185.00",
+                        "formattedAmount": "$185.00"
+                      }
+                    }
+                  },
+                  {
+                    "shippingInformationChanged": {
+                      "originalShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      },
+                      "newShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": "DRAFT_ORDER_CHANGES_APPLIED"
+            },
+            {
+              "id": "df0d96fa-39ed-436d-93e2-31f3e6a42206",
+              "createdDate": "2024-10-22T13:17:51.709Z",
+              "draftOrderChangesApplied": {
+                "draftOrderId": "022eb85f-28aa-47cf-aa8e-9f52a8d4edc2",
+                "changes": [
+                  {
+                    "lineItemRemoved": {
+                      "id": "00000000-0000-0000-0000-000000000002",
+                      "name": {
+                        "original": "Shoe"
+                      },
+                      "quantity": 1
+                    }
+                  },
+                  {
+                    "totalPriceChanged": {
+                      "originalTotal": {
+                        "amount": "185.00",
+                        "formattedAmount": "$185.00"
+                      },
+                      "newTotal": {
+                        "amount": "35.00",
+                        "formattedAmount": "$35.00"
+                      }
+                    }
+                  },
+                  {
+                    "shippingInformationChanged": {
+                      "originalShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      },
+                      "newShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": "DRAFT_ORDER_CHANGES_APPLIED"
+            },
+            {
+              "id": "ff8d2ee8-2bbc-4e0e-b483-6f0a367a4219",
+              "createdDate": "2024-10-22T13:31:49.224Z",
+              "draftOrderChangesApplied": {
+                "draftOrderId": "3f6ebd30-3dc5-4889-b60a-cffad65a7bac",
+                "reason": "Added shoe",
+                "changes": [
+                  {
+                    "lineItemAdded": {
+                      "id": "00000000-0000-0000-0000-000000000004",
+                      "name": {
+                        "original": "Shoe",
+                        "translated": "Shoe"
+                      },
+                      "quantity": 1
+                    }
+                  },
+                  {
+                    "totalPriceChanged": {
+                      "originalTotal": {
+                        "amount": "35.00",
+                        "formattedAmount": "$35.00"
+                      },
+                      "newTotal": {
+                        "amount": "45.00",
+                        "formattedAmount": "$45.00"
+                      }
+                    }
+                  },
+                  {
+                    "shippingInformationChanged": {
+                      "originalShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      },
+                      "newShippingInfo": {
+                        "total": {
+                          "amount": "10",
+                          "formattedAmount": "$10.00"
+                        },
+                        "shippingTitle": "Standard US Shipping"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": "DRAFT_ORDER_CHANGES_APPLIED"
+            }
+          ],
+          "attributionSource": "UNSPECIFIED",
+          "createdBy": {
+            "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+          },
+          "channelInfo": {
+            "type": "BACKOFFICE_MERCHANT"
+          },
+          "seenByAHuman": true,
+          "customFields": [],
+          "balanceSummary": {
+            "balance": {
+              "amount": "45.00",
+              "formattedAmount": "$45.00"
+            },
+            "paid": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "refunded": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "authorized": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "pendingRefund": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "additionalFees": [],
+          "recipientInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Ave",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "phone": "0555555555",
+              "company": ""
+            }
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Finalizes a draft order and applies its modifications to the associated order.
+    You can also control which side-effects are executed on commit.
+
+    <Note>
+
+    + The draft order's status is set to `COMMITTED`.
+    + Committing a draft order cannot be undone or reverted.
+    + A committed draft order does not allow for further modifications. However, it is kept for reference and can be retrieved.
+    + Only drafts created for an existing order can be committed. To convert a draft order created from scratch into an order, call [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft).
+    + Inventory levels change only for line items passed in `commitSettings.updateInventory`.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.MANAGE-ECOM">Manage eCommerce - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { draftOrders } from '@wix/ecom';
+
+    draftOrders.commitDraftOrder(draftOrderId, options): Promise<CommitDraftOrderResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="draftOrderId" type="string" required>
+
+      Draft order ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CommitDraftOrderOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="commitSettings" type="DraftOrderCommitSettings">
+
+          Optional side effects to trigger.
+
+          <Expandable title="commitSettings properties">
+
+            <ParamField body="sendNotificationsToBuyer" type="boolean">
+
+              Whether to send notifications to the buyer.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="sendNotificationsToBusiness" type="boolean">
+
+              Whether to send notifications to the business.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="addActivitiesToOrder" type="boolean">
+
+              Whether to add activities to the order.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="sendNotificationsToCustomFulfillers" type="boolean">
+
+              Whether to send email notifications to custom fulfillers when there is a change in the shippable items they fulfill.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="updateInventory" type="InventoryUpdate[]">
+
+              Line item IDs for which to perform an inventory change.
+              When not provided, inventory will not change.
+
+              Constraints: `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `InventoryUpdate[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="reason" type="string">
+
+          Reason for edit, provided by user (optional).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CommitDraftOrderResponse>`.
+
+    <ResponseField name="committedDraftOrder" type="DraftOrder">
+
+      Draft order after commit.
+
+      See the [Draft Order Object](/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="orderAfterCommit" type="Order">
+
+      Updated order after commit.
+
+      <Expandable title="orderAfterCommit properties">
+
+        <ResponseField name="_id" type="string">
+
+          Order ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="number" type="number">
+
+          Order number displayed in the site owner's dashboard.
+
+          Auto-generated for orders created through the regular order flow. When importing an order, you can provide the original number to preserve it. See [Set Order Number Counter](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/set-order-number-counter) to control numbering of orders created after a migration.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the order was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_updatedDate" type="datetime">
+
+          Date and time the order was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="lineItems" type="OrderLineItem[]">
+
+          Order line items.
+
+          **Read-only.** Constraints: `minItems 1`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ResponseField name="_id" type="string">
+
+              Line item ID.
+
+              Constraints: `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="productName" type="ProductName">
+
+              Item name.
+
+              + Stores - `product.name`
+              + Bookings - `service.info.name`
+              + Events - `ticket.name`
+
+              _Nested structure omitted for brevity — see the `ProductName` object._
+
+            </ResponseField>
+
+            <ResponseField name="catalogReference" type="CatalogReference">
+
+              References to the line item's origin catalog. Empty for custom line items.
+
+              _Nested structure omitted for brevity — see the `CatalogReference` object._
+
+            </ResponseField>
+
+            <ResponseField name="quantity" type="integer">
+
+              Line item quantity.
+
+              Constraints: `min 1`, `max 100000`.
+
+            </ResponseField>
+
+            <ResponseField name="totalDiscount" type="Price">
+
+              Total discount for this line item's entire quantity.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="descriptionLines" type="DescriptionLine[]">
+
+              Line item description lines. Used for display purposes for the cart, checkout and order.
+
+              Constraints: `minItems 0`, `maxItems 20`.
+
+              _Nested structure omitted for brevity — see the `DescriptionLine[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="image" type="string">
+
+              Line item image.
+
+            </ResponseField>
+
+            <ResponseField name="physicalProperties" type="PhysicalProperties">
+
+              Physical properties of the item. When relevant, contains information such as SKU and item weight.
+
+              _Nested structure omitted for brevity — see the `PhysicalProperties` object._
+
+            </ResponseField>
+
+            <ResponseField name="itemType" type="ItemType">
+
+              Item type. Either a preset type or custom.
+
+              _Nested structure omitted for brevity — see the `ItemType` object._
+
+            </ResponseField>
+
+            <ResponseField name="fulfillerId" type="string">
+
+              Fulfiller ID. Field is empty when the line item is self-fulfilled.
+              To get fulfillment information, pass the order ID to [List Fulfillments For Single Order](https://dev.wix.com/docs/rest/api-reference/wix-e-commerce/order-fulfillments/list-fulfillments-for-single-order).
+
+            </ResponseField>
+
+            <ResponseField name="refundQuantity" type="integer">
+
+              Number of items that were refunded.
+
+            </ResponseField>
+
+            <ResponseField name="restockQuantity" type="integer">
+
+              Number of items restocked.
+
+              For a per-location breakdown, see `restockLocations`.
+
+            </ResponseField>
+
+            <ResponseField name="price" type="Price">
+
+              Line item price after line item discounts for display purposes.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceBeforeDiscounts" type="Price">
+
+              Line item price before line item discounts for display purposes. Defaults to `price` when not provided.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalPriceBeforeTax" type="Price">
+
+              Total price after discounts, and before tax.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalPriceAfterTax" type="Price">
+
+              Total price after all discounts and tax.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="paymentOption" type="string">
+
+              Type of selected payment option for current item.
+
+              Default: `FULL_PAYMENT_ONLINE`
+
+              **Supported values:**
+
+              - `FULL_PAYMENT_ONLINE` — The entire payment for this item happens as part of the checkout.
+              - `FULL_PAYMENT_OFFLINE` — The entire payment for this item happens after checkout. For example, when using cash, check, or other offline payment methods.
+              - `MEMBERSHIP` — Payment for this item is done by charging a membership. Any remaining amount not covered by the membership, such as item modifiers, is paid online.
+              - `DEPOSIT_ONLINE` — Partial payment to be paid upfront during checkout. The initial amount to be paid for each line item is specified in `depositAmount`.
+              - `MEMBERSHIP_OFFLINE` — Payment for this item can only be done by charging a membership and must be manually redeemed in the dashboard by the site admin. When selected, `price` is `0`.
+              - `MEMBERSHIP_ONLINE_WITH_OFFLINE_REMAINDER` — Item price is charged to online membership. Any remaining amount not covered by the membership, such as item modifiers, is paid offline.
+
+            </ResponseField>
+
+            <ResponseField name="taxDetails" type="ItemTaxFullDetails" deprecated>
+
+              Deprecated. Use `taxInfo` instead.
+              This field will be removed on September 30, 2024.
+              Tax details for this line item.
+
+              **Deprecated.** Deprecated. Use `taxInfo` instead.
+              This field will be removed on September 30, 2024.
+              Tax details for this line item. Use `tax_info` instead. Removal: 2024-09-30.
+
+              _Nested structure omitted for brevity — see the `ItemTaxFullDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxInfo" type="LineItemTaxInfo">
+
+              Represents all the relevant tax details for a specific line item.
+
+              _Nested structure omitted for brevity — see the `LineItemTaxInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="digitalFile" type="DigitalFile">
+
+              Digital file identifier, relevant only for items with type DIGITAL.
+
+              _Nested structure omitted for brevity — see the `DigitalFile` object._
+
+            </ResponseField>
+
+            <ResponseField name="subscriptionInfo" type="SubscriptionInfo">
+
+              Subscription info.
+
+              _Nested structure omitted for brevity — see the `SubscriptionInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceDescription" type="PriceDescription">
+
+              Additional description for the price. For example, when price is 0 but additional details about the actual price are needed - "Starts at $67".
+
+              _Nested structure omitted for brevity — see the `PriceDescription` object._
+
+            </ResponseField>
+
+            <ResponseField name="depositAmount" type="Price">
+
+              Item's price amount to be charged during checkout. Relevant for items with a `paymentOption` value of `"DEPOSIT_ONLINE"`.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="locations" type="LocationAndQuantity[]">
+
+              Line item locations.
+
+              The location's total quantity must not exceed the line item quantity.
+
+              **Developer Preview.** Constraints: `minItems 0`, `maxItems 5`.
+
+              _Nested structure omitted for brevity — see the `LocationAndQuantity[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="lineItemPrice" type="Price">
+
+              Total price **after** catalog discounts and line item discounts.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Address used for tax calculation.
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceUndetermined" type="boolean">
+
+              Whether the price is not yet defined, and will be updated after the order is created.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="fixedQuantity" type="boolean">
+
+              Whether the line item quantity is fixed and cannot be changed.
+
+              Default: `false`
+
+              **Developer Preview.**
+
+            </ResponseField>
+
+            <ResponseField name="decimalQuantity" type="DecimalQuantity">
+
+              Decimal-quantity metadata. Set when the line represents a
+              non-integer purchase (e.g. 2.75 m² of fake grass).
+
+              When set, the line item must have `fixedQuantity` = true and be set with `quantity` = 1.
+              The decimal value lives in `decimalQuantity.value`.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `DecimalQuantity` object._
+
+            </ResponseField>
+
+            <ResponseField name="extendedFields" type="ExtendedFields">
+
+              Custom extended fields for the line item object.
+
+              [Extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) must be configured in the app dashboard before they can be accessed with API calls.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `ExtendedFields` object._
+
+            </ResponseField>
+
+            <ResponseField name="modifierGroups" type="ModifierGroup[]">
+
+              Modifier groups that were added to the item.
+
+              **Read-only.** **Developer Preview.** Constraints: `maxItems 10`.
+
+              _Nested structure omitted for brevity — see the `ModifierGroup[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="buyerInfo" type="BuyerInfo">
+
+          Buyer information.
+
+          <Expandable title="buyerInfo properties">
+
+            <ResponseField name="contactId" type="string">
+
+              Contact ID. Automatically created if one doesn't exist. For more information, see [Contacts API](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts/contact-v4/introduction).
+
+            </ResponseField>
+
+            <ResponseField name="email" type="string">
+
+              Buyer's email address.
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="paymentStatus" type="string">
+
+          Order payment status.
+
+          **Supported values:**
+
+          - `UNSPECIFIED`
+          - `NOT_PAID` — `NOT_PAID` can apply to an order made online, but not yet paid. In such cases `order.status` will be `INITIALIZED`.
+          This status also applies when an offline order needs to be manually marked as paid. In such cases `order.status` will be `APPROVED`.
+          - `PAID` — All required payments associated with this order are paid.
+          - `PARTIALLY_REFUNDED` — Order partially refunded, but the refunded amount is less than the order's total price. See `order.balanceSummary` for more details.
+          - `FULLY_REFUNDED` — Order fully refunded. Refund amount equals total price. See `order.balanceSummary` for more details.
+          - `PENDING` — All payments pending.
+
+          This can happen with two-step payments, when a payment requires manual review, or when a payment is in progress and will be concluded shortly.
+          Learn more about [pending orders](https://support.wix.com/en/article/pending-orders).
+          - `PARTIALLY_PAID` — At least one payment received and approved, but it covers less than the order's total price. See `order.balanceSummary` for more details.
+          - `PENDING_MERCHANT` — Payment received, but not yet confirmed by the payment provider.
+
+          In most cases, when a payment provider is holding payment it's because setup hasn't been successfully completed by the merchant/site owner.
+          To solve this, the merchant/site owner should log in to the payment provider's dashboard and make sure their account is set up correctly, or contact their support for further assistance.
+          - `CANCELED` — One or more payments canceled.
+          - `DECLINED` — One or more payments declined.
+
+        </ResponseField>
+
+        <ResponseField name="fulfillmentStatus" type="string">
+
+          Order fulfillment status.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NOT_FULFILLED` — None of the order items are fulfilled or the order was manually marked as unfulfilled.
+          - `FULFILLED` — All of the order items are fulfilled or the order was manually marked as fulfilled.
+          Orders without shipping info are fulfilled automatically.
+          - `PARTIALLY_FULFILLED` — Some, but not all, of the order items are fulfilled.
+
+        </ResponseField>
+
+        <ResponseField name="buyerLanguage" type="string">
+
+          Language for communication with the buyer. Defaults to the site language.
+          For a site that supports multiple languages, this is the language the buyer selected.
+
+        </ResponseField>
+
+        <ResponseField name="weightUnit" type="string">
+
+          Weight measurement unit - defaults to site's weight unit.
+
+          **Supported values:**
+
+          - `UNSPECIFIED_WEIGHT_UNIT` — Weight unit can't be classified due to an error.
+          - `KG` — Kilograms.
+          - `LB` — Pounds.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency used for the pricing of this order in [ISO-4217](https://en.wikipedia.org/wiki/ISO_4217#List_of_ISO_4217_currency_codes) format.
+
+          Default: The site's currency.
+
+        </ResponseField>
+
+        <ResponseField name="currencyConversionDetails" type="CurrencyConversionDetails">
+
+          Currency conversion details. For use with multi-currency sites.
+
+          **Developer Preview.**
+
+          <Expandable title="currencyConversionDetails properties">
+
+            <ResponseField name="originalCurrency" type="string">
+
+              Currency used for the pricing of this order, in [ISO-4217](https://en.wikipedia.org/wiki/ISO_4217#List_of_ISO_4217_currency_codes) format.
+
+              This currency is used to calculate the pricing before conversion to the buyer's payment currency.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="conversionRate" type="string">
+
+              The rate used for converting the original currency to the currency used for payment.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxIncludedInPrices" type="boolean">
+
+          Whether tax is included in line item prices.
+
+          Constraints: `immutable`.
+
+        </ResponseField>
+
+        <ResponseField name="siteLanguage" type="string">
+
+          Site language in which original values are shown.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="priceSummary" type="PriceSummary">
+
+          Order price summary.
+
+          **Read-only.**
+
+          <Expandable title="priceSummary properties">
+
+            <ResponseField name="subtotal" type="Price">
+
+              Subtotal of all line items, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="Price">
+
+              Total shipping price, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="tax" type="Price">
+
+              Total tax applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="discount" type="Price">
+
+              Total discount amount applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="total" type="Price">
+
+              Order's total price after discounts and tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalAdditionalFees" type="Price">
+
+              Total additional fees before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="billingInfo" type="AddressWithContact">
+
+          Billing address and contact details.
+
+          <Expandable title="billingInfo properties">
+
+            <ResponseField name="address" type="Address">
+
+              Address.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ResponseField>
+
+            <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+              Contact details.
+
+              _Nested structure omitted for brevity — see the `FullAddressContactDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="shippingInfo" type="ShippingInformation">
+
+          Shipping info and selected shipping option details.
+
+          <Expandable title="shippingInfo properties">
+
+            <ResponseField name="carrierId" type="string">
+
+              App Def Id of external provider which was a source of shipping info
+
+            </ResponseField>
+
+            <ResponseField name="code" type="string">
+
+              Unique code (or ID) of selected shipping option. For example, `"usps_std_overnight"`.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Shipping option title.
+              For example, `"USPS Standard Overnight Delivery"`, `"Standard"` or `"First-Class Package International"`.
+
+              Constraints: `maxLength 250`.
+
+            </ResponseField>
+
+            <ResponseField name="logistics" type="DeliveryLogistics">
+
+              Shipping logistics.
+
+              _Nested structure omitted for brevity — see the `DeliveryLogistics` object._
+
+            </ResponseField>
+
+            <ResponseField name="cost" type="ShippingPrice">
+
+              Shipping costs.
+
+              _Nested structure omitted for brevity — see the `ShippingPrice` object._
+
+            </ResponseField>
+
+            <ResponseField name="region" type="ShippingRegion">
+
+              Shipping region.
+
+              _Nested structure omitted for brevity — see the `ShippingRegion` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="buyerNote" type="string">
+
+          [Buyer note](https://support.wix.com/en/article/wix-stores-viewing-buyer-notes) left by the customer.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Order status.
+
+          **Supported values:**
+
+          - `INITIALIZED` — Order created, but not yet approved or canceled.
+          - `APPROVED` — Order approved.
+
+          This happens when either an online payment is received **or** when `priceSummary.total` is `0` (a zero-total order).
+          Offline orders (cash payment) are automatically approved.
+          - `CANCELED` — Order canceled by the merchant or buyer.
+          - `PENDING` — Order is waiting for the buyer to complete checkout.
+          - `REJECTED` — Order rejected.
+
+          This happens when pending payments fail.
+
+        </ResponseField>
+
+        <ResponseField name="archived" type="boolean">
+
+          Whether the order is archived. Archived orders are hidden from the main orders view in the dashboard, but remain retrievable through the API.
+
+          To archive or unarchive an order, call [Update Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/update-order) and set `archived` to `true` or `false`.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="taxSummary" type="TaxSummary" deprecated>
+
+          Tax summary.
+          Deprecated. Use `taxInfo` instead.
+          This field will be removed on September 30, 2024.
+
+          **Deprecated.** Tax summary.
+          Deprecated. Use `taxInfo` instead.
+          This field will be removed on September 30, 2024. Use `tax_info` instead. Removal: 2024-09-30.
+
+          <Expandable title="taxSummary properties">
+
+            <ResponseField name="totalTax" type="Price">
+
+              Total tax.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxInfo" type="OrderTaxInfo">
+
+          Tax information.
+
+          <Expandable title="taxInfo properties">
+
+            <ResponseField name="totalTax" type="Price">
+
+              Calculated tax, added from line items.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxBreakdown" type="OrderTaxBreakdown[]">
+
+              The summary of the tax breakdown for all the line items. It will hold for each tax name, the aggregated tax amount paid for it and the tax rate.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `OrderTaxBreakdown[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxExempt" type="boolean">
+
+              Whether the order is exempt from tax calculations.
+
+              Default: `false`
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="appliedDiscounts" type="AppliedDiscount[]">
+
+          Applied discounts.
+
+          Constraints: `maxItems 320`.
+
+          <Expandable title="appliedDiscounts properties">
+
+            <ResponseField name="discountType" type="string">
+
+              Type of discount.
+
+              **Supported values:**
+
+              - `GLOBAL` — Discount applies to the entire order.
+              - `SPECIFIC_ITEMS` — Discount applies to specific items.
+              - `SHIPPING` — Discount applies to shipping. For example, free shipping.
+
+            </ResponseField>
+
+            <ResponseField name="lineItemIds" type="string[]" deprecated>
+
+              __Deprecated.__ Use `lineItemDiscounts` instead.
+
+              IDs of line items the discount applies to.
+
+              **Deprecated.** __Deprecated.__ Use `lineItemDiscounts` instead.
+
+              IDs of line items the discount applies to. Use `line_item_discounts` instead. Removal: 2024-10-30. Constraints: `format GUID`, `minItems 0`, `maxItems 300`.
+
+            </ResponseField>
+
+            <ResponseField name="_id" type="string">
+
+              Discount ID.
+
+            </ResponseField>
+
+            <ResponseField name="lineItemDiscounts" type="LineItemDiscount[]">
+
+              Line items the discount applies to, including the discount amount for each.
+
+              **Developer Preview.** Constraints: `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `LineItemDiscount[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="activities" type="Activity[]">
+
+          Order activities.
+
+          **Read-only.** Constraints: `maxItems 1000`.
+
+          <Expandable title="activities properties">
+
+            <ResponseField name="_id" type="string">
+
+              Activity ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="authorEmail" type="string">
+
+              Activity author's email.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Activity creation date and time.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="type" type="string" deprecated>
+
+              Activity type.
+
+              **Deprecated.** Activity type. Use `activity_type` instead. Removal: 2026-03-01.
+
+              **Supported values:**
+
+              - `ORDER_REFUNDED` — Order was refunded, either partially or fully.
+              - `ORDER_PLACED` — New order was created and placed.
+              - `ORDER_PAID` — Order payment was completed and confirmed.
+              - `ORDER_FULFILLED` — Order items were marked as fulfilled (shipped or ready for pickup).
+              - `ORDER_NOT_FULFILLED` — Order fulfillment status was changed to not fulfilled.
+              - `ORDER_CANCELED` — Order was canceled by merchant or customer.
+              - `DOWNLOAD_LINK_SENT` — Download link was sent for digital items in the order.
+              - `TRACKING_NUMBER_ADDED` — Shipping tracking number was added to the order.
+              - `TRACKING_NUMBER_EDITED` — Existing shipping tracking number was modified.
+              - `TRACKING_LINK_ADDED` — Tracking link for shipment was added to the order.
+              - `SHIPPING_CONFIRMATION_EMAIL_SENT` — Email confirming shipment was sent to the customer.
+              - `INVOICE_ADDED` — Invoice document was added to the order.
+              - `INVOICE_REMOVED` — Invoice was removed from the order.
+              - `INVOICE_SENT` — Invoice was sent to the customer via email.
+              - `FULFILLER_EMAIL_SENT` — Notification email was sent to the order fulfiller.
+              - `SHIPPING_ADDRESS_EDITED` — Order's shipping address was modified.
+              - `EMAIL_EDITED` — Order's contact email address was changed.
+              - `PICKUP_READY_EMAIL_SENT` — Email notification for pickup readiness was sent.
+              - `CUSTOM_ACTIVITY` — Custom activity created by a third-party application.
+              - `MERCHANT_COMMENT` — Comment added to the order by a merchant.
+              - `ORDER_PARTIALLY_PAID` — Partial payment was received for the order.
+              - `DRAFT_ORDER_CHANGES_APPLIED` — Changes were applied to a draft order.
+              - `SAVED_PAYMENT_METHOD` — Payment method was saved for future use.
+              - `AUTHORIZED_PAYMENT_CREATED` — Payment was authorized but not yet captured.
+              - `AUTHORIZED_PAYMENT_CAPTURED` — Previously authorized payment was captured.
+              - `AUTHORIZED_PAYMENT_VOIDED` — Previously authorized payment was voided.
+              - `REFUND_INITIATED` — Refund process was initiated.
+              - `PAYMENT_REFUNDED` — Payment was successfully refunded.
+              - `PAYMENT_REFUND_FAILED` — Attempt to refund payment failed.
+              - `REFUNDED_AS_STORE_CREDIT` — Refund was issued as store credit.
+              - `PAYMENT_PENDING` — Payment is awaiting processing or confirmation.
+              - `PAYMENT_CANCELED` — Payment was canceled before completion.
+              - `PAYMENT_DECLINED` — Payment was declined by payment provider.
+              - `ORDER_PENDING` — Order is awaiting approval or processing.
+              - `ORDER_REJECTED` — Order was rejected by merchant.
+              - `RECEIPT_CREATED` — Receipt was generated for a payment.
+              - `RECEIPT_SENT` — Receipt was sent to the customer.
+              - `CHARGEBACK_CREATED` — Chargeback was created for one of the order's payments.
+              - `CHARGEBACK_REVERSED` — Chargeback was resolved in merchant's favor.
+
+            </ResponseField>
+
+            <ResponseField name="activityType" type="string">
+
+              Activity type.
+
+              **Supported values:**
+
+              - `ORDER_PLACED` — New order was created and placed.
+              - `ORDER_PAID` — Order payment was completed and confirmed.
+              - `ORDER_FULFILLED` — Order items were marked as fulfilled (shipped or ready for pickup).
+              - `ORDER_NOT_FULFILLED` — Order fulfillment status was changed to not fulfilled.
+              - `ORDER_CANCELED` — Order was canceled by merchant or customer.
+              - `DOWNLOAD_LINK_SENT` — Download link was sent for digital items in the order.
+              - `TRACKING_NUMBER_ADDED` — Shipping tracking number was added to the order.
+              - `TRACKING_NUMBER_EDITED` — Existing shipping tracking number was modified.
+              - `TRACKING_LINK_ADDED` — Tracking link for shipment was added to the order.
+              - `SHIPPING_CONFIRMATION_EMAIL_SENT` — Email confirming shipment was sent to the customer.
+              - `INVOICE_ADDED` — Invoice document was added to the order.
+              - `INVOICE_REMOVED` — Invoice was removed from the order.
+              - `INVOICE_SENT` — Invoice was sent to the customer via email.
+              - `FULFILLER_EMAIL_SENT` — Notification email was sent to the order fulfiller.
+              - `SHIPPING_ADDRESS_EDITED` — Order's shipping address was modified.
+              - `EMAIL_EDITED` — Order's contact email address was changed.
+              - `PICKUP_READY_EMAIL_SENT` — Email notification for pickup readiness was sent.
+              - `MERCHANT_COMMENT` — Comment added to the order by a merchant.
+              - `ORDER_PARTIALLY_PAID` — Partial payment was received for the order.
+              - `DRAFT_ORDER_CHANGES_APPLIED` — Changes were applied to a draft order.
+              - `SAVED_PAYMENT_METHOD` — Payment method was saved for future use.
+              - `AUTHORIZED_PAYMENT_CREATED` — Payment was authorized but not yet captured.
+              - `AUTHORIZED_PAYMENT_CAPTURED` — Previously authorized payment was captured.
+              - `AUTHORIZED_PAYMENT_VOIDED` — Previously authorized payment was voided.
+              - `REFUND_INITIATED` — Refund process was initiated.
+              - `PAYMENT_REFUNDED` — Payment was successfully refunded.
+              - `PAYMENT_REFUND_FAILED` — Attempt to refund payment failed.
+              - `REFUNDED_AS_STORE_CREDIT` — Refund was issued as store credit.
+              - `PAYMENT_PENDING` — Payment is awaiting processing or confirmation.
+              - `PAYMENT_CANCELED` — Payment was canceled before completion.
+              - `PAYMENT_DECLINED` — Payment was declined by payment provider.
+              - `ORDER_PENDING` — Order is awaiting approval or processing.
+              - `ORDER_REJECTED` — Order was rejected by merchant.
+              - `RECEIPT_CREATED` — Receipt was generated for a payment.
+              - `RECEIPT_SENT` — Receipt was sent to the customer.
+              - `CHARGEBACK_CREATED` — Chargeback was created for one of the order's payments.
+              - `CHARGEBACK_REVERSED` — Chargeback was resolved in merchant's favor.
+              - `ORDER_REFUNDED` — Order was refunded, either partially or fully.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="attributionSource" type="string">
+
+          Order attribution source.
+
+          **Supported values:**
+
+          - `UNSPECIFIED`
+          - `FACEBOOK_ADS`
+
+        </ResponseField>
+
+        <ResponseField name="createdBy" type="CreatedBy">
+
+          ID of the order's initiator.
+
+          **Read-only.**
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="string" type="string">
+
+              string
+
+              _Nested structure omitted for brevity — see the `string` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="channelInfo" type="ChannelInfo">
+
+          Information about the sales channel that submitted this order.
+
+          <Expandable title="channelInfo properties">
+
+            <ResponseField name="type" type="string">
+
+              Sales channel that submitted the order.
+
+              When creating an order via the API to record an external order, use the channel type that matches the original source. If no matching type exists, use `OTHER_PLATFORM`.
+
+              **Supported values:**
+
+              - `UNSPECIFIED` — Unspecified sales channel. This value is not supported.
+              - `WEB` — A web client.
+              - `POS` — [Point of sale solutions](https://support.wix.com/en/wix-mobile-pos-2196395).
+              - `EBAY` — [eBay shop](https://support.wix.com/en/article/wix-stores-connecting-and-setting-up-an-ebay-shop).
+              - `AMAZON` — [Amazon shop](https://support.wix.com/en/article/wix-stores-connecting-and-setting-up-an-amazon-shop).
+              - `OTHER_PLATFORM` — Other sales platform.
+              - `WIX_APP_STORE` — [Wix Owner app](https://support.wix.com/article/wix-owner-app-an-overview).
+              - `WIX_INVOICES` — Wix Invoices app in [your dashboard](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Finvoices/settings/general-settings)
+              - `BACKOFFICE_MERCHANT` — Wix merchant backoffice.
+              - `WISH` — Wish sales channel.
+              - `CLASS_PASS` — [ClassPass sales channel](https://support.wix.com/en/article/wix-bookings-letting-clients-book-your-services-with-classpass).
+              - `GLOBAL_E` — Global-E sales channel.
+              - `FACEBOOK` — [Facebook shop](https://support.wix.com/en/article/wix-stores-changes-to-facebook-shops).
+              - `ETSY` — [Etsy sales channel](https://support.wix.com/en/article/wix-stores-request-adding-etsy-as-a-sales-channel).
+              - `TIKTOK` — [TikTok sales channel](https://support.wix.com/en/article/wix-stores-request-adding-tiktok-as-a-sales-channel).
+              - `FAIRE_COM` — [Faire marketplace integration](https://support.wix.com/en/article/wix-stores-creating-a-faire-store-using-the-faire-integration-app).
+              - `PAYPAL_AGENTIC_CHECKOUT` — PayPal Agentic Checkout sales channel.
+              - `STRIPE_AGENTIC_CHECKOUT` — Stripe Agentic Checkout sales channel.
+
+            </ResponseField>
+
+            <ResponseField name="externalOrderId" type="string">
+
+              Reference to an order ID from an external system. Relevant when recording orders from external platforms.
+
+            </ResponseField>
+
+            <ResponseField name="externalOrderUrl" type="string">
+
+              URL to the order in the external system. Relevant when recording orders from external platforms.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="seenByAHuman" type="boolean">
+
+          Whether a human has seen the order. Set when an order is clicked on in the dashboard.
+
+        </ResponseField>
+
+        <ResponseField name="checkoutId" type="string">
+
+          Checkout ID.
+
+        </ResponseField>
+
+        <ResponseField name="customFields" type="CustomField[]">
+
+          Custom fields.
+
+          <Expandable title="customFields properties">
+
+            <ResponseField name="value" type="any">
+
+              Custom field value.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Custom field title.
+
+              Constraints: `minLength 1`, `maxLength 500`.
+
+            </ResponseField>
+
+            <ResponseField name="translatedTitle" type="string">
+
+              Translated custom field title.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="balanceSummary" type="BalanceSummary">
+
+          Balance summary.
+
+          **Read-only.**
+
+          <Expandable title="balanceSummary properties">
+
+            <ResponseField name="balance" type="Balance">
+
+              Current amount left to pay.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Balance` object._
+
+            </ResponseField>
+
+            <ResponseField name="paid" type="Price">
+
+              Sum of all approved and successful payments.
+
+              The value includes payments that have subsequently been fully or partially refunded.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Sum of all successfully refunded payments.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="authorized" type="Price">
+
+              Sum of all authorized payments.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pendingRefund" type="Price">
+
+              Sum of all pending refund transactions.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pending" type="Price">
+
+              Sum of all pending transactions.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="chargeback" type="Price">
+
+              Sum of all transaction chargebacks.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="chargebackReversal" type="Price">
+
+              Sum of all chargeback reversals.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="platformFees" type="Price">
+
+              Total platform fees actually charged across all payments.
+              This reflects amounts collected, which may differ from the expected fees in `order.platformFeeSummary`.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalMinusPlatformFees" type="Price">
+
+              Order total after deducting platform fees. Represents the net amount payable to the merchant.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="cashRoundingAdjustment" type="CashRounding">
+
+              The total adjustment applied to the cash payment due to rounding.
+
+              Positive values indicate the total was rounded up; negative values indicate it was rounded down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFees" type="AdditionalFee[]">
+
+          Additional fees applied to the order.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="additionalFees properties">
+
+            <ResponseField name="code" type="string">
+
+              Additional fee's unique code for future processing.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Name of additional fee.
+
+              Constraints: `minLength 1`, `maxLength 50`.
+
+            </ResponseField>
+
+            <ResponseField name="price" type="Price">
+
+              Additional fee's price.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxDetails" type="ItemTaxFullDetails" deprecated>
+
+              Tax details.
+
+              **Deprecated.** Tax details. Use `tax_info` instead. Removal: 2026-03-30.
+
+              _Nested structure omitted for brevity — see the `ItemTaxFullDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxInfo" type="LineItemTaxInfo">
+
+              Represents all the relevant tax details for additional fee.
+
+              _Nested structure omitted for brevity — see the `LineItemTaxInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="providerAppId" type="string">
+
+              SPI implementer's `appId`.
+
+            </ResponseField>
+
+            <ResponseField name="priceBeforeTax" type="Price">
+
+              Additional fee's price before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="priceAfterTax" type="Price">
+
+              Additional fee's price after tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="_id" type="string">
+
+              Additional fee's id.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="lineItemIds" type="string[]">
+
+              Optional - Line items associated with this additional fee.
+              If no `lineItemIds` are provided, the fee will be associated with the whole cart/checkout/order.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="source" type="string">
+
+              Specifies the entity that added the additional fee.
+
+              **Developer Preview.**
+
+              **Supported values:**
+
+              - `SERVICE_PLUGIN` — The additional fee was added by an additional fee service plugin.
+              - `ITEM` — The additional fee was added to the item by a catalog or custom line item.
+              - `MANUAL` — The additional fee was added manually on request.
+              - `SHIPPING` — The additional fee was added by the shipping provider.
+              - `PLATFORM` — The additional fee was added by the Wix eCommerce platform.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Address type tax was calculated against for this fee.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="extendedFields" type="ExtendedFields">
+
+          Custom field data for the order object.
+
+          [Extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) must be configured in the app dashboard before they can be accessed with API calls.
+
+          <Expandable title="extendedFields properties">
+
+            <ResponseField name="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="purchaseFlowId" type="string">
+
+          Persistent ID that correlates between the various eCommerce elements: cart, checkout, and order.
+
+        </ResponseField>
+
+        <ResponseField name="recipientInfo" type="AddressWithContact">
+
+          Final recipient's address and contact details.
+
+          This field represents who will ultimately receive the order. It may differ from `shippingInfo.logistics.shippingDestination` when:
+          + The chosen shipping option is a pickup point or store pickup, where `shippingDestination` contains the pickup location.
+          + No shipping option is selected.
+
+          <Expandable title="recipientInfo properties">
+
+            <ResponseField name="address" type="Address">
+
+              Address.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ResponseField>
+
+            <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+              Contact details.
+
+              _Nested structure omitted for brevity — see the `FullAddressContactDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="tags" type="Tags">
+
+          Order tags.
+
+          [Tags](https://dev.wix.com/docs/rest/business-management/tags/introduction) are labels attached to entities, allowing for flexible categorization and data management.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="privateTags" type="TagList">
+
+              Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ResponseField>
+
+            <ResponseField name="tags" type="TagList">
+
+              Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="purchasedDate" type="datetime">
+
+          Date and time the order was originally purchased in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+          Used for migration from external systems.
+
+        </ResponseField>
+
+        <ResponseField name="businessLocation" type="Location">
+
+          Order location.
+
+          **Developer Preview.**
+
+          <Expandable title="businessLocation properties">
+
+            <ResponseField name="_id" type="string">
+
+              Location ID.
+              Learn more about the [Wix Locations API](https://dev.wix.com/docs/rest/business-management/locations/introduction).
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Location name.
+
+              **Read-only.** Constraints: `minLength 1`, `maxLength 500`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="payAfterFreeTrial" type="PriceSummary">
+
+          Pay after free trial price summary. Price summary that should be paid for subscriptions after free trial period.
+
+          **Read-only.** **Developer Preview.**
+
+          <Expandable title="payAfterFreeTrial properties">
+
+            <ResponseField name="subtotal" type="Price">
+
+              Subtotal of all line items, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="Price">
+
+              Total shipping price, before discounts and before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="tax" type="Price">
+
+              Total tax applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="discount" type="Price">
+
+              Total discount amount applied to the order.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="total" type="Price">
+
+              Order's total price after discounts and tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalAdditionalFees" type="Price">
+
+              Total additional fees before tax.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="platformFeeSummary" type="PlatformFeeSummary">
+
+          Summary of platform fees for this order, including totals by charge type and a breakdown of individual fees.
+
+          **Developer Preview.**
+
+          <Expandable title="platformFeeSummary properties">
+
+            <ResponseField name="total" type="Price">
+
+              Total sum of all platform fees.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalPassOn" type="Price">
+
+              Total amount of platform fees with `PASS_ON` charge type.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="totalAbsorbed" type="Price">
+
+              Total amount of platform fees with `ABSORBED` charge type.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="fees" type="PlatformFee[]">
+
+              Specific information about each platform fee.
+
+              Constraints: `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `PlatformFee[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imported" type="boolean">
+
+          Whether the order was imported from an external system using the Order Import API.
+
+          When `true`, the order originated outside of Wix (for example, during a migration from another
+          eCommerce platform) rather than being placed through the Wix checkout flow or created manually.
+          Imported orders trigger the dedicated `OrderImported` and `ImportedOrderDeleted` domain events.
+
+          Set automatically at import time and cannot be changed afterwards.
+
+          Default: `false`
+
+          **Read-only.** **Developer Preview.** Constraints: `immutable`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `DRAFT_ORDER_DOES_NOT_EXIST` | Couldn't find the draft order. |
+    | `428` | `FAILED_PRECONDITION` | `DRAFT_ORDER_COMMIT_FAILED_VALIDATIONS` | Draft order isn't valid. Check `calculationErrors` for details. |
+    | `409` | `ALREADY_EXISTS` | `DRAFT_ORDER_ALREADY_COMMITTED` | Draft order was already committed. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Draft Order Updated | `wix.ecom.v1.draft_order_updated` | Triggered when a draft order is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-commit-draft-order" id="ex-sdk-commit-draft-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-commit-draft-order" id="ex-sdk-commit-draft-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-commit-draft-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-commit-draft-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Commit Draft Order</span><span className="wix-picker-desc">Commit a draft order to update an existing order</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">commitDraftOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-commit-draft-order-0"><span className="wix-picker-name">Commit Draft Order</span><span className="wix-picker-desc">Commit a draft order to update an existing order</span></label>
+    <label htmlFor="ex-sdk-commit-draft-order-1"><span className="wix-picker-name">commitDraftOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Commit Draft Order
+    import { draftOrders } from "@wix/ecom";
+
+    const draftOrderId = "3f6ebd30-3dc5-4889-b60a-cffad65a7bac";
+
+    const options = {
+      commitSettings: {
+        updateInventory: [],
+        sendNotificationsToBuyer: true
+      },
+      reason: "Added shoe"
+    };
+
+    async function commitDraftOrder() {
+      const response = await draftOrders.commitDraftOrder(draftOrderId, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "committedDraftOrder": {
+     *     "_id": "3f6ebd30-3dc5-4889-b60a-cffad65a7bac",
+     *     "orderId": "15d18c8e-44cd-4790-85a6-c0ebc1dc5ace",
+     *     "status": "COMMITTED",
+     *     "commitSettings": {
+     *       "sendNotificationsToBuyer": true,
+     *       "updateInventory": []
+     *     }
+     *   },
+     *   "orderAfterCommit": {
+     *     "_id": "15d18c8e-44cd-4790-85a6-c0ebc1dc5ace",
+     *     "status": "APPROVED"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript commitDraftOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { draftOrders } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { draftOrders },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function commitDraftOrder(draftOrderId,options) {
+      const response = await myWixClient.draftOrders.commitDraftOrder(draftOrderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

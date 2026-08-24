@@ -1,0 +1,46 @@
+---
+title: "Sample Flows"
+description: "The following flows describe common validation use cases and how to implement them."
+icon: "file-lines"
+---
+
+The following flows describe common validation use cases and how to implement them.
+
+## Enforce limits or validate against an external system
+
+You can use the validation service plugin to query an external system and block booking operations based on the result. Common use cases include enforcing membership plan limits, checking external calendar availability, and detecting fraud.
+
+To validate a booking operation against an external system or business rule:
+
+1. Receive the validation request from Wix.
+2. Extract the relevant details from the booking, such as service type, target time slot, or contact information.
+3. Query your external system or evaluate your internal rules. For membership plan limits, retrieve the customer's current plan and usage count, then compare against the plan limit.
+4. If the check fails, return `valid: false` with a customer-friendly message. Otherwise, return `valid: true`.
+
+## Apply cancellation policies
+
+You can enforce cancellation policies based on timing, fees, or other business rules. For example, you might block self-service cancellations that are too close to the appointment time.
+
+To validate a cancellation against a timing-based policy:
+
+1. Receive the Validate Before Cancel request from Wix.
+2. Extract the booking's start time from `booking.bookedEntity.slot.startDate`.
+3. Calculate the time remaining until the appointment.
+4. Compare against your cancellation policy rules. If the cancellation isn't allowed, return `valid: false` with instructions for the customer. Otherwise, return `valid: true`.
+
+## Validate multi-service bookings
+
+Multi-service bookings contain multiple related bookings in a single package. Your validation logic receives all bookings in the package and must return a result for each one.
+
+<Note>
+
+Multi-service booking validation follows all-or-nothing semantics. If any booking in the package fails validation, the entire multi-service booking is blocked.
+
+</Note>
+
+To validate a multi-service booking:
+
+1. Receive the multi-service validation request from Wix.
+2. Extract the list of bookings from the `items` array.
+3. Evaluate each booking against your validation rules.
+4. Return a result for each item. For items that pass, return `valid: true`. For items that fail, return `valid: false` with details.

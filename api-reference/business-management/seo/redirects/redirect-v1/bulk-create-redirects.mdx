@@ -1,0 +1,659 @@
+---
+title: "Bulk Create Redirects"
+description: "Creates up to 500 redirects."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates up to 500 redirects.
+
+    Each redirect succeeds or fails on its own. A redirect whose `from` path is already taken fails
+    with `FROM_URL_EXISTS`, and one that closes a loop with an earlier redirect in the same request
+    fails with `REDIRECT_LOOP`, while the rest of the request goes ahead. Read those failures from
+    `results[].itemMetadata.error` in a successful response, matched to the request by
+    `results[].itemMetadata.originalIndex`. A malformed request, such as an empty `redirects` list,
+    is rejected as a whole and returns no results.
+
+    A redirect that already exists with the same `from`, `to`, and `options.groupRedirect` is
+    reported as a success with no `id`, and nothing is written for it.
+
+    A redirect that closes a loop with a redirect already on the site is created, and the
+    loop-closing redirect is deleted. `options.forceReplace` does the same for a `from` path that's
+    already taken by a redirect on the site, instead of failing that redirect. Neither deletion can
+    be undone, so retrieve those redirects first if you need to restore them.
+
+    To create a single redirect, call [Create Redirect](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/seo-redirects-service/v1/bulk/redirects/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="redirects" type="Redirect[]" required>
+
+      Redirects to create.
+
+      Constraints: `minItems 1`, `maxItems 500`.
+
+      See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnFullEntity" type="boolean">
+
+      Whether to return the created redirects in `results[].item`, and not only their metadata.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateRedirectsOptions">
+
+      Extra options for creating the redirects.
+
+      <Expandable title="options properties">
+
+        <ParamField body="forceReplace" type="boolean">
+
+          Whether to delete a redirect on the site that already starts from the same `from` path and
+          create the new one in its place. When `false`, a redirect whose `from` path is taken fails with
+          `FROM_URL_EXISTS` while the rest of the request goes ahead.
+
+          Applies only to redirects already on the site. A redirect that clashes with an earlier redirect
+          in the same request always fails. The replaced redirect is deleted for good, so retrieve it
+          first if you might need to restore it.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkRedirectResult[]">
+
+      Outcome of each redirect, in request order.
+
+      Constraints: `maxItems 500`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether this redirect succeeded, its position in the request as `originalIndex`, and the error
+          if it failed.
+
+          A redirect that already exists on the site is reported as a success with no `id`, and nothing is
+          written for it.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Redirect">
+
+          Created redirect.
+
+          Returned only when `returnFullEntity` is `true` in the request. Never returned by Bulk Delete
+          Redirects.
+
+          See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Number of redirects created and number that failed.
+
+      `undetailedFailures` counts redirects whose outcome is unknown. They may or may not have been
+      created, and they carry no error, so call [List Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) to check them.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | — | The `redirects` list is missing or empty, or a redirect in it is missing `from` or `to`. Nothing is written and the response carries no per-item results. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Per-entry failures arrive inside a 200 response. Correlate them to the request with `itemMetadata.originalIndex`, not with the HTTP status. Here the third entry claims a `from` path the first entry already took. Set `returnFullEntity` to `true` to get the created redirects back in `results[].item`.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/seo-redirects-service/v1/bulk/redirects/create' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "redirects": [
+          { "from": "/old-pricing", "to": "/pricing" },
+          { "from": "/old-contact", "to": "/contact" },
+          { "from": "/old-pricing", "to": "/plans" }
+        ],
+        "returnFullEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "5b07d9de-6a9f-494d-8066-a7b66c970270",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "from": "/old-pricing",
+              "to": "/pricing",
+              "options": {
+                "groupRedirect": false
+              },
+              "id": "5b07d9de-6a9f-494d-8066-a7b66c970270",
+              "createdDate": "2026-08-20T07:44:48.190Z"
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "7bb02f0a-d0cb-4c75-9a93-905b393f7662",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "from": "/old-contact",
+              "to": "/contact",
+              "options": {
+                "groupRedirect": false
+              },
+              "id": "7bb02f0a-d0cb-4c75-9a93-905b393f7662",
+              "createdDate": "2026-08-20T07:44:48.190Z"
+            }
+          },
+          {
+            "itemMetadata": {
+              "originalIndex": 2,
+              "success": false,
+              "error": {
+                "code": "FROM_URL_EXISTS",
+                "description": "an earlier redirect in this request already claims /old-pricing"
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates up to 500 redirects.
+
+    Each redirect succeeds or fails on its own. A redirect whose `from` path is already taken fails
+    with `FROM_URL_EXISTS`, and one that closes a loop with an earlier redirect in the same request
+    fails with `REDIRECT_LOOP`, while the rest of the request goes ahead. Read those failures from
+    `results[].itemMetadata.error` in a successful response, matched to the request by
+    `results[].itemMetadata.originalIndex`. A malformed request, such as an empty `redirects` list,
+    is rejected as a whole and returns no results.
+
+    A redirect that already exists with the same `from`, `to`, and `options.groupRedirect` is
+    reported as a success with no `id`, and nothing is written for it.
+
+    A redirect that closes a loop with a redirect already on the site is created, and the
+    loop-closing redirect is deleted. `options.forceReplace` does the same for a `from` path that's
+    already taken by a redirect on the site, instead of failing that redirect. Neither deletion can
+    be undone, so retrieve those redirects first if you need to restore them.
+
+    To create a single redirect, call [Create Redirect](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { redirects } from '@wix/seo';
+
+    redirects.bulkCreateRedirects(redirects, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="redirects" type="Redirect[]" required>
+
+      Redirects to create.
+
+      Constraints: `minItems 1`, `maxItems 500`.
+
+      See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateRedirectsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnFullEntity" type="boolean">
+
+          Whether to return the created redirects in `results[].item`, and not only their metadata.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="options" type="BulkCreateRedirectsOptions">
+
+          Extra options for creating the redirects.
+
+          <Expandable title="options properties">
+
+            <ParamField body="forceReplace" type="boolean">
+
+              Whether to delete a redirect on the site that already starts from the same `from` path and
+              create the new one in its place. When `false`, a redirect whose `from` path is taken fails with
+              `FROM_URL_EXISTS` while the rest of the request goes ahead.
+
+              Applies only to redirects already on the site. A redirect that clashes with an earlier redirect
+              in the same request always fails. The replaced redirect is deleted for good, so retrieve it
+              first if you might need to restore it.
+
+              Default: `false`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkRedirectResult[]">
+
+      Outcome of each redirect, in request order.
+
+      Constraints: `maxItems 500`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether this redirect succeeded, its position in the request as `originalIndex`, and the error
+          if it failed.
+
+          A redirect that already exists on the site is reported as a success with no `id`, and nothing is
+          written for it.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Redirect">
+
+          Created redirect.
+
+          Returned only when `returnFullEntity` is `true` in the request. Never returned by Bulk Delete
+          Redirects.
+
+          See the [Redirect Object](/api-reference/business-management/seo/redirects/redirect-v1/redirect-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Number of redirects created and number that failed.
+
+      `undetailedFailures` counts redirects whose outcome is unknown. They may or may not have been
+      created, and they carry no error, so call [List Redirects](https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) to check them.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | — | The `redirects` list is missing or empty, or a redirect in it is missing `from` or `to`. Nothing is written and the response carries no per-item results. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-redirects" id="ex-sdk-bulk-create-redirects-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-redirects" id="ex-sdk-bulk-create-redirects-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-redirects-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-redirects-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create several redirects, with one entry failing</span><span className="wix-picker-desc">Per-entry failures resolve successfully. Correlate them to the request with itemMetadata.originalIndex. Here the third entry claims a from path the first entry already took</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateRedirects (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-redirects-0"><span className="wix-picker-name">Create several redirects, with one entry failing</span><span className="wix-picker-desc">Per-entry failures resolve successfully. Correlate them to the request with itemMetadata.originalIndex. Here the third entry claims a from path the first entry already took</span></label>
+    <label htmlFor="ex-sdk-bulk-create-redirects-1"><span className="wix-picker-name">bulkCreateRedirects (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create several redirects, with one entry failing
+    import { redirects } from "@wix/seo";
+
+    async function bulkCreateRedirects() {
+      const response = await redirects.bulkCreateRedirects(
+        [
+          { from: "/old-pricing", to: "/pricing" },
+          { from: "/old-contact", to: "/contact" },
+          { from: "/old-pricing", to: "/plans" },
+        ],
+        { returnFullEntity: true },
+      );
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 0,
+     *         "success": true,
+     *         "_id": "fa19f816-440b-4414-b6c7-828fb13e1639"
+     *       },
+     *       "item": {
+     *         "from": "/old-pricing",
+     *         "to": "/pricing",
+     *         "options": {
+     *           "groupRedirect": false
+     *         },
+     *         "_id": "fa19f816-440b-4414-b6c7-828fb13e1639",
+     *         "_createdDate": "2026-08-20T07:48:39.879Z"
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 2,
+     *         "success": false,
+     *         "error": {
+     *           "code": "FROM_URL_EXISTS",
+     *           "description": "an earlier redirect in this request already claims /old-pricing"
+     *         }
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 2,
+     *     "totalFailures": 1,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateRedirects (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { redirects } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { redirects },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateRedirects(redirects,options) {
+      const response = await myWixClient.redirects.bulkCreateRedirects(redirects,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

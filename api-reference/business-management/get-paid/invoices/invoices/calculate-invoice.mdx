@@ -1,0 +1,806 @@
+---
+title: "Calculate Invoice"
+description: "Calculates totals, taxes, and available shipping options for a standalone invoice."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Calculates totals, taxes, and available shipping options for a standalone invoice. Supports both custom and catalog line items.
+
+    Use this method before creating or updating an invoice to preview calculated values. Pass the returned `correlationId` in subsequent calculations to optimize incremental recalculations.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INVOICES.MANAGE">Manage Invoices</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/invoices/v4/invoices/calculate-invoice
+    ```
+
+    ## Body Params
+
+    <ParamField body="invoice" type="Invoice" required>
+
+      Invoice to calculate.
+
+      See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="correlationId" type="string">
+
+      Correlation ID from a previous calculation. Pass this to optimize incremental recalculations.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="invoice" type="Invoice">
+
+      Calculated invoice.
+
+      See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="shipmentOptions" type="ShipmentOption[]">
+
+      Available shipping options for the invoice.
+
+      <Expandable title="shipmentOptions properties">
+
+        <ResponseField name="carrierId" type="string">
+
+          Shipping carrier ID.
+
+        </ResponseField>
+
+        <ResponseField name="code" type="string">
+
+          Shipping method code.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Shipping method title.
+
+        </ResponseField>
+
+        <ResponseField name="price" type="string">
+
+          Shipping price.
+
+        </ResponseField>
+
+        <ResponseField name="logistics" type="DeliveryLogisticsOption">
+
+          Delivery logistics details.
+
+          <Expandable title="logistics properties">
+
+            <ResponseField name="deliveryTime" type="string">
+
+              Expected delivery time as free text.
+
+            </ResponseField>
+
+            <ResponseField name="deliveryTimeSlot" type="DeliveryTimeSlot">
+
+              Expected delivery time window.
+
+              _Nested structure omitted for brevity — see the `DeliveryTimeSlot` object._
+
+            </ResponseField>
+
+            <ResponseField name="instructions" type="string">
+
+              Carrier delivery instructions.
+
+            </ResponseField>
+
+            <ResponseField name="pickupDetails" type="PickupDetails">
+
+              Additional pickup details.
+
+              _Nested structure omitted for brevity — see the `PickupDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="calculationErrors" type="CalculationErrors">
+
+      Errors that occurred during calculation.
+
+      <Expandable title="calculationErrors properties">
+
+        <ResponseField name="taxCalculationError" type="Details">
+
+          Tax calculation error.
+
+          <Expandable title="taxCalculationError properties">
+
+            <ResponseField name="tracing" type="object" deprecated>
+
+              deprecated in API's - to enable migration from rendering arbitrary tracing to rest response
+
+              **Deprecated.** Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="kind" type="kind">
+
+              kind
+
+              _Nested structure omitted for brevity — see the `kind` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="shippingCalculationError" type="shippingCalculationError">
+
+          shippingCalculationError
+
+          <Expandable title="shippingCalculationError properties">
+
+            <ResponseField name="generalShippingCalculationError" type="Details">
+
+              General shipping calculation error.
+
+              _Nested structure omitted for brevity — see the `Details` object._
+
+            </ResponseField>
+
+            <ResponseField name="carrierErrors" type="CarrierErrors">
+
+              Shipping carrier-specific errors.
+
+              _Nested structure omitted for brevity — see the `CarrierErrors` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="correlationId" type="string">
+
+      Correlation ID. Pass this in subsequent calculations to optimize incremental recalculations.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NO_META_SITE` | Couldn't resolve the site. Make sure authentication includes a valid site ID. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEM_CATALOG_ITEM_NOT_FOUND` | A line item references a catalog item that does not exist or is unavailable in its source catalog. |
+    | `400` | `INVALID_ARGUMENT` | `DEPOSIT_MUST_BE_LESS_THAN_TOTAL` | Deposit amount must be less than the invoice total. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_INVOICE_TYPE` | Calculate is only supported for invoices with reference type STANDALONE or AUTO_CHARGE. |
+    | `500` | `INTERNAL` | `APP_INSTALLATION_FAILED` | The required apps couldn't be installed. |
+    | `500` | `INTERNAL` | `SITE_PROPERTIES_FAILED` | Couldn't retrieve business details from the site properties service. |
+    | `400` | `INVALID_ARGUMENT` | `ORDER_TOTAL_EXCEEDS_LIMIT` | Invoice total must be less than 10^13. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Validates and calculates totals for an invoice without creating it, including taxes, discounts, and line item totals.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/invoices/v4/invoices/calculate-invoice' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "invoice": {
+            "sourceReference": {
+              "appId": "13ee94c1-b635-8505-3391-97919052c16f"
+            },
+            "reference": {
+              "referenceType": "STANDALONE",
+              "standaloneReference": {}
+            },
+            "regionalProperties": {
+              "locale": {
+                "languageCode": "en",
+                "country": "US"
+              },
+              "language": "en",
+              "timeZone": "America/New_York"
+            },
+            "issueDate": "2024-01-15T00:00:00.000Z",
+            "dueDate": "2024-02-15T00:00:00.000Z",
+            "title": "Invoice for Flowers Order",
+            "currency": "USD",
+            "customerInfo": {
+              "contactId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "phone": "+1-555-555-5555",
+                "company": "John'\''s Company",
+                "vatId": {
+                  "id": "123-45-6789",
+                  "type": "CPF"
+                }
+              },
+              "billingAddress": {
+                "streetAddress": {
+                  "number": "123",
+                  "name": "Billing Street"
+                },
+                "city": "Boston",
+                "country": "US"
+              }
+            },
+            "shippingInfo": {
+              "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "phone": "+1-555-555-5555",
+                "company": "John'\''s Company",
+                "vatId": {
+                  "id": "123-45-6789",
+                  "type": "CPF"
+                }
+              },
+              "shippingAddress": {
+                "streetAddress": {
+                  "number": "123",
+                  "name": "Shipping Street"
+                },
+                "city": "Boston",
+                "country": "US"
+              }
+            },
+            "lineItems": [
+              {
+                "lineItemType": "CUSTOM",
+                "customItem": {
+                  "name": "Professional Services",
+                  "quantity": "1",
+                  "price": "500.00",
+                  "catalogReference": {
+                    "catalogItemId": "3a7106c8-150b-40ea-8c19-ee48622fe011",
+                    "appId": "73cb9f8a-569e-49a5-8071-7f8f2ccbea77"
+                  }
+                }
+              }
+            ]
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "invoice": {
+          "sourceReference": {
+            "appId": "13ee94c1-b635-8505-3391-97919052c16f"
+          },
+          "reference": {
+            "referenceType": "STANDALONE",
+            "standaloneReference": {}
+          },
+          "regionalProperties": {
+            "locale": {
+              "languageCode": "en",
+              "country": "US"
+            },
+            "language": "en",
+            "timeZone": "America/New_York"
+          },
+          "issueDate": "2024-01-15T00:00:00.000Z",
+          "dueDate": "2024-02-15T00:00:00.000Z",
+          "title": "Invoice for Flowers Order",
+          "currency": "USD",
+          "customerInfo": {
+            "contactId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "email": "john.doe@example.com",
+              "phone": "+1-555-555-5555",
+              "company": "John's Company",
+              "vatId": {
+                "id": "123-45-6789",
+                "type": "CPF"
+              }
+            },
+            "billingAddress": {
+              "streetAddress": {
+                "number": "123",
+                "name": "Billing Street"
+              },
+              "city": "Boston",
+              "country": "US"
+            }
+          },
+          "shippingInfo": {
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "email": "john.doe@example.com",
+              "phone": "+1-555-555-5555",
+              "company": "John's Company",
+              "vatId": {
+                "id": "123-45-6789",
+                "type": "CPF"
+              }
+            },
+            "shippingAddress": {
+              "streetAddress": {
+                "number": "123",
+                "name": "Shipping Street"
+              },
+              "city": "Boston",
+              "country": "US"
+            }
+          },
+          "lineItems": [
+            {
+              "lineItemType": "CUSTOM",
+              "customItem": {
+                "name": "Professional Services",
+                "quantity": "1",
+                "price": "500.00",
+                "catalogReference": {
+                  "catalogItemId": "3a7106c8-150b-40ea-8c19-ee48622fe011",
+                  "appId": "73cb9f8a-569e-49a5-8071-7f8f2ccbea77"
+                },
+                "totals": {
+                  "subtotal": "500.00",
+                  "priceBeforeTax": "500.00",
+                  "tax": "0.00",
+                  "priceAfterTax": "500.00"
+                }
+              }
+            }
+          ],
+          "totals": {
+            "subtotal": "500.00",
+            "discount": "0.00",
+            "shipping": "0.00",
+            "tax": "0.00",
+            "total": "500.00",
+            "paidAmount": "0.00",
+            "balance": "500.00"
+          }
+        },
+        "correlationId": "d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f90"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Calculates totals, taxes, and available shipping options for a standalone invoice. Supports both custom and catalog line items.
+
+    Use this method before creating or updating an invoice to preview calculated values. Pass the returned `correlationId` in subsequent calculations to optimize incremental recalculations.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INVOICES.MANAGE">Manage Invoices</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { invoices } from '@wix/get-paid';
+
+    invoices.calculateInvoice(invoice, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="invoice" type="Invoice" required>
+
+      Invoice to calculate.
+
+      See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CalculateInvoiceOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="correlationId" type="string">
+
+          Correlation ID from a previous calculation. Pass this to optimize incremental recalculations.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="invoice" type="Invoice">
+
+      Calculated invoice.
+
+      See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="shipmentOptions" type="ShipmentOption[]">
+
+      Available shipping options for the invoice.
+
+      <Expandable title="shipmentOptions properties">
+
+        <ResponseField name="carrierId" type="string">
+
+          Shipping carrier ID.
+
+        </ResponseField>
+
+        <ResponseField name="code" type="string">
+
+          Shipping method code.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Shipping method title.
+
+        </ResponseField>
+
+        <ResponseField name="price" type="string">
+
+          Shipping price.
+
+        </ResponseField>
+
+        <ResponseField name="logistics" type="DeliveryLogisticsOption">
+
+          Delivery logistics details.
+
+          <Expandable title="logistics properties">
+
+            <ResponseField name="deliveryTime" type="string">
+
+              Expected delivery time as free text.
+
+            </ResponseField>
+
+            <ResponseField name="deliveryTimeSlot" type="DeliveryTimeSlot">
+
+              Expected delivery time window.
+
+              _Nested structure omitted for brevity — see the `DeliveryTimeSlot` object._
+
+            </ResponseField>
+
+            <ResponseField name="instructions" type="string">
+
+              Carrier delivery instructions.
+
+            </ResponseField>
+
+            <ResponseField name="pickupDetails" type="PickupDetails">
+
+              Additional pickup details.
+
+              _Nested structure omitted for brevity — see the `PickupDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="calculationErrors" type="CalculationErrors">
+
+      Errors that occurred during calculation.
+
+      <Expandable title="calculationErrors properties">
+
+        <ResponseField name="taxCalculationError" type="Details">
+
+          Tax calculation error.
+
+          <Expandable title="taxCalculationError properties">
+
+            <ResponseField name="tracing" type="object" deprecated>
+
+              deprecated in API's - to enable migration from rendering arbitrary tracing to rest response
+
+              **Deprecated.** Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="kind" type="kind">
+
+              kind
+
+              _Nested structure omitted for brevity — see the `kind` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="shippingCalculationError" type="shippingCalculationError">
+
+          shippingCalculationError
+
+          <Expandable title="shippingCalculationError properties">
+
+            <ResponseField name="generalShippingCalculationError" type="Details">
+
+              General shipping calculation error.
+
+              _Nested structure omitted for brevity — see the `Details` object._
+
+            </ResponseField>
+
+            <ResponseField name="carrierErrors" type="CarrierErrors">
+
+              Shipping carrier-specific errors.
+
+              _Nested structure omitted for brevity — see the `CarrierErrors` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="correlationId" type="string">
+
+      Correlation ID. Pass this in subsequent calculations to optimize incremental recalculations.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NO_META_SITE` | Couldn't resolve the site. Make sure authentication includes a valid site ID. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEM_CATALOG_ITEM_NOT_FOUND` | A line item references a catalog item that does not exist or is unavailable in its source catalog. |
+    | `400` | `INVALID_ARGUMENT` | `DEPOSIT_MUST_BE_LESS_THAN_TOTAL` | Deposit amount must be less than the invoice total. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_INVOICE_TYPE` | Calculate is only supported for invoices with reference type STANDALONE or AUTO_CHARGE. |
+    | `500` | `INTERNAL` | `APP_INSTALLATION_FAILED` | The required apps couldn't be installed. |
+    | `500` | `INTERNAL` | `SITE_PROPERTIES_FAILED` | Couldn't retrieve business details from the site properties service. |
+    | `400` | `INVALID_ARGUMENT` | `ORDER_TOTAL_EXCEEDS_LIMIT` | Invoice total must be less than 10^13. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-calculate-invoice" id="ex-sdk-calculate-invoice-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-calculate-invoice" id="ex-sdk-calculate-invoice-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-calculate-invoice" id="ex-sdk-calculate-invoice-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-calculate-invoice-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-calculate-invoice-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">calculateInvoice</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">calculateInvoice (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">calculateInvoice (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-calculate-invoice-0"><span className="wix-picker-name">calculateInvoice</span></label>
+    <label htmlFor="ex-sdk-calculate-invoice-1"><span className="wix-picker-name">calculateInvoice (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-calculate-invoice-2"><span className="wix-picker-name">calculateInvoice (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculateInvoice
+    import { invoices } from '@wix/get-paid';
+
+    async function calculateInvoice(invoice,options) {
+      const response = await invoices.calculateInvoice(invoice,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculateInvoice (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { invoices } from '@wix/get-paid';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { invoices },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function calculateInvoice(invoice,options) {
+      const response = await myWixClient.invoices.calculateInvoice(invoice,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculateInvoice (with elevated permissions)
+    import { invoices } from '@wix/get-paid';
+    import { auth } from '@wix/essentials';
+
+    async function myCalculateInvoiceMethod(invoice,options) {
+      const elevatedCalculateInvoice = auth.elevate(invoices.calculateInvoice);
+      const response = await elevatedCalculateInvoice(invoice,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,56 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that your app can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that your app can support. It provides a useful starting point as you plan your app's implementation.
+
+## Manage supplier profiles in marketplace ecosystems
+
+Your marketplace platform needs to onboard new suppliers and maintain their profiles with accurate information including location, ratings, and trust verification status. This ensures providers can make informed decisions when selecting suppliers for their product catalogs.
+
+To manage supplier profiles in your marketplace ecosystem:
+
+1. Call [Create Supplier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/create-supplier) with required supplier information including `name` and optional details like `location`, `types`, and `rating`.
+2. Store the returned supplier `id` and `revision` number for future operations.
+3. Call [Get Supplier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/get-supplier) to retrieve current supplier information and verify the latest `revision` number.
+4. Call [Update Supplier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/update-supplier) with the current `revision` number to modify supplier details like trust status or rating.
+5. Call [Delete Supplier](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/delete-supplier) to permanently remove suppliers that are no longer active in your marketplace.
+
+## Perform bulk supplier data operations
+
+Your system needs to process large volumes of supplier data efficiently, such as importing suppliers from external sources or updating multiple supplier records simultaneously. Bulk operations allow you to handle up to 100 suppliers per request while maintaining data consistency.
+
+To perform bulk supplier data operations:
+
+1. Prepare your supplier data in batches of up to 100 suppliers per request. If you have more than 100 suppliers, split them into multiple batches.
+2. Call [Bulk Create Suppliers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/bulk-create-suppliers) with `returnEntity: true` to create multiple suppliers and receive the created entities with their assigned IDs and revision numbers. Each supplier must include required fields `name` and `types`.
+3. Call [Bulk Update Suppliers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/bulk-update-suppliers) with current revision numbers for each supplier to modify multiple records simultaneously. Remember to update both `rating` and `reviewCount` together when changing rating information.
+4. Call [Bulk Delete Suppliers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/bulk-delete-suppliers) with an array of supplier IDs to remove multiple suppliers in a single operation.
+5. Process the failed operations from `bulkActionMetadata.totalFailures` to identify and handle them appropriately. Check the `error` field in individual item metadata for details.
+
+## Organize suppliers with tags and categories
+
+Your marketplace needs to categorize suppliers for better organization and filtering capabilities. You want to use both public tags for general categorization visible to site members and private tags for internal management purposes.
+
+To organize suppliers with tags and categories:
+
+1. Create or identify the tag IDs you want to assign to suppliers, maximum 5 characters per tag ID. Organize tags into `publicTags` for customer-facing categories and `privateTags` for internal use.
+2. For up to 100 specific suppliers, call [Bulk Update Supplier Tags](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/bulk-update-supplier-tags) with `supplierIds`, `assignTags`, and `unassignTags`. Note that if a tag appears in both lists, it will be assigned. Assignment takes precedence.
+3. For large-scale tag operations across many suppliers, call [Bulk Update Supplier Tags By Filter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/bulk-update-supplier-tags-by-filter) with filter criteria to asynchronously update tags on all suppliers matching specific conditions such as location or verification status. This endpoint has no supplier limit.
+4. For asynchronous operations, store the returned `jobId` to track completion status.
+5. Call [Query Suppliers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/query-suppliers) with tag filters to retrieve suppliers based on their assigned categories. For example, filter by `tags.publicTags.tagIds` to find all suppliers with a specific public tag.
+
+## Synchronize supplier data across systems
+
+Your application needs to maintain consistent supplier data across multiple systems and trigger downstream workflows when supplier information changes. This ensures all connected systems stay synchronized with the latest supplier updates.
+
+To synchronize supplier data across systems:
+
+1. Set up webhooks to listen for supplier domain events: [Supplier Created](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/supplier-created), [Supplier Updated](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/supplier-updated), [Supplier Deleted](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/supplier-deleted), and [Supplier Tags Modified](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/supplier-tags-modified). These events support real-time synchronization, audit logging, and workflow triggers.
+2. When receiving a Supplier Created event, extract the new supplier data and replicate it to your connected systems. The event includes the complete supplier entity with its assigned `id` and `appId`.
+3. For Supplier Updated events, use the `modifiedFields` information to identify what changed and update only the relevant data in downstream systems. This reduces unnecessary processing.
+4. Process Supplier Deleted events by removing the supplier from all connected systems and cleaning up related data.
+5. Handle Supplier Tags Modified events by updating tag associations in your categorization systems. The event includes both `assignedTags` and `unassignedTags`.
+6. Use [Query Suppliers](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/suppliers/query-suppliers) with cursor paging to perform initial data synchronization or recover from missed events. Request up to 100 suppliers per call, then use the `next` cursor from `pagingMetadata` to retrieve subsequent pages until `hasNext` is `false`.

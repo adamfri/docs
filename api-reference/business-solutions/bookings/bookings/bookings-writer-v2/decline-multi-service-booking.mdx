@@ -1,0 +1,725 @@
+---
+title: "Decline Multi Service Booking"
+description: "Updates the status for all single-service bookings in a multi-service booking to DECLINED."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates the status for all single-service bookings in a multi-service booking to `DECLINED`.
+
+    Call this method to reject multi-service bookings that can't be accommodated or don't meet business requirements.
+
+    ### Status requirements
+
+    - __Original status__: All single-service bookings must have `PENDING`, `CREATED`, or `WAITING_LIST` status.
+    - __Target status__: All bookings move to `DECLINED` together (all-or-nothing operation).
+
+    ### Checkout restrictions
+
+    Only call this method if the customer paid via a custom checkout. For Wix eCommerce checkouts,
+    Wix Bookings automatically manages the bookings' statuses based on payment processing.
+
+    ### Additional updates
+
+    - __Payment status__: Updates if you specify a new `declineBookingsInfo.paymentStatus`.
+    - __Customer notifications__: Send messages using `participantNotification`.
+    - __Revision control__: Requires current revision numbers for all single-service bookings.
+
+    Refer to [Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/decline-booking) for more details about declining single-service bookings.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings/{multiServiceBookingId}/decline
+    ```
+
+    ## Path Params
+
+    <ParamField path="multiServiceBookingId" type="string" required>
+
+      ID of the multi-service booking to decline.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="declineBookingsInfo" type="BookingInfo[]">
+
+      Information about the single-service bookings to decline.
+
+      <Expandable title="declineBookingsInfo properties">
+
+        <ParamField body="bookingId" type="string">
+
+          ID of the single-service booking.
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer">
+
+          Revision number, which increments by 1 each time the booking is updated.
+          To prevent conflicting changes, the current revision must be specified when managing the booking.
+
+        </ParamField>
+
+        <ParamField body="paymentStatus" type="string">
+
+          Payment status to set for the single-service booking.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Information about whether to notify the customer and the message to send.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to send a message about the changes to the customer.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Custom message to send to the participants about the changes to the booking.
+
+        </ParamField>
+
+        <ParamField body="metadata" type="object">
+
+          Information about the delivery channels used to send the notification.
+          For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+          Constraints: `format map`.
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="doubleBooked" type="boolean">
+
+      Whether this booking has a conflict with at least 1 other confirmed booking.
+
+    </ParamField>
+
+    <ParamField body="returnFullEntity" type="boolean">
+
+      Whether to return the declined single-service bookings.
+
+    </ParamField>
+
+    <ParamField body="flowControlSettings" type="DeclineBookingFlowControlSettings">
+
+      Information about whether specific procedures of the standard Wix Bookings declining flow are changed.
+      For example, whether to issue a refund upon cancellation.
+
+      <Expandable title="flowControlSettings properties">
+
+        <ParamField body="withRefund" type="boolean">
+
+          Whether a refund is expected when declining the booking.
+
+          The refund will be issued only if the booking is refundable.
+          A booking paid by membership is refunded by Wix Bookings itself.
+          A booking paid by any other method is refunded by the site's refund automation, if one is set up.
+          If specifying `true`, the booking flow control settings will be set with a refund.
+          If you specify `false` or an empty field,
+          the booking flow control settings are set without refund.
+
+          Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="multiServiceBooking" type="MultiServiceBooking">
+
+      Declined multi-service booking.
+
+      <Expandable title="multiServiceBooking properties">
+
+        <ResponseField name="id" type="string">
+
+          Multi-service booking ID.
+
+        </ResponseField>
+
+        <ResponseField name="bookings" type="BookingResult[]">
+
+          The single-service bookings that make up the multi-service booking package.
+
+          <Expandable title="bookings properties">
+
+            <ResponseField name="bookingId" type="string">
+
+              Single-service booking ID. Always present.
+              This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="booking" type="Booking">
+
+              Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+              See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `MULTI_SERVICE_BOOKING_NOT_FOUND` |  |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` |  |
+    | `400` | `INVALID_ARGUMENT` | `REVISION_MISSING` |  |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_BOOKING_STATUS` |  |
+    | `428` | `FAILED_PRECONDITION` | `ALL_BOOKINGS_ARE_ALREADY_DECLINED` |  |
+    | `400` | `INVALID_ARGUMENT` | `NOT_ALL_BOOKINGS_WERE_SENT` |  |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_BOOKING_INFO` |  |
+    | `500` | `INTERNAL` | `SOME_BOOKINGS_UPDATES_FAILED` |  |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_REVISION_MISMATCH` |  |
+    | `403` | `PERMISSION_DENIED` | `MULTI_SERVICE_BOOKING_INCLUDES_MULTIPLE_STAFF_MEMBERS` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Declined | `wix.bookings.v2.booking_declined` | Triggered when a booking is declined. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings/a1b2c3d4-e5f6-7890-abcd-ef1234567890/decline' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "declineBookingsInfo": [
+            {
+              "bookingId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+              "revision": "1",
+              "paymentStatus": "REFUNDED"
+            },
+            {
+              "bookingId": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+              "revision": "1",
+              "paymentStatus": "REFUNDED"
+            }
+          ],
+          "participantNotification": {
+            "notifyParticipants": true,
+            "message": "Unfortunately, we cannot accommodate your spa package at this time. A full refund has been issued."
+          },
+          "doubleBooked": false,
+          "returnFullEntity": true,
+          "flowControlSettings": {
+            "withRefund": false
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "multiServiceBooking": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "bookings": [
+            {
+              "bookingId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+              "booking": {
+                "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                "status": "DECLINED",
+                "paymentStatus": "REFUNDED",
+                "bookedEntity": {
+                  "slot": {
+                    "scheduleId": "d4e5f6a7-b8c9-0123-defa-234567890123",
+                    "startDate": "2024-02-15T14:00:00.000Z",
+                    "endDate": "2024-02-15T15:00:00.000Z"
+                  }
+                },
+                "contactDetails": {
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "email": "jane.smith@example.com",
+                  "phone": "+1-555-123-4567"
+                }
+              }
+            },
+            {
+              "bookingId": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+              "booking": {
+                "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+                "status": "DECLINED",
+                "paymentStatus": "REFUNDED",
+                "bookedEntity": {
+                  "slot": {
+                    "scheduleId": "e5f6a7b8-c9d0-1234-efab-345678901234",
+                    "startDate": "2024-02-15T15:00:00.000Z",
+                    "endDate": "2024-02-15T15:45:00.000Z"
+                  }
+                },
+                "contactDetails": {
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "email": "jane.smith@example.com",
+                  "phone": "+1-555-123-4567"
+                }
+              }
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates the status for all single-service bookings in a multi-service booking to `DECLINED`.
+
+    Call this method to reject multi-service bookings that can't be accommodated or don't meet business requirements.
+
+    ### Status requirements
+
+    - __Original status__: All single-service bookings must have `PENDING`, `CREATED`, or `WAITING_LIST` status.
+    - __Target status__: All bookings move to `DECLINED` together (all-or-nothing operation).
+
+    ### Checkout restrictions
+
+    Only call this method if the customer paid via a custom checkout. For Wix eCommerce checkouts,
+    Wix Bookings automatically manages the bookings' statuses based on payment processing.
+
+    ### Additional updates
+
+    - __Payment status__: Updates if you specify a new `declineBookingsInfo.paymentStatus`.
+    - __Customer notifications__: Send messages using `participantNotification`.
+    - __Revision control__: Requires current revision numbers for all single-service bookings.
+
+    Refer to [Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/decline-booking) for more details about declining single-service bookings.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.declineMultiServiceBooking(multiServiceBookingId, options): Promise<DeclineMultiServiceBookingResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="multiServiceBookingId" type="string" required>
+
+      ID of the multi-service booking to decline.
+
+    </ParamField>
+
+    <ParamField body="options" type="DeclineMultiServiceBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="declineBookingsInfo" type="BookingInfo[]">
+
+          Information about the single-service bookings to decline.
+
+          <Expandable title="declineBookingsInfo properties">
+
+            <ParamField body="bookingId" type="string">
+
+              ID of the single-service booking.
+
+            </ParamField>
+
+            <ParamField body="revision" type="integer">
+
+              Revision number, which increments by 1 each time the booking is updated.
+              To prevent conflicting changes, the current revision must be specified when managing the booking.
+
+            </ParamField>
+
+            <ParamField body="paymentStatus" type="string">
+
+              Payment status to set for the single-service booking.
+
+              **Supported values:**
+
+              - `UNDEFINED` — Undefined payment status.
+              - `NOT_PAID` — The booking isn't paid.
+              - `PAID` — The booking is fully paid.
+              - `PARTIALLY_PAID` — The booking is partially paid.
+              - `REFUNDED` — The booking is refunded.
+              - `EXEMPT` — The booking is free of charge.
+              - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Information about whether to notify the customer and the message to send.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to send a message about the changes to the customer.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Custom message to send to the participants about the changes to the booking.
+
+            </ParamField>
+
+            <ParamField body="metadata" type="object">
+
+              Information about the delivery channels used to send the notification.
+              For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="doubleBooked" type="boolean">
+
+          Whether this booking has a conflict with at least 1 other confirmed booking.
+
+        </ParamField>
+
+        <ParamField body="returnFullEntity" type="boolean">
+
+          Whether to return the declined single-service bookings.
+
+        </ParamField>
+
+        <ParamField body="flowControlSettings" type="DeclineBookingFlowControlSettings">
+
+          Information about whether specific procedures of the standard Wix Bookings declining flow are changed.
+          For example, whether to issue a refund upon cancellation.
+
+          <Expandable title="flowControlSettings properties">
+
+            <ParamField body="withRefund" type="boolean">
+
+              Whether a refund is expected when declining the booking.
+
+              The refund will be issued only if the booking is refundable.
+              A booking paid by membership is refunded by Wix Bookings itself.
+              A booking paid by any other method is refunded by the site's refund automation, if one is set up.
+              If specifying `true`, the booking flow control settings will be set with a refund.
+              If you specify `false` or an empty field,
+              the booking flow control settings are set without refund.
+
+              Default: `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<DeclineMultiServiceBookingResponse>`.
+
+    <ResponseField name="multiServiceBooking" type="MultiServiceBooking">
+
+      Declined multi-service booking.
+
+      <Expandable title="multiServiceBooking properties">
+
+        <ResponseField name="_id" type="string">
+
+          Multi-service booking ID.
+
+        </ResponseField>
+
+        <ResponseField name="bookings" type="BookingResult[]">
+
+          The single-service bookings that make up the multi-service booking package.
+
+          <Expandable title="bookings properties">
+
+            <ResponseField name="bookingId" type="string">
+
+              Single-service booking ID. Always present.
+              This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="booking" type="Booking">
+
+              Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+              See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `MULTI_SERVICE_BOOKING_NOT_FOUND` |  |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` |  |
+    | `400` | `INVALID_ARGUMENT` | `REVISION_MISSING` |  |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_BOOKING_STATUS` |  |
+    | `428` | `FAILED_PRECONDITION` | `ALL_BOOKINGS_ARE_ALREADY_DECLINED` |  |
+    | `400` | `INVALID_ARGUMENT` | `NOT_ALL_BOOKINGS_WERE_SENT` |  |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_BOOKING_INFO` |  |
+    | `500` | `INTERNAL` | `SOME_BOOKINGS_UPDATES_FAILED` |  |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_REVISION_MISMATCH` |  |
+    | `403` | `PERMISSION_DENIED` | `MULTI_SERVICE_BOOKING_INCLUDES_MULTIPLE_STAFF_MEMBERS` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Declined | `wix.bookings.v2.booking_declined` | Triggered when a booking is declined. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-decline-multi-service-booking" id="ex-sdk-decline-multi-service-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-decline-multi-service-booking" id="ex-sdk-decline-multi-service-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-decline-multi-service-booking" id="ex-sdk-decline-multi-service-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-decline-multi-service-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-decline-multi-service-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">declineMultiServiceBooking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">declineMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">declineMultiServiceBooking (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-decline-multi-service-booking-0"><span className="wix-picker-name">declineMultiServiceBooking</span></label>
+    <label htmlFor="ex-sdk-decline-multi-service-booking-1"><span className="wix-picker-name">declineMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-decline-multi-service-booking-2"><span className="wix-picker-name">declineMultiServiceBooking (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript declineMultiServiceBooking
+    import { bookings } from '@wix/bookings';
+
+    async function declineMultiServiceBooking(multiServiceBookingId,options) {
+      const response = await bookings.declineMultiServiceBooking(multiServiceBookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript declineMultiServiceBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function declineMultiServiceBooking(multiServiceBookingId,options) {
+      const response = await myWixClient.bookings.declineMultiServiceBooking(multiServiceBookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript declineMultiServiceBooking (with elevated permissions)
+    import { bookings } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myDeclineMultiServiceBookingMethod(multiServiceBookingId,options) {
+      const elevatedDeclineMultiServiceBooking = auth.elevate(bookings.declineMultiServiceBooking);
+      const response = await elevatedDeclineMultiServiceBooking(multiServiceBookingId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

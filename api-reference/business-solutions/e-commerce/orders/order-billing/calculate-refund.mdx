@@ -1,0 +1,1209 @@
+---
+title: "Calculate Refund"
+description: "Calculates the total refund amount and breakdown for specified line items, shipping, and additional fees."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Calculates the total refund amount and breakdown for specified line items, shipping, and additional fees.
+
+    Returns detailed calculations including:
+    - Total refund amount with tax, discount, and subtotal breakdowns
+    - Individual item calculations with pricing details
+    - Validation of whether the requested refund items are available
+
+    Use this method to preview refund amounts before calling Refund Payments.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/calculate-refund
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to calculate refund for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="refundItems" type="RefundItems">
+
+      Items to include in the refund calculation with their respective quantities and amounts.
+
+      Specify which line items, shipping charges, and additional fees to refund.
+
+      <Expandable title="refundItems properties">
+
+        <ParamField body="lineItems" type="LineItemRefund[]">
+
+          Line items and their quantities to refund.
+
+          Constraints: `minItems 0`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="lineItemId" type="string" required>
+
+              Line item ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer" required>
+
+              Quantity of this product to refund.
+              Cannot exceed the available refund quantity for this line item.
+
+              Constraints: `min 1`, `max 100000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalFees" type="AdditionalFeeRefund[]">
+
+          Additional fees and their amounts to refund.
+
+          Constraints: `minItems 0`, `maxItems 100`.
+
+          <Expandable title="additionalFees properties">
+
+            <ParamField body="additionalFeeId" type="string" required>
+
+              Additional fee ID to refund.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="Price">
+
+              Amount of the additional fee to refund.
+              If not specified, the full remaining refundable amount for this fee will be refunded.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="shipping" type="ShippingRefund">
+
+          Shipping amount to refund.
+
+          <Expandable title="shipping properties">
+
+            <ParamField body="amount" type="Price">
+
+              Amount of shipping charges to refund.
+              If not specified, the full remaining refundable shipping amount will be refunded.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="summary" type="AggregatedRefundSummary">
+
+      Aggregated summary of all items provided for refund.
+
+      This field is not returned when refund is not available for the given list of items.
+
+      <Expandable title="summary properties">
+
+        <ResponseField name="total" type="Price">
+
+          Total refund amount.
+
+          <Expandable title="total properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="tax" type="Price">
+
+          Tax amount for the items being refunded.
+
+          <Expandable title="tax properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="discount" type="Price">
+
+          Discount amount for the items being refunded.
+
+          <Expandable title="discount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="subtotal" type="Price">
+
+          Total cost of the items being refunded (without tax and discount).
+
+          <Expandable title="subtotal properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="lineItemsSubtotal" type="Price">
+
+          Total cost of the line items being refunded (without tax and discount).
+
+          <Expandable title="lineItemsSubtotal properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFeesTotal" type="Price">
+
+          Total cost of the additional fees being refunded.
+
+          <Expandable title="additionalFeesTotal properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="calculatedRefundItems" type="CalculatedRefundItems">
+
+      Detailed refund calculations broken down by each requested item type.
+
+      <Expandable title="calculatedRefundItems properties">
+
+        <ResponseField name="lineItems" type="CalculatedLineItemRefund[]">
+
+          Calculated refund details for each line item.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ResponseField name="item" type="LineItemRefund">
+
+              Line item refund details.
+
+              _Nested structure omitted for brevity — see the `LineItemRefund` object._
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="CalculatedRefundSummary">
+
+              Calculated refund summary for this line item.
+
+              _Nested structure omitted for brevity — see the `CalculatedRefundSummary` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFees" type="CalculatedAdditionalFeeRefund[]">
+
+          Calculated refund details for each additional fee.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="additionalFees properties">
+
+            <ResponseField name="additionalFee" type="AdditionalFeeRefund">
+
+              Additional fee refund details.
+
+              _Nested structure omitted for brevity — see the `AdditionalFeeRefund` object._
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="CalculatedRefundSummary">
+
+              Calculated refund summary for this additional fee.
+
+              _Nested structure omitted for brevity — see the `CalculatedRefundSummary` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="shipping" type="CalculatedShippingRefund">
+
+          Calculated refund details for the shipping fee.
+
+          <Expandable title="shipping properties">
+
+            <ResponseField name="shipping" type="ShippingRefund">
+
+              Shipping refund details.
+
+              _Nested structure omitted for brevity — see the `ShippingRefund` object._
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="CalculatedRefundSummary">
+
+              Calculated refund summary for shipping.
+
+              _Nested structure omitted for brevity — see the `CalculatedRefundSummary` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-calculate-refund" id="ex-rest-calculate-refund-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-calculate-refund" id="ex-rest-calculate-refund-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-calculate-refund-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-calculate-refund-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate refund for invalid quantity of line items and shipping that's already been refunded</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate valid refund for 1 line item and 1 additional fee</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-calculate-refund-0"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate refund for invalid quantity of line items and shipping that's already been refunded</span></label>
+    <label htmlFor="ex-rest-calculate-refund-1"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate valid refund for 1 line item and 1 additional fee</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/calculate-refund' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "orderId": "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+          "refundItems": {
+      			"lineItems": [
+      				{
+      					"lineItemId": "00000000-0000-0000-0000-000000000001",
+      					"quantity": 10000
+      				}
+      			],
+      			"shipping": {
+      				"amount": {
+      					"amount": "1"
+      				}
+      			}
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "calculatedRefundItems": {
+          "lineItems": [],
+          "additionalFees": []
+        },
+        "notAvailable": {
+          "errors": [
+            {
+              "lineItem": {
+                "lineItemId": "00000000-0000-0000-0000-000000000001",
+                "quantity": 10000
+              },
+              "error": {
+                "applicationError": {
+                  "code": "INVALID_LINE_ITEM_REFUND_QUANTITY",
+                  "description": "Invalid refund quantity for line item [00000000-0000-0000-0000-000000000001]. Requested [10000], available [2]."
+                }
+              }
+            },
+            {
+              "shipping": {
+                "amount": {
+                  "amount": "1",
+                  "formattedAmount": ""
+                }
+              },
+              "error": {
+                "applicationError": {
+                  "code": "INVALID_SHIPPING_REFUND_AMOUNT",
+                  "description": "Invalid refund amount for shipping. Requested [1], available [0.00]."
+                }
+              }
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/calculate-refund' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "orderId": "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+          "refundItems": {
+      			"lineItems": [
+      				{
+      					"lineItemId": "00000000-0000-0000-0000-000000000001",
+      					"quantity": 1
+      				}
+      			],
+      			"additionalFees": [
+      				{
+      					"additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+      					"amount": {
+      						"amount": "1"
+      					}
+      				}
+      			]
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "summary": {
+          "total": {
+            "amount": "23.00",
+            "formattedAmount": "$23.00"
+          },
+          "tax": {
+            "amount": "2.00",
+            "formattedAmount": "$2.00"
+          },
+          "discount": {
+            "amount": "0.00",
+            "formattedAmount": "$0.00"
+          },
+          "subtotal": {
+            "amount": "21.00",
+            "formattedAmount": "$21.00"
+          },
+          "lineItemsSubtotal": {
+            "amount": "20.00",
+            "formattedAmount": "$20.00"
+          },
+          "additionalFeesTotal": {
+            "amount": "1",
+            "formattedAmount": "$1.00"
+          }
+        },
+        "calculatedRefundItems": {
+          "lineItems": [
+            {
+              "item": {
+                "lineItemId": "00000000-0000-0000-0000-000000000001",
+                "quantity": 1
+              },
+              "summary": {
+                "total": {
+                  "amount": "22.00",
+                  "formattedAmount": "$22.00"
+                },
+                "tax": {
+                  "amount": "2.00",
+                  "formattedAmount": "$2.00"
+                },
+                "discount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "subtotal": {
+                  "amount": "20.00",
+                  "formattedAmount": "$20.00"
+                }
+              }
+            }
+          ],
+          "additionalFees": [
+            {
+              "additionalFee": {
+                "additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+                "amount": {
+                  "amount": "1",
+                  "formattedAmount": ""
+                }
+              },
+              "summary": {
+                "total": {
+                  "amount": "1",
+                  "formattedAmount": "$1.00"
+                },
+                "tax": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "discount": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                },
+                "subtotal": {
+                  "amount": "1.00",
+                  "formattedAmount": "$1.00"
+                }
+              }
+            }
+          ]
+        },
+        "available": true
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Calculates the total refund amount and breakdown for specified line items, shipping, and additional fees.
+
+    Returns detailed calculations including:
+    - Total refund amount with tax, discount, and subtotal breakdowns
+    - Individual item calculations with pricing details
+    - Validation of whether the requested refund items are available
+
+    Use this method to preview refund amounts before calling Refund Payments.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.calculateRefund(orderId, options): Promise<CalculateRefundResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to calculate refund for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CalculateRefundOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="refundItems" type="RefundItems">
+
+          Items to include in the refund calculation with their respective quantities and amounts.
+
+          Specify which line items, shipping charges, and additional fees to refund.
+
+          <Expandable title="refundItems properties">
+
+            <ParamField body="lineItems" type="LineItemRefund[]">
+
+              Line items and their quantities to refund.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `LineItemRefund[]` object._
+
+            </ParamField>
+
+            <ParamField body="additionalFees" type="AdditionalFeeRefund[]">
+
+              Additional fees and their amounts to refund.
+
+              Constraints: `minItems 0`, `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `AdditionalFeeRefund[]` object._
+
+            </ParamField>
+
+            <ParamField body="shipping" type="ShippingRefund">
+
+              Shipping amount to refund.
+
+              _Nested structure omitted for brevity — see the `ShippingRefund` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CalculateRefundResponse>`.
+
+    <ResponseField name="summary" type="AggregatedRefundSummary">
+
+      Aggregated summary of all items provided for refund.
+
+      This field is not returned when refund is not available for the given list of items.
+
+      <Expandable title="summary properties">
+
+        <ResponseField name="total" type="Price">
+
+          Total refund amount.
+
+          <Expandable title="total properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="tax" type="Price">
+
+          Tax amount for the items being refunded.
+
+          <Expandable title="tax properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="discount" type="Price">
+
+          Discount amount for the items being refunded.
+
+          <Expandable title="discount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="subtotal" type="Price">
+
+          Total cost of the items being refunded (without tax and discount).
+
+          <Expandable title="subtotal properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="lineItemsSubtotal" type="Price">
+
+          Total cost of the line items being refunded (without tax and discount).
+
+          <Expandable title="lineItemsSubtotal properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFeesTotal" type="Price">
+
+          Total cost of the additional fees being refunded.
+
+          <Expandable title="additionalFeesTotal properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="calculatedRefundItems" type="CalculatedRefundItems">
+
+      Detailed refund calculations broken down by each requested item type.
+
+      <Expandable title="calculatedRefundItems properties">
+
+        <ResponseField name="lineItems" type="CalculatedLineItemRefund[]">
+
+          Calculated refund details for each line item.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ResponseField name="item" type="LineItemRefund">
+
+              Line item refund details.
+
+              _Nested structure omitted for brevity — see the `LineItemRefund` object._
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="CalculatedRefundSummary">
+
+              Calculated refund summary for this line item.
+
+              _Nested structure omitted for brevity — see the `CalculatedRefundSummary` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFees" type="CalculatedAdditionalFeeRefund[]">
+
+          Calculated refund details for each additional fee.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="additionalFees properties">
+
+            <ResponseField name="additionalFee" type="AdditionalFeeRefund">
+
+              Additional fee refund details.
+
+              _Nested structure omitted for brevity — see the `AdditionalFeeRefund` object._
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="CalculatedRefundSummary">
+
+              Calculated refund summary for this additional fee.
+
+              _Nested structure omitted for brevity — see the `CalculatedRefundSummary` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="shipping" type="CalculatedShippingRefund">
+
+          Calculated refund details for the shipping fee.
+
+          <Expandable title="shipping properties">
+
+            <ResponseField name="shipping" type="ShippingRefund">
+
+              Shipping refund details.
+
+              _Nested structure omitted for brevity — see the `ShippingRefund` object._
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="CalculatedRefundSummary">
+
+              Calculated refund summary for shipping.
+
+              _Nested structure omitted for brevity — see the `CalculatedRefundSummary` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-calculate-refund" id="ex-sdk-calculate-refund-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-calculate-refund" id="ex-sdk-calculate-refund-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-calculate-refund" id="ex-sdk-calculate-refund-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-calculate-refund-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-calculate-refund-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate a valid refund for one line item and one additional fee</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate a refund that isn't available — an invalid line item quantity and already-refunded shipping</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">calculateRefund (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-calculate-refund-0"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate a valid refund for one line item and one additional fee</span></label>
+    <label htmlFor="ex-sdk-calculate-refund-1"><span className="wix-picker-name">Calculate Refund</span><span className="wix-picker-desc">Calculate a refund that isn't available — an invalid line item quantity and already-refunded shipping</span></label>
+    <label htmlFor="ex-sdk-calculate-refund-2"><span className="wix-picker-name">calculateRefund (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Calculate Refund
+    import { orderBilling } from "@wix/ecom";
+
+    async function calculateRefund() {
+      const response = await orderBilling.calculateRefund(
+        "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+        {
+          refundItems: {
+            lineItems: [
+              { lineItemId: "00000000-0000-0000-0000-000000000001", quantity: 1 },
+            ],
+            additionalFees: [
+              {
+                additionalFeeId: "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+                amount: { amount: "1" },
+              },
+            ],
+          },
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "available": true,
+     *   "summary": {
+     *     "total": { "amount": "23.00", "formattedAmount": "$23.00" }
+     *   },
+     *   "calculatedRefundItems": {
+     *     "lineItems": [
+     *       {
+     *         "item": {
+     *           "lineItemId": "00000000-0000-0000-0000-000000000001",
+     *           "quantity": 1
+     *         },
+     *         "summary": {
+     *           "total": { "amount": "22.00", "formattedAmount": "$22.00" }
+     *         }
+     *       }
+     *     ],
+     *     "additionalFees": [
+     *       {
+     *         "additionalFee": {
+     *           "additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f"
+     *         }
+     *       }
+     *     ]
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Calculate Refund
+    import { orderBilling } from "@wix/ecom";
+
+    async function calculateRefund() {
+      const response = await orderBilling.calculateRefund(
+        "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+        {
+          refundItems: {
+            lineItems: [
+              {
+                lineItemId: "00000000-0000-0000-0000-000000000001",
+                quantity: 10000,
+              },
+            ],
+            shipping: { amount: { amount: "1" } },
+          },
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "calculatedRefundItems": { "lineItems": [], "additionalFees": [] },
+     *   "notAvailable": {
+     *     "errors": [
+     *       {
+     *         "lineItem": {
+     *           "lineItemId": "00000000-0000-0000-0000-000000000001",
+     *           "quantity": 10000
+     *         },
+     *         "error": {
+     *           "applicationError": {
+     *             "code": "INVALID_LINE_ITEM_REFUND_QUANTITY",
+     *             "description": "Invalid refund quantity for line item [00000000-0000-0000-0000-000000000001]. Requested [10000], available [2]."
+     *           }
+     *         }
+     *       }
+     *     ]
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculateRefund (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function calculateRefund(orderId,options) {
+      const response = await myWixClient.orderBilling.calculateRefund(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

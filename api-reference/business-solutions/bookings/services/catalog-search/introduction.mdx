@@ -1,0 +1,138 @@
+---
+title: "Introduction"
+description: "The Bookings Catalog Search API lets you query a site's catalog of services and get back only the services that customers can actually book, each enriched with…"
+icon: "file-lines"
+---
+
+The Bookings Catalog Search API lets you query a site's catalog of
+[services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction)
+and get back only the services that customers can actually book, each enriched
+with availability data.
+
+The API applies catalog filters
+([WQL](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language)),
+business location, resource type, and resource
+[attribute](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/introduction)
+filters to the service catalog, then runs the matching services through the
+availability engine for a requested date range.
+
+Location, resource type, and attribute filters are combined with AND: a
+service's resource must satisfy the location/resource type filter and the
+attribute filter to be included. A resource configured as available at all
+locations always matches the location filter, regardless of which locations
+are specified.
+
+With the Catalog Search API, you can:
+
+- Query services and filter them by availability within a date range.
+- Narrow results by business location, resource type, and resource attributes.
+- Sort and page through results using standard WQL query options.
+- Optionally include unavailable services in the response.
+
+## More about catalog search
+
+The `QueryServicesByFilters` endpoint resolves results in 3 stages:
+
+1. **Catalog filtering**: The `query` field accepts a WQL filter, sort, and
+   cursor paging. This narrows the set of candidate services.
+2. **Resource pre-filtering**: The `serviceFilters` field narrows results
+   further by business location, resource type, and resource attributes.
+3. **Availability check**: When a date range is provided, only services with
+   bookable slots in that window are returned. Without a date range, all
+   pre-filtered services are returned without an availability check, each marked
+   `available: true`.
+
+### Availability window
+
+`serviceFilters` accepts a `localStartDate` and `localEndDate` pair (ISO
+local date-time) together with a `timeZone`. `localStartDate` must be strictly
+before `localEndDate`.
+
+How the window is matched depends on its shape:
+
+- **Hours within a single day** (for example `09:00` to `17:00`):
+  - `exactMatch: true`: the service must be bookable for the exact hour window,
+    matched to the minute.
+  - `exactMatch: false` (default): at least 1 bookable slot within the window.
+- **A single full day**: the service must be bookable that day (`exactMatch` is
+  not required).
+- **Multiple days**:
+  - `exactMatch: true`: the service must be bookable on every day in the range.
+  - `exactMatch: false` (default): at least 1 bookable slot anywhere in the range.
+
+**Range conventions.** A whole-day end may be written as the next day's
+`00:00:00` (exclusive) or as any time at or after `23:59:00` on the same day
+(inclusive); both mean "through the end of that day". A window counts as whole
+days only when it starts at `00:00:00` and ends on a day boundary; any other
+window is an hour window and is matched as such, even when it crosses midnight
+(such as `09:00` one day to `09:00` the next).
+
+**Hour-based and day-based services.** Services configured with a booking
+duration range refine the rules above: a single day is matched as a whole
+(any slot counts), sub-day hour windows still respect the `exactMatch` flag,
+and an exact multi-day window returns no results for hour-based services (an
+exact multi-day booking isn't meaningful when booking by the hour).
+
+Set `includeUnavailable: true` to also receive services that have no
+availability in the window, each marked `available: false`.
+
+### Paging
+
+The cursor in `pagingMetadata.cursors.next` is an opaque token owned by Catalog
+Search. Pass it unchanged in the next request's `query.cursorPaging.cursor`.
+Don't assume any relationship between this cursor and the internal cursors of
+Services V2 or other upstream services.
+
+If `query.cursorPaging.limit` isn't specified, it defaults to `10`.
+
+When filtering by availability (a date range is set in `serviceFilters` and
+`includeUnavailable` is `false`), specify `query.cursorPaging` to get complete
+result pages. Without it, a single page of filtered results is returned
+without backfilling to the requested page size.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- [Wix Bookings](fallback::https://www.wix.com/app-market/web-solution/bookings) must be
+  installed on a site before you can use the Catalog Search API.
+- To keep latency bounded, the resource pre-filter scans a capped number of
+  matching resources and attribute values. When these caps are exceeded, the
+  filtered set is truncated and results may be imprecise:
+  - Location and resource-type pre-filter: at most 200 matching resources are
+    scanned.
+  - Attribute pre-filter: at most 1,000 matching attribute values are scanned
+    across all conditions.
+
+## Use cases
+
+- [Show services bookable this week](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/sample-flows#show-services-bookable-this-week)
+- [Filter the catalog by location and resource attributes](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/sample-flows#filter-the-catalog-by-location-and-resource-attributes)
+- [Build a filter sidebar with unavailable services greyed out](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/sample-flows#build-a-filter-sidebar-with-unavailable-services-greyed-out)
+- [Require availability for an entire multi-day range](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/sample-flows#require-availability-for-an-entire-multi-day-range)
+- [Filter services by catalog fields](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/sample-flows#filter-services-by-catalog-fields)
+
+## Terminology
+
+- **Attribute**: A custom property defined on a
+  [resource type](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/introduction),
+  such as a language spoken or a certification. Used to filter services by the
+  attributes of the resources that provide them.
+- **Resource type**: A classification that links resources, such as staff
+  members or rooms, to the services they can provide.
+- **Availability window**: The date and time range specified in `serviceFilters`
+  used to determine which services are currently bookable.
+
+For a comprehensive glossary of Wix Bookings terms, see
+[Terminology](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/terminology).
+
+## See also
+
+- [Services V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction):
+  Create, manage, and retrieve the services a business offers.
+- [Resources](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/introduction):
+  Manage business resources, such as staff and rooms, needed to provide services.
+- [Locations](fallback::https://dev.wix.com/docs/rest/business-management/locations/introduction):
+  Manage business locations.
+
+@sdk_package_setup

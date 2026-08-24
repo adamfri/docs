@@ -1,0 +1,828 @@
+---
+title: "Create Multi Service Booking"
+description: "Creates a multi-service booking and all included single-service bookings simultaneously."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a multi-service booking and all included single-service bookings simultaneously.
+
+    ### When to call this method
+
+    Create sequential appointments where customers book related services together. For adding existing single-service bookings to an existing multi-service booking, call [Add Bookings to Multi Service Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/add-bookings-to-multi-service-booking) instead.
+
+    ### Requirements and behavior
+
+    __Package constraints__: Multi-service bookings support 2-8 appointment-based single-service bookings only (course and class bookings aren't supported). All single-service bookings must be at the same location with sequential scheduling and no gaps between appointments.
+
+    __Timing specification__: You must provide complete `slot` details (`scheduleId`, `startDate`, `endDate`) for each single-service booking. Wix Bookings validates sequential timing but doesn't auto-calculate it.
+
+    __Package pricing__: The total price equals the sum of individual services. To handle payment, pass each single-service booking's `bookings[].bookingId` from the response to the [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction). Don't use `multiServiceBooking.id`, the top-level multi-service booking ID isn't supported for checkout. Wix Bookings automatically syncs the payment status from the corresponding [Wix eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+    __Package notifications__: Customers receive 1 unified notification for the entire multi-service booking. Wix Bookings doesn't send notifications for the package's individual single-service bookings.
+
+    ### Related methods
+
+    Verify availability first with [List Multi Service Availability Time Slots](https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-multi-service-availability-time-slots).
+
+    See [Create Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) for more details about constraints and effects of creating single-service bookings.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings
+    ```
+
+    ## Body Params
+
+    <ParamField body="bookings" type="Booking[]" required>
+
+      Between 2 to 8 new single-service booking specifications to create and combine in a multi-service booking.
+
+      Each single-service booking specification must include `slot` details (`scheduleId`, `startDate`, and `endDate`).
+      Specify contact details, number of participants, and any additional fields as needed.
+
+      For sequential bookings, ensure the timing allows services to be scheduled back-to-back.
+
+      Constraints: `minItems 2`, `maxItems 8`.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Information about whether to notify the customer and the message to send.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to send a message about the changes to the customer.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Custom message to send to the participants about the changes to the booking.
+
+        </ParamField>
+
+        <ParamField body="metadata" type="object">
+
+          Information about the delivery channels used to send the notification.
+          For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+          Constraints: `format map`.
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="sendSmsReminder" type="boolean">
+
+      Whether to send an SMS reminder to the customer 24 hours before the session starts.
+      Wix Bookings takes the phone number from `contactDetails.phone`.
+
+      Default: `true`
+
+    </ParamField>
+
+    <ParamField body="flowControlSettings" type="CreateBookingFlowControlSettings">
+
+      Whether to ignore specific standard procedures of the Wix Bookings flow.
+      For example, whether to skip checking availability before updating the status.
+
+      <Expandable title="flowControlSettings properties">
+
+        <ParamField body="skipAvailabilityValidation" type="boolean">
+
+          Whether the availability is checked before creating the booking.
+
+          - `false`: A booking is only created when the slot or schedule is available.
+          - `true`: The booking is created regardless of availability conflicts. Make sure the call's [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) has the required permissions.
+
+          *Use cases for `true`:**
+          - Emergency or priority bookings that must be accommodated.
+          - Administrative bookings that override normal availability rules.
+          - Testing or demonstration purposes.
+
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="skipBusinessConfirmation" type="boolean">
+
+          Whether `PENDING` bookings are automatically set to `CONFIRMED` for
+          services that normally require the owner's manual confirmation.
+
+          Your app must have the `BOOKINGS.OVERRIDE_AVAILABILITY` permission
+          when passing `true`.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="skipSelectedPaymentOptionValidation" type="boolean">
+
+          Whether customers can pay using a payment method that isn't supported
+          for the service, but that's supported for other services.
+
+          Your app must have the `BOOKINGS.MANAGE_PAYMENTS` permission when passing
+          `true`.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="skipAddOnValidation" type="boolean">
+
+          Whether Wix Bookings validates [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) when creating a booking.
+          The calling [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) must have `BOOKINGS.MANAGE_ADDONS` permissions to specify `true`.
+          This allows customers to choose an add-on that's not associated with the service or choose more than the maximum number of add-ons from a group.
+
+          Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnFullEntity" type="boolean">
+
+      Whether to return the created single-service bookings.
+
+    </ParamField>
+
+    <ParamField body="multiServiceBookingType" type="string">
+
+      Multi-service booking type.
+
+      Currently only `SEQUENTIAL_BOOKINGS` is supported.
+
+      **Supported values:**
+
+      - `SEQUENTIAL_BOOKINGS` — Bookings must be scheduled back-to-back.
+      Each booking starts when the previous one ends, with no gaps between them.
+      - `SEPARATE_BOOKINGS` — Bookings can be scheduled separately.
+      Each booking can be at different times, not necessarily consecutive.
+      Not currently supported.
+      - `PARALLEL_BOOKINGS` — Bookings occur at the same time.
+      All bookings in the package are scheduled for the same time slot.
+      Not currently supported.
+
+    </ParamField>
+
+    <ParamField body="formSubmission" type="object">
+
+      Booking form data submitted by the customer during the booking process.
+      Each key represents the name of the form submission field while the value is the data submitted by the customer for that field.
+
+      Wix Bookings stores this form data in different locations depending on the field type:
+      - __Contact details fields__: Input values for standard contact fields such as name, email, phone, and address are saved in the booking object's `contactDetails`.
+      - __Custom and additional fields__: All other form field values are stored separately in the [form submissions object](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction).
+
+      For comprehensive details about integrating custom forms with bookings, see [Wix Forms Integration](https://dev.wix.com/docs/rest/business-solutions/bookings/wix-forms-integration).
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="multiServiceBooking" type="MultiServiceBooking">
+
+      Created multi-service booking.
+      Contains the single-service bookings in the same order as specified in the request.
+
+      <Expandable title="multiServiceBooking properties">
+
+        <ResponseField name="id" type="string">
+
+          Multi-service booking ID.
+
+        </ResponseField>
+
+        <ResponseField name="bookings" type="BookingResult[]">
+
+          The single-service bookings that make up the multi-service booking package.
+
+          <Expandable title="bookings properties">
+
+            <ResponseField name="bookingId" type="string">
+
+              Single-service booking ID. Always present.
+              This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="booking" type="Booking">
+
+              Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+              See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `VALIDATION_FAILURE` |  |
+    | `428` | `FAILED_PRECONDITION` | `SCHEDULE_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `RESOURCE_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `EMPTY_FORM_INFO` |  |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_RESOLVING_CUSTOM_CHOICES` |  |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICES` |  |
+    | `428` | `FAILED_PRECONDITION` | `SLOT_NOT_AVAILABLE` |  |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` |  |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_SKIP_AVAILABILITY_VALIDATION_IF_RESOURCE_NOT_PROVIDED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Created | `wix.bookings.v2.booking_created` | Triggered when a booking is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "bookings": [
+            {
+              "bookedEntity": {
+                "slot": {
+                  "serviceId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "scheduleId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                  "startDate": "2024-02-15T14:00:00.000Z",
+                  "endDate": "2024-02-15T15:00:00.000Z",
+                  "location": {
+                    "locationType": "OWNER_BUSINESS",
+                    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                  }
+                }
+              },
+              "contactDetails": {
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "email": "jane.smith@example.com",
+                "phone": "+1-555-123-4567"
+              },
+              "totalParticipants": 1,
+              "additionalFields": [
+                {
+                  "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+                  "value": "Swedish Massage"
+                }
+              ]
+            },
+            {
+              "bookedEntity": {
+                "slot": {
+                  "serviceId": "e5f6a7b8-c9d0-1234-efab-345678901234",
+                  "scheduleId": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+                  "startDate": "2024-02-15T15:00:00.000Z",
+                  "endDate": "2024-02-15T15:45:00.000Z",
+                  "location": {
+                    "locationType": "OWNER_BUSINESS",
+                    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                  }
+                }
+              },
+              "contactDetails": {
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "email": "jane.smith@example.com",
+                "phone": "+1-555-123-4567"
+              },
+              "totalParticipants": 1,
+              "additionalFields": [
+                {
+                  "id": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+                  "value": "Deep Cleansing Facial"
+                }
+              ]
+            }
+          ],
+          "multiServiceBookingType": "SEQUENTIAL_BOOKINGS",
+          "participantNotification": {
+            "notifyParticipants": true,
+            "message": "Your spa package has been booked! We look forward to seeing you."
+          },
+          "sendSmsReminder": true,
+          "returnFullEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+        "multiServiceBooking": {
+          "id": "11223344-5566-7788-99aa-bbccddeeff00",
+          "bookings": [
+            {
+              "bookingId": "22334455-6677-8899-aabb-ccddeeff0011",
+              "booking": {
+                "id": "22334455-6677-8899-aabb-ccddeeff0011",
+                "bookedEntity": {
+                  "slot": {
+                    "serviceId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                    "scheduleId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                    "startDate": "2024-02-15T14:00:00.000Z",
+                    "endDate": "2024-02-15T15:00:00.000Z",
+                    "location": {
+                      "locationType": "OWNER_BUSINESS",
+                      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                    }
+                  }
+                },
+                "contactDetails": {
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "email": "jane.smith@example.com",
+                  "phone": "+1-555-123-4567"
+                },
+                "status": "CREATED",
+                "paymentStatus": "NOT_PAID",
+                "totalParticipants": 1,
+                "additionalFields": [
+                  {
+                    "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+                    "value": "Swedish Massage"
+                  }
+                ]
+              }
+            },
+            {
+              "bookingId": "33445566-7788-99aa-bbcc-ddeeff001122",
+              "booking": {
+                "id": "33445566-7788-99aa-bbcc-ddeeff001122",
+                "bookedEntity": {
+                  "slot": {
+                    "serviceId": "e5f6a7b8-c9d0-1234-efab-345678901234",
+                    "scheduleId": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+                    "startDate": "2024-02-15T15:00:00.000Z",
+                    "endDate": "2024-02-15T15:45:00.000Z",
+                    "location": {
+                      "locationType": "OWNER_BUSINESS",
+                      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                    }
+                  }
+                },
+                "contactDetails": {
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "email": "jane.smith@example.com",
+                  "phone": "+1-555-123-4567"
+                },
+                "status": "CREATED",
+                "paymentStatus": "NOT_PAID",
+                "totalParticipants": 1,
+                "additionalFields": [
+                  {
+                    "id": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+                    "value": "Deep Cleansing Facial"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a multi-service booking and all included single-service bookings simultaneously.
+
+    ### When to call this method
+
+    Create sequential appointments where customers book related services together. For adding existing single-service bookings to an existing multi-service booking, call [Add Bookings to Multi Service Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/add-bookings-to-multi-service-booking) instead.
+
+    ### Requirements and behavior
+
+    __Package constraints__: Multi-service bookings support 2-8 appointment-based single-service bookings only (course and class bookings aren't supported). All single-service bookings must be at the same location with sequential scheduling and no gaps between appointments.
+
+    __Timing specification__: You must provide complete `slot` details (`scheduleId`, `startDate`, `endDate`) for each single-service booking. Wix Bookings validates sequential timing but doesn't auto-calculate it.
+
+    __Package pricing__: The total price equals the sum of individual services. To handle payment, pass each single-service booking's `bookings[].bookingId` from the response to the [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction). Don't use `multiServiceBooking.id`, the top-level multi-service booking ID isn't supported for checkout. Wix Bookings automatically syncs the payment status from the corresponding [Wix eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+    __Package notifications__: Customers receive 1 unified notification for the entire multi-service booking. Wix Bookings doesn't send notifications for the package's individual single-service bookings.
+
+    ### Related methods
+
+    Verify availability first with [List Multi Service Availability Time Slots](https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-multi-service-availability-time-slots).
+
+    See [Create Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) for more details about constraints and effects of creating single-service bookings.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.createMultiServiceBooking(bookings, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="bookings" type="Booking[]" required>
+
+      Between 2 to 8 new single-service booking specifications to create and combine in a multi-service booking.
+
+      Each single-service booking specification must include `slot` details (`scheduleId`, `startDate`, and `endDate`).
+      Specify contact details, number of participants, and any additional fields as needed.
+
+      For sequential bookings, ensure the timing allows services to be scheduled back-to-back.
+
+      Constraints: `minItems 2`, `maxItems 8`.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateMultiServiceBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Information about whether to notify the customer and the message to send.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to send a message about the changes to the customer.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Custom message to send to the participants about the changes to the booking.
+
+            </ParamField>
+
+            <ParamField body="metadata" type="object">
+
+              Information about the delivery channels used to send the notification.
+              For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="sendSmsReminder" type="boolean">
+
+          Whether to send an SMS reminder to the customer 24 hours before the session starts.
+          Wix Bookings takes the phone number from `contactDetails.phone`.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="flowControlSettings" type="CreateBookingFlowControlSettings">
+
+          Whether to ignore specific standard procedures of the Wix Bookings flow.
+          For example, whether to skip checking availability before updating the status.
+
+          <Expandable title="flowControlSettings properties">
+
+            <ParamField body="skipAvailabilityValidation" type="boolean">
+
+              Whether the availability is checked before creating the booking.
+
+              - `false`: A booking is only created when the slot or schedule is available.
+              - `true`: The booking is created regardless of availability conflicts. Make sure the call's [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) has the required permissions.
+
+              *Use cases for `true`:**
+              - Emergency or priority bookings that must be accommodated.
+              - Administrative bookings that override normal availability rules.
+              - Testing or demonstration purposes.
+
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="skipBusinessConfirmation" type="boolean">
+
+              Whether `PENDING` bookings are automatically set to `CONFIRMED` for
+              services that normally require the owner's manual confirmation.
+
+              Your app must have the `BOOKINGS.OVERRIDE_AVAILABILITY` permission
+              when passing `true`.
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="skipSelectedPaymentOptionValidation" type="boolean">
+
+              Whether customers can pay using a payment method that isn't supported
+              for the service, but that's supported for other services.
+
+              Your app must have the `BOOKINGS.MANAGE_PAYMENTS` permission when passing
+              `true`.
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="skipAddOnValidation" type="boolean">
+
+              Whether Wix Bookings validates [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) when creating a booking.
+              The calling [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) must have `BOOKINGS.MANAGE_ADDONS` permissions to specify `true`.
+              This allows customers to choose an add-on that's not associated with the service or choose more than the maximum number of add-ons from a group.
+
+              Default: `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="returnFullEntity" type="boolean">
+
+          Whether to return the created single-service bookings.
+
+        </ParamField>
+
+        <ParamField body="multiServiceBookingType" type="string">
+
+          Multi-service booking type.
+
+          Currently only `SEQUENTIAL_BOOKINGS` is supported.
+
+          **Supported values:**
+
+          - `SEQUENTIAL_BOOKINGS` — Bookings must be scheduled back-to-back.
+          Each booking starts when the previous one ends, with no gaps between them.
+          - `SEPARATE_BOOKINGS` — Bookings can be scheduled separately.
+          Each booking can be at different times, not necessarily consecutive.
+          Not currently supported.
+          - `PARALLEL_BOOKINGS` — Bookings occur at the same time.
+          All bookings in the package are scheduled for the same time slot.
+          Not currently supported.
+
+        </ParamField>
+
+        <ParamField body="formSubmission" type="object">
+
+          Booking form data submitted by the customer during the booking process.
+          Each key represents the name of the form submission field while the value is the data submitted by the customer for that field.
+
+          Wix Bookings stores this form data in different locations depending on the field type:
+          - __Contact details fields__: Input values for standard contact fields such as name, email, phone, and address are saved in the booking object's `contactDetails`.
+          - __Custom and additional fields__: All other form field values are stored separately in the [form submissions object](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction).
+
+          For comprehensive details about integrating custom forms with bookings, see [Wix Forms Integration](https://dev.wix.com/docs/rest/business-solutions/bookings/wix-forms-integration).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="multiServiceBooking" type="MultiServiceBooking">
+
+      Created multi-service booking.
+      Contains the single-service bookings in the same order as specified in the request.
+
+      <Expandable title="multiServiceBooking properties">
+
+        <ResponseField name="_id" type="string">
+
+          Multi-service booking ID.
+
+        </ResponseField>
+
+        <ResponseField name="bookings" type="BookingResult[]">
+
+          The single-service bookings that make up the multi-service booking package.
+
+          <Expandable title="bookings properties">
+
+            <ResponseField name="bookingId" type="string">
+
+              Single-service booking ID. Always present.
+              This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="booking" type="Booking">
+
+              Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+              See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `VALIDATION_FAILURE` |  |
+    | `428` | `FAILED_PRECONDITION` | `SCHEDULE_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `RESOURCE_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `EMPTY_FORM_INFO` |  |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_RESOLVING_CUSTOM_CHOICES` |  |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICES` |  |
+    | `428` | `FAILED_PRECONDITION` | `SLOT_NOT_AVAILABLE` |  |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` |  |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_SKIP_AVAILABILITY_VALIDATION_IF_RESOURCE_NOT_PROVIDED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Created | `wix.bookings.v2.booking_created` | Triggered when a booking is created. |
+    | Booking Form Filled | `wix.bookings.v2.booking_formFilled` | Triggered when a booking form is filled. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-multi-service-booking" id="ex-sdk-create-multi-service-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-multi-service-booking" id="ex-sdk-create-multi-service-booking-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-multi-service-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-multi-service-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">createMultiServiceBooking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-multi-service-booking-0"><span className="wix-picker-name">createMultiServiceBooking</span></label>
+    <label htmlFor="ex-sdk-create-multi-service-booking-1"><span className="wix-picker-name">createMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript createMultiServiceBooking
+    import { bookings } from '@wix/bookings';
+
+    async function createMultiServiceBooking(bookings,options) {
+      const response = await bookings.createMultiServiceBooking(bookings,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createMultiServiceBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createMultiServiceBooking(bookings,options) {
+      const response = await myWixClient.bookings.createMultiServiceBooking(bookings,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

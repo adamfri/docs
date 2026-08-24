@@ -1,0 +1,1619 @@
+---
+title: "List Availability Time Slots"
+description: "Retrieves a list of appointment time slots that match the provided filters."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of appointment time slots that match the provided filters.
+
+    ### Defaults
+
+    List Availability Time Slots uses the following defaults:
+
+    - Sorts time slots by `localStartDate` in ascending order.
+    - `cursorPaging.limit` set to `1000`.
+    - Returns both bookable and un-bookable time slots.
+    - If `bookable` filter isn't specified, bookable slots are returned first.
+    - `fromLocalDate` is set to the current time.
+
+    ### Filtering behavior
+
+    The method automatically filters time slots:
+
+    - **Past time slots**: Only time slots starting from the specified `fromLocalDate` are included. When you omit `fromLocalDate`, Wix Bookings uses the current time as the default.
+    - **Resource availability**: Only time slots with at least some available resources are returned.
+
+    ### Service type limitations
+
+    Only appointment-based services are supported when calling List Availability Time Slots.
+
+    To retrieve class availability, you can call [List Event Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-event-time-slots).
+
+    To retrieve course availability, you can follow the [End-to-End Booking Flow for course](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+
+    ### Booking policy filtering
+
+    Use `bookingPolicyViolations` to filter slots based on booking restrictions defined in your [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+    *Default behavior**: When you don't specify any `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+    - Set `tooEarlyToBook` to `true` to retrieve slots that can't be booked yet due to minimum advance booking time restrictions.
+    Currently, you can't specify `earliestBookingDate` to further filter by when the slot becomes bookable.
+    - Set `tooLateToBook` to `true` to retrieve slots that can no longer be booked due to maximum advance booking time restrictions.
+    - Set `bookOnlineDisabled` to `true` or `false` to filter by online booking availability settings.
+
+    ### Available resources
+
+    Time slots aren't returned when they have no available resources.
+
+    Each time slot includes details for up to 10 available resources.
+    If there are more than 10 resources, you can call [Get Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) and filter by the resource Type ID to get details for the remaining resources.
+
+    ### Customer choices
+
+    Use `customerChoices` to calculate availability based on the customer's selected service duration or add-ons.
+
+    `customerChoices` is not supported for services configured with a duration range (`availabilityConstraints.durationRange`). For these services, availability is calculated based on the duration range configuration.
+
+    When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` in `customerChoices` and omitting `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+    ### Business hours exception
+
+    Wix Bookings disregards business opening hours when all of the following conditions are met:
+
+    1. 1 or more [staff members](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction) are needed to provide the service.
+    2. No other [resource type](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) is needed to provide the service.
+    3. The service doesn't have duration-based [variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    4. The service doesn't support [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+    In these cases, the working hours of the relevant staff member are used for availability calculation.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-CALENDAR">Read Bookings Calendar Availability</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/service-availability/v2/time-slots
+    ```
+
+    ## Body Params
+
+    <ParamField body="serviceId" type="string">
+
+      Service ID for which to retrieve time slots. You must specify the ID of an appointment-based service.
+      Required, unless you specify `cursorPaging.cursor`.
+
+    </ParamField>
+
+    <ParamField body="fromLocalDate" type="string">
+
+      Lower boundary for `localStartDate` to include in response.
+      Each returned time slot has a `localStartDate` within the provided `fromLocalDate` and `toLocalDate` exclusive.
+      Required, unless you specify `cursorPaging.cursor`.
+
+      Local start date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+    </ParamField>
+
+    <ParamField body="toLocalDate" type="string">
+
+      Upper boundary for `localStartDate` to include in response.
+      Each returned time slot has a `localStartDate` within the provided `fromLocalDate` and `toLocalDate` exclusive.
+      Required, unless you specify `cursorPaging.cursor`.
+
+      Local end date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+    </ParamField>
+
+    <ParamField body="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ParamField>
+
+    <ParamField body="locations" type="Location[]">
+
+      Locations to include in response.
+      If not specified, returns time slots for all locations where the service is available.
+
+      Constraints: `minItems 0`, `maxItems 5`.
+
+      <Expandable title="locations properties">
+
+        <ParamField body="id" type="string">
+
+          [Location ID](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+          Available only for business locations.
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Location name.
+
+        </ParamField>
+
+        <ParamField body="formattedAddress" type="string">
+
+          Formatted location address.
+
+        </ParamField>
+
+        <ParamField body="locationType" type="string">
+
+          Location type.
+
+          **Supported values:**
+
+          - `BUSINESS` — A business location, either the default business address, or locations defined for the business by the Business Info.
+          - `CUSTOM` — The location is unique to this service and isn't defined as 1 of the business locations.
+          - `CUSTOMER` — The location can be determined by the customer and isn't set up beforehand.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="includeResourceTypeIds" type="string[]">
+
+      Resource type IDs to include in the response.
+      If specified, returns up to 10 `availableResources` with matching `resourceTypeId`.
+      This controls which resource details are included in the response but doesn't filter the time slots themselves.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="bookable" type="boolean">
+
+      Whether the time slot is bookable according to the service's booking policies.
+      If not specified, returns both bookable and un-bookable time slots.
+
+    </ParamField>
+
+    <ParamField body="bookingPolicyViolations" type="BookingPolicyViolations">
+
+      Indicators for service's booking policy violations.
+      Allows filtering for time slots with specific violation types based on [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction)). When you don't specify `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+      <Expandable title="bookingPolicyViolations properties">
+
+        <ParamField body="tooEarlyToBook" type="boolean">
+
+          Whether it's too early for customers to book the slot.
+
+          By default, all slots are returned. Specifying `{"tooEarlyToBook": false}` returns only those that customers can already book, while specifying `{"tooEarlyToBook": true}` returns only those that can't be booked yet.
+
+        </ParamField>
+
+        <ParamField body="earliestBookingDate" type="datetime">
+
+          Earliest time for booking the slot in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+          *In responses**: Contains a value when `tooEarlyToBook` is `true`, indicating the earliest time customers can book the slot.
+
+          *In requests**: Don't specify a value for this field. Use `tooEarlyToBook` to filter slots that can't be booked yet due to minimum advance booking time restrictions.
+
+        </ParamField>
+
+        <ParamField body="tooLateToBook" type="boolean">
+
+          Whether it's too late for customers to book the slot.
+
+          By default, all slots are returned. Specifying `{"tooLateToBook": false}` returns only those that customers can still book, while specifying `{"tooLateToBook": true}` returns only those that can no longer be booked.
+
+        </ParamField>
+
+        <ParamField body="bookOnlineDisabled" type="boolean">
+
+          Whether customers can book the service online.
+
+          By default, both services with online booking enabled and disabled are returned. Providing the boolean set to `true` or `false` returns only matching slots.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="timeSlotsPerDay" type="integer">
+
+      Maximum number of slots to return for each day in the specified time range.
+      If `bookable` filter isn't specified, bookable slots are returned first.
+
+    </ParamField>
+
+    <ParamField body="cursorPaging" type="CursorPaging">
+
+      Cursor-based paging configuration.
+      Enables fetching results in smaller chunks by setting a limit on the number of results.
+      For consistent pagination behavior, use the same `limit` value throughout a pagination sequence.
+      When specifying a new `limit` in follow-up requests, the API respects the new value.
+
+      <Expandable title="cursorPaging properties">
+
+        <ParamField body="limit" type="integer">
+
+          Number of results to load.
+
+          Default: `1000`.
+          Max: `1000`.
+
+        </ParamField>
+
+        <ParamField body="cursor" type="string">
+
+          Pointer to the next or previous page in the list of results.
+
+          You can get the relevant cursor token
+          from the `pagingMetadata` object in the previous call's response.
+          Not relevant for the first request.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="customerChoices" type="CustomerChoices">
+
+      Selected customer choices for service configuration.
+      If not specified, uses the service's default configuration.
+
+      Not supported for services configured with a duration range (`availabilityConstraints.durationRange`).
+
+      When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` and omitting `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+      <Expandable title="customerChoices properties">
+
+        <ParamField body="durationInMinutes" type="integer">
+
+          Duration selected by the customer in minutes. Based on the customer's selection from [service options and variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+          When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` instead of `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+        </ParamField>
+
+        <ParamField body="addOnIds" type="string[]">
+
+          IDs of [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) selected by the customer.
+          When specifying this field, we recommend omitting `durationInMinutes`. Wix Bookings then calculates the total duration based on the service duration plus all selected add-on durations.
+
+          Constraints: `format GUID`, `maxItems 21`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="resourceTypes" type="ResourceType[]">
+
+      Resource types to filter time slots.
+      Only returns time slots that have these specific resource types available.
+      This filters the time slots themselves, unlike `includeResourceTypeIds` which only controls response details.
+
+      Constraints: `maxItems 8`.
+
+      <Expandable title="resourceTypes properties">
+
+        <ParamField body="resourceTypeId" type="string">
+
+          [Resource type ID](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction).
+
+        </ParamField>
+
+        <ParamField body="resourceIds" type="string[]">
+
+          Resource IDs.
+          Available only if there is at least 1 resource available for the slot.
+
+          Constraints: `format GUID`, `maxItems 135`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="timeSlots" type="TimeSlot[]">
+
+      Retrieved time slots.
+      Sorted by `localStartDate` in ascending order. When multiple slots have the same start time, no specific secondary sorting is guaranteed.
+
+      Constraints: `maxItems 1000`.
+
+      See the [Time Slot Object](/api-reference/business-solutions/bookings/time-slots/time-slots-v2/time-slot-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ResponseField>
+
+    <ResponseField name="cursorPagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata for the next page of results.
+      Contains a cursor if there are more than 1000 results.
+
+      <Expandable title="cursorPagingMetadata properties">
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `NO_IMPLEMENTERS_FOUND` | No availability provider is installed or configured for this operation. |
+    | `404` | `NOT_FOUND` | `MULTIPLE_IMPLEMENTERS_FOUND` | Multiple availability providers are installed. Only 1 provider can be active at a time. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_ARGUMENTS` | Required request parameters are missing. Verify all required fields are provided. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `404` | `NOT_FOUND` | `SERVICE_NOT_FOUND` | Couldn't find the service. |
+    | `428` | `FAILED_PRECONDITION` | `REQUESTED_GENDER_NOT_ALLOWED` | `customerChoices.requestedGender` is specified while `genderPubliclyAccessible` is disabled in the business's [staff member settings](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-member-settings/introduction). |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-list-availability-time-slots" id="ex-rest-list-availability-time-slots-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-list-availability-time-slots" id="ex-rest-list-availability-time-slots-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-list-availability-time-slots" id="ex-rest-list-availability-time-slots-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-list-availability-time-slots-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-list-availability-time-slots-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">All available appointments for a specific day</span><span className="wix-picker-desc">Retrieves all available appointment slots for a single day to provide detailed scheduling options</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Paginate appointment availability results (next page)</span><span className="wix-picker-desc">Retrieves the next page of available appointment slots using cursor pagination from a previous query</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Available days for appointment booking (monthly calendar view)</span><span className="wix-picker-desc">Retrieves one available appointment slot per day for a month to support calendar interfaces</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-list-availability-time-slots-0"><span className="wix-picker-name">All available appointments for a specific day</span><span className="wix-picker-desc">Retrieves all available appointment slots for a single day to provide detailed scheduling options</span></label>
+    <label htmlFor="ex-rest-list-availability-time-slots-1"><span className="wix-picker-name">Paginate appointment availability results (next page)</span><span className="wix-picker-desc">Retrieves the next page of available appointment slots using cursor pagination from a previous query</span></label>
+    <label htmlFor="ex-rest-list-availability-time-slots-2"><span className="wix-picker-name">Available days for appointment booking (monthly calendar view)</span><span className="wix-picker-desc">Retrieves one available appointment slot per day for a month to support calendar interfaces</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "includeResourceTypeIds": [
+          "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155"
+          ],
+          "locations": [
+            {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "locationType": "BUSINESS"
+            }
+          ],
+          "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+          "fromLocalDate": "2025-09-15T00:00:00",
+          "toLocalDate": "2025-09-15T23:59:00",
+          "timeZone": "America/New_York",
+          "bookable": true,
+          "cursorPaging": {
+            "limit": 10
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlots": [
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-15T09:00:00",
+            "localEndDate": "2025-09-15T10:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "510fc9f3-f291-4155-a3dc-cb96ae06f14f",
+                    "name": "Dr. Sarah Johnson"
+                  },
+                  {
+                    "id": "43eb802c-0491-43de-8b60-ab0f036213a1",
+                    "name": "Dr. Michael Chen"
+                  },
+                  {
+                    "id": "423f5e66-ebb6-402e-952d-c00ff2f5eb79",
+                    "name": "Dr. Emily Rodriguez"
+                  },
+                  {
+                    "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                    "name": "Dr. James Wilson"
+                  },
+                  {
+                    "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                    "name": "Dr. Lisa Thompson"
+                  },
+                  {
+                    "id": "38f06a80-c44c-464a-95ee-01f0f58c04d1",
+                    "name": "Dr. David Lee"
+                  },
+                  {
+                    "id": "57347352-dfc0-4729-a821-28cf734f106b",
+                    "name": "Dr. Amanda Garcia"
+                  },
+                  {
+                    "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                    "name": "Dr. Robert Davis"
+                  },
+                  {
+                    "id": "76570209-101f-409b-af97-b445bdb63125",
+                    "name": "Dr. Jennifer Martinez"
+                  },
+                  {
+                    "id": "a699f4ae-6fcf-41e4-bf57-fbe42aac0ddf",
+                    "name": "Dr. Kevin Brown"
+                  }
+                ],
+                "hasMoreAvailableResources": true
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-15T10:00:00",
+            "localEndDate": "2025-09-15T11:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "510fc9f3-f291-4155-a3dc-cb96ae06f14f",
+                    "name": "Dr. Sarah Johnson"
+                  },
+                  {
+                    "id": "43eb802c-0491-43de-8b60-ab0f036213a1",
+                    "name": "Dr. Michael Chen"
+                  },
+                  {
+                    "id": "423f5e66-ebb6-402e-952d-c00ff2f5eb79",
+                    "name": "Dr. Emily Rodriguez"
+                  },
+                  {
+                    "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                    "name": "Dr. James Wilson"
+                  },
+                  {
+                    "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                    "name": "Dr. Lisa Thompson"
+                  },
+                  {
+                    "id": "38f06a80-c44c-464a-95ee-01f0f58c04d1",
+                    "name": "Dr. David Lee"
+                  },
+                  {
+                    "id": "57347352-dfc0-4729-a821-28cf734f106b",
+                    "name": "Dr. Amanda Garcia"
+                  },
+                  {
+                    "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                    "name": "Dr. Robert Davis"
+                  },
+                  {
+                    "id": "76570209-101f-409b-af97-b445bdb63125",
+                    "name": "Dr. Jennifer Martinez"
+                  },
+                  {
+                    "id": "a699f4ae-6fcf-41e4-bf57-fbe42aac0ddf",
+                    "name": "Dr. Kevin Brown"
+                  }
+                ],
+                "hasMoreAvailableResources": true
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-15T11:00:00",
+            "localEndDate": "2025-09-15T12:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "510fc9f3-f291-4155-a3dc-cb96ae06f14f",
+                    "name": "Dr. Sarah Johnson"
+                  },
+                  {
+                    "id": "43eb802c-0491-43de-8b60-ab0f036213a1",
+                    "name": "Dr. Michael Chen"
+                  },
+                  {
+                    "id": "423f5e66-ebb6-402e-952d-c00ff2f5eb79",
+                    "name": "Dr. Emily Rodriguez"
+                  },
+                  {
+                    "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                    "name": "Dr. James Wilson"
+                  },
+                  {
+                    "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                    "name": "Dr. Lisa Thompson"
+                  },
+                  {
+                    "id": "38f06a80-c44c-464a-95ee-01f0f58c04d1",
+                    "name": "Dr. David Lee"
+                  },
+                  {
+                    "id": "57347352-dfc0-4729-a821-28cf734f106b",
+                    "name": "Dr. Amanda Garcia"
+                  },
+                  {
+                    "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                    "name": "Dr. Robert Davis"
+                  },
+                  {
+                    "id": "76570209-101f-409b-af97-b445bdb63125",
+                    "name": "Dr. Jennifer Martinez"
+                  },
+                  {
+                    "id": "a699f4ae-6fcf-41e4-bf57-fbe42aac0ddf",
+                    "name": "Dr. Kevin Brown"
+                  }
+                ],
+                "hasMoreAvailableResources": true
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-15T14:00:00",
+            "localEndDate": "2025-09-15T15:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "43eb802c-0491-43de-8b60-ab0f036213a1",
+                    "name": "Dr. Michael Chen"
+                  },
+                  {
+                    "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                    "name": "Dr. James Wilson"
+                  },
+                  {
+                    "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                    "name": "Dr. Lisa Thompson"
+                  },
+                  {
+                    "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                    "name": "Dr. Robert Davis"
+                  },
+                  {
+                    "id": "b44e0801-223e-4124-bcbc-0eb4c07cba13",
+                    "name": "Dr. Michelle White"
+                  },
+                  {
+                    "id": "fd01e7c0-4ffc-42c3-9f7b-73b46c9e1664",
+                    "name": "Dr. Nicole Anderson"
+                  }
+                ],
+                "hasMoreAvailableResources": false
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-15T15:00:00",
+            "localEndDate": "2025-09-15T16:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "43eb802c-0491-43de-8b60-ab0f036213a1",
+                    "name": "Dr. Michael Chen"
+                  },
+                  {
+                    "id": "167b22cd-0521-47b9-b0c2-baca665351c5",
+                    "name": "Dr. James Wilson"
+                  },
+                  {
+                    "id": "1bd089a1-726b-4fdd-9a70-4b19cffeb392",
+                    "name": "Dr. Lisa Thompson"
+                  },
+                  {
+                    "id": "627d45ed-71bd-4f6c-b90f-fc5b037accc6",
+                    "name": "Dr. Robert Davis"
+                  },
+                  {
+                    "id": "b44e0801-223e-4124-bcbc-0eb4c07cba13",
+                    "name": "Dr. Michelle White"
+                  },
+                  {
+                    "id": "fd01e7c0-4ffc-42c3-9f7b-73b46c9e1664",
+                    "name": "Dr. Nicole Anderson"
+                  }
+                ],
+                "hasMoreAvailableResources": false
+              }
+            ],
+            "nestedTimeSlots": []
+          }
+        ],
+        "timeZone": "America/New_York",
+        "cursorPagingMetadata": {
+          "cursors": {
+            "next": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.P4mw114KkQxwz0Ni9PYffiE3RYg18fX1_NVqjBqMM2Yxr9beMv8qCA.1fdd4p_SwSgwPBeMiG3Upg.5_0llUWKU2snN_oSLS8lMduQOlYEIAcsSq895VFMt-MasDVXthyudMm7UQBV9Uv1xikKJEkzjsbwHQET4NUnXUuIFQaMt83ivmWoDNMh3pppscOSiBBOExUoCLSbMZFZhQZh5oMvnBYU5h3Qbr8mB3Eqw2C8U42FWFZlkMBMGBAv01jYYQJm3GarFPke1UZE1bl8f4ZiTRyn54fYHhXJ_TSlEaWwRGgtCtDlcnhRMu0aaot08jmVSKmTiJWN8TxnO40rItcv60eyPcuKUAKjsD3p05-kWsLtdtcaCGPP-x9LLVv3G00XjycVIR8eN_CGPcr92lBIAY2ea-ukYVF654iONLK8dGz3H6H1tLsvLIepDkcjLOOArB9eHbIJG3mDiFs6Axvx69cfYzZQEs-u1K6t6OG-wGDtsaQyy9IVTZdpP0D8eHNm3dvrNxxLNItNrmR9Z3JzkE7bTopurRgFnIVRSGjHRCn-G-PG15O7IsaLojictKCrRQJt99JtU1om0y1snEfQWcR3LD3hXW5tMiPBTy50Rqal9j8wCTXYm4pF5F-Om4ULDx74TQggzb8p4-nqxz-hcMqPGnEOsfTqzs8bYMh9wDNbXPx8skkAI0eB6bP-C4i8jeddid83f0Vz1XrXX0Opguu79L3BNAVZ3Q.hw0ReL0FAF26UjdB_vMPaQ"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "cursorPaging": {
+              "cursor": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.v62ZlVblOLN7Ba6AYq-mgwThqthA90F21nWdq77ziu9fqNmCO0T50g.7MFaJBVR6iivKV2gZuO_qg.W9dKt-UKfiocW2RfEseCyIE_mXBoFdg0LFxIYCykv8jtqkZVCcTWJ7X1sedwLIGt2FApoGxVo3gWpOr4sLbDPOpb5qMeSJKG5tppUw5Kr_squAFTFEZzDqUq1DSEbvLwxOoPZZp3YAsgX4P-Yi37UEC4OPYLNQkBOaunrGzP9IPCs-y5TONrIIa1eZud-AU85xXha5jRFH_d3s7fTJtHmHVH1W0sygQHgSyBtANsvcIouwFBGb9wSy-Ox9_O6ik87uBaKe6zNS8YQZo98WcoECmmrhCCCkJORkytuiDZGAja65GxJu9KIaLVLF6PjR7g1bvAj26kBoB-XWSk76BHt16ty68toBfUhKONMQtmtY5gF7U1CU9hsTzij0Hs2ppRVTJjhxBHzBs6aWz0gLg7bYeS7pvchJSnighIvf3WPNZn8dSuBXOs_j0g8-QAsUyyRb8YOyq_zUiHKh7PnMtaY9OM8PvVej9Vjll2Bj6pxyddw_L2EE234TwnIXh5ORfyOlM6HELDWnI-SUThqXreI2iyyUe1ml_5tuumiJ5t1kJoGnYC5bs8rlY8f5wfscJNT91Dxbb_rtLV9TL_qvpyghxlTW99y_FtpMQgfecoQ3Y.H412krucVqw99MaFH-FKSg",
+              "limit": 5
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlots": [
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-07T10:00:00",
+            "localEndDate": "2025-09-07T11:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-08T13:30:00",
+            "localEndDate": "2025-09-08T14:30:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-11T15:00:00",
+            "localEndDate": "2025-09-11T16:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-12T09:30:00",
+            "localEndDate": "2025-09-12T10:30:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-13T14:00:00",
+            "localEndDate": "2025-09-13T15:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          }
+        ],
+        "timeZone": "America/New_York",
+        "cursorPagingMetadata": {
+          "cursors": {
+            "next": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.kCW5RwNpPpNdpalS-nxAScn6FH-12OdjWiMqGhwJ7Ih0HLuiVHE_wA._J9j4MZvKvFWRCjMu1i_zg.o4-JRrCIRBujQax6xtQXksv2OjTDTS5X_dE0mUGq1809x1vbZ6hM20cvDjdkR43hw7p9LMnvSYbPE2c2LKtxP4C_bErpv3QxSfWOcXX8zRefWyWTfK0W87J2h-fHKXT1xp6B_SOOA2dsQ0Ho691qnBUhV-qhlwcCYy1ZXBsdUp2_qt8oDKuXGwuTgU35Jd9swc0ZjtkERCSDTPrtiXfjz_Kqwe-AGsJCkdtReYknlnZrV3KHwBRUMoCVN7mP9xWUbO0lSBOK_Pzzm0g1hqfae21jkfQZw9_S9JO7aoLt3lZzg-AjBQMdbzu_zQG5tItyZMd90pNLAYACtllWjs034PtSG4V0Y0KV9xjVXbxapcXGRcfjtGzTKAitaE8H9liReEG_58bVcGuWXXTlLRGncb0PU2qFDh8x4jarodc6l1p2ho6v6_PGb-gUrPmW4OLa3rcC9FfgLqCINJ8Lh1obzSCQ8if2xRcfQb5R25c58IGgaQgI-syYmVeKZ83JOF3TStASBGNif12ODo2xxZnN7eSmCa7jW6gzgERs2V7WNAljmAIUJfEd1AiCX1vVgQ6v1CrFrRfVTQxC6_P6-P6xLbmoqgqatq4T0M6-MYK2eHc.jGzu9sRG8ssk5wY_nf07rg"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "includeResourceTypeIds": [
+          "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155"
+          ],
+          "locations": [
+            {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "locationType": "BUSINESS"
+            }
+          ],
+          "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+          "fromLocalDate": "2025-09-01T00:00:00",
+          "toLocalDate": "2025-09-30T23:59:00",
+          "timeZone": "America/New_York",
+          "bookable": true,
+          "timeSlotsPerDay": 1,
+          "cursorPaging": {
+            "limit": 5
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlots": [
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-01T09:00:00",
+            "localEndDate": "2025-09-01T10:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-02T09:00:00",
+            "localEndDate": "2025-09-02T10:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-04T14:00:00",
+            "localEndDate": "2025-09-04T15:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-05T11:00:00",
+            "localEndDate": "2025-09-05T12:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "27f2fb02-8925-4ede-be26-991411d6c905",
+            "localStartDate": "2025-09-06T16:00:00",
+            "localEndDate": "2025-09-06T17:00:00",
+            "bookable": true,
+            "location": {
+              "id": "92310bc9-10db-4163-85d2-65f83e0ddda9",
+              "name": "Downtown Medical Center",
+              "formattedAddress": "456 Health Blvd, New York, NY 10002",
+              "locationType": "BUSINESS"
+            },
+            "totalCapacity": 1,
+            "remainingCapacity": 1,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [],
+            "nestedTimeSlots": []
+          }
+        ],
+        "timeZone": "America/New_York",
+        "cursorPagingMetadata": {
+          "cursors": {
+            "next": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.v62ZlVblOLN7Ba6AYq-mgwThqthA90F21nWdq77ziu9fqNmCO0T50g.7MFaJBVR6iivKV2gZuO_qg.W9dKt-UKfiocW2RfEseCyIE_mXBoFdg0LFxIYCykv8jtqkZVCcTWJ7X1sedwLIGt2FApoGxVo3gWpOr4sLbDPOpb5qMeSJKG5tppUw5Kr_squAFTFEZzDqUq1DSEbvLwxOoPZZp3YAsgX4P-Yi37UEC4OPYLNQkBOaunrGzP9IPCs-y5TONrIIa1eZud-AU85xXha5jRFH_d3s7fTJtHmHVH1W0sygQHgSyBtANsvcIouwFBGb9wSy-Ox9_O6ik87uBaKe6zNS8YQZo98WcoECmmrhCCCkJORkytuiDZGAja65GxJu9KIaLVLF6PjR7g1bvAj26kBoB-XWSk76BHt16ty68toBfUhKONMQtmtY5gF7U1CU9hsTzij0Hs2ppRVTJjhxBHzBs6aWz0gLg7bYeS7pvchJSnighIvf3WPNZn8dSuBXOs_j0g8-QAsUyyRb8YOyq_zUiHKh7PnMtaY9OM8PvVej9Vjll2Bj6pxyddw_L2EE234TwnIXh5ORfyOlM6HELDWnI-SUThqXreI2iyyUe1ml_5tuumiJ5t1kJoGnYC5bs8rlY8f5wfscJNT91Dxbb_rtLV9TL_qvpyghxlTW99y_FtpMQgfecoQ3Y.H412krucVqw99MaFH-FKSg"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of appointment time slots that match the provided filters.
+
+    ### Defaults
+
+    List Availability Time Slots uses the following defaults:
+
+    - Sorts time slots by `localStartDate` in ascending order.
+    - `cursorPaging.limit` set to `1000`.
+    - Returns both bookable and un-bookable time slots.
+    - If `bookable` filter isn't specified, bookable slots are returned first.
+    - `fromLocalDate` is set to the current time.
+
+    ### Filtering behavior
+
+    The method automatically filters time slots:
+
+    - **Past time slots**: Only time slots starting from the specified `fromLocalDate` are included. When you omit `fromLocalDate`, Wix Bookings uses the current time as the default.
+    - **Resource availability**: Only time slots with at least some available resources are returned.
+
+    ### Service type limitations
+
+    Only appointment-based services are supported when calling List Availability Time Slots.
+
+    To retrieve class availability, you can call [List Event Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-event-time-slots).
+
+    To retrieve course availability, you can follow the [End-to-End Booking Flow for course](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+
+    ### Booking policy filtering
+
+    Use `bookingPolicyViolations` to filter slots based on booking restrictions defined in your [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+    *Default behavior**: When you don't specify any `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+    - Set `tooEarlyToBook` to `true` to retrieve slots that can't be booked yet due to minimum advance booking time restrictions.
+    Currently, you can't specify `earliestBookingDate` to further filter by when the slot becomes bookable.
+    - Set `tooLateToBook` to `true` to retrieve slots that can no longer be booked due to maximum advance booking time restrictions.
+    - Set `bookOnlineDisabled` to `true` or `false` to filter by online booking availability settings.
+
+    ### Available resources
+
+    Time slots aren't returned when they have no available resources.
+
+    Each time slot includes details for up to 10 available resources.
+    If there are more than 10 resources, you can call [Get Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) and filter by the resource Type ID to get details for the remaining resources.
+
+    ### Customer choices
+
+    Use `customerChoices` to calculate availability based on the customer's selected service duration or add-ons.
+
+    `customerChoices` is not supported for services configured with a duration range (`availabilityConstraints.durationRange`). For these services, availability is calculated based on the duration range configuration.
+
+    When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` in `customerChoices` and omitting `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+    ### Business hours exception
+
+    Wix Bookings disregards business opening hours when all of the following conditions are met:
+
+    1. 1 or more [staff members](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction) are needed to provide the service.
+    2. No other [resource type](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) is needed to provide the service.
+    3. The service doesn't have duration-based [variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    4. The service doesn't support [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+    In these cases, the working hours of the relevant staff member are used for availability calculation.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-CALENDAR">Read Bookings Calendar Availability</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { availabilityTimeSlots } from '@wix/bookings';
+
+    availabilityTimeSlots.listAvailabilityTimeSlots(options): Promise<ListAvailabilityTimeSlotsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="ListAvailabilityTimeSlotsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="serviceId" type="string">
+
+          Service ID for which to retrieve time slots. You must specify the ID of an appointment-based service.
+          Required, unless you specify `cursorPaging.cursor`.
+
+        </ParamField>
+
+        <ParamField body="fromLocalDate" type="string">
+
+          Lower boundary for `localStartDate` to include in response.
+          Each returned time slot has a `localStartDate` within the provided `fromLocalDate` and `toLocalDate` exclusive.
+          Required, unless you specify `cursorPaging.cursor`.
+
+          Local start date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+          For example, `2026-01-30T13:30:00`.
+
+        </ParamField>
+
+        <ParamField body="toLocalDate" type="string">
+
+          Upper boundary for `localStartDate` to include in response.
+          Each returned time slot has a `localStartDate` within the provided `fromLocalDate` and `toLocalDate` exclusive.
+          Required, unless you specify `cursorPaging.cursor`.
+
+          Local end date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+          For example, `2026-01-30T13:30:00`.
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+          For example, `America/New_York` or `UTC`.
+
+          Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+        </ParamField>
+
+        <ParamField body="locations" type="Location[]">
+
+          Locations to include in response.
+          If not specified, returns time slots for all locations where the service is available.
+
+          Constraints: `minItems 0`, `maxItems 5`.
+
+          <Expandable title="locations properties">
+
+            <ParamField body="_id" type="string">
+
+              [Location ID](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+              Available only for business locations.
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Location name.
+
+            </ParamField>
+
+            <ParamField body="formattedAddress" type="string">
+
+              Formatted location address.
+
+            </ParamField>
+
+            <ParamField body="locationType" type="string">
+
+              Location type.
+
+              **Supported values:**
+
+              - `BUSINESS` — A business location, either the default business address, or locations defined for the business by the Business Info.
+              - `CUSTOM` — The location is unique to this service and isn't defined as 1 of the business locations.
+              - `CUSTOMER` — The location can be determined by the customer and isn't set up beforehand.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="includeResourceTypeIds" type="string[]">
+
+          Resource type IDs to include in the response.
+          If specified, returns up to 10 `availableResources` with matching `resourceTypeId`.
+          This controls which resource details are included in the response but doesn't filter the time slots themselves.
+
+          Constraints: `format GUID`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="bookable" type="boolean">
+
+          Whether the time slot is bookable according to the service's booking policies.
+          If not specified, returns both bookable and un-bookable time slots.
+
+        </ParamField>
+
+        <ParamField body="bookingPolicyViolations" type="BookingPolicyViolations">
+
+          Indicators for service's booking policy violations.
+          Allows filtering for time slots with specific violation types based on [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction)). When you don't specify `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+          <Expandable title="bookingPolicyViolations properties">
+
+            <ParamField body="tooEarlyToBook" type="boolean">
+
+              Whether it's too early for customers to book the slot.
+
+              By default, all slots are returned. Specifying `{"tooEarlyToBook": false}` returns only those that customers can already book, while specifying `{"tooEarlyToBook": true}` returns only those that can't be booked yet.
+
+            </ParamField>
+
+            <ParamField body="earliestBookingDate" type="datetime">
+
+              Earliest time for booking the slot in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              *In responses**: Contains a value when `tooEarlyToBook` is `true`, indicating the earliest time customers can book the slot.
+
+              *In requests**: Don't specify a value for this field. Use `tooEarlyToBook` to filter slots that can't be booked yet due to minimum advance booking time restrictions.
+
+            </ParamField>
+
+            <ParamField body="tooLateToBook" type="boolean">
+
+              Whether it's too late for customers to book the slot.
+
+              By default, all slots are returned. Specifying `{"tooLateToBook": false}` returns only those that customers can still book, while specifying `{"tooLateToBook": true}` returns only those that can no longer be booked.
+
+            </ParamField>
+
+            <ParamField body="bookOnlineDisabled" type="boolean">
+
+              Whether customers can book the service online.
+
+              By default, both services with online booking enabled and disabled are returned. Providing the boolean set to `true` or `false` returns only matching slots.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="timeSlotsPerDay" type="integer">
+
+          Maximum number of slots to return for each day in the specified time range.
+          If `bookable` filter isn't specified, bookable slots are returned first.
+
+        </ParamField>
+
+        <ParamField body="cursorPaging" type="CursorPaging">
+
+          Cursor-based paging configuration.
+          Enables fetching results in smaller chunks by setting a limit on the number of results.
+          For consistent pagination behavior, use the same `limit` value throughout a pagination sequence.
+          When specifying a new `limit` in follow-up requests, the API respects the new value.
+
+          <Expandable title="cursorPaging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Number of results to load.
+
+              Default: `1000`.
+              Max: `1000`.
+
+            </ParamField>
+
+            <ParamField body="cursor" type="string">
+
+              Pointer to the next or previous page in the list of results.
+
+              You can get the relevant cursor token
+              from the `pagingMetadata` object in the previous call's response.
+              Not relevant for the first request.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="customerChoices" type="CustomerChoices">
+
+          Selected customer choices for service configuration.
+          If not specified, uses the service's default configuration.
+
+          Not supported for services configured with a duration range (`availabilityConstraints.durationRange`).
+
+          When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` and omitting `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+          <Expandable title="customerChoices properties">
+
+            <ParamField body="durationInMinutes" type="integer">
+
+              Duration selected by the customer in minutes. Based on the customer's selection from [service options and variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+              When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` instead of `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+            </ParamField>
+
+            <ParamField body="addOnIds" type="string[]">
+
+              IDs of [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) selected by the customer.
+              When specifying this field, we recommend omitting `durationInMinutes`. Wix Bookings then calculates the total duration based on the service duration plus all selected add-on durations.
+
+              Constraints: `format GUID`, `maxItems 21`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="resourceTypes" type="ResourceType[]">
+
+          Resource types to filter time slots.
+          Only returns time slots that have these specific resource types available.
+          This filters the time slots themselves, unlike `includeResourceTypeIds` which only controls response details.
+
+          Constraints: `maxItems 8`.
+
+          <Expandable title="resourceTypes properties">
+
+            <ParamField body="resourceTypeId" type="string">
+
+              [Resource type ID](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction).
+
+            </ParamField>
+
+            <ParamField body="resourceIds" type="string[]">
+
+              Resource IDs.
+              Available only if there is at least 1 resource available for the slot.
+
+              Constraints: `format GUID`, `maxItems 135`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ListAvailabilityTimeSlotsResponse>`.
+
+    <ResponseField name="timeSlots" type="TimeSlot[]">
+
+      Retrieved time slots.
+      Sorted by `localStartDate` in ascending order. When multiple slots have the same start time, no specific secondary sorting is guaranteed.
+
+      Constraints: `maxItems 1000`.
+
+      See the [Time Slot Object](/api-reference/business-solutions/bookings/time-slots/time-slots-v2/time-slot-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate`.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ResponseField>
+
+    <ResponseField name="cursorPagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata for the next page of results.
+      Contains a cursor if there are more than 1000 results.
+
+      <Expandable title="cursorPagingMetadata properties">
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `NO_IMPLEMENTERS_FOUND` | No availability provider is installed or configured for this operation. |
+    | `404` | `NOT_FOUND` | `MULTIPLE_IMPLEMENTERS_FOUND` | Multiple availability providers are installed. Only 1 provider can be active at a time. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_ARGUMENTS` | Required request parameters are missing. Verify all required fields are provided. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `404` | `NOT_FOUND` | `SERVICE_NOT_FOUND` | Couldn't find the service. |
+    | `428` | `FAILED_PRECONDITION` | `REQUESTED_GENDER_NOT_ALLOWED` | `customerChoices.requestedGender` is specified while `genderPubliclyAccessible` is disabled in the business's [staff member settings](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-member-settings/introduction). |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-availability-time-slots" id="ex-sdk-list-availability-time-slots-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-availability-time-slots" id="ex-sdk-list-availability-time-slots-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-availability-time-slots-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-availability-time-slots-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">listAvailabilityTimeSlots</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listAvailabilityTimeSlots (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-availability-time-slots-0"><span className="wix-picker-name">listAvailabilityTimeSlots</span></label>
+    <label htmlFor="ex-sdk-list-availability-time-slots-1"><span className="wix-picker-name">listAvailabilityTimeSlots (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAvailabilityTimeSlots
+    import { availabilityTimeSlots } from '@wix/bookings';
+
+    async function listAvailabilityTimeSlots(options) {
+      const response = await availabilityTimeSlots.listAvailabilityTimeSlots(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAvailabilityTimeSlots (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { availabilityTimeSlots } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { availabilityTimeSlots },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listAvailabilityTimeSlots(options) {
+      const response = await myWixClient.availabilityTimeSlots.listAvailabilityTimeSlots(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

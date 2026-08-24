@@ -1,0 +1,232 @@
+---
+title: "Async Patch Data Items By Filter"
+description: "Patches all data items matching a filter."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<div className="wix-api-columns">
+
+<div className="wix-ref">
+
+<Info>
+
+  **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+</Info>
+
+Patches all data items matching a filter. Runs asynchronously.
+
+This method selects all items that match the specified filter and applies the given field modifications to each one.
+Unlike [Bulk Patch Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-patch-data-items), you don't need to specify individual item IDs. Instead, items are selected by filter.
+
+The operation runs asynchronously and returns a job ID for tracking status.
+Call [Get Async Job Status](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/get-async-job-status) with the returned job ID to poll for status.
+
+An empty `filter` patches all items in the collection.
+
+<Note>
+
+- The number of affected items is not bounded.
+- If any item fails to be patched, the async job stops and its status becomes `FAILED`. Some items may already have been patched before the failure.
+- Each patched item's `data._updatedDate` property is updated to the current date and time.
+- Calling this method triggers the [Data Item Updated](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event for each patched item.
+- Job records are retained for 30 days. After that, querying the job ID returns `NOT_FOUND`.
+
+</Note>
+
+<Note>
+
+  **Authentication**
+
+  You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+</Note>
+
+## Permissions
+
+This method requires one of the following permission scopes:
+
+<div className="wix-scopes">
+
+<span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+</div>
+
+Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+Callable by: `APP`.
+
+## Endpoint
+
+```http
+POST https://www.wixapis.com/data/v2/bulk/items/async-patch-by-filter
+```
+
+## Body Params
+
+<ParamField body="dataCollectionId" type="string" required>
+
+  ID of the collection containing items to patch.
+
+  Constraints: `maxLength 256`.
+
+</ParamField>
+
+<ParamField body="filter" type="object">
+
+  Filter to select items to patch, using [WQL filter syntax](https://dev.wix.com/docs/rest/api-reference/api-query-language/filtering).
+
+  Filtering is supported for fields explicitly defined in the
+  [data collection structure](https://dev.wix.com/docs/rest/business-solutions/cms/data-collections/introduction#data-collections-and-their-structure).
+  Fields not defined in the collection structure can't be used for filtering.
+  Using an undefined field in the filter causes the async job to fail after the method returns a job ID.
+  Each [field type](https://support.wix.com/en/article/cms-formerly-content-manager-about-your-collection-fields#field-type)
+  supports specific [filter operators](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#operators).
+  Using an unsupported operator causes the async job to fail after the method returns a job ID.
+  Poll [Get Async Job Status](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/get-async-job-status)
+  for the final status.
+
+  An empty filter patches all items in the collection.
+
+</ParamField>
+
+<ParamField body="fieldModifications" type="FieldModification[]" required>
+
+  Field modifications to apply to each matching item.
+  Supports the same modification model as
+  [Patch Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/patch-data-item),
+  including setting, removing, and incrementing fields.
+  Maximum 100 modifications per request.
+
+  Constraints: `minItems 1`, `maxItems 100`.
+
+  <Expandable title="fieldModifications properties">
+
+    <ParamField body="fieldPath" type="string" required>
+
+      Path of the field to be modified. For example: `title`.
+
+      Nested fields can be specified using dot notation. For example: `address.street`.
+
+      Constraints: `maxLength 1000`.
+
+    </ParamField>
+
+    <ParamField body="action" type="string" required>
+
+      Patch action to apply to the specified field.
+
+      **Supported values:**
+
+      - `SET_FIELD` — Sets the specified field to the specified value.
+      - `REMOVE_FIELD` — Clears the specified field.
+      - `INCREMENT_FIELD` — Increments the specified field by the specified value. To decrement, specify a negative value.
+      - `APPEND_TO_ARRAY` — Appends the specified value to the array.
+
+      Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+      - `REMOVE_FROM_ARRAY` — Removes the first instance of the specified value from the array.
+
+      Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+
+    </ParamField>
+
+  </Expandable>
+
+</ParamField>
+
+<ParamField body="publishPluginOptions" type="PublishPluginOptions">
+
+  Options for the [Publish plugin](https://support.wix.com/en/article/cms-controlling-live-site-item-visibility-from-your-collection).
+
+  This plugin allows items in a [data collection](https://dev.wix.com/docs/rest/business-solutions/cms/data-collections/data-collection-object) to be marked as draft or published. Published items are visible to site visitors, while draft items are not.
+
+  <Expandable title="publishPluginOptions properties">
+
+    <ParamField body="includeDraftItems" type="boolean">
+
+      Whether to include draft items.
+
+      When `true`, both published and draft items are affected. Default: `false`.
+
+    </ParamField>
+
+  </Expandable>
+
+</ParamField>
+
+## Response Object
+
+<ResponseField name="jobId" type="string">
+
+  Job ID for tracking the async operation.
+
+  Call [Get Async Job Status](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/get-async-job-status) with this ID to poll for status.
+
+  Constraints: `maxLength 256`.
+
+</ResponseField>
+
+## Errors
+
+<Note>
+
+  This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+</Note>
+
+</div>
+
+<div className="wix-examples">
+
+## Examples
+
+<CodeGroup>
+
+  ```bash Request
+  curl -X POST \
+  'https://www.wixapis.com/wix-data/v2/bulk/items/async-patch-by-filter' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: <AUTH>' \
+  -d '{
+    "dataCollectionId": "cities",
+    "filter": {
+      "$and": [
+        {
+          "state": {
+            "$eq": "California"
+          }
+        },
+        {
+          "population": {
+            "$lt": 500000
+          }
+        }
+      ]
+    },
+    "fieldModifications": [
+      {
+        "fieldPath": "region",
+        "action": "SET_FIELD",
+        "setFieldOptions": {
+          "value": "West Coast"
+        }
+      }
+    ]
+  }'
+  ```
+
+  ```json Response
+  {
+    "jobId": "5b4d5e5c-6ef7-4cf9-9f74-5b9fd7b6be9e"
+  }
+  ```
+
+</CodeGroup>
+
+</div>
+
+</div>

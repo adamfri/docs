@@ -1,0 +1,57 @@
+---
+title: "Importing Files"
+description: "To import files using Import File or Bulk Import File, you need to do one of the following for each file: - Specify its MIME type in the mimeType field of the…"
+icon: "file-lines"
+---
+
+To import files using [Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/import-file) or [Bulk Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/bulk-import-file), you need to do one of the following for each file: 
+
+- Specify its [MIME type](fallback::https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) in the `mimeType` field of the call. For example, `mimeType: 'image/jpeg'`.
+
+- Specify its extension in either the `displayName` or `url` field of the request. For example, `displayName: 'Example Image.jpeg` or `url: https://www.example.com/image.jpeg`.
+
+- Ensure the server hosting the file supports HEAD requests. In these cases the Wix servers can retrieve the MIME type from the hosting server.
+
+<Note>
+
+If you want to validate the media type, specify the file's expected media type in the optional `mediaType` field of the call.  For example, `mediaType: 'IMAGE'`.
+
+</Note>
+
+## Knowing when a file is ready
+
+When you import a file using [Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/import-file), [Bulk Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/bulk-import-file), or [upload a file](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/upload-api), it's not immediately available, meaning you can't manage or use the file straight away. Files can take time to import or upload and be processed. This is true even though the endpoint used to import or upload a file returns a successful response.
+
+To run code when a file finishes processing successfully, listen for the [File Ready](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-ready) event. 
+To run code when a file's import fails, listen for the [File Failed](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-failed) event. 
+
+## Using `externalInfo`
+
+The [Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/import-file), [Bulk Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/bulk-import-files), [Generate File Upload URL](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/generate-file-upload-url), and [Generate File Resumable Upload URL](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/generate-file-resumable-upload-url) methods have a parameter called `externalInfo`. 
+Arguments specified in this parameter are included in the event bodies of the [File Ready](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-ready) and [File Failed](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-failed) events. This is the only place they appear.
+
+Use `externalInfo` to send information to the events that isn't contained in the [file descriptor](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-descriptor-object) object.
+
+### `externalInfo` use case
+
+Here is a sample flow to show how you could use `externalInfo` effectively.
+
+There is a form on a site that sends site visitors a confirmation email with the details they submitted in the form. One of the form fields is an image URL.
+In the email, we want to send a Wix download URL for the image, not the original image URL. This means we can only send the email when the image file is ready to download.
+
+To implement this, we use the following flow:
+1. When the site visitor submits the form, send the form information to a [data collection](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/introduction), getting back the form data's `id`.
+1. Call [Import File](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/import-file) to upload the image to the Media Manager. Specify the `externalInfo` parameter as follows:
+    ```json
+    {
+      "externalInfo": {
+        "origin": "formBuilder",
+        "externalIds": ["id"]
+      }
+    }
+    ```
+1. Listen for the [File Ready](https://dev.wix.com/docs/rest/assets/media/media-manager/files/file-ready) event and implement the following steps to handle it:
+    1. Check that the value for `externalInfo.origin` is `formBuilder`. We don't want to run this code if media was added from a different source.
+    1. Use the form data's `id` to [retrieve the form details](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/get-data-item) from the CMS.
+    1. [Generate a download URL](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager/files/generate-file-download-url) for the image.
+    1. Send the confirmation email with the form details and the download URL.

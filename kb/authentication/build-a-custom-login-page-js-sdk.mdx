@@ -1,0 +1,406 @@
+---
+title: "Build a Custom Login Page (JS SDK)"
+description: "This article explains how to implement a custom login page using the JavaScript SDK."
+---
+
+This article explains how to implement a [custom login page](/kb/authentication/about-member-login) using the JavaScript SDK.
+
+<Note>
+
+This flow isn't supported for projects built with [Wix's Astro integration](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/about-the-astro-integration). The integration's automatic authentication doesn't recognize members who sign in through a flow you run yourself, so your project continues to treat them as visitors. On projects with the Astro integration, [add a Wix login page](https://dev.wix.com/docs/go-headless/authentication/members/wix-login-page/add-member-login-with-the-astro-integration) instead.
+
+</Note>
+
+You'll learn how to:
+
+- Set up a Wix client for authentication.
+- Check if a visitor is already logged in.
+- Sign up and log in members.
+- Exchange session tokens for access and refresh tokens.
+- Use a full-page redirect for mobile-compatible authentication.
+- Handle failed authentication states.
+- Refresh access tokens.
+- Log out members.
+
+## Step 1 — Set up a Wix client
+
+To authenticate and interact with Wix APIs, create a [Wix client](https://dev.wix.com/docs/sdk/core-modules/sdk/wix-client) in your code. Install and import the [Members API](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/member-management/members/introduction?apiView=SDK) to create and manage a site's members. You can also import other APIs as needed and pass to your client. 
+
+```js
+import { createClient, OAuthStrategy } from '@wix/sdk';
+import { members } from '@wix/members';
+
+const myWixClient = createClient({
+  modules: { members },
+  auth: OAuthStrategy({
+    clientId: '<YOUR_CLIENT_ID>',
+  })
+});
+```
+
+Replace `<YOUR_CLIENT_ID>` with your OAuth app's **Client ID** from your [Headless Settings](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+
+## Step 2 — Check if the visitor is already logged in
+
+Before showing a login form, check if the current visitor is already logged in:
+
+```js
+const isLoggedIn = myWixClient.auth.loggedIn();
+
+if (isLoggedIn) {
+  const { member } = await myWixClient.members.getCurrentMember();
+  console.log('Logged in as:', member.loginEmail);
+} else {
+  showLoginForm();
+}
+```
+
+If logged in, you can immediately make authenticated API calls. Otherwise, send them to your sign-up or login form.
+
+## Step 3 — Sign up and log in members
+
+Create custom forms in your app with fields for email and password. You can design these forms to match your branding exactly. Your page should be able to:
+
+* Sign up a new member
+* Log in an existing member
+
+<Tip>
+
+You can add [reCAPTCHA protection](https://dev.wix.com/docs/go-headless/authentication/members/custom-login-page/re-captcha/add-re-captcha-to-a-custom-login-page-js-sdk) to your custom login flows to help prevent fraud and abuse. Make sure to also [enable reCAPTCHA](https://dev.wix.com/docs/go-headless/authentication/members/custom-login-page/re-captcha/enable-re-captcha-for-member-login) in your project settings.
+
+</Tip>
+
+### Sign up a new member
+
+To sign up a new member, use the [`register()`](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#register) method with the email and password provided by the visitor:
+
+```js
+let response = await myWixClient.auth.register({
+  email: "<NEW_MEMBER_EMAIL>",
+  password: "<NEW_MEMBER_PASSWORD>",
+});
+```
+
+Collecting additional profile details at sign-up, such as a name, nickname, or your own custom fields, is one of the main reasons to build a custom login page instead of using a Wix login page. To do this, pass an optional [`profile`](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#identityprofile) object with any of the fields your form collects:
+
+```js
+let response = await myWixClient.auth.register({
+  email: "<NEW_MEMBER_EMAIL>",
+  password: "<NEW_MEMBER_PASSWORD>",
+  profile: {
+    firstName: "<FIRST_NAME>",
+    lastName: "<LAST_NAME>",
+    nickname: "<NICKNAME>",
+    // customFields: { <fieldName>: <value> }
+  },
+});
+```
+
+<Note>
+
+Standard profile fields such as `firstName`, `lastName`, and `nickname` work as-is. Arbitrary keys in `customFields` must first be defined using the [Members Custom Fields API](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/member-management/custom-fields/custom-fields/introduction?apiView=SDK), which requires the [Wix Members Area app](https://www.wix.com/app-market/web-solution/members-area) to be installed. An undefined custom field is silently dropped.
+
+</Note>
+
+If `response.loginState` is `SUCCESS`, [exchange the session token for access and refresh tokens](#step-4--exchange-the-session-token-for-access-and-refresh-tokens). Otherwise, [handle failed authentication states](#step-5--handle-failed-authentication-states).
+
+### Log in an existing member
+
+To log in an existing member, use the [`login()`](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy) method with the email and password provided by the visitor:
+
+```js
+let response = await myWixClient.auth.login({
+  email: "<MEMBER_EMAIL>",
+  password: "<MEMBER_PASSWORD>",
+});
+```
+
+If `response.loginState` is `SUCCESS`, [exchange the session token for access and refresh tokens](#step-4--exchange-the-session-token-for-access-and-refresh-tokens). Otherwise, [handle failed authentication states](#step-5--handle-failed-authentication-states).
+
+## Step 4 — Exchange the session token for access and refresh tokens
+
+When authentication is successful, you need to exchange the session token for access and refresh tokens. This process is the same whether you're signing up a new member or logging in an existing member.
+
+Choose one of the following approaches to exchange the session token:
+- [Use the SDK](#use-the-sdk-desktop-browsers): Simpler, but only works on desktop browsers.
+- [Use a full-page redirect](#use-a-full-page-redirect-desktop-and-mobile-browsers): Works on all browsers, including mobile browsers that block 3rd-party cookies.
+
+### Use the SDK (desktop browsers only)
+
+Call [`getMemberTokensForDirectLogin()`](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#getmembertokensfordirectlogin) and set the returned member tokens on your client:
+
+```js
+if (response.loginState === 'SUCCESS') {
+  const tokens = await myWixClient.auth.getMemberTokensForDirectLogin(response.data.sessionToken);
+  myWixClient.auth.setTokens(tokens);
+}
+```
+
+<Tip>
+
+After setting tokens, you can use `myWixClient.members.getCurrentMember()` to fetch the member's info.
+
+</Tip>
+
+### Use a full-page redirect (desktop and mobile browsers)
+
+This approach uses a full-page redirect to complete the PKCE OAuth exchange instead of a hidden iframe. This avoids 3rd-party cookie restrictions that cause `getMemberTokensForDirectLogin()` to fail on mobile browsers.
+
+<Note>
+
+The `redirectUri` you use in this flow must be an [allowed authorization redirect URI](https://dev.wix.com/docs/go-headless/authentication/setup/allow-redirect-uris-and-domains) and must match exactly, including any trailing slash.
+
+</Note>
+
+To use a full-page redirect:
+
+1. After a successful [login or register call](#step-3--sign-up-and-log-in-members), retrieve the `sessionToken` from `response.data.sessionToken`. You'll specify this token when calling [Create Redirect Session](https://dev.wix.com/docs/api-reference/business-management/headless/redirects/create-redirect-session) to establish the member's identity.
+
+1. Generate PKCE data: 
+    - A random code verifier.
+    - A SHA-256 code challenge derived from the verifier.
+    - A random state value.
+    
+    Store the code verifier and state so you can retrieve them after the redirect. 
+    
+    For example:
+
+    ```js
+    function generateRandomString(length) {
+      const array = new Uint8Array(length);
+      crypto.getRandomValues(array);
+      return Array.from(array, (byte) =>
+        byte.toString(16).padStart(2, '0')
+      ).join('');
+    }
+
+    async function generateCodeChallenge(codeVerifier) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(codeVerifier);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    const codeVerifier = generateRandomString(32);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    const state = generateRandomString(16);
+
+    localStorage.setItem('codeVerifier', codeVerifier);
+    localStorage.setItem('oauthState', state);
+    ```
+
+1. Call [Create Redirect Session](https://dev.wix.com/docs/api-reference/business-management/headless/redirects/create-redirect-session), specifying the `sessionToken` and the PKCE challenge data in `auth.authRequest`. Specify the visitor access token as the authorization header.
+
+    ```js
+    const visitorTokens = myWixClient.auth.getTokens();
+
+    const redirectResponse = await fetch(
+      'https://www.wixapis.com/_api/redirects-api/v1/redirect-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: visitorTokens.accessToken.value,
+        },
+        body: JSON.stringify({
+          auth: {
+            authRequest: {
+              clientId: '<YOUR_CLIENT_ID>',
+              codeChallenge,
+              codeChallengeMethod: 'S256',
+              responseMode: 'query',
+              responseType: 'code',
+              scope: 'offline_access',
+              redirectUri: '<YOUR_REDIRECT_URI>',
+              sessionToken: response.data.sessionToken,
+              state,
+            },
+          },
+          callbacks: {
+            postFlowUrl: '<YOUR_POST_FLOW_URL>',
+          },
+        }),
+      }
+    );
+
+    const redirectData = await redirectResponse.json();
+    ```
+
+1. Redirect the browser to the `fullUrl` returned in the response. This navigates the user to the Wix authorization page instead of using a hidden iframe.
+
+    ```js
+    window.location.href = redirectData.redirectSession.fullUrl;
+    ```
+
+1. When the authorization flow completes, the browser redirects back to your `redirectUri` with `code` and `state` query parameters. On page load, retrieve these values and verify that `state` matches what you stored to protect against CSRF attacks. 
+
+    For example:
+
+    ```js
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+
+    const storedState = localStorage.getItem('oauthState');
+    if (state !== storedState) {
+      throw new Error('State mismatch');
+    }
+    ```
+
+1. Exchange the authorization code for member tokens by calling [Create Access Token](https://dev.wix.com/docs/api-reference/app-management/oauth-2/create-access-token), specifying the `code`, stored `codeVerifier`, and `redirectUri`.
+
+    ```js
+    const codeVerifier = localStorage.getItem('codeVerifier');
+
+    const tokenResponse = await fetch('https://www.wixapis.com/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: '<YOUR_CLIENT_ID>',
+        grantType: 'authorization_code',
+        code,
+        codeVerifier,
+        redirectUri: '<YOUR_REDIRECT_URI>',
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    ```
+
+1. Convert the token response to the SDK token format and reinitialize the Wix client with the member tokens.
+
+    ```js
+    const memberTokens = {
+      accessToken: {
+        value: tokenData.access_token,
+        expiresAt: Math.floor(Date.now() / 1000) + tokenData.expires_in,
+      },
+      refreshToken: {
+        value: tokenData.refresh_token,
+        role: 'member',
+      },
+    };
+
+    const myWixClient = createClient({
+      modules: { members },
+      auth: OAuthStrategy({
+        clientId: '<YOUR_CLIENT_ID>',
+        tokens: memberTokens,
+      }),
+    });
+    ```
+
+## Step 5 — Handle failed authentication states
+
+When a sign-up or login attempt fails, the `login()` and `register()` methods return an object with a `loginState` property. Your code should handle each possible state to provide a smooth user experience. The possible values include:
+
+- `SUCCESS`: Authentication was successful.
+- `FAILURE`: Authentication unsuccessful due to one of the following reasons, as indicated by the `errorCode`:
+  - `invalidEmail`: The email address provided is invalid. Your code should present an error.
+  - `invalidPassword`: The password provided is invalid. Your code should present an error.
+  - `emailAlreadyExists`: The visitor attempted to sign up as a new member using an email address belonging to an existing member. Your code should present an error.
+  - `resetPassword`: The member needs to reset their password. Your code needs to [send a password reset email](#send-a-password-reset-email).
+- `EMAIL_VERIFICATION_REQUIRED`: Authentication requires email verification. Your code needs to [process email verification](#process-email-verification).
+- `OWNER_APPROVAL_REQUIRED`: The site owner needs to approve registration for the new member. Your code should present a notice to inform the visitor that their membership is pending. Once their membership is approved, the member can log in.
+
+### Send a password reset email
+
+Call the [`sendPasswordResetEmail()`](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy) method to send a password reset email to a member. The method takes the member's email address and a URL to send the member to after they successfully change their password.
+
+```js
+await myWixClient.auth.sendPasswordResetEmail(
+  email,
+  redirectUri
+);
+```
+
+The `redirectUri` must be an [allowed authorization redirect URI](https://dev.wix.com/docs/go-headless/authentication/setup/allow-redirect-uris-and-domains). When the member clicks the reset link in their email, they're taken to a Wix-managed password reset page. After successfully setting a new password, Wix redirects them to your specified URL.
+
+For example, the following code sends a password reset email to `john_doe@email.com`, and once the member resets their password on the Wix-hosted page, Wix redirects the member back to your page at `http://www.my-site.com/password_changed`.
+
+```js
+await myWixClient.auth.sendPasswordResetEmail(
+  "john_doe@email.com",
+  "http://www.my-site.com/password_changed",
+);
+```
+
+### Process email verification
+
+If the `loginState` is `EMAIL_VERIFICATION_REQUIRED`, Wix sends an email with a verification code to the member. You need to create a form or prompt to collect this verification code from the member, and then use the [`processVerification()`](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy) method to complete the verification:
+
+```js
+const response = await myWixClient.auth.processVerification({
+  verificationCode: verificationCode
+});
+```
+
+If `response.loginState` is `SUCCESS`, [exchange the session token for access and refresh tokens](#step-4--exchange-the-session-token-for-access-and-refresh-tokens).
+
+## Step 6 — Refresh access tokens
+
+Access tokens expire after a short time for security reasons. When this happens, you can use a refresh token to request a new access token without asking the member to log in again.
+
+Your API layer should handle this automatically. Set up your logic to detect when an access token has expired, use the refresh token to get a new one, and then retry the original request.
+
+```js
+const storedRefreshToken = JSON.parse(Cookies.get(WIX_REFRESH_TOKEN) || 'null');
+
+const myWixClient = createClient({
+  modules: { members },
+  auth: OAuthStrategy({
+    clientId: '<YOUR_CLIENT_ID>',
+    tokens: {
+      refreshToken: storedRefreshToken,
+      accessToken: { value: '', expiresAt: 0 }
+    }
+  })
+});
+
+try {
+  const newTokens = await myWixClient.auth.renewToken(storedRefreshToken);
+  myWixClient.auth.setTokens(newTokens);
+  Cookies.set(WIX_REFRESH_TOKEN, JSON.stringify(newTokens.refreshToken), {
+    expires: 14
+  });
+} catch (error) {
+  window.location.href = '/login';
+}
+```
+
+<Tip>
+
+Don't expose refresh tokens to the browser unnecessarily. For best security, handle token refresh on the server when possible.
+
+</Tip>
+
+## Logging out a member
+
+To log a member out:
+
+1. Get the logout URL from your Wix client:
+
+   ```js
+   const { logoutUrl } = await myWixClient.auth.logout(window.location.href);
+   ```
+
+2. Redirect the member to the logout URL:
+
+   ```js
+   window.location.href = logoutUrl;
+   ```
+
+This logs the member out and redirects them back to your app.
+
+## Troubleshooting
+
+If you encounter issues with custom login, make sure that:
+
+- You're using the correct client ID from your [Headless Settings](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+- The `redirectUri` parameter in `sendPasswordResetEmail()` matches one of your [allowed authorization redirect URIs](https://dev.wix.com/docs/go-headless/authentication/setup/allow-redirect-uris-and-domains).
+- If you're having token-related errors during testing, clear browser cookies and try again.
+- You're using a single shared client instance throughout your app (not creating new instances in components).
+- If `createRedirectSession()` fails with `FAILED_TO_EXTRACT_SESSION`, no member session was established. This commonly happens when `getMemberTokensForDirectLogin()` hangs on mobile browsers that block 3rd-party cookies. For mobile-compatible authentication, [use a full-page redirect](#use-a-full-page-redirect-desktop-and-mobile-browsers).

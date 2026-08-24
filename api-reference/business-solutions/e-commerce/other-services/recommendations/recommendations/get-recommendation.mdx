@@ -1,0 +1,529 @@
+---
+title: "Get Recommendation"
+description: "Returns a list of items to recommend to site visitors based on the specified algorithms."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Returns a list of items to recommend to site visitors based on the specified algorithms.
+
+    You can specify multiple algorithms in the request. The method processes them in order and returns the recommendations from the first algorithm that meets the `minimumRecommendedItems` threshold. If the first algorithm doesn't provide enough items, the method moves to the next algorithm in the list and repeats the process. If no algorithm meets the threshold, the method returns an empty array.
+
+    <Note>
+
+    - Both the app providing the algorithm and an app providing a supported catalog must be installed on the site.
+    - This method doesn't run the algorithms directly. It calls the installed apps that provide them.
+
+    </Note>
+
+    To see which algorithms are available on a site, call [List Available Algorithms](https://dev.wix.com/docs/rest/api-reference/wix-e-commerce/recommendations/list-available-algorithms).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.READ-ECOM">Read eCommerce - all read permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/v1/recommendations/get
+    ```
+
+    ## Body Params
+
+    <ParamField body="items" type="CatalogReference[]">
+
+      Catalog items to base recommendations on. Required if the algorithm's `algorithmType` is `RELATED_ITEMS`.
+
+      Constraints: `maxItems 300`.
+
+      <Expandable title="items properties">
+
+        <ParamField body="catalogItemId" type="string" required>
+
+          ID of the item within the catalog it belongs to.
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string" required>
+
+          ID of the app providing the catalog.
+
+          You can get your app's ID from its page in the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+          For items from Wix catalogs, the following values always apply:
+          + Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"`
+          + Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+          + Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`
+
+          Constraints: `minLength 1`.
+
+        </ParamField>
+
+        <ParamField body="options" type="object">
+
+          Additional item details in `key:value` pairs.
+
+          Use this optional field for more specificity with item selection. The values of the `options` field differ depending on which catalog is providing the items.
+
+          For Wix Stores products, learn more about integrating with [Catalog V3](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration)
+          or [Catalog V1](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/e-commerce-integration), depending on [the version the site uses](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-versioning/introduction).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="algorithms" type="Algorithm[]" required>
+
+      Algorithms to specify for generating recommendations, ordered by preference. The method processes algorithms in order and provides recommendations from the first algorithm that meets the `minimumRecommendedItems` threshold.
+
+      Constraints: `minItems 1`, `maxItems 10`.
+
+      <Expandable title="algorithms properties">
+
+        <ParamField body="id" type="string" required>
+
+          ID of the algorithm, as defined by the app that provides it.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string" required>
+
+          ID of the app providing the algorithm. This can be an app built by Wix or a 3rd-party app.
+
+          See app IDs for [apps built by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="minimumRecommendedItems" type="integer">
+
+      Minimum number of items an algorithm must provide for its recommendations to be returned in the response. If no algorithm provides enough items, an empty array is returned.
+
+      Constraints: `min 0`, `max 100`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="recommendation" type="Recommendation">
+
+      The recommended items and the algorithm that provided them. Empty if no algorithm met the `minimumRecommendedItems` threshold.
+
+      See the [Recommendation Object](/api-reference/business-solutions/e-commerce/other-services/recommendations/recommendations/recommendation-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `ITEM_APP_ID_NOT_SUPPORTED` | The `items` array contains app IDs that aren't supported by the specified algorithm. |
+    | `400` | `INVALID_ARGUMENT` | `ALGORITHM_NOT_SUPPORTED` | One or more algorithms in the `algorithms` array aren't supported by the provider. |
+    | `404` | `NOT_FOUND` | `RECOMMENDATIONS_PROVIDER_NOT_FOUND` | Couldn't find the recommendation provider. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl POST 'www.wixapis.com/ecom/v1/recommendations/get' \
+      -H 'Content-Type: application/json;charset=UTF-8' \
+      -H 'Authorization: <AUTH>' \
+      --data-binary '{
+           "items": [
+               {
+                   "catalogItemId": "ec7914e8-208b-0069-5850-1a965643508d",
+                   "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+               }
+           ],
+           "algorithms": [
+               {
+                   "id": "e33f5e32-d1a2-4944-b38f-d29b7d5ef4ef",
+                   "appId": "72454cb3-90b5-4cef-bbff-cc61aea02584"
+               },
+               {
+                   "id": "09dc98e8-8696-49f7-833a-bab57f516f88",
+                   "appId": "b0933968-e643-4835-a403-de8e1eb4d33c"
+               }
+           ],
+           "minimumRelatedItems": 1
+      }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+          "recommendation": {
+              "items": [
+                  {
+                      "catalogItemId": "1ce6198f-5fad-5ac9-5b36-ecb2175929ef",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "efd0b233-8f8e-b6b8-b5f3-66903caa8558",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "58a7ab15-5c65-d836-7934-86f78b17996b",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "040528a7-7256-7875-c8e4-8976d949f66b",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "11e2ffb7-2520-3c21-051e-1f05486b9061",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "e8f9c6d5-4ddd-36dd-f595-fe7bfd7891e2",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "16694dd9-ab43-7c5b-974e-e15a4297f235",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "593c5cd0-4996-2a8a-ad34-7669f266c42e",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  },
+                  {
+                      "catalogItemId": "51c819a7-9380-1748-d761-b0bb25d175c2",
+                      "appId": "f29c9b39-1090-4d9b-8e3a-a3a681a57970"
+                  }
+              ],
+              "algorithm": {
+                  "id": "e33f5e32-d1a2-4944-b38f-d29b7d5ef4ef",
+                  "appId": "72454cb3-90b5-4cef-bbff-cc61aea02584"
+              }
+          }
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Returns a list of items to recommend to site visitors based on the specified algorithms.
+
+    You can specify multiple algorithms in the request. The method processes them in order and returns the recommendations from the first algorithm that meets the `minimumRecommendedItems` threshold. If the first algorithm doesn't provide enough items, the method moves to the next algorithm in the list and repeats the process. If no algorithm meets the threshold, the method returns an empty array.
+
+    <Note>
+
+    - Both the app providing the algorithm and an app providing a supported catalog must be installed on the site.
+    - This method doesn't run the algorithms directly. It calls the installed apps that provide them.
+
+    </Note>
+
+    To see which algorithms are available on a site, call [List Available Algorithms](https://dev.wix.com/docs/rest/api-reference/wix-e-commerce/recommendations/list-available-algorithms).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.READ-ECOM">Read eCommerce - all read permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { recommendations } from '@wix/ecom';
+
+    recommendations.getRecommendation(algorithms, options): Promise<GetRecommendationResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="algorithms" type="Algorithm[]" required>
+
+      Algorithms to specify for generating recommendations, ordered by preference. The method processes algorithms in order and provides recommendations from the first algorithm that meets the `minimumRecommendedItems` threshold.
+
+      Constraints: `minItems 1`, `maxItems 10`.
+
+      <Expandable title="algorithms properties">
+
+        <ParamField body="_id" type="string" required>
+
+          ID of the algorithm, as defined by the app that provides it.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string" required>
+
+          ID of the app providing the algorithm. This can be an app built by Wix or a 3rd-party app.
+
+          See app IDs for [apps built by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="GetRecommendationOptions">
+
+      Get recommendation options.
+
+      <Expandable title="options properties">
+
+        <ParamField body="items" type="CatalogReference[]">
+
+          Catalog items to base recommendations on. Required if the algorithm's `algorithmType` is `RELATED_ITEMS`.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="items properties">
+
+            <ParamField body="catalogItemId" type="string" required>
+
+              ID of the item within the catalog it belongs to.
+
+              Constraints: `minLength 1`, `maxLength 36`.
+
+            </ParamField>
+
+            <ParamField body="appId" type="string" required>
+
+              ID of the app providing the catalog.
+
+              You can get your app's ID from its page in the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+              For items from Wix catalogs, the following values always apply:
+              + Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"`
+              + Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              + Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`
+
+              Constraints: `minLength 1`.
+
+            </ParamField>
+
+            <ParamField body="options" type="object">
+
+              Additional item details in `key:value` pairs.
+
+              Use this optional field for more specificity with item selection. The values of the `options` field differ depending on which catalog is providing the items.
+
+              For Wix Stores products, learn more about integrating with [Catalog V3](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration)
+              or [Catalog V1](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/e-commerce-integration), depending on [the version the site uses](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-versioning/introduction).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="minimumRecommendedItems" type="integer">
+
+          Minimum number of items an algorithm must provide for its recommendations to be returned in the response. If no algorithm provides enough items, an empty array is returned.
+
+          Constraints: `min 0`, `max 100`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<GetRecommendationResponse>`.
+
+    <ResponseField name="recommendation" type="Recommendation">
+
+      The recommended items and the algorithm that provided them. Empty if no algorithm met the `minimumRecommendedItems` threshold.
+
+      See the [Recommendation Object](/api-reference/business-solutions/e-commerce/other-services/recommendations/recommendations/recommendation-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `ITEM_APP_ID_NOT_SUPPORTED` | The `items` array contains app IDs that aren't supported by the specified algorithm. |
+    | `400` | `INVALID_ARGUMENT` | `ALGORITHM_NOT_SUPPORTED` | One or more algorithms in the `algorithms` array aren't supported by the provider. |
+    | `404` | `NOT_FOUND` | `RECOMMENDATIONS_PROVIDER_NOT_FOUND` | Couldn't find the recommendation provider. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-recommendation" id="ex-sdk-get-recommendation-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-recommendation" id="ex-sdk-get-recommendation-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-recommendation-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-recommendation-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Get recommendation with algorithms and options objects (with $w)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getRecommendation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-recommendation-0"><span className="wix-picker-name">Get recommendation with algorithms and options objects (with $w)</span></label>
+    <label htmlFor="ex-sdk-get-recommendation-1"><span className="wix-picker-name">getRecommendation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Get recommendation with algorithms and options objects (with $w)
+    /********************************************
+     * Backend code - recommendations.web.js/ts *
+     *******************************************/
+    import { Permissions, webMethod } from '@wix/web-methods';
+    import { recommendations } from '@wix/ecom';
+
+    export const getRecommendation = webMethod(Permissions.Anyone, async (algorithms, options) => {
+      try {
+        const result = await recommendations.getRecommendation(algorithms, options);
+
+        return result;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    });
+
+    /*************
+     * Page code *
+     ************/
+
+    import { getRecommendation } from 'backend/recommendations.web';
+
+    $w.onReady(async function () {
+      let algorithm = {
+        appId: '215238eb-22a5-4c36-9e7b-e7c08025e04e',
+        id: '68ebce04-b96a-4c52-9329-08fc9d8c1253'
+      };
+      let item = {
+    	appId: '215238eb-22a5-4c36-9e7b-e7c08025e04e',
+    	catalogItemId: '11e2ffb7-2520-3c21-051e-1f05486b9061'
+      };
+      let options = {
+    	items: [item],
+    	minimumRecommendedItems: 1
+      }
+      let recommendations = await getRecommendation([algorithm], options);
+      console.log(recommendations);
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getRecommendation (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { recommendations } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { recommendations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getRecommendation(algorithms,options) {
+      const response = await myWixClient.recommendations.getRecommendation(algorithms,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

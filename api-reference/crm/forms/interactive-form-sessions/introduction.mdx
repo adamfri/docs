@@ -1,0 +1,95 @@
+---
+title: "Introduction"
+description: "The Interactive Form Sessions API enables you to create AI-powered conversational form experiences where users complete forms through natural language conversa…"
+icon: "file-lines"
+---
+
+The Interactive Form Sessions API enables you to create AI-powered conversational form experiences where users complete forms through natural language conversations instead of traditional form filling. This transforms static forms into engaging, dynamic interactions that guide users step-by-step through data collection.
+
+With the Interactive Form Sessions API, you can:
+
+- Create interactive form sessions that use AI to guide users through form completion.
+- Process user messages and extract structured data from natural language input.
+- Handle real-time streaming responses for progressive conversational experiences.
+- Pre-fill sessions with existing data when switching from static to interactive forms.
+- Support multiple input types including text, selections, numbers, file uploads, and signatures.
+- Test conversational flows using dry run mode without actual form submissions.
+
+The Interactive Form Sessions API works in conjunction with the [Wix Form Schemas API](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/introduction) to provide the underlying form structure.
+
+You can use dry run mode for testing. In this mode the full conversational flow works normally and form data is extracted, but no actual form submission occurs.
+
+## Supporting purchases with interactive forms
+
+Interactive form sessions can create conversational product ordering experiences where customers describe what they want in natural language, and the AI guides them through product selection and redirects them to a checkout page.
+
+Forms with purchase capabilities are ideal for scenarios where traditional product selection interfaces may be overwhelming or inefficient, such as:
+
+- **Complex product catalogs**: When customers need guidance navigating extensive product options or configurations.
+- **Personalized recommendations**: When product selection benefits from understanding customer preferences through conversation.
+- **Service-based purchases**: When customers need to describe their specific needs before selecting appropriate service packages.
+- **Gift purchases**: When customers need assistance choosing products for others based on recipient characteristics.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- A form must be created using the [Wix Forms API](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/introduction) before creating an interactive session for it.
+- Response time SLA is 15 seconds maximum for all methods.
+- User messages support up to 10,000 characters.
+- Multiple active sessions per form are supported.
+- Sessions maintain state throughout the conversation lifecycle.
+- File upload submissions are not currently supported.
+- Purchase flows require a form that has access to the products or services available for sale, as well as integration with the Wix eCommerce [Checkout API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/introduction). 
+
+## Response chunks architecture
+
+The API uses a chunked response system that delivers different types of content sequentially to build conversational interfaces. 
+
+Response chunks are typed to indicate their purpose:
+- **TEXT**: Regular conversational messages from the AI assistant.
+- **TEXT_DATA**: Structured data extracted from user input and mapped to form fields.
+- **MULTI_SELECT_INPUT**: Multiple-choice input element for selecting from a list of options.
+- **SINGLE_SELECT_INPUT**: Single-choice input element for selecting one option.
+- **NUMBER_INPUT**: Numeric input element for entering numbers.
+- **SUBMISSION**: Form completion data, including a submission ID.
+- **ERROR**: Error messages and validation failures.
+- **IMPORTANT_TEXT**: Highlighted contextual information.
+- **END_OF_RESPONSE**: Stream completion signal.
+
+Each chunk type requires different handling in your user interface. Process chunks sequentially as they arrive to build the complete conversational experience.
+
+## Streaming vs standard methods
+
+The API provides both standard and streaming variants for session creation and message sending, each designed for different user experience requirements and implementation approaches.
+- **Standard methods** (`CreateInteractiveFormSession` and `SendUserMessage`) return complete responses after all processing finishes. All response chunks are generated before being returned together in a single response. 
+  - Use these when your implementation can wait for complete responses before displaying content, you're building simple forms with minimal AI processing time, or you prefer simpler implementation without real-time streaming complexity.
+- **Streaming methods** (`CreateInteractiveFormSessionStreamed` and `SendUserMessageStreamed`) deliver response chunks in real-time as they're generated. Response chunks arrive immediately as the AI generates them, creating natural conversation flow that feels more engaging and responsive. 
+  - Use these for interactive chat interfaces where users expect real-time conversation or when immediate user feedback improves engagement.
+
+#### How streaming works
+
+1. Call `CreateInteractiveFormSessionStreamed` or `SendUserMessageStreamed`.
+2. The AI generates and sends response chunks immediately as they're created:
+   - `TEXT` chunks appear as the AI formulates conversational responses.
+   - `TEXT_DATA` chunks arrive as soon as data is extracted from user input.
+   - Input prompts (`SINGLE_SELECT_INPUT`, `MULTI_SELECT_INPUT`, etc.) are sent when the AI determines they're needed.
+   - `END_OF_RESPONSE` chunk signals completion of the stream.
+3. Your implementation processes each chunk as it arrives, updating the UI progressively.
+
+## Use cases
+
+- [Create AI-powered conversations](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/sample-flows#create-ai-powered-conversations)
+- [Resume and complete abandoned form submissions](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/sample-flows#resume-and-complete-abandoned-form-submissions)
+- [Create conversational product ordering experiences](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/sample-flows#create-conversational-product-ordering-experiences)
+
+## Terminology
+
+- **Interactive form session**: A stateful conversation instance that maintains context throughout the AI-powered form completion process.
+- **Response chunk**: A typed piece of content delivered by the AI assistant, such as text messages, extracted data, or input prompts.
+- **Streaming response**: Real-time delivery of response chunks as they're generated, enabling progressive display of conversational content.
+- **Dry run mode**: A testing mode where the full conversational flow works normally and form data is extracted, but no actual form submission occurs.
+- **Form field targeting**: The process of mapping extracted data or input prompts to specific fields in the form schema using field identifiers.
+- **Meaningful input**: The portion of user input that was relevant for data extraction, used to highlight processed text in the UI.
+
+@sdk_package_setup

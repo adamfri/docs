@@ -1,0 +1,2933 @@
+---
+title: "Marketing Settings Object"
+description: "A site's marketing preferences that shape how the AI generates its marketing plan and posts."
+icon: "cube"
+---
+
+A site's marketing preferences that shape how the AI generates its marketing plan and posts.
+
+Settings are optional: if a site hasn't configured them, sensible defaults are applied
+automatically when a plan is generated. Owners can customize any combination of fields
+using the UpsertMarketingSettings method. Settings are shared across all enabled marketing
+tools unless a tool-specific override is set in `overrides`.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Unique ID of the marketing settings, equal to the site's MetaSite ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="settings" type="Settings">
+
+      Core preferences that apply to all marketing tools unless a tool-specific override is set.
+
+      <Expandable title="settings properties">
+
+        <ResponseField name="toneOfVoice" type="string">
+
+          Writing style description used to shape the voice of generated post captions.
+
+        </ResponseField>
+
+        <ResponseField name="pointOfView" type="string">
+
+          Narrative perspective used in generated post captions (first, second, or third person).
+
+          **Supported values:**
+
+          - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+          - `SECOND_PERSON` — Uses "you", "your".
+          - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+        </ResponseField>
+
+        <ResponseField name="customContentGuidelines" type="string">
+
+          Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+        </ResponseField>
+
+        <ResponseField name="language" type="Language">
+
+          Language and regional variation used for generated content. Read-only; derived from site properties.
+
+          **Read-only.**
+
+          <Expandable title="language properties">
+
+            <ResponseField name="language" type="string">
+
+              Language for generated content (e.g., `English`, `Spanish`).
+
+            </ResponseField>
+
+            <ResponseField name="regionalVariation" type="string">
+
+              Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="topics" type="Topics">
+
+          Content pillars: topics the AI should focus on or avoid when generating posts.
+
+          <Expandable title="topics properties">
+
+            <ResponseField name="included" type="string[]">
+
+              Topics the AI should actively incorporate into generated content.
+
+              Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+            </ResponseField>
+
+            <ResponseField name="excluded" type="string[]">
+
+              Topics the AI should avoid in generated content.
+
+              Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+            </ResponseField>
+
+            <ResponseField name="coreTopic" type="string">
+
+              The primary theme that anchors all generated content. Stored but not currently used during
+              generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imageGuidelines" type="string">
+
+          Free-text style instructions applied when generating images for posts.
+
+        </ResponseField>
+
+        <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+          Overall goal of the marketing plan, used to align content strategy across all tools.
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="goal" type="goal">
+
+              goal
+
+              <Expandable title="goal properties">
+
+                <ResponseField name="goalKey" type="string">
+
+                  A standard goal selected from the available plan goal options.
+
+                  **Supported values:**
+
+                  - `DRIVE_TRAFFIC` — Increase visits to the site.
+                  - `BRAND_AWARENESS` — Grow recognition and reach of the brand.
+                  - `BOOST_SALES` — Promote products or services to increase purchases.
+                  - `COLLECT_LEADS` — Capture contact information from potential customers.
+
+                </ResponseField>
+
+                <ResponseField name="customGoal" type="string">
+
+                  A free-text goal provided when none of the standard options apply.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="socialChannels" type="string[]">
+
+          Social platforms to generate content for. Social post drafts are only produced when
+          `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+          Constraints: `minItems 0`, `maxItems 10`.
+
+          **Supported values:**
+
+          - `FACEBOOK` — Facebook.
+          - `INSTAGRAM` — Instagram.
+          - `LINKEDIN` — LinkedIn.
+          - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+          - `PINTEREST` — Pinterest.
+          - `GBP` — Google Business Profile.
+          - `TIKTOK` — TikTok.
+
+        </ResponseField>
+
+        <ResponseField name="frequency" type="Frequency">
+
+          Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+          controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+          `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+          <Expandable title="frequency properties">
+
+            <ResponseField name="interval" type="string">
+
+              Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+              **Supported values:**
+
+              - `WEEK` — Per-week cadence.
+              - `MONTH` — Per-month cadence.
+              - `YEAR` — Per-year cadence.
+
+            </ResponseField>
+
+            <ResponseField name="count" type="integer">
+
+              Number of posts to produce within each `interval`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="marketingTools" type="string[]">
+
+          Marketing tools enabled in the plan. Social post drafts are only generated when
+          `SOCIAL_MARKETING` is present.
+
+          Constraints: `minItems 0`, `maxItems 3`.
+
+          **Supported values:**
+
+          - `EMAIL_MARKETING` — Email marketing campaigns.
+          - `BLOGS` — Blog post creation.
+          - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+        </ResponseField>
+
+        <ResponseField name="businessProfile" type="BusinessProfile">
+
+          Business context (goal, value proposition, and target audience) used to tailor content.
+
+          <Expandable title="businessProfile properties">
+
+            <ResponseField name="businessGoal" type="string">
+
+              What the business is trying to achieve (e.g., grow revenue, build community).
+
+            </ResponseField>
+
+            <ResponseField name="valueProposition" type="string">
+
+              What makes the business unique and why customers should choose it.
+
+            </ResponseField>
+
+            <ResponseField name="targetAudience" type="string">
+
+              Description of the intended audience the business wants to reach.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="calendar" type="Calendar">
+
+          Calendars whose events the AI considers when planning marketing activities.
+
+          <Expandable title="calendar properties">
+
+            <ResponseField name="ids" type="string[]">
+
+              IDs of the selected calendar options.
+
+              Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="targetLocations" type="string[]" deprecated>
+
+          Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+          **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+        </ResponseField>
+
+        <ResponseField name="businessLocation" type="BusinessLocation">
+
+          Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+          **Read-only.**
+
+          <Expandable title="businessLocation properties">
+
+            <ResponseField name="id" type="string">
+
+              Unique identifier for the business location (msid)
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+              List of physical business locations (maximum 5)
+
+              Constraints: `maxItems 5`.
+
+              <Expandable title="physicalLocations properties">
+
+                <ResponseField name="location" type="string">
+
+                  Free-form location text (e.g., "123 Main St, New York, NY 10001")
+
+                  Constraints: `maxLength 500`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+              List of service areas where the business operates (maximum 5)
+
+              Constraints: `maxItems 5`.
+
+              <Expandable title="serviceLocations properties">
+
+                <ResponseField name="location" type="string">
+
+                  Free-form service area text (e.g., "Manhattan, NY" or "Within 50 miles of Chicago")
+
+                  Constraints: `maxLength 500`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="online" type="boolean">
+
+              Indicates whether the business operates online
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="string">
+
+              Timestamp when the business location was created (ISO 8601 format)
+
+              **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="string">
+
+              Timestamp when the business location was last updated (ISO 8601 format)
+
+              **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+          Controls how images are generated for posts (mode and photo sources). These values are stored
+          but aren't currently applied during generation.
+
+          <Expandable title="imageGenerationSettings properties">
+
+            <ResponseField name="mode" type="string">
+
+              How images are generated for posts.
+
+              **Supported values:**
+
+              - `RAW` — Uses existing photos from enabled sources without AI processing.
+              - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+              - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+            </ResponseField>
+
+            <ResponseField name="enabledPhotoSources" type="string[]">
+
+              Photo sources the AI may draw from when generating or remixing images.
+
+              Constraints: `minItems 0`, `maxItems 2`.
+
+              **Supported values:**
+
+              - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+              - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="userPreferences" type="string">
+
+          User-authored preferences for personalizing marketing output. This value belongs to the site
+          and is shared by collaborators; it is not scoped to an individual user.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="overrides" type="SettingsOverrides">
+
+      Per-tool overrides. Unset fields in an override inherit the value from `settings`.
+
+      <Expandable title="overrides properties">
+
+        <ResponseField name="emailMarketing" type="Settings">
+
+          Settings applied only when generating email marketing content, overriding the shared settings.
+
+          <Expandable title="emailMarketing properties">
+
+            <ResponseField name="toneOfVoice" type="string">
+
+              Writing style description used to shape the voice of generated post captions.
+
+            </ResponseField>
+
+            <ResponseField name="pointOfView" type="string">
+
+              Narrative perspective used in generated post captions (first, second, or third person).
+
+              **Supported values:**
+
+              - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+              - `SECOND_PERSON` — Uses "you", "your".
+              - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+            </ResponseField>
+
+            <ResponseField name="customContentGuidelines" type="string">
+
+              Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+            </ResponseField>
+
+            <ResponseField name="language" type="Language">
+
+              Language and regional variation used for generated content. Read-only; derived from site properties.
+
+              **Read-only.**
+
+              <Expandable title="language properties">
+
+                <ResponseField name="language" type="string">
+
+                  Language for generated content (e.g., `English`, `Spanish`).
+
+                </ResponseField>
+
+                <ResponseField name="regionalVariation" type="string">
+
+                  Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="topics" type="Topics">
+
+              Content pillars: topics the AI should focus on or avoid when generating posts.
+
+              <Expandable title="topics properties">
+
+                <ResponseField name="included" type="string[]">
+
+                  Topics the AI should actively incorporate into generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="excluded" type="string[]">
+
+                  Topics the AI should avoid in generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="coreTopic" type="string">
+
+                  The primary theme that anchors all generated content. Stored but not currently used during
+                  generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGuidelines" type="string">
+
+              Free-text style instructions applied when generating images for posts.
+
+            </ResponseField>
+
+            <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+              Overall goal of the marketing plan, used to align content strategy across all tools.
+
+              <Expandable title="One of the following">
+
+                <ResponseField name="goal" type="goal">
+
+                  goal
+
+                  _Nested structure omitted for brevity — see the `goal` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="socialChannels" type="string[]">
+
+              Social platforms to generate content for. Social post drafts are only produced when
+              `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+              Constraints: `minItems 0`, `maxItems 10`.
+
+              **Supported values:**
+
+              - `FACEBOOK` — Facebook.
+              - `INSTAGRAM` — Instagram.
+              - `LINKEDIN` — LinkedIn.
+              - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+              - `PINTEREST` — Pinterest.
+              - `GBP` — Google Business Profile.
+              - `TIKTOK` — TikTok.
+
+            </ResponseField>
+
+            <ResponseField name="frequency" type="Frequency">
+
+              Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+              controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+              `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+              <Expandable title="frequency properties">
+
+                <ResponseField name="interval" type="string">
+
+                  Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+                  **Supported values:**
+
+                  - `WEEK` — Per-week cadence.
+                  - `MONTH` — Per-month cadence.
+                  - `YEAR` — Per-year cadence.
+
+                </ResponseField>
+
+                <ResponseField name="count" type="integer">
+
+                  Number of posts to produce within each `interval`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="marketingTools" type="string[]">
+
+              Marketing tools enabled in the plan. Social post drafts are only generated when
+              `SOCIAL_MARKETING` is present.
+
+              Constraints: `minItems 0`, `maxItems 3`.
+
+              **Supported values:**
+
+              - `EMAIL_MARKETING` — Email marketing campaigns.
+              - `BLOGS` — Blog post creation.
+              - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+            </ResponseField>
+
+            <ResponseField name="businessProfile" type="BusinessProfile">
+
+              Business context (goal, value proposition, and target audience) used to tailor content.
+
+              <Expandable title="businessProfile properties">
+
+                <ResponseField name="businessGoal" type="string">
+
+                  What the business is trying to achieve (e.g., grow revenue, build community).
+
+                </ResponseField>
+
+                <ResponseField name="valueProposition" type="string">
+
+                  What makes the business unique and why customers should choose it.
+
+                </ResponseField>
+
+                <ResponseField name="targetAudience" type="string">
+
+                  Description of the intended audience the business wants to reach.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="calendar" type="Calendar">
+
+              Calendars whose events the AI considers when planning marketing activities.
+
+              <Expandable title="calendar properties">
+
+                <ResponseField name="ids" type="string[]">
+
+                  IDs of the selected calendar options.
+
+                  Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="targetLocations" type="string[]" deprecated>
+
+              Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+              **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+            </ResponseField>
+
+            <ResponseField name="businessLocation" type="BusinessLocation">
+
+              Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+              **Read-only.**
+
+              <Expandable title="businessLocation properties">
+
+                <ResponseField name="id" type="string">
+
+                  Unique identifier for the business location (msid)
+
+                  **Read-only.** Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+                  List of physical business locations (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `PhysicalLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+                  List of service areas where the business operates (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `ServiceLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="online" type="boolean">
+
+                  Indicates whether the business operates online
+
+                </ResponseField>
+
+                <ResponseField name="createdDate" type="string">
+
+                  Timestamp when the business location was created (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+                <ResponseField name="updatedDate" type="string">
+
+                  Timestamp when the business location was last updated (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+              Controls how images are generated for posts (mode and photo sources). These values are stored
+              but aren't currently applied during generation.
+
+              <Expandable title="imageGenerationSettings properties">
+
+                <ResponseField name="mode" type="string">
+
+                  How images are generated for posts.
+
+                  **Supported values:**
+
+                  - `RAW` — Uses existing photos from enabled sources without AI processing.
+                  - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+                  - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+                </ResponseField>
+
+                <ResponseField name="enabledPhotoSources" type="string[]">
+
+                  Photo sources the AI may draw from when generating or remixing images.
+
+                  Constraints: `minItems 0`, `maxItems 2`.
+
+                  **Supported values:**
+
+                  - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+                  - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="userPreferences" type="string">
+
+              User-authored preferences for personalizing marketing output. This value belongs to the site
+              and is shared by collaborators; it is not scoped to an individual user.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="blogs" type="Settings">
+
+          Settings applied only when generating blog content, overriding the shared settings.
+
+          <Expandable title="blogs properties">
+
+            <ResponseField name="toneOfVoice" type="string">
+
+              Writing style description used to shape the voice of generated post captions.
+
+            </ResponseField>
+
+            <ResponseField name="pointOfView" type="string">
+
+              Narrative perspective used in generated post captions (first, second, or third person).
+
+              **Supported values:**
+
+              - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+              - `SECOND_PERSON` — Uses "you", "your".
+              - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+            </ResponseField>
+
+            <ResponseField name="customContentGuidelines" type="string">
+
+              Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+            </ResponseField>
+
+            <ResponseField name="language" type="Language">
+
+              Language and regional variation used for generated content. Read-only; derived from site properties.
+
+              **Read-only.**
+
+              <Expandable title="language properties">
+
+                <ResponseField name="language" type="string">
+
+                  Language for generated content (e.g., `English`, `Spanish`).
+
+                </ResponseField>
+
+                <ResponseField name="regionalVariation" type="string">
+
+                  Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="topics" type="Topics">
+
+              Content pillars: topics the AI should focus on or avoid when generating posts.
+
+              <Expandable title="topics properties">
+
+                <ResponseField name="included" type="string[]">
+
+                  Topics the AI should actively incorporate into generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="excluded" type="string[]">
+
+                  Topics the AI should avoid in generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="coreTopic" type="string">
+
+                  The primary theme that anchors all generated content. Stored but not currently used during
+                  generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGuidelines" type="string">
+
+              Free-text style instructions applied when generating images for posts.
+
+            </ResponseField>
+
+            <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+              Overall goal of the marketing plan, used to align content strategy across all tools.
+
+              <Expandable title="One of the following">
+
+                <ResponseField name="goal" type="goal">
+
+                  goal
+
+                  _Nested structure omitted for brevity — see the `goal` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="socialChannels" type="string[]">
+
+              Social platforms to generate content for. Social post drafts are only produced when
+              `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+              Constraints: `minItems 0`, `maxItems 10`.
+
+              **Supported values:**
+
+              - `FACEBOOK` — Facebook.
+              - `INSTAGRAM` — Instagram.
+              - `LINKEDIN` — LinkedIn.
+              - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+              - `PINTEREST` — Pinterest.
+              - `GBP` — Google Business Profile.
+              - `TIKTOK` — TikTok.
+
+            </ResponseField>
+
+            <ResponseField name="frequency" type="Frequency">
+
+              Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+              controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+              `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+              <Expandable title="frequency properties">
+
+                <ResponseField name="interval" type="string">
+
+                  Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+                  **Supported values:**
+
+                  - `WEEK` — Per-week cadence.
+                  - `MONTH` — Per-month cadence.
+                  - `YEAR` — Per-year cadence.
+
+                </ResponseField>
+
+                <ResponseField name="count" type="integer">
+
+                  Number of posts to produce within each `interval`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="marketingTools" type="string[]">
+
+              Marketing tools enabled in the plan. Social post drafts are only generated when
+              `SOCIAL_MARKETING` is present.
+
+              Constraints: `minItems 0`, `maxItems 3`.
+
+              **Supported values:**
+
+              - `EMAIL_MARKETING` — Email marketing campaigns.
+              - `BLOGS` — Blog post creation.
+              - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+            </ResponseField>
+
+            <ResponseField name="businessProfile" type="BusinessProfile">
+
+              Business context (goal, value proposition, and target audience) used to tailor content.
+
+              <Expandable title="businessProfile properties">
+
+                <ResponseField name="businessGoal" type="string">
+
+                  What the business is trying to achieve (e.g., grow revenue, build community).
+
+                </ResponseField>
+
+                <ResponseField name="valueProposition" type="string">
+
+                  What makes the business unique and why customers should choose it.
+
+                </ResponseField>
+
+                <ResponseField name="targetAudience" type="string">
+
+                  Description of the intended audience the business wants to reach.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="calendar" type="Calendar">
+
+              Calendars whose events the AI considers when planning marketing activities.
+
+              <Expandable title="calendar properties">
+
+                <ResponseField name="ids" type="string[]">
+
+                  IDs of the selected calendar options.
+
+                  Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="targetLocations" type="string[]" deprecated>
+
+              Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+              **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+            </ResponseField>
+
+            <ResponseField name="businessLocation" type="BusinessLocation">
+
+              Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+              **Read-only.**
+
+              <Expandable title="businessLocation properties">
+
+                <ResponseField name="id" type="string">
+
+                  Unique identifier for the business location (msid)
+
+                  **Read-only.** Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+                  List of physical business locations (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `PhysicalLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+                  List of service areas where the business operates (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `ServiceLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="online" type="boolean">
+
+                  Indicates whether the business operates online
+
+                </ResponseField>
+
+                <ResponseField name="createdDate" type="string">
+
+                  Timestamp when the business location was created (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+                <ResponseField name="updatedDate" type="string">
+
+                  Timestamp when the business location was last updated (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+              Controls how images are generated for posts (mode and photo sources). These values are stored
+              but aren't currently applied during generation.
+
+              <Expandable title="imageGenerationSettings properties">
+
+                <ResponseField name="mode" type="string">
+
+                  How images are generated for posts.
+
+                  **Supported values:**
+
+                  - `RAW` — Uses existing photos from enabled sources without AI processing.
+                  - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+                  - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+                </ResponseField>
+
+                <ResponseField name="enabledPhotoSources" type="string[]">
+
+                  Photo sources the AI may draw from when generating or remixing images.
+
+                  Constraints: `minItems 0`, `maxItems 2`.
+
+                  **Supported values:**
+
+                  - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+                  - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="userPreferences" type="string">
+
+              User-authored preferences for personalizing marketing output. This value belongs to the site
+              and is shared by collaborators; it is not scoped to an individual user.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="socialMarketing" type="Settings">
+
+          Settings applied only when generating social marketing content, overriding the shared settings.
+
+          <Expandable title="socialMarketing properties">
+
+            <ResponseField name="toneOfVoice" type="string">
+
+              Writing style description used to shape the voice of generated post captions.
+
+            </ResponseField>
+
+            <ResponseField name="pointOfView" type="string">
+
+              Narrative perspective used in generated post captions (first, second, or third person).
+
+              **Supported values:**
+
+              - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+              - `SECOND_PERSON` — Uses "you", "your".
+              - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+            </ResponseField>
+
+            <ResponseField name="customContentGuidelines" type="string">
+
+              Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+            </ResponseField>
+
+            <ResponseField name="language" type="Language">
+
+              Language and regional variation used for generated content. Read-only; derived from site properties.
+
+              **Read-only.**
+
+              <Expandable title="language properties">
+
+                <ResponseField name="language" type="string">
+
+                  Language for generated content (e.g., `English`, `Spanish`).
+
+                </ResponseField>
+
+                <ResponseField name="regionalVariation" type="string">
+
+                  Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="topics" type="Topics">
+
+              Content pillars: topics the AI should focus on or avoid when generating posts.
+
+              <Expandable title="topics properties">
+
+                <ResponseField name="included" type="string[]">
+
+                  Topics the AI should actively incorporate into generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="excluded" type="string[]">
+
+                  Topics the AI should avoid in generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="coreTopic" type="string">
+
+                  The primary theme that anchors all generated content. Stored but not currently used during
+                  generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGuidelines" type="string">
+
+              Free-text style instructions applied when generating images for posts.
+
+            </ResponseField>
+
+            <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+              Overall goal of the marketing plan, used to align content strategy across all tools.
+
+              <Expandable title="One of the following">
+
+                <ResponseField name="goal" type="goal">
+
+                  goal
+
+                  _Nested structure omitted for brevity — see the `goal` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="socialChannels" type="string[]">
+
+              Social platforms to generate content for. Social post drafts are only produced when
+              `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+              Constraints: `minItems 0`, `maxItems 10`.
+
+              **Supported values:**
+
+              - `FACEBOOK` — Facebook.
+              - `INSTAGRAM` — Instagram.
+              - `LINKEDIN` — LinkedIn.
+              - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+              - `PINTEREST` — Pinterest.
+              - `GBP` — Google Business Profile.
+              - `TIKTOK` — TikTok.
+
+            </ResponseField>
+
+            <ResponseField name="frequency" type="Frequency">
+
+              Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+              controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+              `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+              <Expandable title="frequency properties">
+
+                <ResponseField name="interval" type="string">
+
+                  Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+                  **Supported values:**
+
+                  - `WEEK` — Per-week cadence.
+                  - `MONTH` — Per-month cadence.
+                  - `YEAR` — Per-year cadence.
+
+                </ResponseField>
+
+                <ResponseField name="count" type="integer">
+
+                  Number of posts to produce within each `interval`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="marketingTools" type="string[]">
+
+              Marketing tools enabled in the plan. Social post drafts are only generated when
+              `SOCIAL_MARKETING` is present.
+
+              Constraints: `minItems 0`, `maxItems 3`.
+
+              **Supported values:**
+
+              - `EMAIL_MARKETING` — Email marketing campaigns.
+              - `BLOGS` — Blog post creation.
+              - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+            </ResponseField>
+
+            <ResponseField name="businessProfile" type="BusinessProfile">
+
+              Business context (goal, value proposition, and target audience) used to tailor content.
+
+              <Expandable title="businessProfile properties">
+
+                <ResponseField name="businessGoal" type="string">
+
+                  What the business is trying to achieve (e.g., grow revenue, build community).
+
+                </ResponseField>
+
+                <ResponseField name="valueProposition" type="string">
+
+                  What makes the business unique and why customers should choose it.
+
+                </ResponseField>
+
+                <ResponseField name="targetAudience" type="string">
+
+                  Description of the intended audience the business wants to reach.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="calendar" type="Calendar">
+
+              Calendars whose events the AI considers when planning marketing activities.
+
+              <Expandable title="calendar properties">
+
+                <ResponseField name="ids" type="string[]">
+
+                  IDs of the selected calendar options.
+
+                  Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="targetLocations" type="string[]" deprecated>
+
+              Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+              **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+            </ResponseField>
+
+            <ResponseField name="businessLocation" type="BusinessLocation">
+
+              Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+              **Read-only.**
+
+              <Expandable title="businessLocation properties">
+
+                <ResponseField name="id" type="string">
+
+                  Unique identifier for the business location (msid)
+
+                  **Read-only.** Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+                  List of physical business locations (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `PhysicalLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+                  List of service areas where the business operates (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `ServiceLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="online" type="boolean">
+
+                  Indicates whether the business operates online
+
+                </ResponseField>
+
+                <ResponseField name="createdDate" type="string">
+
+                  Timestamp when the business location was created (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+                <ResponseField name="updatedDate" type="string">
+
+                  Timestamp when the business location was last updated (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+              Controls how images are generated for posts (mode and photo sources). These values are stored
+              but aren't currently applied during generation.
+
+              <Expandable title="imageGenerationSettings properties">
+
+                <ResponseField name="mode" type="string">
+
+                  How images are generated for posts.
+
+                  **Supported values:**
+
+                  - `RAW` — Uses existing photos from enabled sources without AI processing.
+                  - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+                  - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+                </ResponseField>
+
+                <ResponseField name="enabledPhotoSources" type="string[]">
+
+                  Photo sources the AI may draw from when generating or remixing images.
+
+                  Constraints: `minItems 0`, `maxItems 2`.
+
+                  **Supported values:**
+
+                  - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+                  - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="userPreferences" type="string">
+
+              User-authored preferences for personalizing marketing output. This value belongs to the site
+              and is shared by collaborators; it is not scoped to an individual user.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="datetime">
+
+      Date and time the marketing settings were created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="datetime">
+
+      Date and time the marketing settings were last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "marketingSettings": {
+          "id": "f1c2e3a4-5b6c-47d8-9e0f-1a2b3c4d5e6f",
+          "settings": {
+            "toneOfVoice": "Friendly and approachable, with a focus on quality craftsmanship",
+            "pointOfView": "FIRST_PERSON",
+            "marketingPlanGoal": {
+              "goalKey": "BRAND_AWARENESS"
+            },
+            "socialChannels": [
+              "INSTAGRAM",
+              "FACEBOOK"
+            ],
+            "frequency": {
+              "interval": "WEEK",
+              "count": 3
+            },
+            "marketingTools": [
+              "SOCIAL_MARKETING",
+              "EMAIL_MARKETING"
+            ],
+            "topics": {
+              "included": [
+                "sustainable fashion",
+                "new arrivals"
+              ],
+              "excluded": [
+                "politics"
+              ],
+              "coreTopic": "handmade apparel"
+            },
+            "calendar": {
+              "ids": [
+                "9b1d8f2a-7c3e-4a5b-8d6f-1e2c3b4a5d6e"
+              ]
+            },
+            "businessProfile": {
+              "businessGoal": "Grow online sales of our handmade apparel line",
+              "valueProposition": "Ethically made, one-of-a-kind clothing",
+              "targetAudience": "Eco-conscious shoppers aged 25-45"
+            }
+          },
+          "createdAt": "2026-05-01T09:15:00.000Z",
+          "updatedAt": "2026-06-10T14:32:11.000Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Unique ID of the marketing settings, equal to the site's MetaSite ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="settings" type="Settings">
+
+      Core preferences that apply to all marketing tools unless a tool-specific override is set.
+
+      <Expandable title="settings properties">
+
+        <ResponseField name="toneOfVoice" type="string">
+
+          Writing style description used to shape the voice of generated post captions.
+
+        </ResponseField>
+
+        <ResponseField name="pointOfView" type="string">
+
+          Narrative perspective used in generated post captions (first, second, or third person).
+
+          **Supported values:**
+
+          - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+          - `SECOND_PERSON` — Uses "you", "your".
+          - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+        </ResponseField>
+
+        <ResponseField name="customContentGuidelines" type="string">
+
+          Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+        </ResponseField>
+
+        <ResponseField name="language" type="Language">
+
+          Language and regional variation used for generated content. Read-only; derived from site properties.
+
+          **Read-only.**
+
+          <Expandable title="language properties">
+
+            <ResponseField name="language" type="string">
+
+              Language for generated content (e.g., `English`, `Spanish`).
+
+            </ResponseField>
+
+            <ResponseField name="regionalVariation" type="string">
+
+              Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="topics" type="Topics">
+
+          Content pillars: topics the AI should focus on or avoid when generating posts.
+
+          <Expandable title="topics properties">
+
+            <ResponseField name="included" type="string[]">
+
+              Topics the AI should actively incorporate into generated content.
+
+              Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+            </ResponseField>
+
+            <ResponseField name="excluded" type="string[]">
+
+              Topics the AI should avoid in generated content.
+
+              Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+            </ResponseField>
+
+            <ResponseField name="coreTopic" type="string">
+
+              The primary theme that anchors all generated content. Stored but not currently used during
+              generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imageGuidelines" type="string">
+
+          Free-text style instructions applied when generating images for posts.
+
+        </ResponseField>
+
+        <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+          Overall goal of the marketing plan, used to align content strategy across all tools.
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="goal" type="goal">
+
+              goal
+
+              <Expandable title="goal properties">
+
+                <ResponseField name="goalKey" type="string">
+
+                  A standard goal selected from the available plan goal options.
+
+                  **Supported values:**
+
+                  - `DRIVE_TRAFFIC` — Increase visits to the site.
+                  - `BRAND_AWARENESS` — Grow recognition and reach of the brand.
+                  - `BOOST_SALES` — Promote products or services to increase purchases.
+                  - `COLLECT_LEADS` — Capture contact information from potential customers.
+
+                </ResponseField>
+
+                <ResponseField name="customGoal" type="string">
+
+                  A free-text goal provided when none of the standard options apply.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="socialChannels" type="string[]">
+
+          Social platforms to generate content for. Social post drafts are only produced when
+          `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+          Constraints: `minItems 0`, `maxItems 10`.
+
+          **Supported values:**
+
+          - `FACEBOOK` — Facebook.
+          - `INSTAGRAM` — Instagram.
+          - `LINKEDIN` — LinkedIn.
+          - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+          - `PINTEREST` — Pinterest.
+          - `GBP` — Google Business Profile.
+          - `TIKTOK` — TikTok.
+
+        </ResponseField>
+
+        <ResponseField name="frequency" type="Frequency">
+
+          Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+          controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+          `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+          <Expandable title="frequency properties">
+
+            <ResponseField name="interval" type="string">
+
+              Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+              **Supported values:**
+
+              - `WEEK` — Per-week cadence.
+              - `MONTH` — Per-month cadence.
+              - `YEAR` — Per-year cadence.
+
+            </ResponseField>
+
+            <ResponseField name="count" type="integer">
+
+              Number of posts to produce within each `interval`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="marketingTools" type="string[]">
+
+          Marketing tools enabled in the plan. Social post drafts are only generated when
+          `SOCIAL_MARKETING` is present.
+
+          Constraints: `minItems 0`, `maxItems 3`.
+
+          **Supported values:**
+
+          - `EMAIL_MARKETING` — Email marketing campaigns.
+          - `BLOGS` — Blog post creation.
+          - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+        </ResponseField>
+
+        <ResponseField name="businessProfile" type="BusinessProfile">
+
+          Business context (goal, value proposition, and target audience) used to tailor content.
+
+          <Expandable title="businessProfile properties">
+
+            <ResponseField name="businessGoal" type="string">
+
+              What the business is trying to achieve (e.g., grow revenue, build community).
+
+            </ResponseField>
+
+            <ResponseField name="valueProposition" type="string">
+
+              What makes the business unique and why customers should choose it.
+
+            </ResponseField>
+
+            <ResponseField name="targetAudience" type="string">
+
+              Description of the intended audience the business wants to reach.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="calendar" type="Calendar">
+
+          Calendars whose events the AI considers when planning marketing activities.
+
+          <Expandable title="calendar properties">
+
+            <ResponseField name="ids" type="string[]">
+
+              IDs of the selected calendar options.
+
+              Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="targetLocations" type="string[]" deprecated>
+
+          Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+          **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+        </ResponseField>
+
+        <ResponseField name="businessLocation" type="BusinessLocation">
+
+          Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+          **Read-only.**
+
+          <Expandable title="businessLocation properties">
+
+            <ResponseField name="_id" type="string">
+
+              Unique identifier for the business location (msid)
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+              List of physical business locations (maximum 5)
+
+              Constraints: `maxItems 5`.
+
+              <Expandable title="physicalLocations properties">
+
+                <ResponseField name="location" type="string">
+
+                  Free-form location text (e.g., "123 Main St, New York, NY 10001")
+
+                  Constraints: `maxLength 500`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+              List of service areas where the business operates (maximum 5)
+
+              Constraints: `maxItems 5`.
+
+              <Expandable title="serviceLocations properties">
+
+                <ResponseField name="location" type="string">
+
+                  Free-form service area text (e.g., "Manhattan, NY" or "Within 50 miles of Chicago")
+
+                  Constraints: `maxLength 500`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="online" type="boolean">
+
+              Indicates whether the business operates online
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="string">
+
+              Timestamp when the business location was created (ISO 8601 format)
+
+              **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="string">
+
+              Timestamp when the business location was last updated (ISO 8601 format)
+
+              **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+          Controls how images are generated for posts (mode and photo sources). These values are stored
+          but aren't currently applied during generation.
+
+          <Expandable title="imageGenerationSettings properties">
+
+            <ResponseField name="mode" type="string">
+
+              How images are generated for posts.
+
+              **Supported values:**
+
+              - `RAW` — Uses existing photos from enabled sources without AI processing.
+              - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+              - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+            </ResponseField>
+
+            <ResponseField name="enabledPhotoSources" type="string[]">
+
+              Photo sources the AI may draw from when generating or remixing images.
+
+              Constraints: `minItems 0`, `maxItems 2`.
+
+              **Supported values:**
+
+              - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+              - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="userPreferences" type="string">
+
+          User-authored preferences for personalizing marketing output. This value belongs to the site
+          and is shared by collaborators; it is not scoped to an individual user.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="overrides" type="SettingsOverrides">
+
+      Per-tool overrides. Unset fields in an override inherit the value from `settings`.
+
+      <Expandable title="overrides properties">
+
+        <ResponseField name="emailMarketing" type="Settings">
+
+          Settings applied only when generating email marketing content, overriding the shared settings.
+
+          <Expandable title="emailMarketing properties">
+
+            <ResponseField name="toneOfVoice" type="string">
+
+              Writing style description used to shape the voice of generated post captions.
+
+            </ResponseField>
+
+            <ResponseField name="pointOfView" type="string">
+
+              Narrative perspective used in generated post captions (first, second, or third person).
+
+              **Supported values:**
+
+              - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+              - `SECOND_PERSON` — Uses "you", "your".
+              - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+            </ResponseField>
+
+            <ResponseField name="customContentGuidelines" type="string">
+
+              Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+            </ResponseField>
+
+            <ResponseField name="language" type="Language">
+
+              Language and regional variation used for generated content. Read-only; derived from site properties.
+
+              **Read-only.**
+
+              <Expandable title="language properties">
+
+                <ResponseField name="language" type="string">
+
+                  Language for generated content (e.g., `English`, `Spanish`).
+
+                </ResponseField>
+
+                <ResponseField name="regionalVariation" type="string">
+
+                  Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="topics" type="Topics">
+
+              Content pillars: topics the AI should focus on or avoid when generating posts.
+
+              <Expandable title="topics properties">
+
+                <ResponseField name="included" type="string[]">
+
+                  Topics the AI should actively incorporate into generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="excluded" type="string[]">
+
+                  Topics the AI should avoid in generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="coreTopic" type="string">
+
+                  The primary theme that anchors all generated content. Stored but not currently used during
+                  generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGuidelines" type="string">
+
+              Free-text style instructions applied when generating images for posts.
+
+            </ResponseField>
+
+            <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+              Overall goal of the marketing plan, used to align content strategy across all tools.
+
+              <Expandable title="One of the following">
+
+                <ResponseField name="goal" type="goal">
+
+                  goal
+
+                  _Nested structure omitted for brevity — see the `goal` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="socialChannels" type="string[]">
+
+              Social platforms to generate content for. Social post drafts are only produced when
+              `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+              Constraints: `minItems 0`, `maxItems 10`.
+
+              **Supported values:**
+
+              - `FACEBOOK` — Facebook.
+              - `INSTAGRAM` — Instagram.
+              - `LINKEDIN` — LinkedIn.
+              - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+              - `PINTEREST` — Pinterest.
+              - `GBP` — Google Business Profile.
+              - `TIKTOK` — TikTok.
+
+            </ResponseField>
+
+            <ResponseField name="frequency" type="Frequency">
+
+              Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+              controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+              `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+              <Expandable title="frequency properties">
+
+                <ResponseField name="interval" type="string">
+
+                  Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+                  **Supported values:**
+
+                  - `WEEK` — Per-week cadence.
+                  - `MONTH` — Per-month cadence.
+                  - `YEAR` — Per-year cadence.
+
+                </ResponseField>
+
+                <ResponseField name="count" type="integer">
+
+                  Number of posts to produce within each `interval`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="marketingTools" type="string[]">
+
+              Marketing tools enabled in the plan. Social post drafts are only generated when
+              `SOCIAL_MARKETING` is present.
+
+              Constraints: `minItems 0`, `maxItems 3`.
+
+              **Supported values:**
+
+              - `EMAIL_MARKETING` — Email marketing campaigns.
+              - `BLOGS` — Blog post creation.
+              - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+            </ResponseField>
+
+            <ResponseField name="businessProfile" type="BusinessProfile">
+
+              Business context (goal, value proposition, and target audience) used to tailor content.
+
+              <Expandable title="businessProfile properties">
+
+                <ResponseField name="businessGoal" type="string">
+
+                  What the business is trying to achieve (e.g., grow revenue, build community).
+
+                </ResponseField>
+
+                <ResponseField name="valueProposition" type="string">
+
+                  What makes the business unique and why customers should choose it.
+
+                </ResponseField>
+
+                <ResponseField name="targetAudience" type="string">
+
+                  Description of the intended audience the business wants to reach.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="calendar" type="Calendar">
+
+              Calendars whose events the AI considers when planning marketing activities.
+
+              <Expandable title="calendar properties">
+
+                <ResponseField name="ids" type="string[]">
+
+                  IDs of the selected calendar options.
+
+                  Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="targetLocations" type="string[]" deprecated>
+
+              Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+              **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+            </ResponseField>
+
+            <ResponseField name="businessLocation" type="BusinessLocation">
+
+              Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+              **Read-only.**
+
+              <Expandable title="businessLocation properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Unique identifier for the business location (msid)
+
+                  **Read-only.** Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+                  List of physical business locations (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `PhysicalLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+                  List of service areas where the business operates (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `ServiceLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="online" type="boolean">
+
+                  Indicates whether the business operates online
+
+                </ResponseField>
+
+                <ResponseField name="_createdDate" type="string">
+
+                  Timestamp when the business location was created (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+                <ResponseField name="_updatedDate" type="string">
+
+                  Timestamp when the business location was last updated (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+              Controls how images are generated for posts (mode and photo sources). These values are stored
+              but aren't currently applied during generation.
+
+              <Expandable title="imageGenerationSettings properties">
+
+                <ResponseField name="mode" type="string">
+
+                  How images are generated for posts.
+
+                  **Supported values:**
+
+                  - `RAW` — Uses existing photos from enabled sources without AI processing.
+                  - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+                  - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+                </ResponseField>
+
+                <ResponseField name="enabledPhotoSources" type="string[]">
+
+                  Photo sources the AI may draw from when generating or remixing images.
+
+                  Constraints: `minItems 0`, `maxItems 2`.
+
+                  **Supported values:**
+
+                  - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+                  - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="userPreferences" type="string">
+
+              User-authored preferences for personalizing marketing output. This value belongs to the site
+              and is shared by collaborators; it is not scoped to an individual user.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="blogs" type="Settings">
+
+          Settings applied only when generating blog content, overriding the shared settings.
+
+          <Expandable title="blogs properties">
+
+            <ResponseField name="toneOfVoice" type="string">
+
+              Writing style description used to shape the voice of generated post captions.
+
+            </ResponseField>
+
+            <ResponseField name="pointOfView" type="string">
+
+              Narrative perspective used in generated post captions (first, second, or third person).
+
+              **Supported values:**
+
+              - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+              - `SECOND_PERSON` — Uses "you", "your".
+              - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+            </ResponseField>
+
+            <ResponseField name="customContentGuidelines" type="string">
+
+              Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+            </ResponseField>
+
+            <ResponseField name="language" type="Language">
+
+              Language and regional variation used for generated content. Read-only; derived from site properties.
+
+              **Read-only.**
+
+              <Expandable title="language properties">
+
+                <ResponseField name="language" type="string">
+
+                  Language for generated content (e.g., `English`, `Spanish`).
+
+                </ResponseField>
+
+                <ResponseField name="regionalVariation" type="string">
+
+                  Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="topics" type="Topics">
+
+              Content pillars: topics the AI should focus on or avoid when generating posts.
+
+              <Expandable title="topics properties">
+
+                <ResponseField name="included" type="string[]">
+
+                  Topics the AI should actively incorporate into generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="excluded" type="string[]">
+
+                  Topics the AI should avoid in generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="coreTopic" type="string">
+
+                  The primary theme that anchors all generated content. Stored but not currently used during
+                  generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGuidelines" type="string">
+
+              Free-text style instructions applied when generating images for posts.
+
+            </ResponseField>
+
+            <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+              Overall goal of the marketing plan, used to align content strategy across all tools.
+
+              <Expandable title="One of the following">
+
+                <ResponseField name="goal" type="goal">
+
+                  goal
+
+                  _Nested structure omitted for brevity — see the `goal` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="socialChannels" type="string[]">
+
+              Social platforms to generate content for. Social post drafts are only produced when
+              `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+              Constraints: `minItems 0`, `maxItems 10`.
+
+              **Supported values:**
+
+              - `FACEBOOK` — Facebook.
+              - `INSTAGRAM` — Instagram.
+              - `LINKEDIN` — LinkedIn.
+              - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+              - `PINTEREST` — Pinterest.
+              - `GBP` — Google Business Profile.
+              - `TIKTOK` — TikTok.
+
+            </ResponseField>
+
+            <ResponseField name="frequency" type="Frequency">
+
+              Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+              controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+              `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+              <Expandable title="frequency properties">
+
+                <ResponseField name="interval" type="string">
+
+                  Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+                  **Supported values:**
+
+                  - `WEEK` — Per-week cadence.
+                  - `MONTH` — Per-month cadence.
+                  - `YEAR` — Per-year cadence.
+
+                </ResponseField>
+
+                <ResponseField name="count" type="integer">
+
+                  Number of posts to produce within each `interval`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="marketingTools" type="string[]">
+
+              Marketing tools enabled in the plan. Social post drafts are only generated when
+              `SOCIAL_MARKETING` is present.
+
+              Constraints: `minItems 0`, `maxItems 3`.
+
+              **Supported values:**
+
+              - `EMAIL_MARKETING` — Email marketing campaigns.
+              - `BLOGS` — Blog post creation.
+              - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+            </ResponseField>
+
+            <ResponseField name="businessProfile" type="BusinessProfile">
+
+              Business context (goal, value proposition, and target audience) used to tailor content.
+
+              <Expandable title="businessProfile properties">
+
+                <ResponseField name="businessGoal" type="string">
+
+                  What the business is trying to achieve (e.g., grow revenue, build community).
+
+                </ResponseField>
+
+                <ResponseField name="valueProposition" type="string">
+
+                  What makes the business unique and why customers should choose it.
+
+                </ResponseField>
+
+                <ResponseField name="targetAudience" type="string">
+
+                  Description of the intended audience the business wants to reach.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="calendar" type="Calendar">
+
+              Calendars whose events the AI considers when planning marketing activities.
+
+              <Expandable title="calendar properties">
+
+                <ResponseField name="ids" type="string[]">
+
+                  IDs of the selected calendar options.
+
+                  Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="targetLocations" type="string[]" deprecated>
+
+              Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+              **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+            </ResponseField>
+
+            <ResponseField name="businessLocation" type="BusinessLocation">
+
+              Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+              **Read-only.**
+
+              <Expandable title="businessLocation properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Unique identifier for the business location (msid)
+
+                  **Read-only.** Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+                  List of physical business locations (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `PhysicalLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+                  List of service areas where the business operates (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `ServiceLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="online" type="boolean">
+
+                  Indicates whether the business operates online
+
+                </ResponseField>
+
+                <ResponseField name="_createdDate" type="string">
+
+                  Timestamp when the business location was created (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+                <ResponseField name="_updatedDate" type="string">
+
+                  Timestamp when the business location was last updated (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+              Controls how images are generated for posts (mode and photo sources). These values are stored
+              but aren't currently applied during generation.
+
+              <Expandable title="imageGenerationSettings properties">
+
+                <ResponseField name="mode" type="string">
+
+                  How images are generated for posts.
+
+                  **Supported values:**
+
+                  - `RAW` — Uses existing photos from enabled sources without AI processing.
+                  - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+                  - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+                </ResponseField>
+
+                <ResponseField name="enabledPhotoSources" type="string[]">
+
+                  Photo sources the AI may draw from when generating or remixing images.
+
+                  Constraints: `minItems 0`, `maxItems 2`.
+
+                  **Supported values:**
+
+                  - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+                  - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="userPreferences" type="string">
+
+              User-authored preferences for personalizing marketing output. This value belongs to the site
+              and is shared by collaborators; it is not scoped to an individual user.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="socialMarketing" type="Settings">
+
+          Settings applied only when generating social marketing content, overriding the shared settings.
+
+          <Expandable title="socialMarketing properties">
+
+            <ResponseField name="toneOfVoice" type="string">
+
+              Writing style description used to shape the voice of generated post captions.
+
+            </ResponseField>
+
+            <ResponseField name="pointOfView" type="string">
+
+              Narrative perspective used in generated post captions (first, second, or third person).
+
+              **Supported values:**
+
+              - `FIRST_PERSON` — Uses "I", "we", "my", "our".
+              - `SECOND_PERSON` — Uses "you", "your".
+              - `THIRD_PERSON` — Uses "they", "their", or the business name.
+
+            </ResponseField>
+
+            <ResponseField name="customContentGuidelines" type="string">
+
+              Free-text instructions that further personalize how content is written, beyond `tone_of_voice`.
+
+            </ResponseField>
+
+            <ResponseField name="language" type="Language">
+
+              Language and regional variation used for generated content. Read-only; derived from site properties.
+
+              **Read-only.**
+
+              <Expandable title="language properties">
+
+                <ResponseField name="language" type="string">
+
+                  Language for generated content (e.g., `English`, `Spanish`).
+
+                </ResponseField>
+
+                <ResponseField name="regionalVariation" type="string">
+
+                  Regional variation of the language (e.g., `Australian` when `language` is `English`).
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="topics" type="Topics">
+
+              Content pillars: topics the AI should focus on or avoid when generating posts.
+
+              <Expandable title="topics properties">
+
+                <ResponseField name="included" type="string[]">
+
+                  Topics the AI should actively incorporate into generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="excluded" type="string[]">
+
+                  Topics the AI should avoid in generated content.
+
+                  Constraints: `maxLength 50`, `minItems 0`, `maxItems 50`.
+
+                </ResponseField>
+
+                <ResponseField name="coreTopic" type="string">
+
+                  The primary theme that anchors all generated content. Stored but not currently used during
+                  generation; the fields that influence generation are `topics.included` and `topics.excluded`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGuidelines" type="string">
+
+              Free-text style instructions applied when generating images for posts.
+
+            </ResponseField>
+
+            <ResponseField name="marketingPlanGoal" type="MarketingPlanGoal">
+
+              Overall goal of the marketing plan, used to align content strategy across all tools.
+
+              <Expandable title="One of the following">
+
+                <ResponseField name="goal" type="goal">
+
+                  goal
+
+                  _Nested structure omitted for brevity — see the `goal` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="socialChannels" type="string[]">
+
+              Social platforms to generate content for. Social post drafts are only produced when
+              `SOCIAL_MARKETING` is included in `marketing_tools`.
+
+              Constraints: `minItems 0`, `maxItems 10`.
+
+              **Supported values:**
+
+              - `FACEBOOK` — Facebook.
+              - `INSTAGRAM` — Instagram.
+              - `LINKEDIN` — LinkedIn.
+              - `TWITTER` — Deprecated: No longer functional as of July 31, 2026.
+              - `PINTEREST` — Pinterest.
+              - `GBP` — Google Business Profile.
+              - `TIKTOK` — TikTok.
+
+            </ResponseField>
+
+            <ResponseField name="frequency" type="Frequency">
+
+              Posting cadence that acts as a fallback for social marketing only. Per-tool cadences are
+              controlled by `overrides.socialMarketing.frequency`, `overrides.blogs.frequency`, and
+              `overrides.emailMarketing.frequency` (each with its own per-tool default).
+
+              <Expandable title="frequency properties">
+
+                <ResponseField name="interval" type="string">
+
+                  Time unit for the posting cadence (`WEEK`, `MONTH`, or `YEAR`).
+
+                  **Supported values:**
+
+                  - `WEEK` — Per-week cadence.
+                  - `MONTH` — Per-month cadence.
+                  - `YEAR` — Per-year cadence.
+
+                </ResponseField>
+
+                <ResponseField name="count" type="integer">
+
+                  Number of posts to produce within each `interval`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="marketingTools" type="string[]">
+
+              Marketing tools enabled in the plan. Social post drafts are only generated when
+              `SOCIAL_MARKETING` is present.
+
+              Constraints: `minItems 0`, `maxItems 3`.
+
+              **Supported values:**
+
+              - `EMAIL_MARKETING` — Email marketing campaigns.
+              - `BLOGS` — Blog post creation.
+              - `SOCIAL_MARKETING` — Social media post drafts. Must be enabled for social post drafts to be generated.
+
+            </ResponseField>
+
+            <ResponseField name="businessProfile" type="BusinessProfile">
+
+              Business context (goal, value proposition, and target audience) used to tailor content.
+
+              <Expandable title="businessProfile properties">
+
+                <ResponseField name="businessGoal" type="string">
+
+                  What the business is trying to achieve (e.g., grow revenue, build community).
+
+                </ResponseField>
+
+                <ResponseField name="valueProposition" type="string">
+
+                  What makes the business unique and why customers should choose it.
+
+                </ResponseField>
+
+                <ResponseField name="targetAudience" type="string">
+
+                  Description of the intended audience the business wants to reach.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="calendar" type="Calendar">
+
+              Calendars whose events the AI considers when planning marketing activities.
+
+              <Expandable title="calendar properties">
+
+                <ResponseField name="ids" type="string[]">
+
+                  IDs of the selected calendar options.
+
+                  Constraints: `format GUID`, `minItems 0`, `maxItems 20`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="targetLocations" type="string[]" deprecated>
+
+              Deprecated. Read-only; derived from the site. Use `business_location` instead.
+
+              **Read-only.** **Deprecated.** Deprecated. Read-only; derived from the site. Use `business_location` instead. Use `business_location` instead. Removal: 2026-12-31. Constraints: `maxLength 10000`, `maxItems 5`.
+
+            </ResponseField>
+
+            <ResponseField name="businessLocation" type="BusinessLocation">
+
+              Business location used to generate location-specific content. Read-only; derived from SEO settings.
+
+              **Read-only.**
+
+              <Expandable title="businessLocation properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Unique identifier for the business location (msid)
+
+                  **Read-only.** Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="physicalLocations" type="PhysicalLocation[]">
+
+                  List of physical business locations (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `PhysicalLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="serviceLocations" type="ServiceLocation[]">
+
+                  List of service areas where the business operates (maximum 5)
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `ServiceLocation[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="online" type="boolean">
+
+                  Indicates whether the business operates online
+
+                </ResponseField>
+
+                <ResponseField name="_createdDate" type="string">
+
+                  Timestamp when the business location was created (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+                <ResponseField name="_updatedDate" type="string">
+
+                  Timestamp when the business location was last updated (ISO 8601 format)
+
+                  **Read-only.** Constraints: `format LOCAL_DATE_TIME`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="imageGenerationSettings" type="ImageGenerationSettings">
+
+              Controls how images are generated for posts (mode and photo sources). These values are stored
+              but aren't currently applied during generation.
+
+              <Expandable title="imageGenerationSettings properties">
+
+                <ResponseField name="mode" type="string">
+
+                  How images are generated for posts.
+
+                  **Supported values:**
+
+                  - `RAW` — Uses existing photos from enabled sources without AI processing.
+                  - `AI_ONLY` — Generates images entirely with AI, without using existing photos.
+                  - `REMIX` — Applies AI enhancements to existing photos from enabled sources.
+
+                </ResponseField>
+
+                <ResponseField name="enabledPhotoSources" type="string[]">
+
+                  Photo sources the AI may draw from when generating or remixing images.
+
+                  Constraints: `minItems 0`, `maxItems 2`.
+
+                  **Supported values:**
+
+                  - `PRODUCTS_CATALOG` — Photos from the site's product catalog.
+                  - `SERVICES_CATALOG` — Photos from the site's services catalog.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="userPreferences" type="string">
+
+              User-authored preferences for personalizing marketing output. This value belongs to the site
+              and is shared by collaborators; it is not scoped to an individual user.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="datetime">
+
+      Date and time the marketing settings were created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="datetime">
+
+      Date and time the marketing settings were last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

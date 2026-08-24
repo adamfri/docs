@@ -1,0 +1,814 @@
+---
+title: "Set Item Seo Tags"
+description: "Sets the SEO tags of a single item."
+icon: "pen"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-patch">PATCH</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sets the SEO tags of a single item.
+
+    List the fields to change in `fieldMask`.
+
+    Setting `tags` replaces the item's tags in full, so send the complete set you want the
+    item to have. To return the item to the tags it inherits, call [Reset Item SEO Tags To
+    Default](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/reset-item-seo-tags-to-default)
+    rather than sending an empty list.
+
+    Whether the change reaches the live site immediately depends on the item type. Items
+    that keep no separate draft, such as store products, are always live. Static pages
+    keep a draft and a published version, so set `publish` to `true` to update the
+    published one. A blog post that's already published stays published. Setting `publish`
+    for an item type that keeps no draft has no effect.
+
+    Limitation: for a static page, `publish: true` updates only the published revision — it
+    does not also update the saved one. [Get Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/get-item-seo-tags)
+    and List Item SEO Tags always read the saved revision, so they keep returning the values
+    from before this call until the same changed fields are also set without `publish`.
+    This method's own response isn't a read of the published revision either, so don't treat
+    it as confirmation that the live page changed — check the live page to confirm that.
+
+    Tags are validated before anything is saved, so a request that contains an invalid tag
+    changes nothing.
+
+    Tags can currently be written only for the item's primary language: leave
+    `itemSeoTags.language` unset. Sending a language fails with `LANGUAGE_NOT_SUPPORTED`,
+    even when `fieldMask` doesn't name it.
+
+    To set the tags of many items in one call, call [Bulk Set Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/bulk-set-item-seo-tags).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    PATCH https://www.wixapis.com/promote/seo/v1/item-seo-tags/{itemType}/{itemId}
+    ```
+
+    ## Path Params
+
+    <ParamField path="itemType" type="string" required>
+
+      Type of item to set tags for. For example, `STATIC_PAGE` or `STORES_PRODUCT`.
+
+    </ParamField>
+
+    <ParamField path="itemId" type="string" required>
+
+      ID of the item to set tags for.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="itemSeoTags" type="ItemSeoTags" required>
+
+      Item SEO tags to set. Only `tags` and `focusKeywords` can be changed.
+
+      Leave `language` unset: the tags are written for the site's primary language. Sending
+      a language fails with `LANGUAGE_NOT_SUPPORTED`, even when the field mask doesn't name
+      it.
+
+      See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="fieldMask" type="FieldMask" required>
+
+      Fields to update.
+
+      Supported properties: `tags`, `focusKeywords`
+
+      <Expandable title="fieldMask properties">
+
+        <ParamField body="paths" type="string[]" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="publish" type="boolean">
+
+      Whether to publish the change to the live site, for item types that keep a separate
+      draft, such as static pages.
+
+      Has no effect for item types that are always live, and isn't an error for them.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="itemSeoTags" type="ItemSeoTags">
+
+      Updated item SEO tags.
+
+      See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_ITEM_TYPE` | Wix doesn't support the specified `itemType`. The error message lists the item types that are supported. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TAGS` | A tag isn't valid for an item. For example, its value isn't valid for that tag, it uses an unsupported `robots` directive, or the item's tags exceed the size limit. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FIELD_MASK` | The `fieldMask` is empty, or names a field that doesn't exist or can't be changed. |
+    | `404` | `NOT_FOUND` | `ITEM_NOT_FOUND` | Couldn't find the item. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/seo-metatags-server/v1/item-seo-tags/STATIC_PAGE/c1dmp' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "itemSeoTags": {
+          "tags": [
+            {
+              "type": "title",
+              "children": "Winter collection | Ceramics studio"
+            },
+            {
+              "type": "meta",
+              "props": {
+                "name": "description",
+                "content": "Stoneware mugs and bowls, thrown and glazed by hand."
+              }
+            }
+          ]
+        },
+        "fieldMask": "tags"
+      }'
+      ```
+
+      ```json Response
+      {
+        "itemSeoTags": {
+          "id": "STATIC_PAGE:c1dmp",
+          "itemType": "STATIC_PAGE",
+          "itemId": "c1dmp",
+          "tags": [
+            {
+              "type": "title",
+              "children": "Winter collection | Ceramics studio",
+              "custom": false,
+              "disabled": false
+            },
+            {
+              "type": "meta",
+              "props": {
+                "name": "description",
+                "content": "Stoneware mugs and bowls, thrown and glazed by hand."
+              },
+              "children": "",
+              "custom": false,
+              "disabled": false
+            }
+          ],
+          "focusKeywords": [],
+          "hasOverride": true,
+          "resolvedTags": [
+            {
+              "tag": {
+                "type": "title",
+                "children": "Winter collection | Ceramics studio",
+                "custom": false,
+                "disabled": false
+              },
+              "source": "TAG_SOURCE_HOST_PAGE"
+            },
+            {
+              "tag": {
+                "type": "meta",
+                "props": {
+                  "name": "description",
+                  "content": "Stoneware mugs and bowls, thrown and glazed by hand."
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              "source": "TAG_SOURCE_HOST_PAGE"
+            }
+          ],
+          "hostPageId": "c1dmp",
+          "publishStatus": "PUBLISH_STATUS_UNSPECIFIED",
+          "origin": "ORIGIN_UNSPECIFIED"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sets the SEO tags of a single item.
+
+    List the fields to change in `fieldMask`.
+
+    Setting `tags` replaces the item's tags in full, so send the complete set you want the
+    item to have. To return the item to the tags it inherits, call [Reset Item SEO Tags To
+    Default](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/reset-item-seo-tags-to-default)
+    rather than sending an empty list.
+
+    Whether the change reaches the live site immediately depends on the item type. Items
+    that keep no separate draft, such as store products, are always live. Static pages
+    keep a draft and a published version, so set `publish` to `true` to update the
+    published one. A blog post that's already published stays published. Setting `publish`
+    for an item type that keeps no draft has no effect.
+
+    Limitation: for a static page, `publish: true` updates only the published revision — it
+    does not also update the saved one. [Get Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/get-item-seo-tags)
+    and List Item SEO Tags always read the saved revision, so they keep returning the values
+    from before this call until the same changed fields are also set without `publish`.
+    This method's own response isn't a read of the published revision either, so don't treat
+    it as confirmation that the live page changed — check the live page to confirm that.
+
+    Tags are validated before anything is saved, so a request that contains an invalid tag
+    changes nothing.
+
+    Tags can currently be written only for the item's primary language: leave
+    `itemSeoTags.language` unset. Sending a language fails with `LANGUAGE_NOT_SUPPORTED`,
+    even when `fieldMask` doesn't name it.
+
+    To set the tags of many items in one call, call [Bulk Set Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/bulk-set-item-seo-tags).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { itemSeoTags } from '@wix/seo';
+
+    itemSeoTags.setItemSeoTags(identifiers, itemSeoTags, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="identifiers" type="SetItemSeoTagsIdentifiers" required>
+
+      identifiers
+
+      <Expandable title="identifiers properties">
+
+        <ParamField body="itemType" type="string" required>
+
+          Type of item to set tags for. For example, `STATIC_PAGE` or `STORES_PRODUCT`.
+
+          Constraints: `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="itemId" type="string" required>
+
+          ID of the item to set tags for.
+
+          Constraints: `maxLength 200`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="itemSeoTags" type="SetItemSeoTags" required>
+
+      Item SEO tags to set. Only `tags` and `focusKeywords` can be changed.
+
+      Leave `language` unset: the tags are written for the site's primary language. Sending
+      a language fails with `LANGUAGE_NOT_SUPPORTED`, even when the field mask doesn't name
+      it.
+
+      <Expandable title="itemSeoTags properties">
+
+        <ParamField body="_id" type="string">
+
+          Item SEO tags ID, in the format `{itemType}:{itemId}`.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="itemType" type="string">
+
+          Type of item the tags belong to. For example, `STATIC_PAGE`, `BLOG_POST`, or
+          `STORES_PRODUCT`.
+
+          For an item on a page built from a Wix Data collection, the item type takes the form
+          `WIX_DATA_PAGE_ITEM-{pageId}`.
+
+          **Read-only.** Constraints: `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="itemId" type="string">
+
+          ID of the item the tags belong to. For a static page, this is the page ID.
+
+          **Read-only.** Constraints: `maxLength 200`.
+
+        </ParamField>
+
+        <ParamField body="tags" type="Tag[]">
+
+          Tags set for this item alone, which take precedence over the tags it would otherwise
+          inherit.
+
+          Empty when the item has no tags of its own.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="tags properties">
+
+            <ParamField body="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ParamField>
+
+            <ParamField body="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ParamField>
+
+            <ParamField body="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ParamField>
+
+            <ParamField body="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ParamField>
+
+            <ParamField body="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ParamField>
+
+            <ParamField body="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="focusKeywords" type="Keyword[]">
+
+          Keywords the item's content is intended to rank for. Used by Wix's SEO tools to assess
+          the item's content; they aren't rendered on the page.
+
+          Mark the item's main keyword with `isMain` rather than relying on its position in the
+          list.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="focusKeywords properties">
+
+            <ParamField body="term" type="string">
+
+              Keyword value.
+
+            </ParamField>
+
+            <ParamField body="isMain" type="boolean">
+
+              Whether the keyword is the main focus keyword.
+
+            </ParamField>
+
+            <ParamField body="origin" type="string">
+
+              The source that added the keyword terms to the SEO settings.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="hasOverride" type="boolean">
+
+          Whether the item has tags of its own, as opposed to inheriting them.
+
+          `false` doesn't mean the item shows Wix's built-in tags: it may inherit from the
+          pattern for its item type, from the site's tags, or from the page that hosts it. See
+          `resolvedTags` for the tags the item is expected to render with.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="resolvedTags" type="ResolvedTag[]">
+
+          The tags the item is expected to render with, each marked with where it came from.
+
+          Derived by combining every source Wix manages, so it reflects inherited tags as well
+          as the item's own. Tags that site code, apps, or page components add while the page
+          renders aren't included, so this isn't a literal copy of the page's rendered head.
+
+          If a tag's source can't be determined, the tag is still exact but its `source` is
+          `TAG_SOURCE_UNSPECIFIED`.
+
+          **Read-only.** Constraints: `maxItems 500`.
+
+          <Expandable title="resolvedTags properties">
+
+            <ParamField body="tag" type="Tag">
+
+              Resolved SEO tag.
+
+              _Nested structure omitted for brevity — see the `Tag` object._
+
+            </ParamField>
+
+            <ParamField body="source" type="string">
+
+              Where the tag came from.
+
+              **Supported values:**
+
+              - `TAG_SOURCE_SITE` — The site's own site-wide tags.
+              - `TAG_SOURCE_DEFAULT_PATTERN` — The pattern Wix provides for the page type.
+              - `TAG_SOURCE_USER_PATTERN` — The pattern the Wix user customized for the page type.
+              - `TAG_SOURCE_HOST_PAGE` — The tags of the page the item is displayed on.
+              - `TAG_SOURCE_ITEM` — The item's own tags, which the Wix user set for that item alone.
+
+            </ParamField>
+
+            <ParamField body="inheritedTag" type="Tag">
+
+              The tag that `tag` replaced: what this tag would be if the source that set it
+              didn't. Returned only when a source replaced a value an earlier source had set,
+              so it's absent when `source` is the only source that set the tag.
+
+              It reports the value from one source down the list, not the Wix built-in. For a
+              tag an item sets on a page type whose pattern the site customized, it's the
+              customized pattern's tag, because that's what the item inherits and what
+              resetting the item surfaces.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Tag` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="hostPageId" type="string">
+
+          ID of the page that displays the item, for items shown on a shared page, such as a
+          blog post or a store product.
+
+          Informational: the hosting page can't be addressed through this API.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="publishStatus" type="string">
+
+          Whether the item's SEO tags are live on the published site.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `PUBLISH_STATUS_PUBLISHED` — The item's SEO tags are live on the published site. Item types that keep no separate
+          draft, such as store products, events, and portfolio collections, always report this
+          status.
+          - `PUBLISH_STATUS_NOT_PUBLISHED` — The item has never been published, so its SEO tags exist only as a draft and aren't on
+          the live site. For example, a blog post that's still a draft.
+
+        </ParamField>
+
+        <ParamField body="language" type="string">
+
+          Language the tags apply to, as an IETF BCP 47 language tag. For example, `en-US` for
+          U.S. English.
+
+          Tags can currently be written only for the site's primary language, so leave this
+          unset on a write. Sending a language fails with `LANGUAGE_NOT_SUPPORTED`.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="origin" type="string">
+
+          What made the most recent change to the item's tags, for example a user or the site
+          migration flow. Derived from the caller, not from the request.
+
+          `ORIGIN_UNSPECIFIED` when the caller isn't one Wix identifies as a specific origin.
+          Origin isn't stored with the tags either, so Get Item SEO Tags and List Item SEO Tags
+          always return `ORIGIN_UNSPECIFIED`.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `ORIGIN_USER` — A user, working in the dashboard or editor, or calling the API on their own behalf.
+          - `ORIGIN_MIGRATION` — The flow that imports an existing site into Wix.
+          - `ORIGIN_AI` — An AI agent or an automated suggestion flow.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="SetItemSeoTagsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fieldMask" type="FieldMask" required>
+
+          Fields to update.
+
+          Supported properties: `tags`, `focusKeywords`
+
+          <Expandable title="fieldMask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="publish" type="boolean">
+
+          Whether to publish the change to the live site, for item types that keep a separate
+          draft, such as static pages.
+
+          Has no effect for item types that are always live, and isn't an error for them.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="itemSeoTags" type="ItemSeoTags">
+
+      Updated item SEO tags.
+
+      See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_ITEM_TYPE` | Wix doesn't support the specified `itemType`. The error message lists the item types that are supported. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TAGS` | A tag isn't valid for an item. For example, its value isn't valid for that tag, it uses an unsupported `robots` directive, or the item's tags exceed the size limit. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FIELD_MASK` | The `fieldMask` is empty, or names a field that doesn't exist or can't be changed. |
+    | `404` | `NOT_FOUND` | `ITEM_NOT_FOUND` | Couldn't find the item. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-set-item-seo-tags" id="ex-sdk-set-item-seo-tags-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-set-item-seo-tags" id="ex-sdk-set-item-seo-tags-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-set-item-seo-tags-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-set-item-seo-tags-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Set the title and description of one page</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">setItemSeoTags (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-set-item-seo-tags-0"><span className="wix-picker-name">Set the title and description of one page</span></label>
+    <label htmlFor="ex-sdk-set-item-seo-tags-1"><span className="wix-picker-name">setItemSeoTags (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Set the title and description of one page
+    import { itemSeoTags } from "@wix/seo";
+
+    async function setItemSeoTags() {
+      const response = await itemSeoTags.setItemSeoTags(
+        { itemType: "STATIC_PAGE", itemId: "c1dmp" },
+        {
+          tags: [
+            { type: "title", children: "Winter collection | Ceramics studio" },
+            {
+              type: "meta",
+              props: {
+                name: "description",
+                content: "Stoneware mugs and bowls, thrown and glazed by hand.",
+              },
+            },
+          ],
+        },
+        { fieldMask: ["tags"] },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "itemSeoTags": {
+     *     "_id": "STATIC_PAGE:c1dmp",
+     *     "itemType": "STATIC_PAGE",
+     *     "itemId": "c1dmp",
+     *     "tags": [
+     *       { "type": "title", "children": "Winter collection | Ceramics studio" },
+     *       {
+     *         "type": "meta",
+     *         "props": {
+     *           "name": "description",
+     *           "content": "Stoneware mugs and bowls, thrown and glazed by hand."
+     *         }
+     *       }
+     *     ],
+     *     "hasOverride": true,
+     *     "origin": "ORIGIN_UNSPECIFIED"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript setItemSeoTags (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { itemSeoTags } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { itemSeoTags },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function setItemSeoTags(identifiers,itemSeoTags,options) {
+      const response = await myWixClient.itemSeoTags.setItemSeoTags(identifiers,itemSeoTags,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

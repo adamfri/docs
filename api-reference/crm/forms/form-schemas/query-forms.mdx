@@ -1,0 +1,610 @@
+---
+title: "Query Forms"
+description: "Retrieves a list of form schemas given the provided paging, filtering, and sorting."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of form schemas given the provided paging, filtering, and sorting.
+
+    You must specify a namespace equality filter. For example, `"namespace:{"$eq":"<your_namespace>"}`.
+
+    | Property | Filters | Sort |
+    | --- | --- | --- |
+    | `id` | `$eq`, `$in`, `$ne`, `$nin` | Sort: `ASC`, `DESC` |
+    | `namespace` | `$eq` | Sort: `ASC`, `DESC` |
+    | `createdDate` | `$eq`, `$gt`, `$gte`, `$in`, `$lt`, `$lte`, `$ne`, `$nin` | Sort: `ASC`, `DESC` |
+    | `updatedDate` | `$eq`, `$gt`, `$gte`, `$in`, `$lt`, `$lte`, `$ne`, `$nin` | Sort: `ASC`, `DESC` |
+    | `properties.name` | `$eq`, `$ne`, `$nin`, `$in`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `name` | `$eq`, `$ne`, `$nin`, `$in`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `properties.disabled` | `$eq`, `$ne` | Sort: `ASC`, `DESC` |
+    | `enabled` | `$eq`, `$ne` | Sort: `ASC`, `DESC` |
+    | `fields.validation.predefined.format` | `$hasSome` | None |
+    | `tags.privateTags.tagIds` | `$hasAll`, `$hasSome` | Sort: `ASC`, `DESC` |
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/form-schema-service/v4/forms/query
+    ```
+
+    ## Body Params
+
+    <ParamField body="query" type="CursorQuery">
+
+      WQL expression. You must specify a namespace equality filter. For example, `"namespace:{"$eq":"<your_namespace>"}`.
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          Constraints: `maxItems 3`.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+              Constraints: `maxLength 512`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="additionalMetadata" type="object">
+
+      Optional metadata passed to SPI implementer, allowing clients to include additional business-specific data.
+
+    </ParamField>
+
+    <ParamField body="namespace" type="string">
+
+      Namespace for filtering form schemas.
+
+      Constraints: `maxLength 50`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="forms" type="Form[]">
+
+      Retrieved form schemas.
+
+      Constraints: `maxItems 100`.
+
+      See the [Form Object](/api-reference/crm/forms/form-schemas/form-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="CursorPagingMetadata">
+
+      Details on the paged set of results returned.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_NAMESPACE_FILTER` | Query is missing required namespace filter. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Query forms
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'http://www.wixapis.com/form-schema-service/v4/forms/query' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "namespace": "wix.form_app.form",
+          "query": {
+            "filter": {
+              "id": "e62e3011-55cf-4de3-a497-e097b52d86b8"
+            }
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "forms": [
+          {
+            "id": "e62e3011-55cf-4de3-a497-e097b52d86b8",
+            "steps": [
+              {
+                "id": "60aee123-89c4-427d-696e-6560d5b72d37",
+                "name": "Page 1",
+                "hidden": false,
+                "layout": {
+                  "large": {
+                    "items": [
+                      {
+                        "fieldId": "98cf12f2-7631-4d1d-fe5f-b5847754f901",
+                        "row": 1,
+                        "column": 0,
+                        "width": 12,
+                        "height": 1
+                      },
+                      {
+                        "fieldId": "9d12378c-f6b5-416e-1e3e-821964140c8f",
+                        "row": 0,
+                        "column": 0,
+                        "width": 12,
+                        "height": 1
+                      }
+                    ],
+                    "columns": null,
+                    "rowHeight": null,
+                    "margin": null,
+                    "padding": null
+                  },
+                  "medium": null,
+                  "small": null
+                }
+              }
+            ],
+            "rules": [],
+            "revision": "1",
+            "createdDate": "2025-02-10T10:50:02.316Z",
+            "updatedDate": "2025-02-10T10:50:02.316Z",
+            "deletedFields": [],
+            "extendedFields": {
+              "namespaces": {
+                "@forms/form-app": {
+                  "automationId": "90171237-675b-49a0-9dfc-c5a5109c3c13"
+                }
+              }
+            },
+            "namespace": "wix.form_app.form",
+            "mediaFolderId": null,
+            "limitationRule": null,
+            "spamFilterProtectionLevel": "ADVANCED",
+            "requiredIndicatorProperties": null,
+            "submitSettings": {
+              "submitSuccessAction": "THANK_YOU_MESSAGE",
+              "thankYouMessageOptions": {
+                "durationInSeconds": null,
+                "richContent": null
+              }
+            },
+            "disabledFormMessage": null,
+            "enabled": true
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of form schemas given the provided paging, filtering, and sorting.
+
+    You must specify a namespace equality filter. For example, `"namespace:{"$eq":"<your_namespace>"}`.
+
+    | Property | Filters | Sort |
+    | --- | --- | --- |
+    | `_id` | `$eq`, `$in`, `$ne`, `$nin` | Sort: `ASC`, `DESC` |
+    | `namespace` | `$eq` | Sort: `ASC`, `DESC` |
+    | `_createdDate` | `$eq`, `$gt`, `$gte`, `$in`, `$lt`, `$lte`, `$ne`, `$nin` | Sort: `ASC`, `DESC` |
+    | `_updatedDate` | `$eq`, `$gt`, `$gte`, `$in`, `$lt`, `$lte`, `$ne`, `$nin` | Sort: `ASC`, `DESC` |
+    | `name` | `$eq`, `$ne`, `$nin`, `$in`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `enabled` | `$eq`, `$ne` | Sort: `ASC`, `DESC` |
+    | `tags.privateTags.tagIds` | `$hasAll`, `$hasSome` | Sort: `ASC`, `DESC` |
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { forms } from '@wix/forms';
+
+    forms.queryForms(query, options): FormsQueryBuilder
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="query" type="FormQuery" required>
+
+      WQL expression. You must specify a namespace equality filter. For example, `"namespace:{"$eq":"<your_namespace>"}`.
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          Constraints: `maxItems 3`.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+              Constraints: `maxLength 512`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="QueryFormsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="additionalMetadata" type="object">
+
+          Optional metadata passed to SPI implementer, allowing clients to include additional business-specific data.
+
+        </ParamField>
+
+        <ParamField body="namespace" type="string">
+
+          Namespace for filtering form schemas.
+
+          Constraints: `maxLength 50`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `FormsQueryBuilder`.
+
+    <ResponseField name="forms" type="Form[]">
+
+      Retrieved form schemas.
+
+      Constraints: `maxItems 100`.
+
+      See the [Form Object](/api-reference/crm/forms/form-schemas/form-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="CursorPagingMetadata">
+
+      Details on the paged set of results returned.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_NAMESPACE_FILTER` | Query is missing required namespace filter. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-forms" id="ex-sdk-query-forms-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-forms" id="ex-sdk-query-forms-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-forms-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-forms-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">queryForms</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryForms (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-forms-0"><span className="wix-picker-name">queryForms</span></label>
+    <label htmlFor="ex-sdk-query-forms-1"><span className="wix-picker-name">queryForms (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryForms
+    import { forms } from '@wix/forms';
+
+    async function queryForms(query,options) {
+      const response = await forms.queryForms(query,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryForms (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { forms } from '@wix/forms';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { forms },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function queryForms(query,options) {
+      const response = await myWixClient.forms.queryForms(query,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

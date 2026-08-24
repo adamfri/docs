@@ -1,0 +1,842 @@
+---
+title: "Validate Before Create Multi Service"
+description: "Validates whether a multi-service booking can be created."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Validates whether a multi-service booking can be created.
+
+    Wix calls this method when a customer initiates a multi-service booking,
+    before the bookings are persisted. Use this to enforce package-level business
+    rules that apply across all bookings in the multi-service package.
+
+    If any booking in the package fails validation, the entire operation is
+    blocked. If your service returns an error or times out, Wix blocks the
+    creation (fail-closed behavior).
+
+    ## Endpoint
+
+    ```http
+    POST /v1/validate-before-create-multi-service
+    ```
+
+    ## Body Params
+
+    <ParamField body="multiServiceBookingType" type="string">
+
+      Type of multi-service booking being created. The `multiServiceBookingId` doesn't exist yet at create time.
+
+      **Supported values:**
+
+      - `SEQUENTIAL_BOOKINGS` — Bookings must be scheduled back-to-back.
+      Each booking starts when the previous one ends, with no gaps between them.
+      - `SEPARATE_BOOKINGS` — Bookings can be scheduled separately.
+      Each booking can be at different times, not necessarily consecutive.
+      Not currently supported.
+      - `PARALLEL_BOOKINGS` — Bookings occur at the same time.
+      All bookings in the package are scheduled for the same time slot.
+      Not currently supported.
+
+    </ParamField>
+
+    <ParamField body="items" type="CreateValidationItem[]">
+
+      Items to validate. Contains all bookings in the multi-service package.
+
+      Constraints: `maxItems 8`.
+
+      <Expandable title="items properties">
+
+        <ParamField body="itemIndex" type="integer">
+
+          Index of this item in the request, starting from `0`. Used to correlate results back to request items.
+
+        </ParamField>
+
+        <ParamField body="booking" type="Booking">
+
+          Booking to validate.
+
+          <Expandable title="booking properties">
+
+            <ParamField body="id" type="string">
+
+              Booking ID.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="bookedEntity" type="BookedEntity">
+
+              An object describing the bookable entity - either a specific time slot or a recurring schedule.
+
+              The structure depends on the type of service being booked:
+
+              __For appointment services__: Use `slot` to book a specific time slot with a
+              service provider. Appointments are typically one-time sessions at a specific date and time.
+
+              __For class services__: Use `slot` to book a specific class session. Classes
+              are individual sessions that can have multiple participants.
+
+              __For course services__: Use `schedule` to book an entire course consisting of
+              multiple sessions over time. Courses are recurring, multi-session offerings.
+
+              Choose the appropriate field based on your service type and booking requirements.
+
+              _Nested structure omitted for brevity — see the `BookedEntity` object._
+
+            </ParamField>
+
+            <ParamField body="contactDetails" type="ContactDetails">
+
+              Contact details of the site visitor or [member](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/members/introduction)
+              making the booking.
+
+              _Nested structure omitted for brevity — see the `ContactDetails` object._
+
+            </ParamField>
+
+            <ParamField body="additionalFields" type="CustomFormField[]" deprecated>
+
+              Additional custom fields submitted with the booking form.
+              Deprecated due to Bookings integrating with Wix Forms.
+              You can call Wix Forms' [Get Submission](https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/get-submission) specifying `formSubmissionId` as the `id` to get the submitted booking form data.
+              Read more about the [Bookings Forms integration](https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration).
+
+              **Deprecated.** Additional custom fields submitted with the booking form.
+              Deprecated due to Bookings integrating with Wix Forms.
+              You can call Wix Forms' [Get Submission](https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/get-submission) specifying `formSubmissionId` as the `id` to get the submitted booking form data.
+              Read more about the [Bookings Forms integration](https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration). Use `form_submission_id` instead. Removal: 2026-03-31.
+
+              _Nested structure omitted for brevity — see the `CustomFormField[]` object._
+
+            </ParamField>
+
+            <ParamField body="status" type="string">
+
+              Booking status. A booking is automatically confirmed if the service allows it
+              and an eCommerce order is created. It is automatically declined if there is a
+              double booking and the customer hasn't paid or is eligible for an automatic
+              refund. Currently, only payments with pricing plans are automatically refundable.
+
+              **Supported values:**
+
+              - `CREATED` — The booking was created, but the customer hasn't completed the related eCommerce order yet.
+              - `CONFIRMED` — The merchant has confirmed the booking and it appears in the business calendar. Merchants can set up their [services](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction) to automatically confirm all `PENDING` bookings.
+              - `CANCELED` — The customer has canceled the booking. Depending on the relevant service's [policy snapshot](https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policy-snapshots/introduction)
+              they may have to pay a [cancellation fee](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/introduction).
+              - `PENDING` — The merchant must manually confirm the booking before it appears in the business calendar.
+              - `DECLINED` — The merchant has declined the booking before the customer was charged.
+              - `WAITING_LIST` — Currently, you can't call [Register to Waitlist](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/waitlist/register-to-waitlist) for course or appointment bookings, even though this is supported in live sites.
+
+            </ParamField>
+
+            <ParamField body="paymentStatus" type="string">
+
+              The payment status of the booking. This field automatically syncs with the
+              `paymentStatus` of the corresponding [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction)
+              when customers use Wix eCommerce checkout.
+
+              ### Integration patterns
+
+              __When using Wix eCommerce checkout__: Wix Bookings automatically syncs the payment status based on the eCommerce order's payment status.
+              Do not manually update this field.
+
+              __When using custom payment flows__: You can manually update the payment status with [Confirm Booking or Decline Booking](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking) to reflect the customer's payment state.
+
+              __For membership/pricing plan payments__: Wix Bookings automatically manages the payment status when customers pay with an active [pricing plan](https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans/pricing-plans/introduction) subscription.
+
+              All payment statuses are supported for every booking `status`.
+
+              **Supported values:**
+
+              - `UNDEFINED` — Undefined payment status.
+              - `NOT_PAID` — The booking isn't paid.
+              - `PAID` — The booking is fully paid.
+              - `PARTIALLY_PAID` — The booking is partially paid.
+              - `REFUNDED` — The booking is refunded.
+              - `EXEMPT` — The booking is free of charge.
+              - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+            </ParamField>
+
+            <ParamField body="selectedPaymentOption" type="string">
+
+              Payment option selected by the customer. If the customer hasn't completed their checkout, they may still change the payment method. Must be one of the payment options offered by the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction), unless `skipSelectedPaymentOptionValidation` is `true`.
+
+              When the customer pays with a [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/checkout/introduction), this field is required.
+              Otherwise, the Create Booking call fails.
+              For custom checkouts, you don't have to specify this field.
+
+              **Supported values:**
+
+              - `UNDEFINED` — Undefined payment option.
+              - `OFFLINE` — Offline payment.
+              - `ONLINE` — Online payment.
+              - `MEMBERSHIP` — Payment using a Wix Pricing Plan.
+              - `MEMBERSHIP_OFFLINE` — Customers can pay only in person with a Wix Pricing Plan, while the Wix user
+              must manually redeem the pricing plan in the dashboard.
+
+            </ParamField>
+
+            <ParamField body="createdDate" type="datetime">
+
+              Date and time the booking was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="externalUserId" type="string">
+
+              External user ID that you can provide.
+
+            </ParamField>
+
+            <ParamField body="revision" type="integer">
+
+              Revision number to be used when updating, rescheduling, or cancelling the booking.
+              Increments by 1 each time the booking is updated, rescheduled, or canceled. To prevent conflicting changes, the current revision must be specified when updating the booking.
+
+            </ParamField>
+
+            <ParamField body="createdBy" type="IdentificationData">
+
+              ID of the creator of the booking.
+              If `appId` and another ID are present, the other ID takes precedence.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `IdentificationData` object._
+
+            </ParamField>
+
+            <ParamField body="startDate" type="datetime">
+
+              The start date of the booking in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+              For a slot, this is the start date of the slot. For a schedule, this is the start date of the first session.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="endDate" type="datetime">
+
+              The end date of the booking in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+              For a slot, this is the end date of the slot. For a schedule, this is the end date of the last session.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="updatedDate" type="datetime">
+
+              Date and time the booking was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="extendedFields" type="ExtendedFields">
+
+              Custom field data for this object.
+              Extended fields must be configured in the app dashboard before they can be accessed with API calls.
+
+              _Nested structure omitted for brevity — see the `ExtendedFields` object._
+
+            </ParamField>
+
+            <ParamField body="doubleBooked" type="boolean">
+
+              Whether this booking overlaps with another confirmed booking. Returned
+              only if set to `true`.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="formSubmissionId" type="string">
+
+              ID of the [form submission](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction)
+              associated with this booking.
+
+            </ParamField>
+
+            <ParamField body="formId" type="string">
+
+              ID of the [form](https://dev.wix.com/docs/rest/crm/forms/form-schemas/form-object)
+              associated with this booking. The value depends on how the
+              booking was created:
+              - For bookings created with Create Booking or Bulk Create Booking, `formId`
+              is identical to ID of the booking form that's associated with the relevant
+              service.
+              - For bookings created via Create Multi Service Booking, `formId` is set to
+              `00000000-0000-0000-0000-000000000000` (the default booking form ID).
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="bookedAddOns" type="BookedAddOn[]">
+
+              List of [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) associated with the booking.
+
+              Constraints: `maxItems 21`.
+
+              _Nested structure omitted for brevity — see the `BookedAddOn[]` object._
+
+            </ParamField>
+
+            <ParamField body="appId" type="string">
+
+              ID of the app that's associated with the booking.
+              Inherited from the `appId` of the service associated with the booking.
+              Bookings are displayed in Wix Bookings only if they are associated with the Wix Bookings app ID or have no associated app ID.
+              For bookings from Wix apps, the following values apply:
+              - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+              - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`
+              [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+              &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="createdByAppId" type="string">
+
+              ID of the app that created the booking. This field is used for analytics, auditing, and tracking creation sources.
+              This read-only field is automatically populated during booking creation by checking these sources in order:
+              1. The caller's App ID from the request identity context (external app or server identity).
+              2. The booking's `appId` field (inherited from the service's `appId`).
+              3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+              &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="depositSelected" type="boolean">
+
+              Whether the customer chooses to pay only the deposit amount upfront.
+
+              - `true`: The customer pays only the deposit amount upfront.
+              - `false`: The customer pays the full price upfront.
+
+              Used only when `selectedPaymentOption` is `ONLINE` and the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) has a deposit amount set.
+
+              When the service supports deposit payments and `fullUpfrontPaymentAllowed` is `false`, this field must be `true`.
+              When the service supports deposit payments and `fullUpfrontPaymentAllowed` is `true`, this field can be `true` or `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="participantsInfo" type="participantsInfo">
+
+              participantsInfo
+
+              _Nested structure omitted for brevity — see the `participantsInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="singleServiceBookingResults" type="CreateValidationItemResult[]">
+
+      Validation results for each booking in the multi-service package.
+
+      Constraints: `maxItems 8`.
+
+      <Expandable title="singleServiceBookingResults properties">
+
+        <ResponseField name="itemIndex" type="integer">
+
+          Index of the validated item from the request.
+
+        </ResponseField>
+
+        <ResponseField name="result" type="ValidationResult">
+
+          Validation result for this item.
+
+          <Expandable title="result properties">
+
+            <ResponseField name="valid" type="boolean">
+
+              Whether the operation is valid. Set to `true` to allow the operation, or `false` to block it.
+
+            </ResponseField>
+
+            <ResponseField name="invalidReason" type="InvalidReason">
+
+              Details about why the validation failed. Populate this when `valid` is `false`.
+
+              _Nested structure omitted for brevity — see the `InvalidReason` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \ 'https://provider.example.com/v1/validate-before-create-multi-service' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "data": {
+          "request": {
+            "multiServiceBookingType": "SEQUENTIAL_BOOKINGS",
+            "items": [
+              {
+                "itemIndex": 0,
+                "booking": {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "status": "PENDING",
+                  "selectedPaymentOption": "ONLINE",
+                  "bookedEntity": {
+                    "slot": {
+                      "serviceId": "660e8400-e29b-41d4-a716-446655440001",
+                      "eventId": "770e8400-e29b-41d4-a716-446655440002",
+                      "scheduleId": "880e8400-e29b-41d4-a716-446655440003",
+                      "startDate": "2026-02-15T10:00:00Z",
+                      "endDate": "2026-02-15T11:00:00Z"
+                    }
+                  }
+                }
+              },
+              {
+                "itemIndex": 1,
+                "booking": {
+                  "id": "550e8400-e29b-41d4-a716-446655440001",
+                  "status": "PENDING",
+                  "selectedPaymentOption": "ONLINE",
+                  "bookedEntity": {
+                    "slot": {
+                      "serviceId": "660e8400-e29b-41d4-a716-446655440005",
+                      "eventId": "770e8400-e29b-41d4-a716-446655440006",
+                      "scheduleId": "880e8400-e29b-41d4-a716-446655440003",
+                      "startDate": "2026-02-15T11:30:00Z",
+                      "endDate": "2026-02-15T12:30:00Z"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "metadata": {
+            "requestId": "1674480822.92546993606315181",
+            "identity": {
+              "identityType": "ANONYMOUS_VISITOR",
+              "anonymousVisitorId": "c7808c1d-e6a5-49e5-bcbe-b3fcf2f72d28"
+            },
+            "instanceId": "bb2b1658-9855-4598-b1e0-48e8cdb7f98a"
+          }
+        },
+        "aud": "3467d501-9004-498d-9b5c-d50f6d4ede66",
+        "iss": "wix.com",
+        "iat": 1674480823,
+        "exp": 1678080823
+      }'
+      ```
+
+      ```json Response
+      {
+        "singleServiceBookingResults": [
+          {
+            "itemIndex": 0,
+            "result": {
+              "valid": true
+            }
+          },
+          {
+            "itemIndex": 1,
+            "result": {
+              "valid": false,
+              "invalidReason": {
+                "fieldViolations": [
+                  {
+                    "field": "booking.bookedEntity.slot.serviceId",
+                    "description": "Your membership doesn't include facial treatments. Add the Facial Package to your membership or book this service separately.",
+                    "code": "SERVICE_NOT_COVERED"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Validates whether a multi-service booking can be created.
+
+    Wix calls this method when a customer initiates a multi-service booking,
+    before the bookings are persisted. Use this to enforce package-level business
+    rules that apply across all bookings in the multi-service package.
+
+    If any booking in the package fails validation, the entire operation is
+    blocked. If your service returns an error or times out, Wix blocks the
+    creation (fail-closed behavior).
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookingsValidation } from '@wix/bookings';
+
+    bookingsValidation.validateBeforeCreateMultiService(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="ValidateBeforeCreateMultiServiceRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="multiServiceBookingType" type="string">
+
+          Type of multi-service booking being created. The `multiServiceBookingId` doesn't exist yet at create time.
+
+          **Supported values:**
+
+          - `SEQUENTIAL_BOOKINGS` — Bookings must be scheduled back-to-back.
+          Each booking starts when the previous one ends, with no gaps between them.
+          - `SEPARATE_BOOKINGS` — Bookings can be scheduled separately.
+          Each booking can be at different times, not necessarily consecutive.
+          Not currently supported.
+          - `PARALLEL_BOOKINGS` — Bookings occur at the same time.
+          All bookings in the package are scheduled for the same time slot.
+          Not currently supported.
+
+        </ParamField>
+
+        <ParamField body="items" type="CreateValidationItem[]">
+
+          Items to validate. Contains all bookings in the multi-service package.
+
+          Constraints: `maxItems 8`.
+
+          <Expandable title="items properties">
+
+            <ParamField body="itemIndex" type="integer">
+
+              Index of this item in the request, starting from `0`. Used to correlate results back to request items.
+
+            </ParamField>
+
+            <ParamField body="booking" type="Booking">
+
+              Booking to validate.
+
+              _Nested structure omitted for brevity — see the `Booking` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="singleServiceBookingResults" type="CreateValidationItemResult[]">
+
+      Validation results for each booking in the multi-service package.
+
+      Constraints: `maxItems 8`.
+
+      <Expandable title="singleServiceBookingResults properties">
+
+        <ResponseField name="itemIndex" type="integer">
+
+          Index of the validated item from the request.
+
+        </ResponseField>
+
+        <ResponseField name="result" type="ValidationResult">
+
+          Validation result for this item.
+
+          <Expandable title="result properties">
+
+            <ResponseField name="valid" type="boolean">
+
+              Whether the operation is valid. Set to `true` to allow the operation, or `false` to block it.
+
+            </ResponseField>
+
+            <ResponseField name="invalidReason" type="InvalidReason">
+
+              Details about why the validation failed. Populate this when `valid` is `false`.
+
+              _Nested structure omitted for brevity — see the `InvalidReason` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-validate-before-create-multi-service" id="ex-sdk-validate-before-create-multi-service-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-validate-before-create-multi-service" id="ex-sdk-validate-before-create-multi-service-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-validate-before-create-multi-service" id="ex-sdk-validate-before-create-multi-service-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-validate-before-create-multi-service-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-validate-before-create-multi-service-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">validateBeforeCreateMultiService</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">validateBeforeCreateMultiService (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">validateBeforeCreateMultiService (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-validate-before-create-multi-service-0"><span className="wix-picker-name">validateBeforeCreateMultiService</span></label>
+    <label htmlFor="ex-sdk-validate-before-create-multi-service-1"><span className="wix-picker-name">validateBeforeCreateMultiService (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-validate-before-create-multi-service-2"><span className="wix-picker-name">validateBeforeCreateMultiService (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript validateBeforeCreateMultiService
+    import { bookingsValidation } from '@wix/bookings/service-plugins';
+
+    async function validateBeforeCreateMultiService(request,metadata) {
+      const response = await bookingsValidation.validateBeforeCreateMultiService(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript validateBeforeCreateMultiService (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookingsValidation } from '@wix/bookings/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookingsValidation },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function validateBeforeCreateMultiService(request,metadata) {
+      const response = await myWixClient.bookingsValidation.validateBeforeCreateMultiService(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript validateBeforeCreateMultiService (with elevated permissions)
+    import { bookingsValidation } from '@wix/bookings/service-plugins';
+    import { auth } from '@wix/essentials';
+
+    async function myValidateBeforeCreateMultiServiceMethod(request,metadata) {
+      const elevatedValidateBeforeCreateMultiService = auth.elevate(bookingsValidation.validateBeforeCreateMultiService);
+      const response = await elevatedValidateBeforeCreateMultiService(request,metadata);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

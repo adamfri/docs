@@ -1,0 +1,386 @@
+---
+title: "Unpublish Data Item"
+description: "Retracts a published data item back to draft state."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retracts a published data item back to draft state.
+
+    By default, this method removes the published copy of the item and creates a draft seeded with the previously-published data. Set `copyToDraft` to `false` to remove the published item without creating a draft.
+
+    Pass the **published** collection ID as `dataCollectionId` (for example, `articles`).
+
+    After unpublishing, edit the resulting draft via [Update Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) or [Patch Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/patch-data-item) with `dataCollectionId` set to your collection's drafts shadow (for example, `articles__drafts`). To put the item back live, call [Publish Data Item Draft](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft).
+
+    <Note>
+
+    - If a pending draft already exists for the supplied `dataItemId`, it is silently overwritten with the previously-published data.
+    - The response carries the newly-created (or overwritten) draft, not the previously-published item. When `copyToDraft` is `false`, `dataItem` is not returned.
+    - Returns `NOT_FOUND` if no published item exists with the supplied `dataItemId`.
+    - Calling this method always triggers a [Data Item Deleted](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-deleted) event on the published collection. When `copyToDraft` is `true` (the default), it also triggers a [Data Item Created](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-created) or [Data Item Updated](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event on the drafts shadow collection. When `copyToDraft` is `false`, no draft is created and no events fire on the drafts shadow collection.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/data/v2/items/unpublish
+    ```
+
+    ## Body Params
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the published data collection.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="dataItemId" type="string" required>
+
+      ID of the published data item to retract. Returns `NOT_FOUND` if no published item exists with this ID.
+
+      Constraints: `maxLength 128`.
+
+    </ParamField>
+
+    <ParamField body="copyToDraft" type="boolean">
+
+      Whether to create a draft copy of the published item.
+      If `true`, any existing draft will be overwritten.
+      If `false`, the published item is simply removed without creating a draft. The response `dataItem` is not returned.
+      Defaults to `true`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="dataItem" type="DataItem">
+
+      The resulting draft data item, seeded with the previously-published data. Empty when `copyToDraft` is `false`.
+
+      See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Created | `wix.data.v2.data_item_created` | Triggered when a data item is inserted. |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+    | Data Item Deleted | `wix.data.v2.data_item_deleted` | Triggered when a data item is deleted or truncated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/items/unpublish' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "dataCollectionId": "tutorials",
+          "dataItemId": "5331fc15-9441-4fd4-bc7b-7f6870c69228"
+      }'
+      ```
+
+      ```json Response
+      {
+          "dataItem": {
+              "id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+              "dataCollectionId": "tutorials",
+              "data": {
+                  "_id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+                  "_createdDate": { "$date": "2023-03-28T12:20:43.745Z" },
+                  "_updatedDate": { "$date": "2024-05-20T14:30:00.000Z" },
+                  "_owner": "690264f5-29a0-4aa8-a9b5-0842fc5ab360",
+                  "title": "Getting Started with Wix Data",
+                  "category": "basics"
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retracts a published data item back to draft state.
+
+    By default, this method removes the published copy of the item and creates a draft seeded with the previously-published data. Set `copyToDraft` to `false` to remove the published item without creating a draft.
+
+    Pass the **published** collection ID as `dataCollectionId` (for example, `articles`).
+
+    After unpublishing, edit the resulting draft via [Update Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) or [Patch Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/patch-data-item) with `dataCollectionId` set to your collection's drafts shadow (for example, `articles__drafts`). To put the item back live, call [Publish Data Item Draft](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft).
+
+    <Note>
+
+    - If a pending draft already exists for the supplied `dataItemId`, it is silently overwritten with the previously-published data.
+    - The response carries the newly-created (or overwritten) draft, not the previously-published item. When `copyToDraft` is `false`, `dataItem` is not returned.
+    - Returns `NOT_FOUND` if no published item exists with the supplied `dataItemId`.
+    - Calling this method always triggers a [Data Item Deleted](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-deleted) event on the published collection. When `copyToDraft` is `true` (the default), it also triggers a [Data Item Created](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-created) or [Data Item Updated](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event on the drafts shadow collection. When `copyToDraft` is `false`, no draft is created and no events fire on the drafts shadow collection.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { items } from '@wix/data';
+
+    items.unpublishDataItem(dataCollectionId, itemId, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the published data collection.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="itemId" type="string" required>
+
+      ID of the published data item to retract. Returns `NOT_FOUND` if no published item exists with this ID.
+
+      Constraints: `maxLength 128`.
+
+    </ParamField>
+
+    <ParamField body="options" type="WixDataUnpublishDataItemOptions">
+
+      Options to use when processing this operation.
+
+      <Expandable title="options properties">
+
+        <ParamField body="copyToDraft" type="boolean">
+
+          Whether to create a draft copy of the published item.
+          If `true`, any existing draft will be overwritten.
+          If `false`, the published item is simply removed without creating a draft. The response `dataItem` is not returned.
+          Defaults to `true`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `WixDataItem`.
+
+    See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Created | `wix.data.v2.data_item_created` | Triggered when a data item is inserted. |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+    | Data Item Deleted | `wix.data.v2.data_item_deleted` | Triggered when a data item is deleted or truncated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-unpublish-data-item" id="ex-sdk-unpublish-data-item-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-unpublish-data-item" id="ex-sdk-unpublish-data-item-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-unpublish-data-item" id="ex-sdk-unpublish-data-item-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-unpublish-data-item-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-unpublish-data-item-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">unpublishDataItem</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">unpublishDataItem (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">unpublishDataItem (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-unpublish-data-item-0"><span className="wix-picker-name">unpublishDataItem</span></label>
+    <label htmlFor="ex-sdk-unpublish-data-item-1"><span className="wix-picker-name">unpublishDataItem (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-unpublish-data-item-2"><span className="wix-picker-name">unpublishDataItem (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript unpublishDataItem
+    import { items } from '@wix/data';
+
+    async function unpublishDataItem(dataCollectionId,itemId,options) {
+      const response = await items.unpublishDataItem(dataCollectionId,itemId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript unpublishDataItem (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { items } from '@wix/data';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { items },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function unpublishDataItem(dataCollectionId,itemId,options) {
+      const response = await myWixClient.items.unpublishDataItem(dataCollectionId,itemId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript unpublishDataItem (with elevated permissions)
+    import { items } from '@wix/data';
+    import { auth } from '@wix/essentials';
+
+    async function myUnpublishDataItemMethod(dataCollectionId,itemId,options) {
+      const elevatedUnpublishDataItem = auth.elevate(items.unpublishDataItem);
+      const response = await elevatedUnpublishDataItem(dataCollectionId,itemId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

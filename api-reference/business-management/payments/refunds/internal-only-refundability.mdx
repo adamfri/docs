@@ -1,0 +1,84 @@
+---
+title: "Internal Only | Refundability"
+description: "You can determine the \"refundability\" of any charge processed by Wix by calling Get Refundability."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+You can determine the "refundability" of any charge processed by Wix by calling [Get Refundability](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/get-refundability). Refundability describes whether it's possible to issue a refund, and if so, the allowed range of the refund amount. Refundability depends on the [identity](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) you're authorized as, the PSP status, the merchant status, the payment method of the charge, the current time, and other details. If refunds aren't allowed for a charge, the reason is provided in the response.
+
+You may want to present refundability information to merchants so they know not to attempt refunds that won't succeed.
+
+## Prevent unintended refunds using Refundability
+
+The public introduction doc mentions `previouslyRefundedAmount` field in the [Create Refund](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/create-refund) to avoid sending unintended refunds in partial refunds flow. 
+[Get Refundability](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/get-refundability) includes a `previouslyRefundedAmount` in the response and provides a more convenient way for retrieving this field rather than using Query endpoint.
+You can use this to check that your local information is up to date before making a refund request.
+
+# Refundability Use Cases and Flows
+
+## Allow merchants to refund existing charges
+
+A company wants to add functionality to a payment tracking app that allows merchants to refund charges.
+
+### Flow
+
+1. When the merchant selects a charge to refund, call [Get Refundability](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/get-refundability) specifying the ID of the charge to be refunded.
+
+2. Check that the value of `refundability.refundAllowed` in the response is `true`. (If it is `false` inform the merchant and end the flow.)
+
+3. Prompt the merchant to issue a refund.
+
+4. When the merchant decides to issue a refund, use [Create Refund](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/create-refund) to start the refund process. Specify a refund object containing the ID of the charge to be refunded.
+
+    ```json
+    {
+      "refund": {
+        "chargeId": "<ID of the charge>"
+      }
+    }
+    ```
+
+5. If the value of `refund.status` in the response is `"SUCCEEDED"`, confirm to the merchant that refund was successful.
+
+## Allow merchants to issue partial refunds for charges, preventing unintended refunds
+
+A company wants to add functionality to a payment tracking app that allows merchants to partially refund charges while preventing unintended refunds. For example, if an order includes several items, the merchant may wish to refund only one of them.
+
+### Prerequisites
+
+- You must have an existing app that tracks charges (formerly called transactions) and stores their IDs. For example, by listening for [Payment](https://dev.wix.com/docs/rest/business-management/payments/cashier/cashier-pay/payment-event/payment) events or calling [Transactions List](fallback::https://dev.wix.com/docs/rest/business-management/payments/cashier/payments/transaction/transactions-list).
+- The Wix user must have onboarded to [accept payments through Wix](fallback::https://support.wix.com/en/article/accepting-payments-an-overview).
+
+### Flow
+
+1. When the merchant selects a charge to refund, call [Get Refundability](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/get-refundability) specifying the ID of the charge to be refunded.
+
+2. Check that the value of `refundability.refundAllowed` in the response is `true`. (If it is `false` inform the merchant and end the flow.)
+
+3. Save `refundability.previouslyRefundedAmount`, `refundability.refundDetails.minRefundAmount`, and `refundability.refundDetails.maxRefundAmount`.
+
+4. Prompt the merchant to issue a refund, showing them the `previouslyRefundedAmount` so that they know what amount has already been refunded.
+
+5. Prompt the merchant to enter a desired refund amount between `minRefundAmount` and `maxRefundAmount`.
+
+6. When the merchant decides to issue a refund, call [Create Refund](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/create-refund), specifying the `previouslyRefundedAmount` along with the refund object.
+
+    ```json
+    {
+      "refund": {
+        "currencyCode": "<currencyCode of the charge, for example, USD>",
+        "amount": "<amount entered by merchant, for example, 49.95>",
+        "chargeId": "<ID of the charge>"
+      },
+      "previouslyRefundedAmount": "<refundability.previouslyRefundedAmount saved earlier>"
+    }
+    ```
+
+   If you encounter a network error, retry the request.
+
+   If the request is unsuccessful and an error code `PREVIOUSLY_REFUNDED_AMOUNT_MISMATCH` is returned, it means that another refund was issued for the same charge after the merchant saw the previously refunded amount in step 4 and elected to proceed. (This can occur if you accidentally send multiple requests for the same refund and the first request succeeds.)
+   Inform the merchant that the information they used outdated information to make the refund request. Show the merchant the up-to-date information and prompt for confirmation before retrying the refund request.
+
+7. If the request is successful and `refund.status` is `"SUCCEEDED"`, confirm to the merchant that refund was successful.

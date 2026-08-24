@@ -1,0 +1,194 @@
+---
+title: "Coupon Scope Alignment"
+description: "The eCommerce Orders API supports two coupon scopes that affect how discounts appear in order line items and pricing: item-level (SPECIFICITEMS) and order-leve…"
+icon: "file-lines"
+---
+
+The eCommerce Orders API supports two coupon scopes that affect how discounts appear in order line items and pricing: item-level (`SPECIFIC_ITEMS`) and order-level (`GLOBAL`). Each scope determines how the discount is calculated, how it affects item prices and the subtotal, and how it's represented in the `appliedDiscounts` structure.
+
+## Item-level coupons
+
+Item-level coupons use the `SPECIFIC_ITEMS` scope. They apply a discount to specific line items in an order.
+
+- Application: The coupon targets one or more specific products or services. The discount applies only to those line items.
+- Calculation: The coupon reduces the targeted line item price, which directly lowers the order subtotal.
+- Distribution: The discount is applied to each targeted line item individually.
+- API: The `discountType` in each `appliedDiscounts` entry is set to `SPECIFIC_ITEMS`. The discount reduces the line item price directly.
+
+## Order-level coupons
+
+Order-level coupons use the `GLOBAL` scope. They apply a discount to the entire order after the subtotal is calculated.
+
+- Application: The coupon applies to the entire order, for example, "$10 off your order."
+- Calculation: The discount is calculated after the subtotal. It doesn't modify individual line item prices.
+- Distribution: The discount is proportionally distributed across line items based on their price, for accounting purposes.
+- API: Returns a single aggregated entry in `appliedDiscounts` with `discountType` set to `GLOBAL`.
+
+## Shipping coupons
+
+Shipping coupons aren't affected by this change.
+
+## Terminology
+
+- Coupon scope: Determines whether a discount targets specific line items (`SPECIFIC_ITEMS`) or the entire order (`GLOBAL`).
+- `appliedDiscounts`: The property on order line items and the order object that contains discount details.
+- Item-level coupon: A coupon with `SPECIFIC_ITEMS` scope that reduces individual line item prices.
+- Order-level coupon: A coupon with `GLOBAL` scope that reduces the order total after the subtotal is calculated.
+
+## Migrating from legacy behavior
+
+In the legacy behavior, all coupons applied as order-level discounts regardless of their configured scope. If you have an existing integration that depends on this behavior, use this section to update your implementation.
+
+<Warning>
+
+If you don't update your integration, you'll see incorrect subtotals, mismatched totals, and duplicated or missing discount amounts.
+
+</Warning>
+
+### What changed
+
+The following table summarizes the differences between the legacy behavior and the updated behavior:
+
+| Feature | Legacy behavior | Updated behavior |
+| :---- | :---- | :---- |
+| Scope logic | All coupons apply as order-level (`GLOBAL`). | Distinct logic for `SPECIFIC_ITEMS` vs. `GLOBAL`. |
+| Item prices | Coupons don't affect line item prices. | `SPECIFIC_ITEMS` coupons reduce targeted line item prices. |
+| Subtotal | Reflects pre-discount prices only. | `SPECIFIC_ITEMS` coupons lower the subtotal directly. |
+| Data model | `SPECIFIC_ITEMS` scope applies `GLOBAL` logic. | API behavior matches the configured scope. |
+
+### Impact on your integration
+
+If your integration consumes order data, you can no longer assume all coupons behave the same way.
+
+You need to make the following updates:
+
+1. Distinguish scopes: Check the `discountType` field in each `appliedDiscounts` entry to determine if a coupon is `SPECIFIC_ITEMS` or `GLOBAL`.
+2. Update calculations: Logic for totals and pricing breakdowns must account for item-level price reductions.
+3. Verify displays: Make sure your UI reflects that `SPECIFIC_ITEMS` coupons lower the line item price and subtotal, while `GLOBAL` coupons don't.
+
+### API response examples
+
+The following examples show stripped-down API response payloads focusing on the affected pricing and discount fields. Note that `totalPrice` includes additional charges such as tax and shipping that aren't shown in these examples.
+
+#### Item-level (`SPECIFIC_ITEMS`) coupon
+
+In this example, a $5 discount is applied to the second line item.
+
+Legacy behavior:
+
+```json
+{
+  "lineItems": [
+    { "id": "...01", "price": "15.00", "lineItemPrice": "15.00", "totalDiscount": "0.00" },
+    { "id": "...02", "price": "15.00", "lineItemPrice": "15.00", "totalDiscount": "5.00" }
+  ],
+  "priceSummary": {
+    "subtotal": "30.00",
+    "discount": "5.00",
+    "totalPrice": "37.00"
+  },
+  "appliedDiscounts": [
+    {
+      "discountType": "SPECIFIC_ITEMS",
+      "lineItemIds": ["...02"],
+      "coupon": { "amount": "5.00" },
+      "lineItemDiscounts": [{ "id": "...02", "totalDiscount": "5.00" }]
+    }
+  ]
+}
+```
+
+Updated behavior:
+
+```json
+{
+  "lineItems": [
+    { "id": "...01", "price": "15.00", "lineItemPrice": "15.00", "totalDiscount": "0.00" },
+    { "id": "...02", "price": "10.00", "lineItemPrice": "10.00", "totalDiscount": "0.00" }
+  ],
+  "priceSummary": {
+    "subtotal": "25.00",
+    "discount": "0.00",
+    "totalPrice": "37.00"
+  },
+  "appliedDiscounts": [
+    {
+      "discountType": "SPECIFIC_ITEMS",
+      "lineItemIds": ["...02"],
+      "coupon": { "amount": "5.00" },
+      "lineItemDiscounts": [{ "id": "...02", "totalDiscount": "5.00" }]
+    }
+  ]
+}
+```
+
+##### Key field changes for item-level coupons
+
+- `lineItems[1].price` and `lineItemPrice`: The $5 discount is applied directly to the base price, dropping from $15.00 to $10.00.
+- `lineItems[1].totalDiscount`: Cleared to $0.00.
+- `priceSummary.subtotal`: Drops from $30.00 to $25.00 to reflect the reduced base prices.
+- `priceSummary.discount`: Cleared to $0.00 since the discount is handled at the item level.
+
+#### Order-level (`GLOBAL`) coupon
+
+In this example, a $10 global discount is applied to the entire order.
+
+Legacy behavior:
+
+```json
+{
+  "lineItems": [
+    { "id": "...01", "price": "15.00", "lineItemPrice": "30.00", "totalDiscount": "6.67" },
+    { "id": "...02", "price": "15.00", "lineItemPrice": "15.00", "totalDiscount": "3.33" }
+  ],
+  "priceSummary": {
+    "subtotal": "45.00",
+    "discount": "10.00",
+    "totalPrice": "39.00"
+  },
+  "appliedDiscounts": [
+    {
+      "discountType": "SPECIFIC_ITEMS",
+      "coupon": { "amount": "6.67" },
+      "lineItemDiscounts": [{ "id": "...01", "totalDiscount": "6.67" }]
+    },
+    {
+      "discountType": "SPECIFIC_ITEMS",
+      "coupon": { "amount": "3.33" },
+      "lineItemDiscounts": [{ "id": "...02", "totalDiscount": "3.33" }]
+    }
+  ]
+}
+```
+
+Updated behavior:
+
+```json
+{
+  "lineItems": [
+    { "id": "...01", "price": "15.00", "lineItemPrice": "30.00", "totalDiscount": "6.67" },
+    { "id": "...02", "price": "15.00", "lineItemPrice": "15.00", "totalDiscount": "3.33" }
+  ],
+  "priceSummary": {
+    "subtotal": "45.00",
+    "discount": "10.00",
+    "totalPrice": "39.00"
+  },
+  "appliedDiscounts": [
+    {
+      "discountType": "GLOBAL",
+      "coupon": { "amount": "10.00" },
+      "lineItemDiscounts": [
+        { "id": "...01", "totalDiscount": "6.67" },
+        { "id": "...02", "totalDiscount": "3.33" }
+      ]
+    }
+  ]
+}
+```
+
+##### Key field changes for order-level coupons
+
+- `appliedDiscounts[].discountType`: Changed from multiple `SPECIFIC_ITEMS` entries to a single `GLOBAL` entry. The `coupon.amount` reflects the total $10.00 discount instead of the split amounts.
+- `appliedDiscounts[].lineItemDiscounts`: The proportional split ($6.67 and $3.33) is grouped into a single array under the global discount entry.
+- Unchanged fields: The `price`, `lineItemPrice`, `totalDiscount`, and `priceSummary` fields remain the same as the legacy behavior.

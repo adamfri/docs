@@ -1,0 +1,32 @@
+---
+title: "Sample Use Cases and Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation. 
+
+## Automatically remove guests from a waitlist when additional spots are available
+
+This use case demonstrates how to automate the process of changing a guest's status from `WAITLIST` to `YES` when additional spots become available in an event. For example, when the guest limit is increased, you can use [Event Updated](https://dev.wix.com/docs/rest/business-solutions/events/events-v3/event-updated) to detect this change and access RSVP data for that event. Use the RSVP API to update the RSVP status and remove guests from the waitlist. Additionally, you can send automated emails to notify guests about the update.
+
+To change the guest status and send update emails, follow these steps:
+
+1. On an ongoing basis, use [Event Updated](https://dev.wix.com/docs/rest/business-solutions/events/events-v3/event-updated) to listen for changes to an event. 
+
+1. When triggered, retrieve the following values:
+    - `updatedEvent.currentEntity.registration.rsvp.limit`
+    - `updatedEvent.currentEntity.registration.rsvp.waitlistEnabled`
+    - `updatedEvent.currentEntity.summaries.rsvps.yesCount`
+
+        If `waitlistEnabled` is `true`, calculate the number of available spots by subtracting `yesCount` from `limit`. Save this number.
+
+1. Call [Search RSVPs](https://dev.wix.com/docs/rest/business-solutions/events/rsvp-v2/search-rsvps) by `eventId` and `WAITLIST` status. Sort results by the `createdDate` field in ascending order. Compare the saved number of available spots to the `totalGuests` field of the RSVP:
+    - If the numbers match, update the RSVP status to `YES` with [Update RSVP](https://dev.wix.com/docs/rest/business-solutions/events/rsvp-v2/update-rsvp).
+    - If the numbers don't match, wait for additional spots to become available.
+
+1. On an ongoing basis, use [RSVP Updated](https://dev.wix.com/docs/rest/business-solutions/events/rsvp-v2/rsvp-updated) to listen for changes. 
+
+1. When RSVP Updated is triggered for the RSVP, send an email to the guest from your marketing tool.

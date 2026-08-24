@@ -1,0 +1,147 @@
+---
+title: "Introduction"
+description: "<blockquote class=\"important\" Important: When developing websites or building apps with Blocks, use Velo service plugins."
+icon: "file-lines"
+---
+
+<Note>
+
+When developing websites or building apps with Blocks, use [Velo service plugins](fallback::https://dev.wix.com/docs/velo/events-service-plugins/about-events-service-plugins-and-the-sdk).
+
+</Note>
+
+As a discount trigger provider, you can integrate with Wix to provide a merchant's stores or businesses with custom triggers that specify when a discount applies on the site's cart and checkout pages. Together with [discount rules](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/extensions/discounts/discount-rules/introduction), custom triggers define the necessary conditions for a discount to apply. For example, a trigger that only fires between 4pm-6pm on Mondays through Thursdays.
+
+The integration is done via an app in the Wix App Market and by implementing the Custom Discount Triggers [service plugin](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions). After the app is installed on a site, Wix triggers a call to your service whenever actions are performed on the cart or checkout entities/pages. For example, when adding an item to the cart.
+
+Using the service plugin, you can design your app to:
++ Offer a happy hour discount.
++ Offer a sale on digital products.
+
+## Before you begin
+
+To use a custom trigger to apply a discount, you must first create a discount rule. Create an automatic discount [using the dashboard](fallback::https://support.wix.com/en/article/wix-stores-creating-automatic-discounts), or by using the [Discount Rules API](https://dev.wix.com/docs/rest/business-solutions/e-commerce/discount-rules/create-discount-rule).
+
+:::tabs
+::::REST_TAB
+
+## Get started
+
+To enable Wix to communicate with your app: 
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **eCommerce** in the left menu, then find **Ecom Discounts Trigger** and click **Create**.
+
+1. Provide the following configuration:
+
+    | Name            | Type   | Description                                                                                                                                                                                                                                                                         |
+    |-----------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `deploymentUri` | string | Required. Base URI where the endpoints are called. Wix appends the endpoint path to the base URI. For example, to call the Get Eligible Triggers endpoint at `https://my-discount-app.com/v1/getEligibleTriggers`, the base URI you provide here is `https://my-discount-app.com/`. |
+    | `componentName` | string | A unique name for this component. This is an internal name that will only appear in the app dashboard.                                                                                                                                                                                 |
+
+:::
+:::SDK_TAB
+
+## Get started
+
+Follow these steps to begin implementing your service plugin.
+
+### Choose a framework
+
+You can implement this service plugin with the following [frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks):
+
++ **Wix CLI:** Learn how to [implement a service plugin with the CLI and the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
++ **Self-hosted:** Learn how to [implement a self-hosted service plugin with the SDK and the Wix Dev Center](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk).
+
+### Configure your service plugin
+
+To configure and customize your plugin, you need to provide important information in the service plugin configuration file. You can [configure your plugin in your app's dashboard](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-1--add-a-service-plugin-extension-to-your-app). For details, see [Custom Discount Trigger Extension Configuration](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/extensions/discounts/custom-discount-triggers-integration-service-plugin/extension-config).
+
+### Define handler functions
+
+Use [`customTriggers.provideHandlers()`](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions) to define the following handler functions that implement your custom business logic. Make sure you define all required functions.
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`getEligibleTriggers()`](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/extensions/discounts/custom-discount-triggers-integration-service-plugin/get-eligible-triggers)    | Yes            |
+| [`listTriggers()`](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/extensions/discounts/custom-discount-triggers-integration-service-plugin/list-triggers)    | Yes            |
+
+## Code examples
+
+Below is an example for implementing the Custom Discount Triggers service plugin in your code.
+
+### CLI: Basic code structure
+
+This is the basic code structure for implementing the Custom Discount Triggers service plugin with the Wix CLI:
+
+```js
+import { customTriggers } from '@wix/ecom/service-plugins'
+
+customTriggers.provideHandlers({
+  getEligibleTriggers: async (payload) => {
+
+    const {request, metadata} = payload;
+
+    // Add your logic here
+
+  },
+  listTriggers: async (payload) => {
+
+    const {request, metadata} = payload;
+
+    // Add your logic here
+
+  }  
+});
+  
+```
+
+### Self-hosted: Basic code structure
+
+This is the basic code structure for implementing a self-hosted Custom Discount Triggers service plugin:
+
+```js
+import { createClient } from '@wix/sdk';
+import { customTriggers } from '@wix/ecom/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { customTriggers }
+});
+
+wixClient.customTriggers.provideHandlers({
+  getEligibleTriggers: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  },
+  listTriggers: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }  
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+  
+```
+
+:::
+::::
+
+## See also
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)

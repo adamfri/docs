@@ -1,0 +1,85 @@
+---
+title: "Introduction"
+description: "With the Wix Bookings Staff Sorting service plugin, you can implement custom staff assignment algorithms that control how staff members are assigned to booking…"
+icon: "file-lines"
+---
+
+With the Wix Bookings Staff Sorting [service plugin](https://dev.wix.com/docs/rest/articles/getting-started/service-provider-interface), you can implement custom staff assignment algorithms that control how staff members are assigned to bookings.
+When customers book services with multiple available staff members, your algorithm determines the assignment logic, going beyond the built-in random and ranking-based options.
+
+Wix users can choose their preferred staff assignment method for each booking policy through the Wix dashboard.
+They can select from built-in Wix Bookings methods (random, ranking-based) or custom methods provided by installed apps.
+When you register your service plugin, we recommend to provide a [dashboard plugin extension](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/dashboard-extensions/dashboard-plugins/about-dashboard-plugin-extensions) for the [staff assignment slot](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/dashboard-extensions/dashboard-plugins/supported-wix-app-dashboard-pages/wix-bookings/wix-bookings-booking-policies-page#slot-staff-assignment) that displays a configuration interface where users can learn about your sorting algorithm and customize its parameters.
+
+Your custom sorting logic can consider factors such as:
++ Staff expertise and skill matching with service requirements.
++ Historical customer preferences and ratings.
++ Real-time availability and workload balancing.
++ Geographic proximity and travel time optimization.
++ Revenue optimization based on staff rates and commission structures.
++ Customer loyalty status and VIP considerations.
++ Seasonal patterns and staff performance metrics.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
++ This API uses "resources" and "resource IDs" instead of "staff members" for future extensibility.
+  Currently, only staff member resources are supported, so all resources are staff members.
++ Wix users can choose between built-in sorting methods (random, ranking-based) or custom sorting via this service plugin through their Wix dashboard.
+  When multiple custom implementations are available, users select which method to use for each [booking policy](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+  You can provide an optional [Policy Page dashboard plugin extension](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/dashboard-extensions/dashboard-plugins/supported-wix-app-dashboard-pages/wix-bookings/wix-bookings-booking-policies-page) to explain your algorithm and offer configuration options.
++ Your response must include the staff array with all the same resource IDs that were provided in the request, in your preferred assignment order.
+  Don't add, remove, or duplicate resources.
+  If your response is invalid, Wix falls back to random staff assignment.
++ Your implementation must respond in under 5 seconds or Wix times out and falls back to random staff assignment.
+  For optimal user experience, respond in under 500 milliseconds.
++ Wix calls the service plugin in real time during the booking process.
+  We recommend implementing a caching layer with events to pre-fetch staff data, service details, and historical booking information. Avoid making synchronous API calls during sorting.
++ Implement your own fallback sorting (such as random or ranking-based) for recoverable errors like unavailable external services.
+  Only timeout or error for catastrophic failures.
+  This gives you control over the fallback strategy and enables proper monitoring.
+
+## Handle errors
+
+Your error handling strategy determines whether you control the fallback behavior:
+
+- Implement your own fallback sorting (such as random or ranking-based) in your response when your primary algorithm fails due to recoverable errors.
+  For example, when an external service is unavailable or cached data is stale.
+- Reserve timeouts and errors for catastrophic failures only, such as when your service can't operate at all.
+  When Wix doesn't receive a response or receives an error, it falls back to random staff assignment.
+  This distinction matters for monitoring: When you return a response with fallback sorting, you can log and track degraded operation.
+  When Wix times out, you may not have visibility into the failure.
+- Ensure your response contains exactly the same resource IDs as the request to avoid automatic fallback to random sorting.
+
+## Set up caching and data storage
+
+Most staff sorting algorithms need access to staff profiles, service details, booking history, and customer preferences to make informed decisions.
+Because performance is critical (under 500 milliseconds recommended, 5 seconds maximum), we recommend pre-fetching and caching this data rather than making real-time API calls during sorting.
+
+To meet the performance requirements, cache the data your sorting algorithm needs:
+
+- Cache staff member profiles from the [Bookings Staff Members API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction).
+- Cache service details from the [Bookings Services API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services).
+- Cache historical booking data from the [Bookings API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings).
+- Cache customer data from the [Contacts API](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/introduction) if your algorithm considers customer preferences or history.
+- Use events from these APIs to keep your cache updated.
+- If your algorithm uses configurable preferences, choose a storage approach and include it in your cache:
+   - Store in external databases when you need cross-site configuration, complex queries, or high-volume data.
+   - Store in [Wix Data Collections](fallback::https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/indexes-and-wix-data-collections) for site-specific configuration that's easy to manage.
+   - Use [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) for simple policy-level settings.
+
+## Use cases
+
+- [Sort staff members based on workload](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-sorting-service-plugin/sample-flows#sort-staff-members-based-on-workload).
+
+## Terminology
+
+- **Staff sorting**: The process of determining the order in which staff members are assigned to bookings.
+- **Fallback assignment**: Secondary staff members in the sorted list used if the primary choice becomes unavailable.
+- **Policy ID**: Identifier for a service's booking policy configuration. Use this to retrieve specific sorting rules or support multiple configurations.
+- **Resource ID**: Unique identifier for staff members. The API uses "resource" terminology for future extensibility, but currently all resources are staff members.
+
+For a comprehensive glossary of Wix Bookings terms, see [Terminology](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/terminology).
+
+@sdk_package_setup

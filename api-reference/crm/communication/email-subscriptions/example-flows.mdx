@@ -1,0 +1,135 @@
+---
+title: "Example Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. 
+This can be a helpful jumping off as you plan your implementation.
+
+## Check Wix for subscription status before a campaign
+
+Some Wix users communicate with their subscribers
+through an external email marketing tool,
+even if they manage their subscribers in Wix.
+To comply with privacy regulations,
+Wix users need to ensure that only contacts
+who have opted in to marketing emails will receive those emails.
+
+Email subscription status is conveyed in the `subscriptionStatus` field.
+To allow Wix users to email only opted-in contacts,
+you should request subscription statuses from Wix before starting a campaign
+with this basic flow:
+
+1. Request the campaign recipients from the external tool.
+  Format the emails as an array.
+
+2. Request the list of subscription statuses from Wix
+  by including the array of emails in [Query Email Subscriptions](fallback::https://dev.wix.com/docs/rest/crm/communication/email-subscriptions/query-email-subscriptions):
+
+    ```json
+    {
+      "filter": {
+        "email": {
+          "$in": [
+            "recipient-1@first.com",
+            "recipient-2@second.com",
+            "...the-rest-of-your-email@list.com"
+          ]
+        }
+      }
+    }
+    ```
+
+3. Filter for the contacts
+  whose `subscriptionStatus` is `SUBSCRIBED`,
+  then extract those email addresses into an array.
+
+4. Return the final, filtered array to the external email marketing tool.
+  This is the confirmed list of contacts
+  who have opted in to marketing emails from the Wix user,
+  and who can now receive the email campaign.
+
+## Sync subscription status with an email marketing tool
+
+Wix users can keep their email marketing tool
+updated with their Wix Contact List
+with a two-way sync.
+To synchronize Wix and an external system,
+think about how you will handle these flows:
+
+- [Initial setup][initial-setup]
+- [Synchronizing from Wix to the email marketing tool][sync-to-wix]
+- [Synchronizing from the email marketing tool to Wix][sync-to-email-tool]
+
+### Part 1: Initial setup
+
+1. Create a mapping from the Wix fields to the email marketing tool fields,
+  to be used whenever Wix and the email marketing tool are synchronized.
+  Store this mapping.
+
+2. To avoid getting caught in an endless loop, 
+  include logic that ignores events that are
+  triggered as the result of a sync.
+
+### Part 2: Synchronizing to the external tool
+
+Listen for any changes to Wix email subscriptions with the
+[Email Subscription Changed](fallback::https://dev.wix.com/docs/rest/crm/communication/email-subscriptions/emailsubscription-email-subscription-changed) event.
+When this event is triggered,
+you receive the email subscription in the payload.
+
+Bring those updates to the email marketing tool
+with a flow like this:
+
+1. Extract the `data` field — which is stringified JSON —
+  and convert it to true JSON.
+  After JSONified, it takes this structure:
+
+    ```json
+    {
+      "subscription": {
+        "id": "9c130f52-31c4-11ed-a261-0242ac120002",
+        "email": "changed-subscription@wix.com",
+        "subscriptionStatus": "UNSUBSCRIBED",
+        "deliverabilityStatus": "VALID",
+        "createdDate" : "2019-10-30T17:22:10.299Z",
+        "updatedDate" : "2019-11-13T20:14:49.458Z"
+      }
+    }
+    ```
+
+2. Use the mapping (from the [initial setup][initial-setup])
+  to copy the `email` and `subscriptionStatus` to the email marketing tool.
+
+3. Ignore the resulting event from the email marketing tool
+  so you don’t create an endless loop of updates.
+
+### Part 3: Synchronizing to Wix
+
+Listen for any changes to email subscriptions from the external CRM.
+Synchronize those changes with a flow like this:
+
+1. Parse the payload to extract email and subscription status.
+
+2. Use the mapping (from the [initial setup][initial-setup])
+  to copy the email and subscription status to Wix.
+  Call [Upsert Email Subscription](fallback::https://dev.wix.com/docs/rest/crm/communication/email-subscriptions/upsert-email-subscription) to send the data:
+
+    ```json
+    {
+      "subscription": {
+        "email": "changed-subscription@email-marketing-tool.com",
+        "subscriptionStatus": "SUBSCRIBED"
+      }
+    }
+    ```
+
+3. Ignore the resulting event from Wix
+  so you don’t create an endless loop of updates.
+
+[initial-setup]: #part-1-initial-setup
+[sync-to-wix]: #part-2-synchronizing-to-the-external-tool
+[sync-to-email-tool]: #part-3-synchronizing-to-wix

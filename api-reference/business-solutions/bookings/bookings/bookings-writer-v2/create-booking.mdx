@@ -1,0 +1,1214 @@
+---
+title: "Create Booking"
+description: "Creates a booking."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a booking.
+
+    ### Appointment booking
+
+    For appointment-based services, specify the relevant time slot in `bookedEntity.slot`.
+
+    We recommend following the [appointment booking sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#book-an-appointment) using Time Slots V2.
+    Specify the slot's `startDate`, `endDate`, `resource`, and `location` in `booking.bookedEntity.slot`.
+
+    ### Class session booking
+
+    For class services, specify the relevant event ID as `bookedEntity.slot.eventId`.
+
+    We recommend following the [class session booking sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#book-a-class-session) using Time Slots V2.
+    Specify the `eventId` from the selected time slot in `booking.bookedEntity.slot.eventId`.
+
+    When you specify `eventId`, Wix Bookings automatically derives `startDate`, `endDate`, `timezone`, `resource`, and `location` based on the event details. Manually specified values are ignored.
+
+    ### Course booking
+
+    For course services, specify the course's schedule ID in `bookedEntity.schedule.scheduleId`.
+    We recommend following [this sample flow](https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-a-course)
+    to minimize failed calls due to unavailability.
+
+    ### Booking status
+
+    Create Booking defaults to `status=CREATED`. Such bookings aren't visible in the [Booking Calendar](https://support.wix.com/en/article/wix-bookings-about-the-wix-booking-calendar).
+
+    Only [identities](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) with `Manage Bookings` permissions can set `status=CONFIRMED`.
+
+    ### Related resources
+
+    Specifying a `resource` triggers an availability check, and the Create Booking call fails if the resource is unavailable.
+
+    If you omit `resource`, resource assignment and availability validation occur during booking confirmation.
+    If no resources are available, the behavior depends on the confirmation method used and payment status.
+
+    ### Booking form data
+
+    When customers sign up for a service, they must fill out the [booking form](https://support.wix.com/en/article/wix-bookings-creating-and-setting-up-your-booking-forms).
+    To create a booking with a completed booking form, specify the relevant data in `formSubmission`.
+    When specifying `formSubmission`, Wix Bookings sets all `booking.contactDetails` fields based on `formSubmission` and ignores any values in `booking.contactDetails`, except for `booking.contactDetails.contactId`.
+    To avoid conflicts, send `booking.contactDetails.contactId` together with `formSubmission`, and omit other contact details.
+    Learn more about the [Bookings and Wix Forms integration](https://dev.wix.com/docs/rest/business-solutions/bookings/wix-forms-integration).
+
+    ### Participant information
+
+    You must specify either `participantsChoices` or `totalParticipants`.
+    The call fails if the specified `participantsChoices` aren't among the supported
+    [service options and variants](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+
+    ### Add-ons
+
+    You can include [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) when creating a booking by specifying `bookedAddOns`.
+    Each selected add-on must belong to an [add-on group](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-add-on-groups) associated with the service and respect the group's selection limits.
+
+    ### Notify customers
+
+    You can specify a `participantNotification.message` for the customer that's send
+    immediately. Ensure `participantNotification.notifyParticipants` is set to `true`
+    to send the message.
+
+    If you specify `{"sendSmsReminder": true}`, the customer receives an SMS 24 hours
+    before the session starts. The phone number is taken from `contactDetails.phone`.
+
+    ### Payment options
+
+    The specified `selectedPaymentOption` indicates how the customer intends to pay, allowing for later changes to a different method supported by the service.
+
+    When the customer pays with a [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction), you must specify a `selectedPaymentOption`.
+    Otherwise, the Create Booking call fails.
+    For custom checkouts, you don't have to specify a `selectedPaymentOption`.
+
+    ### Payment status
+
+    All bookings are created with `paymentStatus=UNDEFINED`, ignoring the payment status you specify.
+
+    For customers paying with a [Wix eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/purchase-flow/checkout/checkout/introduction), Wix Bookings automatically syncs the booking's payment status from the corresponding [eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+    For customers using a custom checkout, call [Confirm or Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking) to update booking's payment status manually.
+
+    ### Admin overwrites
+
+    There are small but important differences when you specify special
+    `flowControlSettings`:
+
+    - `{"skipAvailabilityValidation": true}`: The call succeeds
+    regardless of availability. If you don't specify any resource, the call
+    succeeds even if no resource of the relevant type is available.
+    - `{"skipBusinessConfirmation": true}`: Automatically confirms `PENDING`
+    bookings that require manual confirmation.
+    - `{"skipSelectedPaymentOptionValidation": true}`: Allows customers to pay
+    with payment methods that aren't supported for the service.
+    - `{"skipAddOnValidation": true}`: Allows customers to choose add-ons that aren't associated with the service or exceed group selection limits.
+    - `{"allowAddOnChanges": true}`: Allows customers to update the list of add-ons associated with the booking when rescheduling.
+
+    When using special `flowControlSettings`, ensure you have sufficient
+    permissions. If you encounter failed calls due to insufficient permissions,
+    consider the following options:
+
+    - **App developers** can use a higher
+    [permission](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions),
+    such as `MANAGE BOOKINGS - ALL PERMISSIONS`.
+    - **Site developers** can utilize
+    [elevation](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/authorization/elevation).
+
+    Granting additional permissions and using elevation permits method calls that
+    would typically fail due to authorization checks. Therefore, you should use
+    them intentionally and securely.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/bookings
+    ```
+
+    ## Body Params
+
+    <ParamField body="booking" type="Booking" required>
+
+      The booking to create.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Information about whether to notify the customer and
+      the message to send.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to send a message about the changes to the customer.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Custom message to send to the participants about the changes to the booking.
+
+        </ParamField>
+
+        <ParamField body="metadata" type="object">
+
+          Information about the delivery channels used to send the notification.
+          For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+          Constraints: `format map`.
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="sendSmsReminder" type="boolean">
+
+      Whether to send an SMS reminder to the customer 24 hours before the
+      session starts. The phone number is taken from `contactDetails.phone`.
+      Default: `true`.
+
+    </ParamField>
+
+    <ParamField body="flowControlSettings" type="CreateBookingFlowControlSettings">
+
+      Whether to ignore specific standard procedures of the Wix Bookings flow.
+      For example, whether to check availability when creating a booking.
+
+      <Expandable title="flowControlSettings properties">
+
+        <ParamField body="skipAvailabilityValidation" type="boolean">
+
+          Whether the availability is checked before creating the booking.
+
+          - `false`: A booking is only created when the slot or schedule is available.
+          - `true`: The booking is created regardless of availability conflicts. Make sure the call's [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) has the required permissions.
+
+          *Use cases for `true`:**
+          - Emergency or priority bookings that must be accommodated.
+          - Administrative bookings that override normal availability rules.
+          - Testing or demonstration purposes.
+
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="skipBusinessConfirmation" type="boolean">
+
+          Whether `PENDING` bookings are automatically set to `CONFIRMED` for
+          services that normally require the owner's manual confirmation.
+
+          Your app must have the `BOOKINGS.OVERRIDE_AVAILABILITY` permission
+          when passing `true`.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="skipSelectedPaymentOptionValidation" type="boolean">
+
+          Whether customers can pay using a payment method that isn't supported
+          for the service, but that's supported for other services.
+
+          Your app must have the `BOOKINGS.MANAGE_PAYMENTS` permission when passing
+          `true`.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="skipAddOnValidation" type="boolean">
+
+          Whether Wix Bookings validates [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) when creating a booking.
+          The calling [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) must have `BOOKINGS.MANAGE_ADDONS` permissions to specify `true`.
+          This allows customers to choose an add-on that's not associated with the service or choose more than the maximum number of add-ons from a group.
+
+          Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="formSubmission" type="object">
+
+      Booking form data submitted by the customer during the booking process.
+      Each key represents the name of the form submission field while the value is the data submitted by the customer for that field.
+
+      Wix Bookings stores this form data in different locations depending on the field type:
+      - __Contact details fields__: Input values for standard contact fields such as name, email, phone, and address are saved in the booking object's `contactDetails`.
+      - __Custom and additional fields__: All other form field values are stored separately in the [form submissions object](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction).
+
+      For comprehensive details about integrating custom forms with bookings, see [Wix Forms Integration](https://dev.wix.com/docs/rest/business-solutions/bookings/wix-forms-integration).
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="booking" type="Booking">
+
+      Created booking.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `SESSION_NOT_FOUND` | The specified session doesn't exist. Verify the session ID is correct. |
+    | `428` | `FAILED_PRECONDITION` | `SCHEDULE_NOT_FOUND` | The specified schedule doesn't exist. Verify the schedule ID is correct. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_RESOLVING_CUSTOM_CHOICES` | Couldn't resolve the specified service choices. Verify the choices are valid for this service. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICES` | The specified choices are invalid. Provide valid service option choices. |
+    | `428` | `FAILED_PRECONDITION` | `VALIDATION_FAILURE` | Validation failed. Verify all required booking fields are provided and valid. |
+    | `428` | `FAILED_PRECONDITION` | `SESSION_CAPACITY_EXCEEDED` | The session capacity was exceeded. The requested number of participants exceeds available capacity. |
+    | `428` | `FAILED_PRECONDITION` | `SCHEDULE_CAPACITY_EXCEEDED` | The schedule capacity was exceeded. The requested number of participants exceeds available capacity. |
+    | `428` | `FAILED_PRECONDITION` | `SLOT_NOT_AVAILABLE` | The slot is no longer available for booking. It may have been booked by another customer or is outside business hours. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_VALIDATING_AVAILABILITY` | Availability validation failed. The requested time slot or schedule may be fully booked or unavailable. |
+    | `403` | `PERMISSION_DENIED` | `BOOKING_POLICY_VIOLATION` | The booking violates the service's booking policy. Check booking window restrictions, advance notice requirements, or scheduling rules. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SERVICE_CHOICES` | The specified service choices are invalid. Verify the choices match the service's supported options and variants. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_FLOW_SELECTED_RESOURCES` | The selected resources are invalid for this booking flow. Verify the resources match the service requirements. |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_CREATE_BOOKING_WITH_MULTI_SERVICE_BOOKING_INFO` | Can't create a single booking with multi-service booking information. Use the multi-service booking method instead. |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_SKIP_AVAILABILITY_VALIDATION_IF_RESOURCE_NOT_PROVIDED` | Can't skip availability validation when no resource is provided. Specify a resource or remove the skip flag. |
+    | `428` | `FAILED_PRECONDITION` | `SLOT_HOLD_UNAVAILABLE` | The slot is available, but another customer's in-progress checkout is holding it. Only returned when `flowControlSettings.stampCheckoutHold` is requested. The booking is left `CREATED` and unheld rather than rolled back; the hold frees up on its own when it expires. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_DATE_FORMAT` | The date format is invalid. Use the format `YYYY-MM-DDThh:mm:ss` in ISO-8601 format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The time zone is invalid. Provide a valid IANA time zone identifier. |
+    | `400` | `INVALID_ARGUMENT` | `CONTACT_DETAILS_CONFLICT` | Contact details in the booking don't match the form submission. Ensure contactDetails and formSubmission have matching email, phone, and name values. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Created | `wix.bookings.v2.booking_created` | Triggered when a booking is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-booking" id="ex-rest-create-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-booking" id="ex-rest-create-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-create-booking" id="ex-rest-create-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a course booking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a class session booking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an appointment booking</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-booking-0"><span className="wix-picker-name">Create a course booking</span></label>
+    <label htmlFor="ex-rest-create-booking-1"><span className="wix-picker-name">Create a class session booking</span></label>
+    <label htmlFor="ex-rest-create-booking-2"><span className="wix-picker-name">Create an appointment booking</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/bookings' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "booking": {
+          "bookedEntity": {
+            "schedule": {
+              "scheduleId": "7935f7bd-4aa5-4402-9d2f-2f4a7c039c54",
+              "serviceId": "4d92514a-73ef-4477-8e4b-51d67c18c652",
+              "location": {
+                "name": "Location Name",
+                "formattedAddress": "Location Address",
+                "locationType": "OWNER_BUSINESS"
+              },
+              "timezone": "Europe/Dublin",
+              "firstSessionStart": "2022-09-30T14:00:00.000+01:00",
+              "lastSessionEnd": "2022-12-30T15:00:00.000Z"
+            },
+            "title": "Future Group Trainings",
+            "tags": [
+              "COURSE"
+            ]
+          },
+          "contactDetails": {
+            "firstName": "John",
+            "email": "john@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "selectedPaymentOption": "ONLINE"
+        },
+        "sendSmsReminder": false,
+        "participantNotification": {
+          "notifyParticipants": true
+        },
+        "flowControlSettings": {
+          "skipAvailabilityValidation": false,
+          "skipBusinessConfirmation": false,
+          "skipSelectedPaymentOptionValidation": false
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "booking": {
+          "id": "5c3d3f70-26c4-42e3-8411-37448bf1ae89",
+          "bookedEntity": {
+            "schedule": {
+              "scheduleId": "7935f7bd-4aa5-4402-9d2f-2f4a7c039c54",
+              "serviceId": "4d92514a-73ef-4477-8e4b-51d67c18c652",
+              "location": {
+                "id": "9de094d5-8985-484e-9218-d020d9d17953",
+                "name": "Location Name",
+                "formattedAddress": "Location Address",
+                "locationType": "OWNER_BUSINESS"
+              },
+              "timezone": "Europe/Dublin",
+              "firstSessionStart": "2022-09-30T14:00:00.000+01:00",
+              "lastSessionEnd": "2022-12-30T15:00:00.000Z"
+            },
+            "title": "Future Group Trainings",
+            "tags": [
+              "COURSE"
+            ]
+          },
+          "contactDetails": {
+            "firstName": "John",
+            "email": "john@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "status": "CREATED",
+          "paymentStatus": "UNDEFINED",
+          "selectedPaymentOption": "ONLINE",
+          "createdDate": "2022-12-24T17:16:21.901Z",
+          "revision": "1",
+          "createdBy": {
+            "wixUserId": "086ca7ca-ee70-4ab3-a96e-78f8420e9428"
+          },
+          "startDate": "2022-09-30T13:00:00Z",
+          "endDate": "2022-12-30T15:00:00Z",
+          "updatedDate": "2022-12-24T17:16:21.901Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/bookings' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "booking": {
+          "bookedEntity": {
+            "slot": {
+              "sessionId": "193ZPR9ppP9emJUCLevcLf6orynNEIDt5nc0520xjGQILnPPaF5s62yK3BWz7ExgIRM1Grhufc19yxtld2ty3Xr5MpSWDTKOTjNUxnPiSzuHshes69npqrfSSRCiPbJmW985sUnh3XKhP9BqJdfRknRxJib3BqXo8LrA5kdngb4ubOZQ9d6yW73HMpiWrBufouhn4UalWsPk1OQQpysed4Vo0hq0E8KuD3nw9VMDdBToFyfp8RNAepDdgfBCfIJ3SEYOjyS4rvQAovUxmUA3xeRaV35f1yl8cth0ZZQuLx4gUrle5ciKpRmWU9TM9k5upRk9NyDw3OD9Zd",
+              "serviceId": "8bdfb0dc-9461-4f21-b576-f866f9f50dfb",
+              "scheduleId": "1b5e8844-7d10-42a3-b326-87941e5efdcb",
+              "startDate": "2022-12-28T14:00:00.000Z",
+              "endDate": "2022-12-28T15:00:00.000Z",
+              "timezone": "Europe/Dublin",
+              "resource": {
+                "id": "64bb860a-eda5-4992-9fc6-538d58e818ec",
+                "name": "Sam Kruger",
+                "scheduleId": "2bc4bf60-cccb-42ce-a43d-05d1bbbfac4c"
+              },
+              "location": {
+                "id": "9de094d5-8985-484e-9218-d020d9d17953",
+                "name": "Location Name",
+                "formattedAddress": "Location Address",
+                "locationType": "OWNER_BUSINESS"
+              }
+            },
+            "title": "CLASS",
+            "tags": [
+              "GROUP"
+            ]
+          },
+          "contactDetails": {
+            "firstName": "John",
+            "email": "john@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "selectedPaymentOption": "ONLINE"
+        },
+        "sendSmsReminder": false,
+        "participantNotification": {
+          "notifyParticipants": true
+        },
+        "flowControlSettings": {
+          "skipAvailabilityValidation": false,
+          "skipBusinessConfirmation": false,
+          "skipSelectedPaymentOptionValidation": false
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "booking": {
+          "id": "2a0aed39-2e03-4ba0-bfe3-f099d351e7bd",
+          "bookedEntity": {
+            "slot": {
+              "sessionId": "193ZPR9ppP9emJUCLevcLf6orynNEIDt5nc0520xjGQILnPPaF5s62yK3BWz7ExgIRM1Grhufc19yxtld2ty3Xr5MpSWDTKOTjNUxnPiSzuHshes69npqrfSSRCiPbJmW985sUnh3XKhP9BqJdfRknRxJib3BqXo8LrA5kdngb4ubOZQ9d6yW73HMpiWrBufouhn4UalWsPk1OQQpysed4Vo0hq0E8KuD3nw9VMDdBToFyfp8RNAepDdgfBCfIJ3SEYOjyS4rvQAovUxmUA3xeRaV35f1yl8cth0ZZQuLx4gUrle5ciKpRmWU9TM9k5upRk9NyDw3OD9Zd",
+              "eventId": "65a5776e-37f1-45f7-8e4c-f22d01b23254",
+              "serviceId": "8bdfb0dc-9461-4f21-b576-f866f9f50dfb",
+              "scheduleId": "1b5e8844-7d10-42a3-b326-87941e5efdcb",
+              "startDate": "2022-12-28T14:00:00.000Z",
+              "endDate": "2022-12-28T15:00:00.000Z",
+              "timezone": "Europe/Dublin",
+              "resource": {
+                "id": "64bb860a-eda5-4992-9fc6-538d58e818ec",
+                "name": "Sam Kruger",
+                "scheduleId": "2bc4bf60-cccb-42ce-a43d-05d1bbbfac4c"
+              },
+              "location": {
+                "id": "9de094d5-8985-484e-9218-d020d9d17953",
+                "name": "Location Name",
+                "formattedAddress": "Location Address",
+                "locationType": "OWNER_BUSINESS"
+              }
+            },
+            "title": "CLASS",
+            "tags": [
+              "GROUP"
+            ]
+          },
+          "contactDetails": {
+            "firstName": "John",
+            "email": "john@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "status": "CREATED",
+          "paymentStatus": "UNDEFINED",
+          "selectedPaymentOption": "ONLINE",
+          "createdDate": "2022-12-24T17:36:18.204Z",
+          "revision": "1",
+          "createdBy": {
+            "wixUserId": "086ca7ca-ee70-4ab3-a96e-78f8420e9428"
+          },
+          "startDate": "2022-12-28T14:00:00Z",
+          "endDate": "2022-12-28T15:00:00Z",
+          "updatedDate": "2022-12-24T17:36:18.204Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/bookings' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "booking": {
+          "bookedEntity": {
+            "slot": {
+              "serviceId": "8ee826a3-64c4-416d-a22c-e01d39f56931",
+              "scheduleId": "844772a6-ad31-49fb-b3d9-7aef1e559b7e",
+              "startDate": "2022-12-26T12:00:00.000Z",
+              "endDate": "2022-12-26T13:00:00.000Z",
+              "timezone": "Europe/Dublin",
+              "resource": {
+                "id": "5fa50f19-4c94-4c42-a72b-289505ba2028",
+                "name": "Tom Jones",
+                "scheduleId": "a4166c1f-728c-4895-8a6e-1942bb321315"
+              },
+              "location": {
+                "id": "9de094d5-8985-484e-9218-d020d9d17953",
+                "name": "Location Name",
+                "formattedAddress": "Location Address",
+                "locationType": "OWNER_BUSINESS"
+              }
+            },
+            "title": "In-person Appointment",
+            "tags": [
+              "INDIVIDUAL"
+            ]
+          },
+          "contactDetails": {
+             "firstName": "John",
+             "email": "john@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "selectedPaymentOption": "ONLINE"
+        },
+        "sendSmsReminder": false,
+        "participantNotification": {
+          "notifyParticipants": true
+        },
+        "flowControlSettings": {
+          "skipAvailabilityValidation": false,
+          "skipBusinessConfirmation": false,
+          "skipSelectedPaymentOptionValidation": false
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "booking": {
+          "id": "084e2d07-62ae-42f6-bf7f-5796a393d81d",
+          "bookedEntity": {
+            "slot": {
+              "serviceId": "8ee826a3-64c4-416d-a22c-e01d39f56931",
+              "scheduleId": "844772a6-ad31-49fb-b3d9-7aef1e559b7e",
+              "startDate": "2022-12-26T12:00:00.000Z",
+              "endDate": "2022-12-26T13:00:00.000Z",
+              "timezone": "Europe/Dublin",
+              "resource": {
+                "id": "5fa50f19-4c94-4c42-a72b-289505ba2028",
+                "name": "Tom Jones",
+                "scheduleId": "a4166c1f-728c-4895-8a6e-1942bb321315"
+              },
+              "location": {
+                "id": "9de094d5-8985-484e-9218-d020d9d17953",
+                "name": "Location Name",
+                "formattedAddress": "Location Address",
+                "locationType": "OWNER_BUSINESS"
+              }
+            },
+            "title": "In-person Appointment",
+            "tags": [
+              "INDIVIDUAL"
+            ]
+          },
+          "contactDetails": {
+            "firstName": "John",
+            "email": "john@example.com"
+          },
+          "additionalFields": [],
+          "totalParticipants": 1,
+          "status": "CREATED",
+          "paymentStatus": "UNDEFINED",
+          "selectedPaymentOption": "ONLINE",
+          "createdDate": "2022-12-24T17:42:12.019Z",
+          "revision": "1",
+          "createdBy": {
+            "wixUserId": "086ca7ca-ee70-4ab3-a96e-78f8420e9428"
+          },
+          "startDate": "2022-12-26T12:00:00Z",
+          "endDate": "2022-12-26T13:00:00Z",
+          "updatedDate": "2022-12-24T17:42:12.019Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a booking.
+
+    ### Appointment booking
+
+    For appointment-based services, specify the relevant time slot in `bookedEntity.slot`.
+
+    We recommend following the [appointment booking sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#book-an-appointment) using Time Slots V2.
+    Specify the slot's `startDate`, `endDate`, `resource`, and `location` in `booking.bookedEntity.slot`.
+
+    ### Class session booking
+
+    For class services, specify the relevant event ID as `bookedEntity.slot.eventId`.
+
+    We recommend following the [class session booking sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/sample-flows#book-a-class-session) using Time Slots V2.
+    Specify the `eventId` from the selected time slot in `booking.bookedEntity.slot.eventId`.
+
+    When you specify `eventId`, Wix Bookings automatically derives `startDate`, `endDate`, `timezone`, `resource`, and `location` based on the event details. Manually specified values are ignored.
+
+    ### Course booking
+
+    For course services, specify the course's schedule ID in `bookedEntity.schedule.scheduleId`.
+    We recommend following [this sample flow](https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-a-course)
+    to minimize failed calls due to unavailability.
+
+    ### Booking status
+
+    Create Booking defaults to `status=CREATED`. Such bookings aren't visible in the [Booking Calendar](https://support.wix.com/en/article/wix-bookings-about-the-wix-booking-calendar).
+
+    Only [identities](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) with `Manage Bookings` permissions can set `status=CONFIRMED`.
+
+    ### Related resources
+
+    Specifying a `resource` triggers an availability check, and the Create Booking call fails if the resource is unavailable.
+
+    If you omit `resource`, resource assignment and availability validation occur during booking confirmation.
+    If no resources are available, the behavior depends on the confirmation method used and payment status.
+
+    ### Booking form data
+
+    When customers sign up for a service, they must fill out the [booking form](https://support.wix.com/en/article/wix-bookings-creating-and-setting-up-your-booking-forms).
+    To create a booking with a completed booking form, specify the relevant data in `formSubmission`.
+    When specifying `formSubmission`, Wix Bookings sets all `booking.contactDetails` fields based on `formSubmission` and ignores any values in `booking.contactDetails`, except for `booking.contactDetails.contactId`.
+    To avoid conflicts, send `booking.contactDetails.contactId` together with `formSubmission`, and omit other contact details.
+    Learn more about the [Bookings and Wix Forms integration](https://dev.wix.com/docs/rest/business-solutions/bookings/wix-forms-integration).
+
+    ### Participant information
+
+    You must specify either `participantsChoices` or `totalParticipants`.
+    The call fails if the specified `participantsChoices` aren't among the supported
+    [service options and variants](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+
+    ### Add-ons
+
+    You can include [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) when creating a booking by specifying `bookedAddOns`.
+    Each selected add-on must belong to an [add-on group](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-add-on-groups) associated with the service and respect the group's selection limits.
+
+    ### Notify customers
+
+    You can specify a `participantNotification.message` for the customer that's send
+    immediately. Ensure `participantNotification.notifyParticipants` is set to `true`
+    to send the message.
+
+    If you specify `{"sendSmsReminder": true}`, the customer receives an SMS 24 hours
+    before the session starts. The phone number is taken from `contactDetails.phone`.
+
+    ### Payment options
+
+    The specified `selectedPaymentOption` indicates how the customer intends to pay, allowing for later changes to a different method supported by the service.
+
+    When the customer pays with a [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction), you must specify a `selectedPaymentOption`.
+    Otherwise, the Create Booking call fails.
+    For custom checkouts, you don't have to specify a `selectedPaymentOption`.
+
+    ### Payment status
+
+    All bookings are created with `paymentStatus=UNDEFINED`, ignoring the payment status you specify.
+
+    For customers paying with a [Wix eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/purchase-flow/checkout/checkout/introduction), Wix Bookings automatically syncs the booking's payment status from the corresponding [eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+    For customers using a custom checkout, call [Confirm or Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking) to update booking's payment status manually.
+
+    ### Admin overwrites
+
+    There are small but important differences when you specify special
+    `flowControlSettings`:
+
+    - `{"skipAvailabilityValidation": true}`: The call succeeds
+    regardless of availability. If you don't specify any resource, the call
+    succeeds even if no resource of the relevant type is available.
+    - `{"skipBusinessConfirmation": true}`: Automatically confirms `PENDING`
+    bookings that require manual confirmation.
+    - `{"skipSelectedPaymentOptionValidation": true}`: Allows customers to pay
+    with payment methods that aren't supported for the service.
+    - `{"skipAddOnValidation": true}`: Allows customers to choose add-ons that aren't associated with the service or exceed group selection limits.
+    - `{"allowAddOnChanges": true}`: Allows customers to update the list of add-ons associated with the booking when rescheduling.
+
+    When using special `flowControlSettings`, ensure you have sufficient
+    permissions. If you encounter failed calls due to insufficient permissions,
+    consider the following options:
+
+    - **App developers** can use a higher
+    [permission](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions),
+    such as `MANAGE BOOKINGS - ALL PERMISSIONS`.
+    - **Site developers** can utilize
+    [elevation](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/authorization/elevation).
+
+    Granting additional permissions and using elevation permits method calls that
+    would typically fail due to authorization checks. Therefore, you should use
+    them intentionally and securely.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.createBooking(booking, options): Promise<CreateBookingResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="booking" type="Booking" required>
+
+      The booking to create.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Information about whether to notify the customer and
+          the message to send.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to send a message about the changes to the customer.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Custom message to send to the participants about the changes to the booking.
+
+            </ParamField>
+
+            <ParamField body="metadata" type="object">
+
+              Information about the delivery channels used to send the notification.
+              For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="sendSmsReminder" type="boolean">
+
+          Whether to send an SMS reminder to the customer 24 hours before the
+          session starts. The phone number is taken from `contactDetails.phone`.
+          Default: `true`.
+
+        </ParamField>
+
+        <ParamField body="flowControlSettings" type="CreateBookingFlowControlSettings">
+
+          Whether to ignore specific standard procedures of the Wix Bookings flow.
+          For example, whether to check availability when creating a booking.
+
+          <Expandable title="flowControlSettings properties">
+
+            <ParamField body="skipAvailabilityValidation" type="boolean">
+
+              Whether the availability is checked before creating the booking.
+
+              - `false`: A booking is only created when the slot or schedule is available.
+              - `true`: The booking is created regardless of availability conflicts. Make sure the call's [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) has the required permissions.
+
+              *Use cases for `true`:**
+              - Emergency or priority bookings that must be accommodated.
+              - Administrative bookings that override normal availability rules.
+              - Testing or demonstration purposes.
+
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="skipBusinessConfirmation" type="boolean">
+
+              Whether `PENDING` bookings are automatically set to `CONFIRMED` for
+              services that normally require the owner's manual confirmation.
+
+              Your app must have the `BOOKINGS.OVERRIDE_AVAILABILITY` permission
+              when passing `true`.
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="skipSelectedPaymentOptionValidation" type="boolean">
+
+              Whether customers can pay using a payment method that isn't supported
+              for the service, but that's supported for other services.
+
+              Your app must have the `BOOKINGS.MANAGE_PAYMENTS` permission when passing
+              `true`.
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="skipAddOnValidation" type="boolean">
+
+              Whether Wix Bookings validates [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) when creating a booking.
+              The calling [identity](https://dev.wix.com/docs/build-apps/develop-your-app/access/about-identities) must have `BOOKINGS.MANAGE_ADDONS` permissions to specify `true`.
+              This allows customers to choose an add-on that's not associated with the service or choose more than the maximum number of add-ons from a group.
+
+              Default: `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="formSubmission" type="object">
+
+          Booking form data submitted by the customer during the booking process.
+          Each key represents the name of the form submission field while the value is the data submitted by the customer for that field.
+
+          Wix Bookings stores this form data in different locations depending on the field type:
+          - __Contact details fields__: Input values for standard contact fields such as name, email, phone, and address are saved in the booking object's `contactDetails`.
+          - __Custom and additional fields__: All other form field values are stored separately in the [form submissions object](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction).
+
+          For comprehensive details about integrating custom forms with bookings, see [Wix Forms Integration](https://dev.wix.com/docs/rest/business-solutions/bookings/wix-forms-integration).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CreateBookingResponse>`.
+
+    <ResponseField name="booking" type="Booking">
+
+      Created booking.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `SESSION_NOT_FOUND` | The specified session doesn't exist. Verify the session ID is correct. |
+    | `428` | `FAILED_PRECONDITION` | `SCHEDULE_NOT_FOUND` | The specified schedule doesn't exist. Verify the schedule ID is correct. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_RESOLVING_CUSTOM_CHOICES` | Couldn't resolve the specified service choices. Verify the choices are valid for this service. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICES` | The specified choices are invalid. Provide valid service option choices. |
+    | `428` | `FAILED_PRECONDITION` | `VALIDATION_FAILURE` | Validation failed. Verify all required booking fields are provided and valid. |
+    | `428` | `FAILED_PRECONDITION` | `SESSION_CAPACITY_EXCEEDED` | The session capacity was exceeded. The requested number of participants exceeds available capacity. |
+    | `428` | `FAILED_PRECONDITION` | `SCHEDULE_CAPACITY_EXCEEDED` | The schedule capacity was exceeded. The requested number of participants exceeds available capacity. |
+    | `428` | `FAILED_PRECONDITION` | `SLOT_NOT_AVAILABLE` | The slot is no longer available for booking. It may have been booked by another customer or is outside business hours. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_VALIDATING_AVAILABILITY` | Availability validation failed. The requested time slot or schedule may be fully booked or unavailable. |
+    | `403` | `PERMISSION_DENIED` | `BOOKING_POLICY_VIOLATION` | The booking violates the service's booking policy. Check booking window restrictions, advance notice requirements, or scheduling rules. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_OPERATION` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SERVICE_CHOICES` | The specified service choices are invalid. Verify the choices match the service's supported options and variants. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_FLOW_SELECTED_RESOURCES` | The selected resources are invalid for this booking flow. Verify the resources match the service requirements. |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_CREATE_BOOKING_WITH_MULTI_SERVICE_BOOKING_INFO` | Can't create a single booking with multi-service booking information. Use the multi-service booking method instead. |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_SKIP_AVAILABILITY_VALIDATION_IF_RESOURCE_NOT_PROVIDED` | Can't skip availability validation when no resource is provided. Specify a resource or remove the skip flag. |
+    | `428` | `FAILED_PRECONDITION` | `SLOT_HOLD_UNAVAILABLE` | The slot is available, but another customer's in-progress checkout is holding it. Only returned when `flowControlSettings.stampCheckoutHold` is requested. The booking is left `CREATED` and unheld rather than rolled back; the hold frees up on its own when it expires. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_DATE_FORMAT` | The date format is invalid. Use the format `YYYY-MM-DDThh:mm:ss` in ISO-8601 format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The time zone is invalid. Provide a valid IANA time zone identifier. |
+    | `400` | `INVALID_ARGUMENT` | `CONTACT_DETAILS_CONFLICT` | Contact details in the booking don't match the form submission. Ensure contactDetails and formSubmission have matching email, phone, and name values. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Created | `wix.bookings.v2.booking_created` | Triggered when a booking is created. |
+    | Booking Form Filled | `wix.bookings.v2.booking_formFilled` | Triggered when a booking form is filled. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-booking" id="ex-sdk-create-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-booking" id="ex-sdk-create-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-booking" id="ex-sdk-create-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a single appointment booking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a booking for a class session</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-booking-0"><span className="wix-picker-name">Create a single appointment booking</span></label>
+    <label htmlFor="ex-sdk-create-booking-1"><span className="wix-picker-name">Create a booking for a class session</span></label>
+    <label htmlFor="ex-sdk-create-booking-2"><span className="wix-picker-name">createBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a single appointment booking
+    import { bookings } from "@wix/bookings";
+
+    const booking = {
+      contactDetails: {
+        contactId: "c5805735-091b-4c39-aba6-51b8a1368111",
+        firstName: "Charles",
+        lastName: "Lundron",
+        email: "Charlie@example.com",
+      },
+      totalParticipants: 1,
+      selectedPaymentOption: "OFFLINE" as const,
+      bookedEntity: {
+        tags: [],
+        slot: {
+          endDate: "2022-12-29T15:00:00.000Z",
+          startDate: "2022-12-29T14:00:00.000Z",
+          location: {
+            _id: "bbcc1dfb-bee1-44dd-bd30-660edc1d7111",
+            locationType: "OWNER_BUSINESS" as const,
+          },
+          resource: {
+            _id: "76570209-101f-409b-af97-b445bdb63111",
+            scheduleId: "a38d1093-d608-4476-85bc-2fc38d741111",
+          },
+          serviceId: "a512b177-d1cf-4043-a7bd-7f7961e1b111",
+          timezone: "America/Chicago",
+          scheduleId: "a38d1093-d608-4476-85bc-2fc38d741111",
+        },
+      },
+    };
+
+    async function createBooking() {
+      const response = await bookings.createBooking(booking);
+      return response;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a booking for a class session
+    import { bookings } from '@wix/bookings';
+
+    /* Sample booking value:
+     * {
+     *   totalParticipants: 1,
+     *   contactDetails: {
+     *     firstName: 'Aditi',
+     *     lastName:  'Naidu',
+     *     email: 'aditi.naidu765@example.com'
+     *   },
+     *   bookedEntity: {
+     *     slot: {
+     *		   sessionId: '193ZPR9ppP9emJUCLevcLf6orynNEIDt5nc0520xjGQILnPPaF5s62yK3BWz7ExgIRM1UZAV13fLX2gNLq4sCQwIdZIpxI6tDJxatWo81RhW6mQLgcnnO6ONJkvJH5ZYZEwHOIPMbmhqD5t41JnX3cUcIi0QOtrQjuZmfUCJFaA6fTnI97I4b9OD9AbOfkGsYnZW5UL0Yoc0amYhtACJPhRRe3qJSC5Qxp0aHl0j0ExBDV5ZTajTM1L6QktIUelYWU4Fq45KPYFvqc1UXeLTURzcOG4wsATMD47b5XfFqC9Myj02MJFRmz5nBS47v7586qsxgmQTYw6MVp'
+     *     }
+     *   }
+     * }
+     */
+
+    bookings.createBooking(bookings, options)
+      .then((newSessionBooking) => {
+        const id = newSessionBooking.booking._id;
+        const status = newSessionBooking.booking.status;
+        console.log('Success! Created a new booking:', newSessionBooking.booking);
+        return newSessionBooking;
+
+      })
+      .catch((error) => {
+        console.error(error);
+        // Handle the error
+      });
+
+    /* Promise resolves to:
+     * {
+     *   "bookedEntity": {
+     *     "slot": {
+     *       "sessionId": "193ZPR9ppP9emJUCLevcLf6orynNEIDt5nc0520xjGQILnPPaF5s62yK3BWz7ExgIRM1UZAV13fLX2gNLq4sCQwIdZIpxI6tDJxatWo81RhW6mQLgcnnO6ONJkvJH5ZYZEwHOIPMbmhqD5t41JnX3cUcIi0QOtrQjuZmfUCJFaA6fTnI97I4b9OD9AbOfkGsYnZW5UL0Yoc0amYhtACJPhRRe3qJSC5Qxp0aHl0j0ExBDV5ZTajTM1L6QktIUelYWU4Fq45KPYFvqc1UXeLTURzcOG4wsATMD47b5XfFqC9Myj02MJFRmz5nBS47v7586qsxgmQTYw6MVp",
+     *       "serviceId": "036d51c9-d9fd-4459-be7a-a05e882f3e93",
+     *       "scheduleId": "c0cf791e-fbc0-44e7-8db3-4c2eb7aa9253",
+     *       "eventId": "11bhnkliQkhMrXr0AM2tX25A7AobX7raOYBkACbOPXIaluO3YHF3CH2Lge0zoU8BZOWKrWh8POSBCjnlWYlbHRIaiVY6X73ys6EnBfO5NOmQi9FxjIApGtM",
+     *       "startDate": "2024-04-11T13:30:00.000+01:00",
+     *       "endDate": "2024-04-11T14:30:00.000+01:00",
+     *       "timezone": "Europe/Madrid",
+     *       "resource": {
+     *         "name": "Sandra",
+     *         "email": "info@mysite.com",
+     *         "scheduleId": "f0212cd6-8437-4f2f-bdb0-019bc407bd84",
+     *         "explicitlyRequested": true,
+     *         "_id": "76570209-101f-409b-af97-b445bdb63125"
+     *       },
+     *       "location": {
+     *         "locationType": "OWNER_BUSINESS"
+     *       }
+     *     },
+     *     "title": "Crossfit Beginners",
+     *     "tags": [
+     *         "GROUP"
+     *       ]
+     *     },
+     *     "contactDetails": {
+     *        "firstName": "Aditi",
+     *        "lastName": "Naidu",
+     *        "email": "aditi.naidu765@example.com"
+     *   },
+     *   "additionalFields": [],
+     *   "numberOfParticipants": 1,
+     *   "status": "CREATED",
+     *   "paymentStatus": "UNDEFINED",
+     *   "selectedPaymentOption": "UNDEFINED",
+     *   "revision": "1",
+     *   "createdBy": {
+     *     "identityType": "UNKNOWN",
+     *     "memberId": "c0e1854d-efd1-4c10-a079-bcb922dea639"
+     *   },
+     *   "startDate": "2024-04-11T12:30:00.000Z",
+     *   "endDate": "2024-04-11T13:30:00.000Z",
+     *   "flowControlSettings": {
+     *     "ignoreBookingWindow": false,
+     *     "skipAvailabilityValidation": false,
+     *     "skipBusinessConfirmation": false,
+     *     "skipSelectedPaymentOptionValidation": false,
+     *     "withRefund": false
+     *   },
+     *   "totalParticipants": 1,
+     *   "v2Availability": false,
+     *   "_id": "df846146-51e7-4bcb-b09c-04c4b0f787f4",
+     *   "_createdDate": "2024-02-18T14:35:31.987Z",
+     *   "_updatedDate": "2024-02-18T14:35:31.987Z"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createBooking(booking,options) {
+      const response = await myWixClient.bookings.createBooking(booking,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

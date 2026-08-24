@@ -1,0 +1,783 @@
+---
+title: "Bulk Set Item Seo Tags"
+description: "Sets the SEO tags of multiple items of the same type in one call."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sets the SEO tags of multiple items of the same type in one call.
+
+    Each entry carries its own field mask and behaves like a single [Set Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/set-item-seo-tags)
+    call. The response reports a result per entry, correlated to the request by
+    `itemMetadata.originalIndex`, so you can tell exactly which entries succeeded.
+
+    A problem with one entry, such as an invalid tag or an item that doesn't exist, fails
+    only that entry. Check `bulkActionMetadata.totalFailures` and retry just the failed
+    entries: writes are idempotent, so re-sending an entry that already succeeded is safe.
+
+    Not every failure is per entry. An item type that isn't supported, or one that doesn't
+    support bulk writes, rejects the whole call, and so does a request that isn't
+    authorized. In those cases there are no per-entry results to inspect, so handle a
+    failed call as well as failed entries.
+
+    Limitation: for a static page, request-level `publish: true` applies to every entry and
+    updates only each item's published revision — it does not also update the saved one. Get
+    Item SEO Tags and List Item SEO Tags always read the saved revision, so they keep
+    returning the values from before this call until the same changed fields are also set
+    without `publish`.
+
+    `entries` may contain up to 100 items, but some item types accept fewer per call: a
+    `BLOG_POST` request is capped at 20 entries. Sending more than an item type's own limit
+    fails the whole call with `BULK_CHUNK_SIZE_EXCEEDED`, naming the limit; split the request
+    into smaller batches and retry.
+
+    Tags can currently be written only for the items' primary language: leave
+    `itemSeoTags.language` unset on every entry. Sending a language fails with
+    `LANGUAGE_NOT_SUPPORTED`, even when the entry's field mask doesn't name it.
+
+    To set the tags of a single item, call [Set Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/set-item-seo-tags).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/promote/seo/v1/bulk/item-seo-tags/set
+    ```
+
+    ## Body Params
+
+    <ParamField body="itemType" type="string" required>
+
+      Type of item all the entries belong to. For example, `STATIC_PAGE` or
+      `STORES_PRODUCT`.
+
+      Constraints: `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="entries" type="MaskedItemSeoTags[]">
+
+      Items to set tags for, each with its own field mask.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="entries properties">
+
+        <ParamField body="itemId" type="string">
+
+          ID of the item to set tags for.
+
+          Constraints: `maxLength 200`.
+
+        </ParamField>
+
+        <ParamField body="itemSeoTags" type="ItemSeoTags">
+
+          Item SEO tags to set for this item. Only `tags` and `focusKeywords` can be changed.
+
+          See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="fieldMask" type="FieldMask">
+
+          Fields to update for this item.
+
+          Supported properties: `tags`, `focusKeywords`
+
+          <Expandable title="fieldMask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="publish" type="boolean">
+
+      Whether to publish every change to the live site, for item types that keep a separate
+      draft, such as static pages.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the updated item SEO tags in the results.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkItemSeoTagsResult[]">
+
+      Result for each item in the request, in the same order.
+
+      Match a result to the item you sent using `itemMetadata.originalIndex`. When an item
+      fails, the reason is in `itemMetadata.error`.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether setting this item's tags succeeded, which item in the request it refers to,
+          and the reason if it failed.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="ItemSeoTags">
+
+          Updated item SEO tags.
+
+          Returned only when `returnEntity` is `true` and the item succeeded.
+
+          See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      How many items succeeded and how many failed.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_ITEM_TYPE` | Wix doesn't support the specified `itemType`. The error message lists the item types that are supported. |
+    | `400` | `INVALID_ARGUMENT` | `BULK_CHUNK_SIZE_EXCEEDED` | `entries` has more items than this item type's own bulk limit allows (for example, more than 20 for `BLOG_POST`), even though it's within the general `maxSize: 100` on `entries`. The error message names the item type's limit. |
+    | `428` | `FAILED_PRECONDITION` | `BULK_NOT_SUPPORTED_FOR_ITEM_TYPE` | The item type doesn't support setting tags for multiple items at once. Set the items one at a time with Set Item SEO Tags instead. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The third entry names an item that does not exist, so it fails on its own while the other two succeed.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/seo-metatags-server/v1/bulk/item-seo-tags/set' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "itemType": "STATIC_PAGE",
+        "returnEntity": true,
+        "entries": [
+          {
+            "itemId": "c1dmp",
+            "itemSeoTags": {
+              "tags": [
+                {
+                  "type": "title",
+                  "children": "Winter collection | Ceramics studio"
+                }
+              ]
+            },
+            "fieldMask": "tags"
+          },
+          {
+            "itemId": "j4xh7",
+            "itemSeoTags": {
+              "tags": [
+                {
+                  "type": "title",
+                  "children": "Journal | Ceramics studio"
+                }
+              ]
+            },
+            "fieldMask": "tags"
+          },
+          {
+            "itemId": "zzzzz",
+            "itemSeoTags": {
+              "tags": [
+                {
+                  "type": "title",
+                  "children": "Does not exist"
+                }
+              ]
+            },
+            "fieldMask": "tags"
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "c1dmp",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "STATIC_PAGE:c1dmp",
+              "itemType": "STATIC_PAGE",
+              "itemId": "c1dmp",
+              "tags": [
+                {
+                  "type": "title",
+                  "children": "Winter collection | Ceramics studio",
+                  "custom": false,
+                  "disabled": false
+                }
+              ],
+              "focusKeywords": [],
+              "hasOverride": true,
+              "resolvedTags": [],
+              "publishStatus": "PUBLISH_STATUS_UNSPECIFIED",
+              "origin": "ORIGIN_UNSPECIFIED"
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "j4xh7",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "STATIC_PAGE:j4xh7",
+              "itemType": "STATIC_PAGE",
+              "itemId": "j4xh7",
+              "tags": [
+                {
+                  "type": "title",
+                  "children": "Journal | Ceramics studio",
+                  "custom": false,
+                  "disabled": false
+                }
+              ],
+              "focusKeywords": [],
+              "hasOverride": true,
+              "resolvedTags": [],
+              "publishStatus": "PUBLISH_STATUS_UNSPECIFIED",
+              "origin": "ORIGIN_UNSPECIFIED"
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "zzzzz",
+              "originalIndex": 2,
+              "success": false,
+              "error": {
+                "code": "ITEM_NOT_FOUND",
+                "description": "No STATIC_PAGE item with id \"zzzzz\""
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sets the SEO tags of multiple items of the same type in one call.
+
+    Each entry carries its own field mask and behaves like a single [Set Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/set-item-seo-tags)
+    call. The response reports a result per entry, correlated to the request by
+    `itemMetadata.originalIndex`, so you can tell exactly which entries succeeded.
+
+    A problem with one entry, such as an invalid tag or an item that doesn't exist, fails
+    only that entry. Check `bulkActionMetadata.totalFailures` and retry just the failed
+    entries: writes are idempotent, so re-sending an entry that already succeeded is safe.
+
+    Not every failure is per entry. An item type that isn't supported, or one that doesn't
+    support bulk writes, rejects the whole call, and so does a request that isn't
+    authorized. In those cases there are no per-entry results to inspect, so handle a
+    failed call as well as failed entries.
+
+    Limitation: for a static page, request-level `publish: true` applies to every entry and
+    updates only each item's published revision — it does not also update the saved one. Get
+    Item SEO Tags and List Item SEO Tags always read the saved revision, so they keep
+    returning the values from before this call until the same changed fields are also set
+    without `publish`.
+
+    `entries` may contain up to 100 items, but some item types accept fewer per call: a
+    `BLOG_POST` request is capped at 20 entries. Sending more than an item type's own limit
+    fails the whole call with `BULK_CHUNK_SIZE_EXCEEDED`, naming the limit; split the request
+    into smaller batches and retry.
+
+    Tags can currently be written only for the items' primary language: leave
+    `itemSeoTags.language` unset on every entry. Sending a language fails with
+    `LANGUAGE_NOT_SUPPORTED`, even when the entry's field mask doesn't name it.
+
+    To set the tags of a single item, call [Set Item SEO
+    Tags](https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/set-item-seo-tags).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { itemSeoTags } from '@wix/seo';
+
+    itemSeoTags.bulkSetItemSeoTags(itemType, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="itemType" type="string" required>
+
+      Type of item all the entries belong to. For example, `STATIC_PAGE` or
+      `STORES_PRODUCT`.
+
+      Constraints: `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkSetItemSeoTagsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="entries" type="MaskedItemSeoTags[]">
+
+          Items to set tags for, each with its own field mask.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="entries properties">
+
+            <ParamField body="itemId" type="string">
+
+              ID of the item to set tags for.
+
+              Constraints: `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="itemSeoTags" type="ItemSeoTags">
+
+              Item SEO tags to set for this item. Only `tags` and `focusKeywords` can be changed.
+
+              See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+            </ParamField>
+
+            <ParamField body="fieldMask" type="string[]">
+
+              Fields to update for this item.
+
+              Supported properties: `tags`, `focusKeywords`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="publish" type="boolean">
+
+          Whether to publish every change to the live site, for item types that keep a separate
+          draft, such as static pages.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the updated item SEO tags in the results.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkItemSeoTagsResult[]">
+
+      Result for each item in the request, in the same order.
+
+      Match a result to the item you sent using `itemMetadata.originalIndex`. When an item
+      fails, the reason is in `itemMetadata.error`.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether setting this item's tags succeeded, which item in the request it refers to,
+          and the reason if it failed.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="ItemSeoTags">
+
+          Updated item SEO tags.
+
+          Returned only when `returnEntity` is `true` and the item succeeded.
+
+          See the [Item Seo Tags Object](/api-reference/business-management/seo/item-seo-tags-v1/item-seo-tags-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      How many items succeeded and how many failed.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `UNSUPPORTED_ITEM_TYPE` | Wix doesn't support the specified `itemType`. The error message lists the item types that are supported. |
+    | `400` | `INVALID_ARGUMENT` | `BULK_CHUNK_SIZE_EXCEEDED` | `entries` has more items than this item type's own bulk limit allows (for example, more than 20 for `BLOG_POST`), even though it's within the general `maxSize: 100` on `entries`. The error message names the item type's limit. |
+    | `428` | `FAILED_PRECONDITION` | `BULK_NOT_SUPPORTED_FOR_ITEM_TYPE` | The item type doesn't support setting tags for multiple items at once. Set the items one at a time with Set Item SEO Tags instead. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-set-item-seo-tags" id="ex-sdk-bulk-set-item-seo-tags-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-set-item-seo-tags" id="ex-sdk-bulk-set-item-seo-tags-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-set-item-seo-tags-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-set-item-seo-tags-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Set the titles of several pages in one call</span><span className="wix-picker-desc">The code filters the results for entries that failed, although both entries succeed here</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkSetItemSeoTags (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-set-item-seo-tags-0"><span className="wix-picker-name">Set the titles of several pages in one call</span><span className="wix-picker-desc">The code filters the results for entries that failed, although both entries succeed here</span></label>
+    <label htmlFor="ex-sdk-bulk-set-item-seo-tags-1"><span className="wix-picker-name">bulkSetItemSeoTags (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Set the titles of several pages in one call
+    import { itemSeoTags } from "@wix/seo";
+
+    async function bulkSetItemSeoTags() {
+      const response = await itemSeoTags.bulkSetItemSeoTags("STATIC_PAGE", {
+        entries: [
+          {
+            itemId: "c1dmp",
+            itemSeoTags: {
+              tags: [{ type: "title", children: "Winter collection | Ceramics studio" }],
+            },
+            fieldMask: ["tags"],
+          },
+          {
+            itemId: "j4xh7",
+            itemSeoTags: {
+              tags: [{ type: "title", children: "Journal | Ceramics studio" }],
+            },
+            fieldMask: ["tags"],
+          },
+        ],
+        returnEntity: true,
+      });
+      // bulkSetItemSeoTags resolves even when individual items fail, so check the results
+      // rather than assuming every item was written.
+      const failedEntries = response.results.filter(
+        ({ itemMetadata }) => itemMetadata?.success !== true,
+      );
+      return { response, failedEntries };
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": { "id": "c1dmp", "originalIndex": 0, "success": true },
+     *       "item": { "_id": "STATIC_PAGE:c1dmp", "itemId": "c1dmp", "hasOverride": true }
+     *     },
+     *     {
+     *       "itemMetadata": { "id": "j4xh7", "originalIndex": 1, "success": true },
+     *       "item": { "_id": "STATIC_PAGE:j4xh7", "itemId": "j4xh7", "hasOverride": true }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 2,
+     *     "totalFailures": 0,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkSetItemSeoTags (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { itemSeoTags } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { itemSeoTags },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkSetItemSeoTags(itemType,options) {
+      const response = await myWixClient.itemSeoTags.bulkSetItemSeoTags(itemType,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

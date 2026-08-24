@@ -1,0 +1,406 @@
+---
+title: "Configure Your Automation"
+description: "In this article, we explain in more detail how to create and configure automations using the Create Automation method."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+In this article, we explain in more detail how to create and configure automations using the [Create Automation](fallback::https://dev.wix.com/docs/rest/business-management/automations/automations/automations-v2/create-automation) method. We'll go through the different configuration options for the full automation as well as its trigger and actions.
+
+## Configuring the trigger
+
+When configuring the trigger for your automation, specify the trigger key and the ID of the app that created the trigger. For example, if you use the "Subscribed to site" trigger, specify the following app ID and trigger key:
+
+```json
+{
+  "trigger": {
+    "appId": "c435f412-d571-4c48-aada-ddf65a4a56b4",
+    "triggerKey": "wix_form_platform-subscription_confirmation_request",
+    "filters": []
+  }
+}
+```
+
+You can also include any of the optional configuration described below.
+
+### Filters
+
+Use the `filters` array to apply [filter fields](fallback::https://dev.wix.com/docs/rest/business-management/automations/triggers/about-triggers#filter-fields) to your trigger. Filter fields allow you to filter which triggers activate an automation. For example, you may want your automation to trigger only if a certain form is submitted.
+
+Filter expressions have an `AND` relation. This means that all filter expressions must evaluate to true for a given payload in order for the automation to run. An example of an added filter might look like this:
+
+```json
+{
+  "trigger": {
+    "appId": "c435f412-d571-4c48-aada-ddf65a4a56b4",
+    "triggerKey": "wix_form_platform-subscription_confirmation_request",
+    "filters": [
+      {
+        "id": "20672101-5cb6-495d-8e10-61c5d217e624",
+        "fieldKey": "formId",
+        "filterExpression": "{{ contains(['guid1', 'guid2'] ; var('formId')) }}"
+      }
+    ]
+  }
+}
+```
+
+<Note>
+
+Before specifying any filters, you must first define them in the app dashboard as filter fields for the trigger. You can't create new filter fields with the API call.
+
+</Note>
+
+### Scheduled events
+
+Scheduled events let you schedule the trigger to activate before the event occurs. For example, this allows you to send a reminder email three days prior to a training session.
+
+<Note>
+
+Before scheduling a trigger, you must first configure it as a scheduled event in the app dashboard.
+
+</Note>
+
+Add the time offset value in `preScheduledEventOffsetExpression`. This is the amount of time by which to offset the time of the automation execution from the event. Note that this field expects a string, which can be hard-coded or stored in a variable specified in the payload.
+
+For example, if you want the automation to run 5 days before the date of the event, you can configure your trigger in the following way:
+
+```json
+{
+  "scheduledEventOffset": {
+    "preScheduledEventOffsetExpression": "{{ 5 }}",
+    "scheduledEventOffsetTimeUnit": "DAYS"
+  }
+}
+```
+
+You can also use a variable, such as `timeOffset`, to specify the value of the offset expression. When specifying a variable, use bracket notation:
+
+```json
+{
+  "scheduledEventOffset": {
+    "preScheduledEventOffsetExpression": "{{ var('timeOffset') }}",
+    "scheduledEventOffsetTimeUnit": "DAYS"
+  }
+}
+```
+
+<Note>
+
+You can only use negative offsets from the event date (before the event). To schedule triggers to run after the event, use [delay actions](fallback::#action-type).
+
+</Note>
+
+## Configuring actions
+
+Actions are the steps that execute after a trigger activates.
+
+When setting up an automation, you must define a map of all possible actions in the automation flow. Every action must be defined in key:value pairs:
+
+- For the map key, specify the action ID. This is an automation-specific UUID generated for every action in your automation.
+- For the map value, specify the action configuration, which includes the action's type, namespace, and related configuration details.
+
+Here's an example of an action map (some configuration details are removed for conciseness):
+
+```json
+{
+  "actions": {
+    "92509b45-8b76-448c-bb51-7f0604bf1f07": {
+      "id": "92509b45-8b76-448c-bb51-7f0604bf1f07",
+      "type": "APP_DEFINED",
+      "namespace": "customer-rewards",
+      "appDefinedInfo": {
+        "appId": "c7438f41-3e15-41cd-90c5-f17213281cf3",
+        "actionKey": "send-a-coupon",
+        "inputMapping": {
+          /* ...Input mapping details... */
+        },
+        "skipConditionOrExpressionGroups": [],
+        "postActionIds": []
+      }
+    },
+    "c384e339-2683-4a4e-9c8f-86a3bfbca268": {
+      "id": "c384e339-2683-4a4e-9c8f-86a3bfbca268",
+      "type": "APP_DEFINED",
+      "namespace": "calculations",
+      "appDefinedInfo": {
+        /* ...App info... */
+      }
+    },
+    "3765519f-3f42-40c6-bee1-ac2ff6ed26e0": {
+      "id": "3765519f-3f42-40c6-bee1-ac2ff6ed26e0",
+      "type": "APP_DEFINED",
+      "namespace": "notifications",
+      "appDefinedInfo": {
+        /* ...App info... */
+      }
+    }
+  }
+}
+```
+
+You must add at least 1 action ID to the `rootActionIds` array. The trigger activates these actions in parallel. Each root action can be followed by additional subsequent actions, if any are defined.
+
+<Note>
+
+You can currently only specify 1 root action.
+
+</Note>
+
+### Namespace
+
+The action namespace is a human-readable name that distinguishes it from other actions of the same type. If an action outputs data, it is included under its namespace in the payload sent to subsequent actions in the automation flow.
+
+You can provide the action namespace, or let Wix automatically generate one for you in the `"<ACTION_KEY>-<INDEX_OF_ACTION>"` format.
+
+Here's an example of a trigger payload:
+
+```json
+{
+  "intField": "50",
+  "boolField": true
+}
+```
+
+The trigger is followed by an action with the namespace `"action_1"`, that outputs the following data:
+
+```json
+{
+  "message": "hello"
+}
+```
+
+The payload sent to the step that follows the action looks like this:
+
+```json
+{
+  "intField": "50",
+  "boolField": true,
+  "action_1": {
+    "message": "hello"
+  }
+}
+```
+
+The output of any subsequent actions in the automation flow is concatenated to the payload. For example, given the following automation configuration:
+
+```bash
+Trigger A
+    |
+Action B // namespace = "action_b1"
+    |
+Action B // namespace = "action_b2"
+    |
+Action C
+```
+
+The payload available to Action C looks like this:
+
+```json
+{
+  "intField": "50",
+  "boolField": true,
+  "action_b1": {
+    "message": "hi there"
+  },
+  "action_b2": {
+    "message": "hello"
+  }
+}
+```
+
+All the fields in the JSON above are available to Action C to map to its own input fields. Action C can select which action output to use by choosing `action_b1.message` or `action_b2.message`.
+
+You can provide the namespace, or let Wix automatically generate one for you in an `"<ACTION_KEY>-<INDEX_OF_ACTION>"`.
+
+### Action type
+
+Actions are steps in the automation flow. Each action has a specific type that determines its behavior. When configuring an action, you must specify both its type and its corresponding information object, as shown in the table below:
+
+| Action type   | Description                                                                                                                                                                             | Information object |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `APP_DEFINED` | An [action created by an app](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/add-an-action-to-your-app). Available in the Automations Builder to users. | `appDefinedInfo`   |
+| `CONDITION`   | A [condition](fallback::https://dev.wix.com/docs/rest/business-management/automations/terminology#condition) that determines which action runs next.                                              | `conditionInfo`    |
+| `DELAY`       | A period of time that forces the automation to wait before executing the next step.                                                                                                     | `delayInfo`        |
+| `RATE_LIMIT`  | A rate-limiter stops the automation flow if the subsequent action reaches its maximum allowed executions.                                                                               | `rateLimitInfo`    |
+
+#### App-defined action
+
+When the action type is `APP_DEFINED`, include the `appDefinedInfo` object. You need the ID of the app that created the action, and the action's key. Both are defined in the app dashboard.
+
+You also need to [define the action's input mapping](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/about-actions#understanding-input-mapping), which is the implementation of its [input schema](fallback::https://dev.wix.com/docs/rest/business-management/automations/actions/the-action-input-schema) defined in the app dashboard.
+
+Here's an example of an input mapping object:
+
+```json
+{
+  "inputMapping": {
+    "to": "{{ var('payload.contact.email') }}",
+    "subject": "Your registration to {{ var('eventName') }} is confirmed",
+    "body": "Hi {{ var('contact.name') }}, you are confirmed for the event."
+  }
+}
+```
+
+You can configure your automation to skip the app-defined action if certain conditions are met. You can list up to 10 such conditions in the `skipConditionOrExpressionGroups` array. Conditions can be hard-coded or stored in variables specified in the payload, such as `true` or `boolFieldFromPayload`. A condition can also be expressed as a function.
+
+The last parameter in `appDefinedInfo` is `postActionIds`. This is where you specify which actions follow the current action. This is similar to the `rootActionIds` array, but instead of specifying actions that run in parallel after the trigger occurs, it specifies actions that run after the app-defined action.
+
+<Note>
+
+You can currently specify only 1 action in the `postActionIds` array.
+
+</Note>
+
+Here's a complete example of an `appDefinedInfo` object:
+
+```json
+{
+  "appDefinedInfo": {
+    "appId": "c7438f41-3e15-41cd-90c5-f17213281cf3",
+    "actionKey": "send-a-coupon",
+    "inputMapping": {
+      "to": "{{ var('contact.email') }}",
+      "subject": "Your rewards coupon!",
+      "body": "Hi {{ var('contact.name') }}, you've received a coupon from {{ var('payload.businessName') }}."
+    },
+    "skipConditionOrExpressionGroups": ["{{ var('notSentSeparateCoupon') }}"],
+    "postActionIds": ["297b5ab6-2225-4f24-be65-af8efdd70062"]
+  }
+}
+```
+
+#### Condition action
+
+When the action type is `CONDITION`, include the `conditionInfo` object.
+
+Specify your conditions in the `orExpressionGroups` array. Conditions can be hard-coded, variables from a payload, or expressions. Examples: `true`, `boolFieldFromPayload`, or a function expression.
+
+The action evaluates to true if at least one condition in the `orExpressionGroups` array evaluates to true.
+
+Use the `truePostActionIds` array to specify the IDs of actions that run when the condition evaluates to `true`. Similarly, use the `falsePostActionIds` array to specify the IDs of actions that run when the condition evaluates to `false`.
+
+<Note>
+
+You can currently include only 1 action each in the `falsePostActionIds` and `truePostActionIds` arrays.
+
+</Note>
+
+Here's an example of a `conditionInfo` object, using bracket notation:
+
+```json
+{
+  "conditionInfo": {
+    "orExpressionGroups": [
+      {
+        "operator": "OR",
+        "booleanExpressions": [
+          "{{ var('holidayDeal') }}",
+          "{{ gte(var('payload.purchaseValue') ; 100) }}"
+        ]
+      }
+    ],
+    "truePostActionIds": ["71213b85-3bf9-4dd8-a210-5c08a37c5e56"],
+    "falsePostActionIds": ["82bc79c4-f3eb-45af-9773-463d9ebb7bc6"]
+  }
+}
+```
+
+#### Delay action
+
+When the action type is `DELAY`, use `offsetExpression` and `offsetTimeUnit` to specify the amount of time the automation waits before the following step. The wait time starts when the current action completes. When specifying an expression, use bracket notation:
+
+```json
+{
+  "offsetExpression": "{{ 5 }}",
+  "offsetTimeUnit": "DAYS"
+}
+```
+
+This delays the execution of the next step for 5 days from the time the current action completes.
+
+You can also schedule an action for a specific date. Specify a date in [ISO Date-Time format](fallback::https://en.wikipedia.org/wiki/ISO_8601) for the `dueDateExpression` parameter, such as `2024-12-25T16:00:00Z`:
+
+```json
+{
+  "offsetExpression": "{{ 2 }}",
+  "offsetTimeUnit": "DAYS",
+  "dueDateExpression": "2025-03-20T16:00:00Z"
+}
+```
+
+This delays the next step to run for 2 days after March 20th, 2025. It will run on March 22, 2025, at 16:00.
+
+You can also use payload data received from a previous step using bracket notation in the following syntax: `{{ var('someDateFromPayloadField') }}`, such as:
+
+```json
+{
+  "offsetExpression": "{{ 1 }}",
+  "offsetTimeUnit": "WEEKS",
+  "dueDateExpression": "{{ var('contact.birthday') }}"
+}
+```
+
+This runs the next step 1 week after the contact's birthday, as received in the payload of the previous step.
+
+The final parameter of `delayInfo` is the `postActionIds` array. Use it to specify the IDs of any actions you want to run in parallel after the delay ends.
+
+#### Rate-limit action
+
+When the action type is `RATE_LIMIT`, define the `rateLimitInfo` object.
+
+Use `maxActivationsExpression` to define the maximum number of times the step in the automation flow can run. Its value can be hard-coded or stored in a variable. Examples: `1`, `maximumValue`.
+
+Use `rateLimitDurationExpression` to define how long the rate limit remains active before it expires. Its value can be hard-coded or stored in a variable. Examples: `10`, `durationValue`. `rateLimitDurationTimeUnit` defines the time unit.
+
+`uniqueIdentifierExpression` provides an ID that the rate limiter can use to count the number of times the action has run. An example of a unique identifier is `contact.id` specified in the payload.
+
+To run actions after the rate-limit action, specify their IDs in the `postActionIds` array.
+
+<Note>
+
+You can currently only include 1 action in the `postActionIds` array.
+
+</Note>
+
+Here's an example of the a rate-limiter action:
+
+```json
+{
+  "maxActivationsExpression": "{{ 5 }}",
+  "rateLimitDurationExpression": "{{ 10 }}",
+  "rateLimitDurationTimeUnit": "WEEKS",
+  "uniqueIdentifierExpression": "{{ var('contact.id') }}",
+  "postActionIds": ["56e2bfd5-2ad9-4c82-b7a4-3e75f74bf890"]
+}
+```
+
+In this example, the number of times a step in the flow can run is limited to 5, counted based on a particular contact ID. This limit lasts 10 weeks and runs 3 actions after it completes.
+
+## General automation configuration
+
+You can control the general settings of the automation when it's added to a site. These settings are found in `automation.settings` and include hiding the automation, making it read-only, and disabling users' ability to delete and deactivate the automation.
+
+In addition, the `automation.settings.actionSettings` object contains settings that apply specifically to actions. These settings let you make specific actions permanent and read-only, or prevent users from adding delays and conditions to the automation
+
+Here's a full example of the settings object:
+
+```json
+{
+  "settings": {
+    "hidden": false,
+    "readonly": true,
+    "disableStatusChange": true,
+    "actionSettings": {
+      "readonlyActionIds": [
+        "e2b76883-c90b-4f32-a488-cad5d27e0c66",
+        "c82506cd-2312-48fd-a4a2-d7944ac67ac3"
+      ],
+      "disableConditionAddition": false
+    }
+  }
+}
+```
+
+By default, all boolean settings in `automation.settings` are `false` and all arrays are empty. This means that, unless you define otherwise, any automation you create, as well as its actions, are viewable, editable, and deletable.

@@ -1,0 +1,85 @@
+---
+title: "Import Orders"
+description: "The Orders API lets you migrate a merchant's existing orders into a Wix site from an external system, such as another eCommerce platform."
+icon: "file-lines"
+---
+
+The Orders API lets you migrate a merchant's existing orders into a Wix site from an external system, such as another eCommerce platform. Importing is typically done by a dedicated migration app or by an agency or enterprise partner when a business moves to Wix, so the merchant keeps a single, unified view of their order history for customer service, reporting, and analytics.
+
+Importing preserves each order's original data, including its number, purchase date, and payment and fulfillment statuses, and it doesn't trigger the side effects of a live purchase.
+
+The Orders API provides these methods for working with imported orders:
+
+* [Import Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/import-order): Import an order with its historical data, or overwrite a previously imported order.
+* [Set Order Number Counter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/set-order-number-counter): Set the starting number for orders created after a migration, so new orders continue the merchant's existing numbering.
+* [Bulk Delete Imported Orders](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/bulk-delete-imported-orders): Remove imported orders, for example to clear out a faulty migration before importing again.
+
+Importing also emits two dedicated events: [Order Imported](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/order-imported) and [Imported Order Deleted](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/imported-order-deleted).
+
+<Note>
+
+The order import methods are currently in Beta.
+
+</Note>
+
+## How importing differs from creating an order
+
+Importing an order isn't the same as creating one through checkout or with [Create Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/create-order). Two things work differently:
+
+**Values are stored as provided.** Wix doesn't calculate or validate totals during import. Whatever you send in fields such as `priceSummary`, `balanceSummary`, and `fulfillmentStatus` is stored as-is. Calculate these values from your source data before importing so the order in Wix matches the original.
+
+**Side effects are suppressed.** Importing an order doesn't:
+
+* Send notifications to the buyer, such as confirmation emails or push notifications.
+* Adjust catalog inventory.
+* Create a contact, invoice, receipt, or subscription.
+* Fire the standard order webhooks or CRUD domain events.
+
+Instead, a single [Order Imported](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/order-imported) event is emitted, so your own systems can tell imported orders apart from live ones.
+
+Set `channelInfo.type` to reflect where the order came from. If no specific type matches the source platform, use `OTHER_PLATFORM`.
+
+Once imported, an order behaves like any other order in the Orders API. It has no import-specific restrictions, and the actions available on it depend on its statuses and channel, the same as for a regular order.
+
+## Importing an order
+
+Call [Import Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/import-order) with the complete order. Provide the historical details you want to keep, including `number`, `purchasedDate`, line items, price and balance summaries, and payment and fulfillment statuses.
+
+To import a new order, omit `id`. Wix generates an ID and returns the stored order with `imported` set to `true`.
+
+## Overwriting an imported order
+
+To correct or re-sync an order you imported earlier, call Import Order again with the existing order's `id`. The order is fully replaced with the details in the request, so send the complete order rather than only the changed fields.
+
+Only orders that were created with Import Order can be overwritten this way. Passing the `id` of an order that wasn't imported returns a `CANNOT_OVERWRITE_NON_IMPORTED_ORDER` error.
+
+## Setting the order number counter
+
+Wix assigns each new order a sequential number. After importing historical orders, call [Set Order Number Counter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/set-order-number-counter) to define the number given to the next order created through the regular order flow. This lets a merchant continue their existing sequence without gaps or overlaps with the imported orders.
+
+The counter applies only to orders created after the call. Imported orders keep the `number` you provide when importing them.
+
+By default, the new counter must be higher than the current one, otherwise the call returns a `CANNOT_SET_LOWER_ORDER_NUMBER_COUNTER` error. To set a lower value, set `allowLowerCounter` to `true`. This is useful when you delete all imported orders and import again from scratch and need to reset the counter to a lower number. Be aware that a lower counter can produce duplicate order numbers.
+
+## Deleting imported orders
+
+Call [Bulk Delete Imported Orders](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/bulk-delete-imported-orders) to remove orders you imported, for example to clear a faulty migration before importing again. Only orders created with Import Order can be deleted.
+
+Deletion is permanent. Each order is removed from the site and from search results.
+
+The endpoint runs asynchronously and returns a `jobId`. Pass it to [Get Async Job](fallback::https://dev.wix.com/docs/rest/business-management/async-job/get-async-job) or [List Async Job Items](fallback::https://dev.wix.com/docs/rest/business-management/async-job/list-async-job-items) to track progress. An ID that doesn't belong to an imported order is reported as a failed item in the job, so you can review which orders couldn't be deleted. An [Imported Order Deleted](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/imported-order-deleted) event is emitted for each order that's deleted.
+
+## Import events
+
+The Orders API emits two events specific to importing:
+
+* [Order Imported](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/order-imported): Triggered when an order is imported. It fires on both an initial import and an overwrite, and it's also used to keep the order search index up to date.
+* [Imported Order Deleted](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/imported-order-deleted): Triggered once for each imported order that's deleted.
+
+The Order Imported event is public, so you can use it in your own app to react to migrated orders.
+
+## A typical migration flow
+
+1. For each source order, map your data to the order structure and call Import Order. Provide the original `number`, `purchasedDate`, statuses, line items, and summaries.
+2. If you find a mistake in an imported order, call Import Order again with the same `id` to overwrite it, or call Bulk Delete Imported Orders to remove orders and import them again.
+3. Once the historical orders are in place, call Set Order Number Counter to set the starting number for the merchant's next live order.

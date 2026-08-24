@@ -1,0 +1,1063 @@
+---
+title: "Get Offline Order Preview"
+description: "Performs a dry run of a purchase and provides an order preview."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Performs a dry run of a purchase and provides an order preview.
+
+    The preview uses the same logic as purchasing a plan, but the preview is not saved. Because an order is not actually
+    created, the preview order's `orderId` and `subscriptionId` are displayed as a string of multiple zero characters
+    (`000000-0000`). Tax is only calculated if the site [has it configured](https://support.wix.com/en/article/pricing-plans-setting-up-tax-collection).
+    <br />
+    If a pricing plan has a limit on the amount of purchases per buyer, that limit is not considered for generating the preview.
+    But, if that limit has been reached and this order would then exceed the amount of purchases permitted for this buyer, then
+    `purchaseLimitExceeded` will return as `true`.
+
+    To get a general price preview for a plan that's not buyer-specific, call Get Price Preview.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-PAIDPLANS.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/pricing-plans/v2/checkout/orders/preview-offline
+    ```
+
+    ## Body Params
+
+    <ParamField body="planId" type="string" required>
+
+      ID of the plan of the previewed order, from the Plans API.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="memberId" type="string" required>
+
+      Member ID of the buyer the previewed order is for, from the Members API.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="startDate" type="datetime">
+
+      Start date and time for plan of the previewed order in a `YYYY-MM-DDThh:mm[:ss][.sss]Z` format.
+
+      Default: Current date and time.
+
+    </ParamField>
+
+    <ParamField body="couponCode" type="string">
+
+      Coupon code to apply, from the Coupons API.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="order" type="Order">
+
+      The previewed order, as if the plan had been ordered.
+
+      See the [Order Object](/api-reference/business-solutions/pricing-plans/orders/order-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="purchaseLimitExceeded" type="boolean">
+
+      Whether this previewed order would exceed the permitted amount of purchases available
+      for this plan for this buyer.
+
+      Always `false` for plans that do not have purchase limits.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PRICING_PLANS_NOT_INSTALLED` | Pricing Plans app isn't installed on the site. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_IS_DISABLED` | Coupon is disabled and can't be applied. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_USAGE_EXCEEDED` | Coupon usage limit exceeded. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_LIMIT_PER_CUSTOMER_EXCEEDED` | Coupon limit per customer exceeded. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_IS_NOT_ACTIVE_YET` | Coupon isn't active yet. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_HAS_EXPIRED` | Coupon has expired. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_DOES_NOT_EXIST` | Coupon doesn't exist. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_NOT_APPLICABLE_FOR_PLAN` | Coupon can't be applied to this plan. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_INVALID_SUBTOTAL` | Subtotal is invalid for the applied coupon. |
+    | `400` | `INVALID_ARGUMENT` | `undefined_not_allowed` | Undefined values aren't allowed. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_BUSINESS_ADDRESS_COUNTRY` | Business address country is missing. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_BUSINESS_ADDRESS_STATE` | Business address state is missing. |
+    | `400` | `INVALID_ARGUMENT` | `invalid_sort_field` | Invalid sort field specified. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl -X POST \
+          'https://www.wixapis.com/pricing-plans/v2/checkout/orders/preview-offline' \
+          -H 'Authorization: <AUTH>' \
+          -H 'Content-Type: application/json' \
+          --data-raw '{
+              "planId": "5779edd3-2994-4bf4-acfe-d739ad2d95bd",
+              "memberId": "805ce40a-9000-464e-85ed-5bb052d8beb7",
+              "startDate": "2022-07-08T00:00:00Z"
+          }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+          "order": {
+             "id": "00000000-0000-0000-0000-000000000000",
+             "planId": "5779edd3-2994-4bf4-acfe-d739ad2d95bd",
+             "subscriptionId": "00000000-0000-0000-0000-000000000000",
+             "buyer": {
+               "memberId": "805ce40a-9000-464e-85ed-5bb052d8beb7",
+               "contactId": "805ce40a-9000-464e-85ed-5bb052d8beb7"
+             },
+             "pricing": {
+               "subscription": {
+                 "cycleDuration": {
+                   "count": 1,
+                   "unit": "MONTH"
+                 },
+                 "cycleCount": 0
+               },
+               "prices": [
+                 {
+                   "duration": {
+                     "cycleFrom": 1,
+                     "numberOfCycles": 1
+                   },
+                   "price": {
+                     "subtotal": "15.0",
+                     "coupon": {
+                       "code": "FirstHalfOff",
+                       "amount": "7.5",
+                       "id": "f841bd4a-a053-43e5-b855-204ea6c06188"
+                     },
+                     "discount": "7.5",
+                     "tax": {
+                       "name": "Tax",
+                       "rate": "21",
+                       "amount": "1.58"
+                     },
+                     "total": "9.08",
+                     "currency": "EUR"
+                   }
+                 },
+                 {
+                   "duration": {
+                     "cycleFrom": 2
+                   },
+                   "price": {
+                     "subtotal": "15.00",
+                     "discount": "0",
+                     "tax": {
+                       "name": "Tax",
+                       "rate": "21",
+                       "amount": "3.15"
+                     },
+                     "total": "18.15",
+                     "currency": "EUR"
+                   }
+                 }
+               ]
+             },
+             "type": "OFFLINE",
+             "status": "ACTIVE",
+             "autoRenewCanceled": false,
+             "lastPaymentStatus": "PAID",
+             "startDate": "2022-07-08T00:00:00Z",
+             "planName": "Gym membership",
+             "planDescription": "Get fit fast",
+             "planPrice": "15",
+             "createdDate": "2022-06-02T11:29:30.052417Z",
+             "updatedDate": "2022-06-02T11:29:30.052417Z"
+           },
+          "purchaseLimitExceeded": false
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Performs a dry run of a purchase and provides an order preview.
+
+    The preview uses the same logic as purchasing a plan, but the preview is not saved. Because an order is not actually
+    created, the preview order's `orderId` and `subscriptionId` are displayed as a string of multiple zero characters
+    (`000000-0000`). Tax is only calculated if the site [has it configured](https://support.wix.com/en/article/pricing-plans-setting-up-tax-collection).
+    <br />
+    If a pricing plan has a limit on the amount of purchases per buyer, that limit is not considered for generating the preview.
+    But, if that limit has been reached and this order would then exceed the amount of purchases permitted for this buyer, then
+    `purchaseLimitExceeded` will return as `true`.
+
+    To get a general price preview for a plan that's not buyer-specific, call Get Price Preview.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-PAIDPLANS.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orders } from '@wix/pricing-plans';
+
+    orders.getOfflineOrderPreview(planId, memberId, options): Promise<GetOfflineOrderPreviewResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="planId" type="string" required>
+
+      ID of the plan of the previewed order.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="memberId" type="string" required>
+
+      Member ID of the buyer the previewed order is for, from the Members API.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="GetOfflineOrderPreviewOptions">
+
+      Options for previewing the offline order. 
+
+      <Expandable title="options properties">
+
+        <ParamField body="startDate" type="datetime">
+
+          Start date and time for plan of the previewed order in a `YYYY-MM-DDThh:mm[:ss][.sss]Z` format.
+
+          Default: Current date and time.
+
+        </ParamField>
+
+        <ParamField body="couponCode" type="string">
+
+          Coupon code to apply, from the Coupons API.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<GetOfflineOrderPreviewResponse>`.
+
+    <ResponseField name="order" type="Order">
+
+      The previewed order, as if the plan had been ordered.
+
+      See the [Order Object](/api-reference/business-solutions/pricing-plans/orders/order-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="purchaseLimitExceeded" type="boolean">
+
+      Whether this previewed order would exceed the permitted amount of purchases available
+      for this plan for this buyer.
+
+      Always `false` for plans that do not have purchase limits.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PRICING_PLANS_NOT_INSTALLED` | Pricing Plans app isn't installed on the site. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_IS_DISABLED` | Coupon is disabled and can't be applied. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_USAGE_EXCEEDED` | Coupon usage limit exceeded. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_LIMIT_PER_CUSTOMER_EXCEEDED` | Coupon limit per customer exceeded. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_IS_NOT_ACTIVE_YET` | Coupon isn't active yet. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_HAS_EXPIRED` | Coupon has expired. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_DOES_NOT_EXIST` | Coupon doesn't exist. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_COUPON_NOT_APPLICABLE_FOR_PLAN` | Coupon can't be applied to this plan. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_INVALID_SUBTOTAL` | Subtotal is invalid for the applied coupon. |
+    | `400` | `INVALID_ARGUMENT` | `undefined_not_allowed` | Undefined values aren't allowed. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_BUSINESS_ADDRESS_COUNTRY` | Business address country is missing. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_BUSINESS_ADDRESS_STATE` | Business address state is missing. |
+    | `400` | `INVALID_ARGUMENT` | `invalid_sort_field` | Invalid sort field specified. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-offline-order-preview" id="ex-sdk-get-offline-order-preview-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-offline-order-preview" id="ex-sdk-get-offline-order-preview-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-get-offline-order-preview" id="ex-sdk-get-offline-order-preview-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-get-offline-order-preview" id="ex-sdk-get-offline-order-preview-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-get-offline-order-preview" id="ex-sdk-get-offline-order-preview-4" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-offline-order-preview-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-offline-order-preview-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an offline order preview</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an offline order preview (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an offline order preview with options</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an offline order preview with options (with elevated permissions)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getOfflineOrderPreview (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-offline-order-preview-0"><span className="wix-picker-name">Create an offline order preview</span></label>
+    <label htmlFor="ex-sdk-get-offline-order-preview-1"><span className="wix-picker-name">Create an offline order preview (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-get-offline-order-preview-2"><span className="wix-picker-name">Create an offline order preview with options</span></label>
+    <label htmlFor="ex-sdk-get-offline-order-preview-3"><span className="wix-picker-name">Create an offline order preview with options (with elevated permissions)</span></label>
+    <label htmlFor="ex-sdk-get-offline-order-preview-4"><span className="wix-picker-name">getOfflineOrderPreview (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an offline order preview
+    import { orders } from '@wix/pricing-plans';
+
+    /* Sample planId value: '838f2c9d-c8d0-4799-a10a-e2f23849db10'
+     *
+     * Sample memberId value: '695568ff-1dc2-49ff-83db-2b518d35692b'
+     */
+
+    export async function myGetOfflineOrderPreviewFunction(planId, memberId) {
+      try {
+        const orderPreview = await orders.getOfflineOrderPreview(planId, memberId);
+
+        return orderPreview;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   order: {
+     *     "_createdDate": "2024-01-31T08:51:46.516Z",
+     *     "_id": "00000000-0000-0000-0000-000000000000",
+     *     "_updatedDate": "2024-01-31T08:51:46.516Z",
+     *     "autoRenewCanceled": false,
+     *     "buyer": {
+     *       "contactId": "695568ff-1dc2-49ff-83db-2b518d35692b",
+     *       "memberId": "695568ff-1dc2-49ff-83db-2b518d35692b"
+     *     },
+     *     "currentCycle": {
+     *       "endedDate": "2024-03-01T08:51:46.516Z",
+     *       "index": 0,
+     *       "startedDate": "2024-01-31T08:51:46.516Z"
+     *     },
+     *     "cycles": [
+     *       {
+     *         "endedDate": "2024-03-01T08:51:46.516Z",
+     *         "index": 0,
+     *         "startedDate": "2024-01-31T08:51:46.516Z"
+     *       }
+     *     ],
+     *     "endDate": "2026-03-01T08:51:46.516Z",
+     *     "earliestEndDate": "2026-03-01T08:51:46.516Z",
+     *     "formData": {
+     *       "submissionData": {}
+     *     },
+     *     "freeTrialDays": 30,
+     *     "lastPaymentStatus": "PAID",
+     *     "order": {
+     *       "autoRenewCanceled": false,
+     *       "buyer": {
+     *         "contactId": "695568ff-1dc2-49ff-83db-2b518d35692b",
+     *         "memberId": "695568ff-1dc2-49ff-83db-2b518d35692b"
+     *       },
+     *       "currentCycle": {
+     *         "endedDate": "2024-03-01T08:51:46.516Z",
+     *         "index": 0,
+     *         "startedDate": "2024-01-31T08:51:46.516Z"
+     *       },
+     *       "cycles": [
+     *         {
+     *           "endedDate": "2024-03-01T08:51:46.516Z",
+     *           "index": 0,
+     *           "startedDate": "2024-01-31T08:51:46.516Z"
+     *         }
+     *       ],
+     *       "endDate": "2026-03-01T08:51:46.516Z",
+     *       "earliestEndDate": "2026-03-01T08:51:46.516Z",
+     *       "formData": {
+     *         "submissionData": {}
+     *       },
+     *       "freeTrialDays": 30,
+     *       "lastPaymentStatus": "PAID",
+     *       "orderMethod": "UNKNOWN",
+     *       "orderType": "OFFLINE",
+     *       "pausePeriods": [],
+     *       "planDescription": "Complete with all features. One month free trial.",
+     *       "planId": "838f2c9d-c8d0-4799-a10a-e2f23849db10",
+     *       "planName": "Premium Plan - annual - 30 day trial",
+     *       "planPrice": "500",
+     *       "priceDetails": {
+     *         "currency": "USD",
+     *         "discount": "0",
+     *         "freeTrialDays": 30,
+     *         "planPrice": "500",
+     *         "subtotal": "500.00",
+     *         "total": "500.00",
+     *         "subscription": {
+     *           "cycleCount": 2,
+     *           "cycleDuration": {
+     *             "count": 1,
+     *             "unit": "YEAR"
+     *           }
+     *         }
+     *       },
+     *       "pricing": {
+     *         "prices": [
+     *           {
+     *             "duration": {
+     *               "cycleFrom": 1,
+     *               "numberOfCycles": 2
+     *             },
+     *             "price": {
+     *               "currency": "USD",
+     *               "discount": "0",
+     *               "fees": [],
+     *               "proration": "0",
+     *               "subtotal": "500.00",
+     *               "total": "500.00"
+     *             }
+     *           }
+     *         ],
+     *         "subscription": {
+     *           "cycleCount": 2,
+     *           "cycleDuration": {
+     *             "count": 1,
+     *             "unit": "YEAR"
+     *           }
+     *         }
+     *       },
+     *       "seller": {
+     *         "subscriptionId": "00000000-0000-0000-0000-000000000000"
+     *       },
+     *       "startDate": "2024-01-31T08:51:46.516Z",
+     *       "status": "ACTIVE",
+     *       "statusNew": "ACTIVE",
+     *       "type": "OFFLINE"
+     *     },
+     *     "orderMethod": "UNKNOWN",
+     *     "pausePeriods": [],
+     *     "planDescription": "Complete with all features. One month free trial.",
+     *     "planId": "838f2c9d-c8d0-4799-a10a-e2f23849db10",
+     *     "planName": "Premium Plan - annual - 30 day trial",
+     *     "planPrice": "500",
+     *     "pricing": {
+     *       "prices": [
+     *         {
+     *           "duration": {
+     *             "cycleFrom": 1,
+     *             "numberOfCycles": 2
+     *           },
+     *           "price": {
+     *             "currency": "USD",
+     *             "discount": "0",
+     *             "fees": [],
+     *             "proration": "0",
+     *             "subtotal": "500.00",
+     *             "total": "500.00"
+     *           }
+     *         }
+     *       ],
+     *       "subscription": {
+     *         "cycleCount": 2,
+     *         "cycleDuration": {
+     *           "count": 1,
+     *           "unit": "YEAR"
+     *         }
+     *       }
+     *     },
+     *     "startDate": "2024-01-31T08:51:46.516Z",
+     *     "status": "ACTIVE",
+     *     "statusNew": "ACTIVE",
+     *     "subscriptionId": "00000000-0000-0000-0000-000000000000",
+     *     "type": "OFFLINE"
+     *   }
+     *   "purchaseLimitExceeded": false
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an offline order preview (with elevated permissions)
+    import { orders } from '@wix/pricing-plans';
+    import { auth } from '@wix/essentials';
+
+    /* Sample planId value: '838f2c9d-c8d0-4799-a10a-e2f23849db10'
+    *
+    * Sample memberId value: '695568ff-1dc2-49ff-83db-2b518d35692b'
+    */
+
+    const elevatedGetOfflineOrderPreview = auth.elevate(orders.getOfflineOrderPreview);
+
+    export async function myGetOfflineOrderPreviewFunction(planId, memberId) {
+      try {
+        const orderPreview = await elevatedGetOfflineOrderPreview(planId, memberId);
+
+        return orderPreview;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   order: {
+     *     "_createdDate": "2024-01-31T08:51:46.516Z",
+     *     "_id": "00000000-0000-0000-0000-000000000000",
+     *     "_updatedDate": "2024-01-31T08:51:46.516Z",
+     *     "autoRenewCanceled": false,
+     *     "buyer": {
+     *       "contactId": "695568ff-1dc2-49ff-83db-2b518d35692b",
+     *       "memberId": "695568ff-1dc2-49ff-83db-2b518d35692b"
+     *     },
+     *     "currentCycle": {
+     *       "endedDate": "2024-03-01T08:51:46.516Z",
+     *       "index": 0,
+     *       "startedDate": "2024-01-31T08:51:46.516Z"
+     *     },
+     *     "cycles": [
+     *       {
+     *         "endedDate": "2024-03-01T08:51:46.516Z",
+     *         "index": 0,
+     *         "startedDate": "2024-01-31T08:51:46.516Z"
+     *       }
+     *     ],
+     *     "endDate": "2026-03-01T08:51:46.516Z",
+     *     "earliestEndDate": "2026-03-01T08:51:46.516Z",
+     *     "formData": {
+     *       "submissionData": {}
+     *     },
+     *     "freeTrialDays": 30,
+     *     "lastPaymentStatus": "PAID",
+     *     "order": {
+     *       "autoRenewCanceled": false,
+     *       "buyer": {
+     *         "contactId": "695568ff-1dc2-49ff-83db-2b518d35692b",
+     *         "memberId": "695568ff-1dc2-49ff-83db-2b518d35692b"
+     *       },
+     *       "currentCycle": {
+     *         "endedDate": "2024-03-01T08:51:46.516Z",
+     *         "index": 0,
+     *         "startedDate": "2024-01-31T08:51:46.516Z"
+     *       },
+     *       "cycles": [
+     *         {
+     *           "endedDate": "2024-03-01T08:51:46.516Z",
+     *           "index": 0,
+     *           "startedDate": "2024-01-31T08:51:46.516Z"
+     *         }
+     *       ],
+     *       "endDate": "2026-03-01T08:51:46.516Z",
+     *       "earliestEndDate": "2026-03-01T08:51:46.516Z",
+     *       "formData": {
+     *         "submissionData": {}
+     *       },
+     *       "freeTrialDays": 30,
+     *       "lastPaymentStatus": "PAID",
+     *       "orderMethod": "UNKNOWN",
+     *       "orderType": "OFFLINE",
+     *       "pausePeriods": [],
+     *       "planDescription": "Complete with all features. One month free trial.",
+     *       "planId": "838f2c9d-c8d0-4799-a10a-e2f23849db10",
+     *       "planName": "Premium Plan - annual - 30 day trial",
+     *       "planPrice": "500",
+     *       "priceDetails": {
+     *         "currency": "USD",
+     *         "discount": "0",
+     *         "freeTrialDays": 30,
+     *         "planPrice": "500",
+     *         "subtotal": "500.00",
+     *         "total": "500.00",
+     *         "subscription": {
+     *           "cycleCount": 2,
+     *           "cycleDuration": {
+     *             "count": 1,
+     *             "unit": "YEAR"
+     *           }
+     *         }
+     *       },
+     *       "pricing": {
+     *         "prices": [
+     *           {
+     *             "duration": {
+     *               "cycleFrom": 1,
+     *               "numberOfCycles": 2
+     *             },
+     *             "price": {
+     *               "currency": "USD",
+     *               "discount": "0",
+     *               "fees": [],
+     *               "proration": "0",
+     *               "subtotal": "500.00",
+     *               "total": "500.00"
+     *             }
+     *           }
+     *         ],
+     *         "subscription": {
+     *           "cycleCount": 2,
+     *           "cycleDuration": {
+     *             "count": 1,
+     *             "unit": "YEAR"
+     *           }
+     *         }
+     *       },
+     *       "seller": {
+     *         "subscriptionId": "00000000-0000-0000-0000-000000000000"
+     *       },
+     *       "startDate": "2024-01-31T08:51:46.516Z",
+     *       "status": "ACTIVE",
+     *       "statusNew": "ACTIVE",
+     *       "type": "OFFLINE"
+     *     },
+     *     "orderMethod": "UNKNOWN",
+     *     "pausePeriods": [],
+     *     "planDescription": "Complete with all features. One month free trial.",
+     *     "planId": "838f2c9d-c8d0-4799-a10a-e2f23849db10",
+     *     "planName": "Premium Plan - annual - 30 day trial",
+     *     "planPrice": "500",
+     *     "pricing": {
+     *       "prices": [
+     *         {
+     *           "duration": {
+     *             "cycleFrom": 1,
+     *             "numberOfCycles": 2
+     *           },
+     *           "price": {
+     *             "currency": "USD",
+     *             "discount": "0",
+     *             "fees": [],
+     *             "proration": "0",
+     *             "subtotal": "500.00",
+     *             "total": "500.00"
+     *           }
+     *         }
+     *       ],
+     *       "subscription": {
+     *         "cycleCount": 2,
+     *         "cycleDuration": {
+     *           "count": 1,
+     *           "unit": "YEAR"
+     *         }
+     *       }
+     *     },
+     *     "startDate": "2024-01-31T08:51:46.516Z",
+     *     "status": "ACTIVE",
+     *     "statusNew": "ACTIVE",
+     *     "subscriptionId": "00000000-0000-0000-0000-000000000000",
+     *     "type": "OFFLINE"
+     *   }
+     *   "purchaseLimitExceeded": false
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an offline order preview with options
+    import { orders } from '@wix/pricing-plans';
+
+    /* Sample planId value: 'd2fa5805-0d1a-4cfb-9b43-e683cf5fa990'
+     *
+     * Sample memberId value: '554c9e11-f4d8-4579-ac3a-a17f7e6cb0b4'
+     * 
+     * Sample options value:
+     * {
+     *   couponCode: 'seasonal',
+     *   startDate: new Date()
+     * } 
+     */
+
+    export async function myGetOfflineOrderPreviewFunction(planId, memberId, options) {
+      try {
+        const orderPreview = await orders.getOfflineOrderPreview(planId, memberId, options);
+
+        return orderPreview;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "order": {
+     *     "_createdDate": "2024-02-01T07:58:49.777Z",
+     *     "_id": "00000000-0000-0000-0000-000000000000",
+     *     "_updatedDate": "2024-02-01T07:58:49.777Z",
+     *     "autoRenewCanceled": false,
+     *     "buyer": {
+     *       "contactId": "554c9e11-f4d8-4579-ac3a-a17f7e6cb0b4",
+     *       "memberId": "554c9e11-f4d8-4579-ac3a-a17f7e6cb0b4"
+     *     },
+     *     "currentCycle": {
+     *       "endedDate": "2024-02-15T07:58:49.387Z",
+     *       "index": 0,
+     *       "startedDate": "2024-02-01T07:58:49.387Z"
+     *     },
+     *     "formData": {
+     *       "fomrId": 
+     *       "submissionData": {
+     *         "email_0fd2": "Jboss@email.com",
+     *         "form_field_aa30": false,
+     *         "first_name_c551": "Jason",
+     *         "last_name_78e9": "Bollinger",
+     *         "phone_8cf1": "212-909-2222"
+     *       },
+     *       "submissionId": "10206732-e789-40e9-957d-2c7f3398efc6" 
+     *     },
+     *     "freeTrialDays": 14,
+     *     "lastPaymentStatus": "PAID",
+     *     "pausePeriods": [],
+     *     "planDescription": "The value plan",
+     *     "planId": "d2fa5805-0d1a-4cfb-9b43-e683cf5fa990",
+     *     "planName": "Silver Membership - Monthly",
+     *     "planPrice": "100",
+     *     "status": "ACTIVE",
+     *     "orderMethod": "UNKNOWN",
+     *     "pricing": {
+     *       "prices": [
+     *         {
+     *           "duration": {
+     *             "cycleFrom": 1,
+     *             "numberOfCycles": 1
+     *           },
+     *           "price": {
+     *             "coupon": {
+     *               "code": "seasonal",
+     *               "amount": "95.00",
+     *               "_id": "8673834a-a5c6-4e77-af9c-83f9bf609659"
+     *             },
+     *             "total": "30.00",
+     *             "proration": "0",
+     *             "fees": [
+     *               {
+     *                 "name": "Setup Fee",
+     *                 "amount": "25"
+     *               }
+     *             ],
+     *             "currency": "USD",
+     *             "subtotal": "125.00",
+     *             "discount": "95.00"
+     *           }
+     *         },
+     *         {
+     *           "duration": {
+     *             "cycleFrom": 2
+     *           },
+     *           "price": {
+     *             "coupon": {
+     *               "code": "seasonal",
+     *               "amount": "95.00",
+     *               "_id": "8673834a-a5c6-4e77-af9c-83f9bf609659"
+     *             },
+     *             "total": "5.00",
+     *             "proration": "0",
+     *             "fees": [],
+     *             "currency": "USD",
+     *             "subtotal": "100.00",
+     *             "discount": "95.00"
+     *           }
+     *         }
+     *       ]
+     *       "subscription": {
+     *         "cycleCount": 0,
+     *         "cycleDuration": {
+     *           "count": 1,
+     *           "unit": "MONTH"
+     *         }
+     *       }
+     *     },
+     *     "startDate": "2024-02-01T07:58:49.387Z",
+     *     "status": "ACTIVE",
+     *     "subscriptionId": "00000000-0000-0000-0000-000000000000",
+     *     "type": "OFFLINE",
+     *   },
+     *   "purchaseLimitExceeded": false
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an offline order preview with options (with elevated permissions)
+    import { orders } from '@wix/pricing-plans';
+    import { auth } from '@wix/essentials';
+
+    /* Sample planId value: 'd2fa5805-0d1a-4cfb-9b43-e683cf5fa990'
+     *
+     * Sample memberId value: '554c9e11-f4d8-4579-ac3a-a17f7e6cb0b4'
+     * 
+     * Sample options value:
+     * {
+     *   couponCode: 'seasonal',
+     *   startDate: new Date()
+     * } 
+     */
+
+    const elevatedGetOfflineOrderPreview = auth.elevate(orders.getOfflineOrderPreview);
+
+    export async function myGetOfflineOrderPreviewFunction(planId, memberId, options) {
+      try {
+        const orderPreview = await elevatedGetOfflineOrderPreview(planId, memberId, options);
+
+        return orderPreview;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "order": {
+     *     "_createdDate": "2024-02-01T07:58:49.777Z",
+     *     "_id": "00000000-0000-0000-0000-000000000000",
+     *     "_updatedDate": "2024-02-01T07:58:49.777Z",
+     *     "autoRenewCanceled": false,
+     *     "buyer": {
+     *       "contactId": "554c9e11-f4d8-4579-ac3a-a17f7e6cb0b4",
+     *       "memberId": "554c9e11-f4d8-4579-ac3a-a17f7e6cb0b4"
+     *     },
+     *     "currentCycle": {
+     *       "endedDate": "2024-02-15T07:58:49.387Z",
+     *       "index": 0,
+     *       "startedDate": "2024-02-01T07:58:49.387Z"
+     *     },
+     *     "formData": {
+     *       "fomrId": 
+     *       "submissionData": {
+     *         "email_0fd2": "Jboss@email.com",
+     *         "form_field_aa30": false,
+     *         "first_name_c551": "Jason",
+     *         "last_name_78e9": "Bollinger",
+     *         "phone_8cf1": "212-909-2222"
+     *       },
+     *       "submissionId": "10206732-e789-40e9-957d-2c7f3398efc6" 
+     *     },
+     *     "freeTrialDays": 14,
+     *     "lastPaymentStatus": "PAID",
+     *     "pausePeriods": [],
+     *     "planDescription": "The value plan",
+     *     "planId": "d2fa5805-0d1a-4cfb-9b43-e683cf5fa990",
+     *     "planName": "Silver Membership - Monthly",
+     *     "planPrice": "100",
+     *     "status": "ACTIVE",
+     *     "orderMethod": "UNKNOWN",
+     *     "pricing": {
+     *       "prices": [
+     *         {
+     *           "duration": {
+     *             "cycleFrom": 1,
+     *             "numberOfCycles": 1
+     *           },
+     *           "price": {
+     *             "coupon": {
+     *               "code": "seasonal",
+     *               "amount": "95.00",
+     *               "_id": "8673834a-a5c6-4e77-af9c-83f9bf609659"
+     *             },
+     *             "total": "30.00",
+     *             "proration": "0",
+     *             "fees": [
+     *               {
+     *                 "name": "Setup Fee",
+     *                 "amount": "25"
+     *               }
+     *             ],
+     *             "currency": "USD",
+     *             "subtotal": "125.00",
+     *             "discount": "95.00"
+     *           }
+     *         },
+     *         {
+     *           "duration": {
+     *             "cycleFrom": 2
+     *           },
+     *           "price": {
+     *             "coupon": {
+     *               "code": "seasonal",
+     *               "amount": "95.00",
+     *               "_id": "8673834a-a5c6-4e77-af9c-83f9bf609659"
+     *             },
+     *             "total": "5.00",
+     *             "proration": "0",
+     *             "fees": [],
+     *             "currency": "USD",
+     *             "subtotal": "100.00",
+     *             "discount": "95.00"
+     *           }
+     *         }
+     *       ]
+     *       "subscription": {
+     *         "cycleCount": 0,
+     *         "cycleDuration": {
+     *           "count": 1,
+     *           "unit": "MONTH"
+     *         }
+     *       }
+     *     },
+     *     "startDate": "2024-02-01T07:58:49.387Z",
+     *     "status": "ACTIVE",
+     *     "subscriptionId": "00000000-0000-0000-0000-000000000000",
+     *     "type": "OFFLINE",
+     *   },
+     *   "purchaseLimitExceeded": false
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getOfflineOrderPreview (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orders } from '@wix/pricing-plans';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orders },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getOfflineOrderPreview(planId,memberId,options) {
+      const response = await myWixClient.orders.getOfflineOrderPreview(planId,memberId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,72 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation. See our [complete step-by-step overview of the full booking process](https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows), including service selection, availability checks, booking creation, and payment for end-to-end flows.
+
+## Book an appointment
+
+You can check availability for appointment-based services to help customers find and book suitable time slots.
+
+To book an appointment:
+
+1. Call [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services) to identify the business time zone and relevant service ID.
+1. Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, and `toLocalDate` as filters. Save the relevant time slot details.
+1. To obtain the selected slot's full capacity and booking-policy status, call [Get Availability Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot). Specify the selected slot's `localStartDate` and `localEndDate`.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) to complete the booking.
+
+## Book a class session
+
+You can check availability for class sessions to help customers find and book available spots.
+
+To book a class session:
+
+1. Call [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services) to identify the business time zone and relevant service ID.
+1. Call [List Event Time Slots](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-event-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, `toLocalDate`, and the number of `openSpots` the customer intends to book as filters. Save the `eventId` from the selected time slot.
+1. To obtain the selected slot's full capacity and booking-policy status, call [Get Event Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-event-time-slot). Specify `eventId` to get detailed information about the class session.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) to complete the booking.
+
+## Book a duration-range appointment (hourly)
+
+You can check availability for appointment-based services that let the customer choose a duration within a range. For hourly duration-range services, a two-call approach is used: first retrieve available start times, then retrieve the available end times for the selected start.
+
+To book a duration-range appointment:
+
+1. Call [Get Service](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/get-service) to confirm the service has `schedule.availabilityConstraints.durationRange` configured. Note the `durationRange.hourConfig` values for the minimum and maximum durations.
+1. Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, and `toLocalDate`. Each returned time slot represents an available start time. The slot's `localEndDate` reflects the minimum bookable duration.
+1. After the customer picks a start time, call [List Availability Time Slot End Options](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slot-end-options) with the selected `localStartDate` and `location`. The response contains available end times for that start, sorted by `localEndDate` in ascending order.
+1. Call [Get Availability Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) with the selected `localStartDate` and `localEndDate` to retrieve the available resources for the slot.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) with the selected start time, end time, resource, and location to complete the booking.
+
+## Book a daily duration-range appointment (24/7 resource)
+
+You can check availability for daily duration-range services where the resource has no working hours schedule (a 24/7 resource). Each available day spans midnight to midnight, and the selected range is booked as a single booking.
+
+To book a daily duration-range appointment with a 24/7 resource:
+
+1. Call [Get Service](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/get-service) to confirm the service has `schedule.availabilityConstraints.durationRange` configured with a daily unit type.
+1. Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, and `toLocalDate`. Each returned time slot represents one available day split at midnight with `allDay` set to `true`. Walk the list forward from the customer's chosen start date and stop at the first gap to determine the valid date range.
+1. Merge the selected consecutive slots into a single time range, from the `localStartDate` of the first slot to the `localEndDate` of the last slot. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) with the merged start and end times to complete the booking.
+
+## Book a daily duration-range appointment (working hours resource)
+
+You can check availability for daily duration-range services where the resource is associated with a working hours schedule. Each available day spans the resource's working hours (for example, 09:00 to 18:00), and the selected days are booked together as a consecutive multi-service booking.
+
+To book a daily duration-range appointment with a working hours resource:
+
+1. Call [Get Service](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/get-service) to confirm the service has `schedule.availabilityConstraints.durationRange` configured with a daily unit type.
+1. Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, and `toLocalDate`. Each returned time slot represents one available day spanning the resource's working hours. Walk the list forward from the customer's chosen start date and stop at the first gap to determine the valid date range.
+1. Call [Create Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-multi-service-booking) with the selected slots to complete the booking.
+
+## Check availability for multi-service bookings
+
+You can check availability for multiple services in sequence to help customers book comprehensive service packages.
+
+To check availability for multi-service bookings:
+
+1. Call [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services) with filter `?type=APPOINTMENT` to identify the business time zone and relevant service IDs.
+1. Call [List Multi Service Availability Time Slots](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-multi-service-availability-time-slots) specifying the sequence of `serviceIds`, `timeZone`, `fromLocalDate`, `toLocalDate`, and `location` as filters. Use `bookable: true` to get only bookable slots and `cursorPaging.limit: 100` for pagination.
+1. To obtain the selected multi-service slot's full capacity and booking-policy status, call [Get Multi Service Availability Time Slot](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/get-multi-service-availability-time-slot). Specify the exact `localStartDate` and `localEndDate` values from the selected slot.
+1. Call [Create Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-multi-service-booking) to complete the booking.

@@ -1,0 +1,709 @@
+---
+title: "Merge Contacts"
+description: "Merges source contacts into a target contact."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Merges source contacts into a target contact.
+
+    Merging contacts has the following effects on the target contact:
+
+    - No target contact data is overwritten or deleted.
+    - Arrays (emails, phone numbers, addresses, and labels) from the source contacts are added to the target contact's arrays.
+    - If you merge more than one source contact, the 1st source contact specified is added first, then the 2nd, and so on.
+    - If there is duplicate information between the target contact and the source contact, the information isn't duplicated in the target contact's arrays.
+
+    <Note>
+
+    Merges cannot be undone.
+    In REST, call Preview Merge Contacts to test before merging.
+
+    </Note>
+
+    When you merge contacts, source contacts are typically deleted.
+    However, if a source contact is a site member or a Wix user,
+    the merge will fail because site members and Wix users can't be deleted.
+    This means that site members and Wix users can only be specified as target contacts in a merge.
+
+    After merging, calling Get Contact with a deleted source contact ID returns the target contact ID.
+    Specifying a deleted source contact ID is not supported on any other method.
+
+    When contacts are merged:
+
+    - The Contact Merged event is triggered.
+    - The Contact Updated event is triggered for the target contact. `originatedFrom` is set to `merge`.
+    - The Contact Deleted event is triggered for each source contact. `originatedFrom` is set to `merge`.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/contacts/v4/contacts/{targetContactId}/merge
+    ```
+
+    ## Path Params
+
+    <ParamField path="targetContactId" type="string" required>
+
+      Target contact ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="targetContactRevision" type="integer" required>
+
+      Target contact revision number, which increments by 1 each time the contact is updated.
+      To prevent conflicting changes,
+      the target contact's current `revision` must be specified.
+
+    </ParamField>
+
+    <ParamField body="sourceContactIds" type="string[]">
+
+      IDs of up to 5 contacts to merge into the target contact.
+      When you merge more than one source contact,
+      the first source is given precedence, then the second, and so on.
+
+      Constraints: `minItems 1`, `maxItems 5`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="contact" type="Contact">
+
+      Updated target contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts/contact-v4/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `CONTACT_NOT_FOUND` | Contact not found. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_PRECONDITION` | Can't merge contact with membership status. |
+    | `400` | `INVALID_ARGUMENT` | `ILLEGAL_MERGE` | Can't merge contact with itself. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Merged | `wix.contacts.v4.contact_merged` | Triggered when one or more source contacts are merged into a target contact. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/contacts/v4/contacts/8046df3c-7575-4098-a5ab-c91ad8f33c47/merge' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "targetContactRevision": 2,
+          "sourceContactIds": ["f274f4a0-664a-457a-a83a-d46ea5fb9f54"]
+        }'
+      ```
+
+      ```json Response
+      {
+        "contact": {
+          "id": "8046df3c-7575-4098-a5ab-c91ad8f33c47",
+          "revision": 2,
+          "primaryInfo": {
+            "email": "target@example.com",
+            "phone": "097495550"
+          },
+          "info": {
+            "emails": {
+              "items": [
+                {
+                  "id": "d8f0d88c-af92-4237-833f-56aaaa2b5168",
+                  "tag": "MAIN",
+                  "email": "target@example.com",
+                  "primary": true
+                },
+                {
+                  "id": "c7f05b8c-af92-4237-833f-43aaaa2b4968",
+                  "tag": "MAIN",
+                  "email": "source@example.com",
+                  "primary": false
+                }
+              ]
+            },
+            "phones": {
+              "items": [
+                {
+                  "id": "e5214c79-af80-4eff-87f2-408b0be4e710",
+                  "tag": "HOME",
+                  "countryCode": "IL",
+                  "phone": "097495550",
+                  "e164Phone": "+97297495550",
+                  "primary": true
+                },
+                {
+                  "id": "a5465d4c-dba4-4eff-fab4-408b0be4e710",
+                  "tag": "HOME",
+                  "countryCode": "IL",
+                  "phone": "78457445",
+                  "e164Phone": "+972978457445",
+                  "primary": false
+                }
+              ]
+            },
+            "jobTitle": "Developer",
+            "company": "Wix",
+            "labelKeys": {
+              "items": [
+                "contacts.contacted-me",
+                "custom.my-label",
+                "custom.my-other-label"
+              ]
+            },
+            "extendedFields": {
+              "items": {
+                "custom.color": "Blue",
+                "custom.food": "Pizza"
+              }
+            }
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Merges source contacts into a target contact.
+
+    Merging contacts has the following effects on the target contact:
+
+    - No target contact data is overwritten or deleted.
+    - Arrays (emails, phone numbers, addresses, and labels) from the source contacts are added to the target contact's arrays.
+    - If you merge more than one source contact, the 1st source contact specified is added first, then the 2nd, and so on.
+    - If there is duplicate information between the target contact and the source contact, the information isn't duplicated in the target contact's arrays.
+
+    <Note>
+
+    Merges cannot be undone.
+    In REST, call Preview Merge Contacts to test before merging.
+
+    </Note>
+
+    When you merge contacts, source contacts are typically deleted.
+    However, if a source contact is a site member or a Wix user,
+    the merge will fail because site members and Wix users can't be deleted.
+    This means that site members and Wix users can only be specified as target contacts in a merge.
+
+    After merging, calling Get Contact with a deleted source contact ID returns the target contact ID.
+    Specifying a deleted source contact ID is not supported on any other method.
+
+    When contacts are merged:
+
+    - The Contact Merged event is triggered.
+    - The Contact Updated event is triggered for the target contact. `originatedFrom` is set to `merge`.
+    - The Contact Deleted event is triggered for each source contact. `originatedFrom` is set to `merge`.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contacts } from '@wix/crm';
+
+    contacts.mergeContacts(targetContactId, targetContactRevision, options): Promise<MergeContactsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="targetContactId" type="string" required>
+
+      Target contact ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="targetContactRevision" type="MergeContacts" required>
+
+      Target contact revision number, which increments by 1 each time the contact is updated.
+      To prevent conflicting changes,
+      the target contact's current `revision` must be specified.
+
+      <Expandable title="targetContactRevision properties">
+
+        <ParamField body="value" type="integer" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="MergeContactsOptions">
+
+      Merge contacts options.
+
+      <Expandable title="options properties">
+
+        <ParamField body="sourceContactIds" type="string[]">
+
+          IDs of up to 5 contacts to merge into the target contact.
+          When you merge more than one source contact,
+          the first source is given precedence, then the second, and so on.
+
+          Constraints: `minItems 1`, `maxItems 5`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<MergeContactsResponse>`.
+
+    <ResponseField name="contact" type="Contact">
+
+      Updated target contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts/contact-v4/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `CONTACT_NOT_FOUND` | Contact not found. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_PRECONDITION` | Can't merge contact with membership status. |
+    | `400` | `INVALID_ARGUMENT` | `ILLEGAL_MERGE` | Can't merge contact with itself. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Merged | `wix.contacts.v4.contact_merged` | Triggered when one or more source contacts are merged into a target contact. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-merge-contacts" id="ex-sdk-merge-contacts-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-merge-contacts" id="ex-sdk-merge-contacts-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-merge-contacts" id="ex-sdk-merge-contacts-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-merge-contacts-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-merge-contacts-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Get revision ID and merge contacts</span><span className="wix-picker-desc">This function uses getContact() to extract the revision for the target contact, then merges the source contacts into the target contact</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Get revision ID and merge contacts (with elevated permissions)</span><span className="wix-picker-desc">This function uses getContact() to extract the revision for the target contact, then merges the source contacts into the target contact</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">mergeContacts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-merge-contacts-0"><span className="wix-picker-name">Get revision ID and merge contacts</span><span className="wix-picker-desc">This function uses getContact() to extract the revision for the target contact, then merges the source contacts into the target contact</span></label>
+    <label htmlFor="ex-sdk-merge-contacts-1"><span className="wix-picker-name">Get revision ID and merge contacts (with elevated permissions)</span><span className="wix-picker-desc">This function uses getContact() to extract the revision for the target contact, then merges the source contacts into the target contact</span></label>
+    <label htmlFor="ex-sdk-merge-contacts-2"><span className="wix-picker-name">mergeContacts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Get revision ID and merge contacts
+    import { contacts } from '@wix/crm';
+
+    /*
+     * Sample targetContactId value: '5518ee7f-270e-40c4-b756-dad56e8f0ffc'
+     * 
+     * Sample targetContactRevision value: Extract from `getContact()` return object
+     * 
+     * Sample options value:
+     *  {
+     *    sourceContactIds: [
+     *      'ce6475cf-55d7-411c-8cb1-7f62be2429dd',
+     *      'cb591d0e-a308-4f19-a9b9-5fb26ee7a11f'
+     *    ]
+     *  }
+    */
+
+    export async function mergeContactsFunction(targetContactId, targetContactRevision, options) {
+
+      try{
+        const targetContact = await contacts.getContact(targetContactId);
+
+        // Extract revision from target contact
+        targetContactRevision = targetContact.revision;
+        const mergedContact = await contacts.mergeContacts(targetContactId, targetContactRevision, options);
+        console.log("successfully merged contacts!");
+
+        return mergedContact.contact;  
+      } catch (error) {
+        console.log(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "revision": 3,
+     *   "source": {
+     *     "sourceType": "WIX_CODE",
+     *     "appId": "151e476a-715e-ec33-db9a-a7ff4d51f70a"
+     *   },
+     *   "lastActivity": {
+     *     "activityDate": "2024-01-09T12:41:24.295Z",
+     *     "activityType": "CONTACT_MERGED"
+     *   },
+     *   "primaryInfo": {
+     *     "email": "sally.smith@example.com",
+     *     "phone": "524-624-2486"
+     *   },
+     *   "info": {
+     *     "name": {
+     *       "first": "Sally",
+     *       "last": "Smith"
+     *     },
+     *     "emails": {
+     *       "items": [
+     *         {
+     *           "tag": "UNTAGGED",
+     *           "email": "sally.smith@example.com",
+     *           "primary": true,
+     *           "_id": "fa2a8be4-b0d9-4926-adb3-463ef487787b"
+     *         }
+     *       ]
+     *     },
+     *     "phones": {
+     *       "items": [
+     *         {
+     *           "tag": "MOBILE",
+     *           "countryCode": "US",
+     *           "phone": "524-624-2486",
+     *           "e164Phone": "+15246242486",
+     *           "primary": true,
+     *           "_id": "73382a58-55c6-4b1c-8af1-ffe60a7e5485"
+     *         },
+     *         {
+     *           "tag": "WORK",
+     *           "countryCode": "US",
+     *           "phone": "214-268-2998",
+     *           "e164Phone": "+12142682998",
+     *           "primary": false,
+     *           "_id": "69bd9ea5-31e3-4e68-97a7-1c74031f26cd"
+     *         }
+     *       ]
+     *     },
+     *     "addresses": {
+     *       "items": [
+     *         {
+     *           "tag": "HOME",
+     *           "address": {
+     *             "formatted": "NY",
+     *             "city": "NY"
+     *           },
+     *           "_id": "f22294bf-349b-47bb-9229-8a0d2ca9cb78"
+     *         },
+     *         {
+     *           "tag": "WORK",
+     *           "address": {
+     *             "formatted": "12 Park Ave\nNY\nUnited States",
+     *             "addressLine1": "12 Park Ave",
+     *             "city": "NY",
+     *             "country": "US"
+     *           },
+     *           "_id": "471391d8-285f-405b-ae44-bda559088ac1"
+     *         }
+     *       ]
+     *     },
+     *     "labelKeys": {
+     *       "items": [
+     *         "custom.active-customer",
+     *         "custom.contact",
+     *         "contacts.customers",
+     *         "custom.anonymous"
+     *       ]
+     *     },
+     *     "extendedFields": {
+     *       "items": {
+     *         "contacts.displayByLastName": "Smith Sally",
+     *         "invoices.vatId": "",
+     *         "emailSubscriptions.deliverabilityStatus": "NOT_SET",
+     *         "emailSubscriptions.subscriptionStatus": "NOT_SET",
+     *         "emailSubscriptions.effectiveEmail": "sally.smith@example.com",
+     *         "custom.age": 24,
+     *         "contacts.displayByFirstName": "Sally Smith",
+     *         "custom.nickname": "Silly"
+     *       }
+     *     }
+     *   },
+     *   "_id": "5518ee7f-270e-40c4-b756-dad56e8f0ffc",
+     *   "_createdDate": "2023-12-28T11:44:11.331Z",
+     *   "_updatedDate": "2024-01-09T12:41:24.295Z"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Get revision ID and merge contacts (with elevated permissions)
+    import { contacts } from '@wix/crm';
+    import { auth } from '@wix/essentials';
+
+    const elevatedMergeContacts = auth.elevate(contacts.mergeContacts);
+
+    export async function mergeContactsFunction(targetContactId, targetContactRevision, options) {
+
+      try{
+        const targetContact = await contacts.getContact(targetContactId);
+
+        // Extract revision from target contact
+        targetContactRevision = targetContact.revision;
+        const mergedContact = await elevatedMergeContacts(targetContactId, targetContactRevision, options);
+        console.log("successfully merged contacts!");
+
+        return mergedContact.contact;  
+      } catch (error) {
+        console.log(error);
+        // Handle the error
+      }
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "revision": 3,
+     *   "source": {
+     *     "sourceType": "WIX_CODE",
+     *     "appId": "151e476a-715e-ec33-db9a-a7ff4d51f70a"
+     *   },
+     *   "lastActivity": {
+     *     "activityDate": "2024-01-09T12:41:24.295Z",
+     *     "activityType": "CONTACT_MERGED"
+     *   },
+     *   "primaryInfo": {
+     *     "email": "sally.smith@example.com",
+     *     "phone": "524-624-2486"
+     *   },
+     *   "info": {
+     *     "name": {
+     *       "first": "Sally",
+     *       "last": "Smith"
+     *     },
+     *     "emails": {
+     *       "items": [
+     *         {
+     *           "tag": "UNTAGGED",
+     *           "email": "sally.smith@example.com",
+     *           "primary": true,
+     *           "_id": "fa2a8be4-b0d9-4926-adb3-463ef487787b"
+     *         }
+     *       ]
+     *     },
+     *     "phones": {
+     *       "items": [
+     *         {
+     *           "tag": "MOBILE",
+     *           "countryCode": "US",
+     *           "phone": "524-624-2486",
+     *           "e164Phone": "+15246242486",
+     *           "primary": true,
+     *           "_id": "73382a58-55c6-4b1c-8af1-ffe60a7e5485"
+     *         },
+     *         {
+     *           "tag": "WORK",
+     *           "countryCode": "US",
+     *           "phone": "214-268-2998",
+     *           "e164Phone": "+12142682998",
+     *           "primary": false,
+     *           "_id": "69bd9ea5-31e3-4e68-97a7-1c74031f26cd"
+     *         }
+     *       ]
+     *     },
+     *     "addresses": {
+     *       "items": [
+     *         {
+     *           "tag": "HOME",
+     *           "address": {
+     *             "formatted": "NY",
+     *             "city": "NY"
+     *           },
+     *           "_id": "f22294bf-349b-47bb-9229-8a0d2ca9cb78"
+     *         },
+     *         {
+     *           "tag": "WORK",
+     *           "address": {
+     *             "formatted": "12 Park Ave\nNY\nUnited States",
+     *             "addressLine1": "12 Park Ave",
+     *             "city": "NY",
+     *             "country": "US"
+     *           },
+     *           "_id": "471391d8-285f-405b-ae44-bda559088ac1"
+     *         }
+     *       ]
+     *     },
+     *     "labelKeys": {
+     *       "items": [
+     *         "custom.active-customer",
+     *         "custom.contact",
+     *         "contacts.customers",
+     *         "custom.anonymous"
+     *       ]
+     *     },
+     *     "extendedFields": {
+     *       "items": {
+     *         "contacts.displayByLastName": "Smith Sally",
+     *         "invoices.vatId": "",
+     *         "emailSubscriptions.deliverabilityStatus": "NOT_SET",
+     *         "emailSubscriptions.subscriptionStatus": "NOT_SET",
+     *         "emailSubscriptions.effectiveEmail": "sally.smith@example.com",
+     *         "custom.age": 24,
+     *         "contacts.displayByFirstName": "Sally Smith",
+     *         "custom.nickname": "Silly"
+     *       }
+     *     }
+     *   },
+     *   "_id": "5518ee7f-270e-40c4-b756-dad56e8f0ffc",
+     *   "_createdDate": "2023-12-28T11:44:11.331Z",
+     *   "_updatedDate": "2024-01-09T12:41:24.295Z"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript mergeContacts (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contacts } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contacts },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function mergeContacts(targetContactId,targetContactRevision,options) {
+      const response = await myWixClient.contacts.mergeContacts(targetContactId,targetContactRevision,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

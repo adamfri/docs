@@ -1,0 +1,146 @@
+---
+title: "Introduction"
+description: "<blockquote class=\"important\" Important: When developing websites or building apps with Blocks, use Velo service plugins."
+icon: "file-lines"
+---
+
+<Note>
+
+When developing websites or building apps with Blocks, use [Velo service plugins](fallback::https://dev.wix.com/docs/velo/events-service-plugins/about-events-service-plugins-and-the-sdk).
+
+</Note>
+
+As a shipping provider, you can integrate with Wix to allow a merchant's stores or businesses to request and use your shipping services on their Wix sites.
+Your shipping rates are then displayed on the site's cart and checkout pages.
+
+The integration is done via an app in the Wix App Market and by implementing the Shipping Rates [service plugin](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions). After the app is installed on a site, Wix triggers a call to your service whenever the site needs to retrieve shipping rates for a transaction.
+
+Using the service plugin, you can design your app to:
++ Provide shipping estimates, including fees and times.
++ Provide shipping rates using your own custom logic.
++ Provide services for delivery and pickup.
+
+<Tabs>
+
+<Tab title="REST">
+
+## Prerequisites
+
+Complete the following steps to adapt Wix system's integration to make your shipping rates available to merchants and their customers.
+
+1. Create an [app](fallback::https://dev.wix.com/dc3/my-apps/) in your Wix Studio workspace and retrieve its app ID either from the URL or as displayed in your app's dashboard.
+
+    ![Sample App ID](https://wixmp-833713b177cebf373f611808.wixmp.com/images/7bdf57337e20b2aa283291e35177e08b.png "Sample App ID")
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **eCommerce** in the left menu, then find **Ecom Shipping Rates** and click **Create**.
+1. Use the JSON editor to create the extension's configuration file. Take care to include the required fields noted in the table below. Click **Save**.
+
+    | Name                 | Type                     | Description       |
+    | ---------------------|--------------------------|-------------------|
+    | `deploymentUri`      | string                   | Required. Base URI where the endpoints are called. Wix eCommerce appends the endpoint path to the base URI. For example, to call the Get Shipping Rates endpoint at `https://my-shipping-provider.com/v1/getRates`, the base URI you provide here is `https://my-shipping-provider.com/`.|
+    | `name`               | string                   | Required. Human-readable name of the shipping provider. Max characters: 64.|
+    | `description`        | string                   | Description of the shipping provider. Max characters: 200.|
+    | `learnMoreUrl`       | string                   | URL to more info about the shipping provider.|
+    | `dashboardUrl`       | string                   | URL to reach the shipping provider app's dashboard.|
+    | `fallbackDefinitionMandatory`      | boolean    | Whether to require the site owner to define a fallback/default rate. Set to `true` if you do not provide rates as part of the integration.|
+    | `thumbnail_url`      | string                   | Thumbnail image of the shipping rates provider. Displayed in the shipping settings section in the Dashboard. The URL must be of an image uploaded to the [Wix Media Manager](fallback::https://support.wix.com/en/article/wix-media-uploading-media-to-the-media-manager).|
+
+1. Click [**Test Your App**](https://dev.wix.com/docs/build-apps/launch-your-app/app-submission/test-your-app-on-a-premium-site).
+1. After adding your app to the test site, [enable a shipping rule in the dashboard](fallback::https://support.wix.com/en/article/wix-stores-offering-real-time-shipping-rates-via-third-party-apps) to show your shipping rates during checkout.
+
+</Tab>
+
+<Tab title="SDK">
+
+## Get started
+
+Follow these steps to begin implementing your service plugin.
+
+### Step 1 | Choose a framework
+
+You can implement this service plugin with the following [frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks):
+
++ **Wix CLI:** Learn how to [implement a service plugin with the CLI and the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
++ **Self-hosted:** Learn how to [implement a self-hosted service plugin with the SDK and the Wix Dev Center](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk).
+
+### Step 2 | Configure your service plugin
+
+To configure and customize your plugin, you need to provide important information in the service plugin configuration file. You can [configure your plugin in the Wix Dev Center](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-1--add-a-service-plugin-extension-to-your-app). For details, see [Shipping Rates Extension Configuration](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/extensions/shipping-rates/shipping-rates-integration-service-plugin/extension-config).
+
+### Step 3 | Define handler functions
+
+Use [`shippingRates.provideHandlers()`](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions) to define the following handler functions that implement your custom business logic. Make sure you define all required functions.
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`getShippingRates()`](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/extensions/shipping-rates/shipping-rates-integration-service-plugin/get-shipping-rates)    | Yes            |
+
+## Code examples
+
+Below is an example for implementing the Shipping Rates service plugin in your code.
+
+### CLI: Basic code structure.
+
+This is the basic code structure for implementing the Shipping Rates service plugin with the Wix CLI:
+
+```js
+import { shippingRates } from '@wix/ecom/service-plugins'
+
+shippingRates.provideHandlers({
+  getShippingRates: async (payload) => {
+
+    const {request, metadata} = payload;
+
+    // Add your logic here
+
+  }
+});
+  
+```
+
+### Self-hosted: Basic code structure
+
+This is the basic code structure for implementing a self-hosted Shipping Rates service plugin:
+
+```js
+import { createClient } from '@wix/sdk';
+import { shippingRates } from '@wix/ecom/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { shippingRates }
+});
+
+wixClient.shippingRates.provideHandlers({
+  getShippingRates: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+  
+```
+
+</Tab>
+
+</Tabs>
+
+## See also
+
++ [Tutorial | Create a Self-hosted Custom Shipping Rates App](fallback::https://dev.wix.com/docs/build-apps/get-started/tutorials/tutorial-create-a-self-hosted-custom-shipping-rates-app)
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)

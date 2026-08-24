@@ -1,0 +1,326 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that
+you can support. It provides a useful starting point as you plan your
+implementation.
+
+All flows use the single
+[Query Services by Filters](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/query-services-by-filters)
+endpoint with different filter combinations.
+
+## Show services bookable this week
+
+If a site owner wants to display only the services a customer can actually book,
+you can query the catalog for services with availability in a date range.
+
+To do this, your app can:
+
+1. Call [Query Services by Filters](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/query-services-by-filters),
+  specifying a `serviceFilters` with `localStartDate`, `localEndDate`, and
+  `timeZone`. Leave `exactMatch` unset so a service is returned when it has at
+  least 1 bookable slot anywhere in the window.
+
+    ```json
+    {
+      "query": {
+        "sort": [{ "fieldName": "name", "order": "ASC" }],
+        "cursorPaging": { "limit": 50 }
+      },
+      "serviceFilters": {
+        "localStartDate": "2024-03-25T00:00:00",
+        "localEndDate": "2024-03-31T23:59:59",
+        "timeZone": "America/New_York"
+      }
+    }
+    ```
+
+2. Render the returned `results`. Each result contains the full `service` entity
+  and an `available` flag, which is `true` for every service in this flow.
+
+    ```json
+    {
+      "results": [
+        {
+          "service": {
+            "id": "3b4e1c2a-0000-0000-0000-9e8f7d6c5b4a",
+            "name": "Morning Yoga",
+            "type": "CLASS"
+          },
+          "available": true
+        },
+        {
+          "service": {
+            "id": "7a2b3c4d-0000-0000-0000-1a2b3c4d5e6f",
+            "name": "Personal Training Session",
+            "type": "APPOINTMENT"
+          },
+          "available": true
+        }
+      ],
+      "pagingMetadata": {
+        "cursors": {
+          "next": "eyJsaW1pdCI6NTAsInBhZ2luZ0lkIjoiM2I0ZTFjMmEifQ=="
+        },
+        "hasNext": true
+      }
+    }
+    ```
+
+3. If the response contains `pagingMetadata.cursors.next`, request the next page
+  by passing it unchanged as `query.cursorPaging.cursor`. Repeat until `next` is
+  absent.
+
+    ```json
+    {
+      "query": {
+        "sort": [{ "fieldName": "name", "order": "ASC" }],
+        "cursorPaging": {
+          "limit": 50,
+          "cursor": "eyJsaW1pdCI6NTAsInBhZ2luZ0lkIjoiM2I0ZTFjMmEifQ=="
+        }
+      },
+      "serviceFilters": {
+        "localStartDate": "2024-03-25T00:00:00",
+        "localEndDate": "2024-03-31T23:59:59",
+        "timeZone": "America/New_York"
+      }
+    }
+    ```
+
+## Filter the catalog by location and resource attributes
+
+If a site owner wants customers to narrow the catalog to a specific business
+location and staff with certain attributes, you can apply location, resource
+type, and attribute filters.
+
+To do this, your app can:
+
+1. Call [Query Services by Filters](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/query-services-by-filters),
+  specifying in `serviceFilters` the `locationIds` to match, the
+  `resourceTypes` to include (such as `STAFF`), and one `attributes` entry per
+  attribute condition. Values for the same attribute are OR'd (match any);
+  values across different attributes are AND'd (match all).
+
+  The `attributes` field supports four value types depending on how the
+  attribute was defined:
+
+  - **`enumValue`** (string): matches a specific enum option.
+  - **`numberRangeValue`** (object with `min`/`max`): matches a numeric range. To match an exact value, set both `min` and `max` to the same number.
+  - **`boolValue`** (boolean): matches a true/false flag.
+  - **`numberValues`** (array of numbers): matches if the resource's stored number equals any value in the set.
+
+    ```json
+    {
+      "query": {
+        "cursorPaging": { "limit": 50 }
+      },
+      "serviceFilters": {
+        "locationIds": ["1f87f49a-9c2e-4f0a-9b3d-3a2c1e7d5b10"],
+        "resourceTypes": ["STAFF"],
+        "attributes": [
+          {
+            "attributeId": "8c4d2a1b-7e6f-4c3a-9d2e-1b0a9c8d7e6f",
+            "enumValue": "english"
+          },
+          {
+            "attributeId": "2e5f1b3a-4c7d-8e9f-0a1b-2c3d4e5f6a7b",
+            "numberRangeValue": { "min": 5, "max": 5 }
+          },
+          {
+            "attributeId": "9d8c7b6a-5e4f-3d2c-1b0a-9e8d7c6b5a4f",
+            "boolValue": true
+          },
+          {
+            "attributeId": "4f3a2b1c-6d5e-8f9a-0b1c-2d3e4f5a6b7c",
+            "numberValues": { "values": [3, 5, 7] }
+          }
+        ]
+      }
+    }
+    ```
+
+2. Because no date range is provided, no availability check runs. All
+  pre-filtered services are returned with `available` set to `true`.
+
+    ```json
+    {
+      "results": [
+        {
+          "service": {
+            "id": "5c6d7e8f-0000-0000-0000-1a2b3c4d5e6f",
+            "name": "Advanced Pilates",
+            "type": "CLASS"
+          },
+          "available": true
+        }
+      ],
+      "pagingMetadata": {
+        "cursors": {},
+        "hasNext": false
+      }
+    }
+    ```
+
+## Build a filter sidebar with unavailable services greyed out
+
+If a site owner wants to show the full catalog while distinguishing services
+that have no availability, you can include unavailable services in the response.
+
+To do this, your app can:
+
+1. Call [Query Services by Filters](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/query-services-by-filters),
+  specifying a `serviceFilters` with the date range and `includeUnavailable`
+  set to `true`.
+
+    ```json
+    {
+      "query": {
+        "cursorPaging": { "limit": 50 }
+      },
+      "serviceFilters": {
+        "localStartDate": "2024-03-25T09:00:00",
+        "localEndDate": "2024-03-25T17:00:00",
+        "timeZone": "America/New_York",
+        "includeUnavailable": true
+      }
+    }
+    ```
+
+2. Render all `results`. Use each result's `available` flag to decide whether to
+  show the service as bookable (`true`) or unavailable (`false`).
+
+    ```json
+    {
+      "results": [
+        {
+          "service": {
+            "id": "3b4e1c2a-0000-0000-0000-9e8f7d6c5b4a",
+            "name": "Morning Yoga",
+            "type": "CLASS"
+          },
+          "available": true
+        },
+        {
+          "service": {
+            "id": "9f8e7d6c-0000-0000-0000-5b4a3c2d1e0f",
+            "name": "Evening Stretch",
+            "type": "CLASS"
+          },
+          "available": false
+        }
+      ],
+      "pagingMetadata": {
+        "cursors": {},
+        "hasNext": false
+      }
+    }
+    ```
+
+## Require availability for an entire multi-day range
+
+If a site owner offers a multi-session experience, you can return only services
+that are bookable on every day of a multi-day window.
+
+To do this, your app can:
+
+1. Call [Query Services by Filters](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/query-services-by-filters),
+  specifying a `serviceFilters` that spans 2 or more days with `exactMatch`
+  set to `true`. For a days range, the service must have available slots on every
+  day in the window.
+
+    ```json
+    {
+      "query": {
+        "cursorPaging": { "limit": 50 }
+      },
+      "serviceFilters": {
+        "localStartDate": "2024-03-25T00:00:00",
+        "localEndDate": "2024-03-29T23:59:59",
+        "timeZone": "America/New_York",
+        "exactMatch": true
+      }
+    }
+    ```
+
+2. Only services with slots available on every day of the range are returned.
+
+    ```json
+    {
+      "results": [
+        {
+          "service": {
+            "id": "3b4e1c2a-0000-0000-0000-9e8f7d6c5b4a",
+            "name": "Morning Yoga",
+            "type": "CLASS"
+          },
+          "available": true
+        }
+      ],
+      "pagingMetadata": {
+        "cursors": {},
+        "hasNext": false
+      }
+    }
+    ```
+
+## Filter services by catalog fields
+
+You can combine WQL catalog filters on the `query` field with an availability
+window. This lets you narrow by service properties (such as type or name) before
+the availability check runs.
+
+To do this, your app can:
+
+1. Call [Query Services by Filters](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/catalog-search/query-services-by-filters),
+  specifying a `query.filter` using the same fields supported by
+  [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services),
+  together with a `serviceFilters` for the date range.
+
+    ```json
+    {
+      "query": {
+        "filter": { "type": { "$eq": "CLASS" } },
+        "sort": [{ "fieldName": "name", "order": "ASC" }],
+        "cursorPaging": { "limit": 50 }
+      },
+      "serviceFilters": {
+        "localStartDate": "2024-03-25T00:00:00",
+        "localEndDate": "2024-03-31T23:59:59",
+        "timeZone": "America/New_York"
+      }
+    }
+    ```
+
+2. The catalog filter runs first, so only services of type `CLASS` reach the
+  availability engine. This keeps latency low when the full catalog is large.
+
+    ```json
+    {
+      "results": [
+        {
+          "service": {
+            "id": "3b4e1c2a-0000-0000-0000-9e8f7d6c5b4a",
+            "name": "Morning Yoga",
+            "type": "CLASS"
+          },
+          "available": true
+        },
+        {
+          "service": {
+            "id": "9f8e7d6c-0000-0000-0000-5b4a3c2d1e0f",
+            "name": "Evening Pilates",
+            "type": "CLASS"
+          },
+          "available": true
+        }
+      ],
+      "pagingMetadata": {
+        "cursors": {},
+        "hasNext": false
+      }
+    }
+    ```

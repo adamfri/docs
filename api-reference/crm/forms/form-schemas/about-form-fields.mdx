@@ -1,0 +1,470 @@
+---
+title: "About Form Fields"
+description: "A form schema's formFields array defines every element a form displays, from text inputs to payment fields to the submit button."
+icon: "file-lines"
+---
+
+A form schema's `formFields` array defines every element a form displays, from text inputs to payment fields to the submit button. This article explains how to compose a field correctly, which values to use for each kind of field, and which fields depend on a premium plan or another Wix app.
+
+The [Form object reference](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/form-object) documents each field property individually. This article covers the parts that the property descriptions can't convey on their own: how the properties combine, and which combinations produce which field.
+
+## How a field is composed
+
+Every field sets `fieldType` to either `INPUT` or `DISPLAY`:
+
+- `INPUT` fields collect data from submitters, and put their configuration in `inputOptions`.
+- `DISPLAY` fields show information without collecting data, and put their configuration in `displayOptions`. Rich content and the submit button are display fields. See [Display fields](fallback::#display-fields).
+
+An input field is defined by 3 values that must agree with each other:
+
+- `inputOptions.inputType` sets the data type the field collects, such as `STRING` or `ARRAY`.
+- `inputOptions.<inputType>Options.componentType` sets the UI component that renders the field, such as `TEXT_INPUT` or `DROPDOWN`.
+- `inputOptions.<inputType>Options.<componentType>Options` holds the component's settings, such as its label and choices.
+
+Both nested object names follow the same rule: take the enum value, convert it to camelCase, and append `Options`. For example, `inputType: STRING` nests under `stringOptions`, and `componentType: TEXT_INPUT` nests under `textInputOptions`:
+
+```json
+{
+  "id": "4add0e51-a168-4ab6-76ff-834d782fb4d9",
+  "fieldType": "INPUT",
+  "identifier": "TEXT_INPUT",
+  "inputOptions": {
+    "target": "short_answer_e62b",
+    "inputType": "STRING",
+    "stringOptions": {
+      "validation": {},
+      "componentType": "TEXT_INPUT",
+      "textInputOptions": {
+        "label": "Short answer",
+        "showLabel": true
+      }
+    }
+  }
+}
+```
+
+Because this rule is consistent, you can construct any field object from the table in [Field types](fallback::#field-types) plus the component's property list in the reference. The [Create Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/create-form) method includes complete request examples for common form types, such as a contact form, a feedback survey, and an order form.
+
+<Note>
+
+Field `id` values in this article are examples. Supply your own GUIDs, or omit `id` and let the server generate them. Each `id` must be unique in the form.
+
+</Note>
+
+## Field identifiers
+
+`identifier` labels a field with its purpose. Unlike `target`, which names the key a submitted value is stored under, `identifier` tells Wix apps what kind of field they're looking at.
+
+Use the known values listed in [Field types](fallback::#field-types). Wix Forms uses `identifier` to render submissions in the submission table, so a field with a missing or non-standard identifier may display incorrectly there, even though the form itself works and the API accepts the request.
+
+Identifiers starting with `CONTACTS_` mark fields that map to a contact property. These fields also set `inputOptions.contactMapping`, which makes form submissions create or update a contact. See [Contact fields](fallback::#contact-fields).
+
+The identifiers in this article are the ones used by the Wix Forms namespace, `wix.form_app.form`. Apps made by Wix that own their own namespace may define additional identifiers for the same components, so a form schema in another namespace can carry identifiers not listed here.
+
+## Field types
+
+The following table lists every supported field and the values that produce it. Unless noted, `fieldType` is `INPUT`.
+
+| Field                | `identifier`            | `inputType`    | `componentType`           | Requires |
+|----------------------|-------------------------|----------------|---------------------------|---|
+| Short answer         | `TEXT_INPUT`            | `STRING`       | `TEXT_INPUT`              | |
+| Long answer          | `TEXT_AREA`             | `STRING`       | `TEXT_INPUT`              | |
+| Number               | `NUMBER_INPUT`          | `NUMBER`       | `NUMBER_INPUT`            | |
+| Rating               | `RATING_INPUT`          | `NUMBER`       | `RATING_INPUT`            | |
+| Link                 | `URL_INPUT`             | `STRING`       | `TEXT_INPUT`              | |
+| Email                | `CONTACTS_EMAIL`        | `STRING`       | `TEXT_INPUT`              | |
+| Phone                | `CONTACTS_PHONE`        | `STRING`       | `PHONE_INPUT`             | |
+| Address              | `CONTACTS_ADDRESS`      | `STRING`       | `TEXT_INPUT`              | |
+| Multi-line address   | `MULTILINE_ADDRESS`     | `ADDRESS`      | `MULTILINE_ADDRESS`       | |
+| First name           | `CONTACTS_FIRST_NAME`   | `STRING`       | `TEXT_INPUT`              | |
+| Last name            | `CONTACTS_LAST_NAME`    | `STRING`       | `TEXT_INPUT`              | |
+| Company              | `CONTACTS_COMPANY`      | `STRING`       | `TEXT_INPUT`              | |
+| Position             | `CONTACTS_POSITION`     | `STRING`       | `TEXT_INPUT`              | |
+| Tax ID               | `CONTACTS_TAX_ID`       | `STRING`       | `TEXT_INPUT`              | |
+| Birthdate            | `CONTACTS_BIRTHDATE`    | `STRING`       | `DATE_INPUT`              | |
+| Subscribe checkbox   | `CONTACTS_SUBSCRIBE`    | `BOOLEAN`      | `CHECKBOX`                | |
+| Checkbox             | `CHECKBOX`              | `BOOLEAN`      | `CHECKBOX`                | |
+| Single choice        | `RADIO_GROUP`           | `STRING`       | `RADIO_GROUP`             | |
+| Multi choice         | `CHECKBOX_GROUP`        | `ARRAY`        | `CHECKBOX_GROUP`          | |
+| Image choice         | `IMAGE_CHOICE`          | `ARRAY`        | `CHECKBOX_GROUP`          | |
+| Dropdown             | `DROPDOWN`              | `STRING`       | `DROPDOWN`                | |
+| Tag picker           | `TAGS`                  | `ARRAY`        | `TAGS`                    | |
+| Date picker          | `DATE_PICKER`           | `STRING`       | `DATE_PICKER`             | |
+| Date                 | `DATE_INPUT`            | `STRING`       | `DATE_INPUT`              | |
+| Date and time        | `DATE_TIME_INPUT`       | `STRING`       | `DATE_TIME`               | |
+| Time                 | `TIME_INPUT`            | `STRING`       | `TIME_INPUT`              | |
+| File upload          | `FILE_UPLOAD`           | `WIX_FILE`     | `FILE_UPLOAD`             | Premium plan |
+| Signature            | `SIGNATURE`             | `WIX_FILE`     | `SIGNATURE`               | Premium plan |
+| Product              | `PRODUCT_LIST`          | `PAYMENT`      | `CHECKBOX_GROUP`          | Premium plan, Wix eCommerce |
+| Fixed price          | `FIXED_PAYMENT`         | `PAYMENT`      | `FIXED_PAYMENT`           | Premium plan, Wix eCommerce |
+| Custom price         | `PAYMENT_INPUT`         | `PAYMENT`      | `PAYMENT_INPUT`           | Premium plan, Wix eCommerce |
+| Donation             | `DONATION`              | `PAYMENT`      | `DONATION_INPUT`          | Premium plan, Wix eCommerce |
+| Appointment          | `APPOINTMENT`           | `SCHEDULING`   | `APPOINTMENT`             | Wix Meetings |
+| Service picker       | `SERVICES_DROPDOWN`     | `STRING`       | `SERVICES_DROPDOWN`       | Wix Services |
+| Multi-service picker | `SERVICES_MULTI_CHOICE` | `ARRAY`        | `SERVICES_CHECKBOX_GROUP` | Wix Services |
+| Rich content         | `RICH_TEXT`             | Not applicable | Not applicable            | |
+| Submit button        | `SUBMIT_BUTTON`         | Not applicable | Not applicable            | |
+
+## Display fields
+
+Rich content and the submit button are display fields. They set `fieldType` to `DISPLAY` and have no input type or component type. Instead, `displayOptions.displayFieldType` selects the element, and its settings nest under the matching options object.
+
+A rich content field shows formatted text, images, or links without collecting a value. Its content is a [Ricos rich content](fallback::https://dev.wix.com/docs/rest/crm/ricos/introduction) object, and `maxShownParagraphs` optionally collapses longer content behind an expandable section:
+
+```json
+{
+  "id": "3c0f7a91-5b28-4e63-9d14-7f8a2c60be35",
+  "fieldType": "DISPLAY",
+  "identifier": "RICH_TEXT",
+  "displayOptions": {
+    "displayFieldType": "RICH_CONTENT",
+    "richContentOptions": {
+      "richContent": {
+        "nodes": [
+          {
+            "type": "PARAGRAPH",
+            "id": "hdr1a02",
+            "nodes": [
+              {
+                "type": "TEXT",
+                "id": "",
+                "nodes": [],
+                "textData": {
+                  "text": "Tell us about your project.",
+                  "decorations": []
+                }
+              }
+            ],
+            "paragraphData": { "textStyle": { "textAlignment": "AUTO" } }
+          }
+        ]
+      },
+      "maxShownParagraphs": 3
+    }
+  }
+}
+```
+
+The submit button renders the form's navigation and submit controls:
+
+```json
+{
+  "id": "2e56791e-926e-48fd-37d0-0ad60a27736d",
+  "fieldType": "DISPLAY",
+  "identifier": "SUBMIT_BUTTON",
+  "displayOptions": {
+    "displayFieldType": "PAGE_NAVIGATION",
+    "pageNavigationOptions": {
+      "previousPageText": "Back",
+      "nextPageText": "Next",
+      "submitText": "Submit"
+    }
+  }
+}
+```
+
+## Some component types serve several fields
+
+A component type doesn't always match its field's identifier, because several fields share a general-purpose component. When you read an existing form schema, `componentType` alone doesn't tell you which field a developer intended. Check `identifier` instead:
+
+- `TEXT_INPUT`: Short answer, Long answer, Link, Email, Address, First name, Last name, Company, Position, Tax ID.
+- `DATE_INPUT`: Date, Birthdate.
+- `CHECKBOX`: Checkbox, Subscribe checkbox.
+- `CHECKBOX_GROUP`: Multi choice, Image choice, Product.
+
+This has practical consequences:
+
+- A long answer field sets `componentType` to `TEXT_INPUT`, not to a separate text area component. Only `identifier: TEXT_AREA` distinguishes it from a short answer.
+- An image choice field sets `componentType` to `CHECKBOX_GROUP`. Only `identifier: IMAGE_CHOICE` distinguishes it from a multi choice field.
+
+## Validation
+
+### The validation object
+
+Always include `validation`, even when it's empty: `{}`. It goes inside the field's input type options object: `stringOptions.validation` for a `STRING` field, `arrayOptions.validation` for an `ARRAY` field, and so on. The appointment field is the only exception, since its `schedulingOptions` has no `validation` object.
+
+```json
+"stringOptions": {
+  "validation": {},
+  "componentType": "TEXT_INPUT",
+  "textInputOptions": { "label": "Short answer", "showLabel": true }
+}
+```
+
+Nest it under the object named after the field's `inputType`, not its `componentType`. Placing it under the wrong object is accepted at creation, but leaves the field with no validation the form recognizes.
+
+### Format constraints
+
+Several fields rely on `validation.format` rather than a distinct component to constrain what submitters can enter. Set it inside the input type's options object:
+
+- Link: `URL`
+- Email: `EMAIL`
+- Phone: `PHONE`
+- Birthdate, Date, Date picker: `DATE`
+- Date and time: `DATE_TIME`
+- Time: `TIME`
+
+To leave a string field's format unconstrained, either omit `format` or set it to `UNKNOWN_FORMAT`.
+
+A link field, for example, is a text input that validates its value as a URL:
+
+```json
+{
+  "id": "4913d7ab-352a-481b-831f-ee8beb895b64",
+  "fieldType": "INPUT",
+  "identifier": "URL_INPUT",
+  "inputOptions": {
+    "target": "link_d31f",
+    "inputType": "STRING",
+    "stringOptions": {
+      "validation": { "format": "URL" },
+      "componentType": "TEXT_INPUT",
+      "textInputOptions": { "label": "Link", "showLabel": true }
+    }
+  }
+}
+```
+
+Phone fields accept an optional `validation.phoneOptions.allowedCountryCodes` array of [ISO 3166-1 alpha-2](fallback::https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) codes, which limits the countries a submitter can select. Omit it to allow all countries. To preselect a country, set `phoneInputOptions.defaultCountryCode`.
+
+## What each field submits
+
+A field's `inputType` determines the shape of the value it collects, so it also determines what a submission carries for that field. A `STRING` field submits a string, an `ARRAY` field an array, and an `ADDRESS` field an object. This is why the single-line address field and the multi-line address field aren't interchangeable even though both map to the contact's address.
+
+For the full mapping, see [About Submission Values](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/about-submission-values) in the Form Submissions API.
+
+## Choice fields
+
+Single choice, multi choice, image choice, dropdown, and tag picker fields each declare their choices twice, and the 2 declarations must agree:
+
+- The component's `options` array defines what submitters see. Each option needs an `id`, a `label`, and a `value`.
+- The field's validation declares the accepted values. If these don't match the option values, submissions fail validation.
+
+Where validation lives depends on the input type. `STRING` fields declare `validation.enum`, while `ARRAY` fields declare `validation.items.stringOptions.enum`:
+
+```json
+{
+  "id": "50de5707-06aa-49e7-ba63-cabf0b8bc7e2",
+  "fieldType": "INPUT",
+  "identifier": "RADIO_GROUP",
+  "inputOptions": {
+    "target": "single_choice_3978",
+    "inputType": "STRING",
+    "stringOptions": {
+      "validation": { "enum": ["Option 1", "Option 2"] },
+      "componentType": "RADIO_GROUP",
+      "radioGroupOptions": {
+        "label": "Single choice",
+        "showLabel": true,
+        "numberOfColumns": "ONE",
+        "options": [
+          { "id": "89955e02-2f29-4fca-85a9-d026854ec72d", "label": "Option 1", "value": "Option 1" },
+          { "id": "e6b43c3c-0224-4946-c4cf-5ef4fb34fd37", "label": "Option 2", "value": "Option 2" }
+        ]
+      }
+    }
+  }
+}
+```
+
+Give every option a lowercase GUID `id`. An option without one is rejected at creation.
+
+For `ARRAY` fields, `validation.items` needs both `itemType` and the matching options object, as in the multi choice example above. Passing one without the other, or leaving `items` empty, either fails at creation or produces a field the form can't validate submissions against.
+
+Use `numberOfColumns` to lay choices out. Image choice fields typically use `TWO` or more, and tag pickers use `ZERO` to flow tags inline.
+
+Service picker fields follow the same pattern, but each option `value` is a Wix Services service ID rather than free text.
+
+## Checkbox labels use rich content
+
+Checkbox and subscribe checkbox fields take a [Ricos rich content](fallback::https://dev.wix.com/docs/rest/crm/ricos/introduction) object as their label, not a plain string. This lets a label contain links, which consent text often needs:
+
+```json
+{
+  "id": "8662e61d-19c6-4b38-f8aa-ea88a13d37b6",
+  "fieldType": "INPUT",
+  "identifier": "CHECKBOX",
+  "inputOptions": {
+    "target": "form_field_c221",
+    "inputType": "BOOLEAN",
+    "booleanOptions": {
+      "componentType": "CHECKBOX",
+      "checkboxOptions": {
+        "label": {
+          "nodes": [
+            {
+              "type": "PARAGRAPH",
+              "id": "ipl8z25",
+              "nodes": [
+                {
+                  "type": "TEXT",
+                  "id": "",
+                  "nodes": [],
+                  "textData": { "text": "This is a checkbox.", "decorations": [] }
+                }
+              ],
+              "paragraphData": { "textStyle": { "textAlignment": "AUTO" } }
+            }
+          ]
+        }
+      },
+      "validation": {}
+    }
+  }
+}
+```
+
+Every other field type takes a plain string label.
+
+## Contact fields
+
+Fields with a `CONTACTS_` identifier write their value to a contact property. Set `inputOptions.contactMapping.contactField` to the target property, and mark the field `pii: true` so Wix encrypts the stored value.
+
+`contactField` accepts `FIRST_NAME`, `LAST_NAME`, `COMPANY`, `POSITION`, `EMAIL`, `PHONE`, `ADDRESS`, `BIRTHDATE`, `VAT_ID`, `CUSTOM_FIELD`, and `SUBSCRIPTION`. A tax ID field uses the `CONTACTS_TAX_ID` identifier and maps to the `VAT_ID` contact field.
+
+Some contact fields need extra mapping detail:
+
+- `EMAIL`: `emailInfo.tag`
+- `PHONE`: `phoneInfo.tag`
+- `ADDRESS`: `addressInfo.tag`
+- `SUBSCRIPTION`: `subscriptionInfo.subscriptionChannels`
+- `CUSTOM_FIELD`: `customFieldInfo`
+
+The remaining contact fields need only `contactField`.
+
+A subscribe checkbox uses the `SUBSCRIPTION` contact field to opt submitters into a channel:
+
+```json
+"contactMapping": {
+  "contactField": "SUBSCRIPTION",
+  "subscriptionInfo": { "subscriptionChannels": ["EMAIL"] }
+}
+```
+
+Both the address field and the multi-line address field map to the `ADDRESS` contact property. They differ in structure: the address field is a single text input, while the multi-line address field collects each part of the address separately.
+
+For a multi-line address, `validation.fields` sets which subfields are required. It accepts `country`, `addressLine`, `addressLine2`, `city`, `postalCode`, `subdivision`, `streetName`, and `streetNumber`.
+
+Visibility is controlled separately and covers 1 subfield: `multilineAddressOptions.fieldSettings.addressLine2.show` shows or hides the second address line. The other subfields don't have a visibility setting.
+
+A multi-line address is submitted as an object rather than a string, with `country` as an [ISO 3166-1 alpha-2](fallback::https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code. Both `country` and `subdivision` are validated against the values allowed for the selected country, so a free-text subdivision is rejected. Mark `subdivision` as required only when the form presents the valid options for the chosen country.
+
+Setting `contactMapping` is all that's needed. When someone submits the form, Wix creates or updates the contact from the mapped fields, with no further configuration on the form.
+
+## Payment fields
+
+All 4 payment fields set `inputType: PAYMENT` and declare what's for sale in `paymentOptions.validation.products`. Each product sets a `priceType`:
+
+- `FIXED_PRICE` products set an amount in `fixedPriceOptions.price`.
+- `DYNAMIC_PRICE` products let the submitter enter an amount, with an optional floor in `dynamicPriceOptions.minPrice`.
+
+The component determines how those products are presented:
+
+| Field | `componentType` | Products declared | Submitter experience |
+|---|---|---|---|
+| Product | `CHECKBOX_GROUP` | 1 per purchasable item | Selects items to buy |
+| Fixed price | `FIXED_PAYMENT` | 1, at a fixed price | Pays a set amount |
+| Custom price | `PAYMENT_INPUT` | 1, at a dynamic price | Enters an amount |
+| Donation | `DONATION_INPUT` | 1 per suggested amount | Picks a suggested amount |
+
+For product and donation fields, the component's `options` array references products by ID. Each option's `value` must be the `id` of a product declared in `validation.products`:
+
+```json
+{
+  "id": "b7e7755e-fe11-4546-c29d-20d51007b164",
+  "fieldType": "INPUT",
+  "identifier": "DONATION",
+  "inputOptions": {
+    "target": "donation_4dee",
+    "inputType": "PAYMENT",
+    "paymentOptions": {
+      "componentType": "DONATION_INPUT",
+      "validation": {
+        "products": [
+          {
+            "id": "b66b1c6c-ec2e-4a69-abb9-37d6bbacc706",
+            "priceType": "FIXED_PRICE",
+            "productType": "DIGITAL",
+            "quantityLimit": { "minimum": 1, "maximum": 1 },
+            "fixedPriceOptions": { "price": "10" }
+          },
+          {
+            "id": "df5faf1a-4b00-4e94-0b64-b4b1f94fc09a",
+            "priceType": "FIXED_PRICE",
+            "productType": "DIGITAL",
+            "quantityLimit": { "minimum": 1, "maximum": 1 },
+            "fixedPriceOptions": { "price": "20" }
+          }
+        ]
+      },
+      "donationInputOptions": {
+        "label": "Donation",
+        "showLabel": true,
+        "numberOfColumns": "THREE",
+        "options": [
+          { "value": "b66b1c6c-ec2e-4a69-abb9-37d6bbacc706" },
+          { "value": "df5faf1a-4b00-4e94-0b64-b4b1f94fc09a" }
+        ]
+      }
+    }
+  }
+}
+```
+
+## Appointment fields
+
+An appointment field lets submitters book a slot. It sets `inputType: SCHEDULING` and configures the appointment itself, rather than referencing an existing service:
+
+- `name` and `durationInMinutes` define the appointment.
+- `staffIds` lists the staff members who can take it.
+- `format` sets how the appointment takes place, such as `PHONE`, with matching options in `phoneOptions`.
+- `manualApprovalRequired` controls whether a booking needs confirmation.
+
+This differs from the service picker fields, which reference services already defined in Wix Services.
+
+## Field order comes from the layout
+
+`formFields` is an unordered set. The order fields appear in that array isn't the order they're displayed in, and the submit button can appear anywhere in it. To render a form in the right order, read `steps`.
+
+Each step is a page. Its `layout` holds a breakpoint object for `large`, `medium`, and `small` screens, and each breakpoint's `items` positions a field by `row` and `column`, matching the field through `fieldId`. Sort a breakpoint's items by `row`, then by `column`, and resolve each `fieldId` against `formFields` to get the display order.
+
+A breakpoint is only present when the form defines a layout for it, so fall back to another breakpoint rather than assuming `large` exists.
+
+Every field must appear in the layout, including the submit button. A field that isn't placed still stores submitted values, but the Wix dashboard renders it, and the submissions made against it, as empty.
+
+The server stores `id` in lowercase, so pass a lowercase GUID for `id` and match it with a lowercase `fieldId` in the layout. An uppercase `id` still saves, but the layout's `fieldId` no longer matches it once the form schema is stored, so the field is silently unplaced.
+
+## Field requirements
+
+### Premium plan
+
+File upload, signature, and all 4 payment fields are premium features. The site needs a Core premium plan or higher. Creating a form schema that includes one of these fields on a site without a qualifying plan fails.
+
+The site's plan also caps how many fields a single form schema can hold, and how many form schemas the site can have. Creating a form schema that exceeds either cap fails rather than truncating. Both caps depend on the plan, so read the current values with [List Forms Providers Configs](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/list-forms-providers-configs) instead of assuming a fixed number. Splitting a single logical form across several schemas to stay under the field cap trades a single submission record for several, and consumes more of the site's form allowance.
+
+### Another Wix app
+
+Some fields depend on another Wix app for the site:
+
+- Product, Fixed price, Custom price, Donation: Wix eCommerce
+- Appointment: Wix Meetings
+- Service picker, Multi-service picker: Wix Services
+
+Creating a form schema that includes one of these fields on a site without the required app fails.
+
+Payment fields also require a premium plan, in addition to Wix eCommerce.
+
+### File upload and signature fields
+
+File upload and signature fields both use `inputType: WIX_FILE`, and both constrain uploads through `validation`:
+
+- `uploadFileFormats` limits accepted file types, such as `IMAGE` or `VIDEO`.
+- `fileLimit` sets how many files a submitter can upload.
+
+A signature field stores the drawn signature as an image, so it sets `uploadFileFormats` to `["IMAGE"]` and `fileLimit` to `1`.
+
+## See also
+
+- [Form object](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/form-object)
+- [Create Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/create-form)
+- [About the Form Schemas API](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/introduction)

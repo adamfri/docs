@@ -1,0 +1,2123 @@
+---
+title: "Contact Object"
+description: "A contact represents a person in a site's contact list."
+icon: "cube"
+---
+
+A contact represents a person in a site's contact list. It stores profile details such as name, email addresses, phone numbers, and addresses, and can optionally be linked to a site member.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Contact ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the Contact is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the Contact.
+
+      Ignored when creating a Contact.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the contact was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the contact was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="externalId" type="string">
+
+      Contact external ID. Used to identify contacts from external systems.
+      This field can only be set once and can't be updated after creation.
+
+    </ResponseField>
+
+    <ResponseField name="name" type="ContactName">
+
+      Contact's name information including first and last name.
+
+      <Expandable title="name properties">
+
+        <ResponseField name="first" type="string">
+
+          Contact's first name.
+
+        </ResponseField>
+
+        <ResponseField name="last" type="string">
+
+          Contact's last name.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="email" type="ContactEmail">
+
+      The main email of the contact with subscription status and deliverability information.
+      This email is used for contact matching and deduplication logic.
+
+      <Expandable title="email properties">
+
+        <ResponseField name="email" type="string">
+
+          Main email address for the contact. Used for communication and contact matching.
+
+          Stored in normalized form: leading and trailing whitespace is trimmed and the address is lowercased.
+
+          Constraints: `format EMAIL`, `maxLength 320`.
+
+        </ResponseField>
+
+        <ResponseField name="subscriptionStatus" type="ContactSubscription">
+
+          Indicates the recipient's opt-in or opt-out status for marketing emails.
+          This field is read-only and managed by the subscription system.
+
+          Updates are eventually consistent, reflecting marketing consent changes after they're processed.
+
+          **Read-only.**
+
+          <Expandable title="subscriptionStatus properties">
+
+            <ResponseField name="status" type="string">
+
+              Indicates the recipient's opt-in or opt-out status for marketing communications.
+
+              - `NO_SUBSCRIPTION_STATUS`: No status exists. Used when a phone is not a valid E164 number.
+              - `NOT_SET`: No subscription status specified. Default value.
+              - `PENDING`: Subscription confirmation was requested, but recipient hasn't confirmed yet.
+              - `SUBSCRIBED`: Recipient has explicitly opted in to receive marketing communications.
+              - `UNSUBSCRIBED`: Recipient has opted out of marketing communications.
+
+              **Supported values:**
+
+              - `NO_SUBSCRIPTION_STATUS`
+              - `NOT_SET`
+              - `PENDING`
+              - `SUBSCRIBED`
+              - `UNSUBSCRIBED`
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time when the subscription status was last updated.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="deliverabilityStatus" type="string">
+
+          Indicates the last reported delivery status of emails sent to this address.
+          This field is read-only and updated automatically by the email delivery system.
+
+          - `NOT_SET`: No delivery status reported. Default value.
+          - `VALID`: Emails are being successfully delivered to this address.
+          - `BOUNCED`: The last email to this address bounced or was rejected by the recipient's email server.
+          - `SPAM_COMPLAINT`: Recipient registered a spam complaint with their email provider.
+          - `INACTIVE`: Multiple emails have been delivered without any engagement from the recipient.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NOT_SET`
+          - `VALID`
+          - `BOUNCED`
+          - `SPAM_COMPLAINT`
+          - `INACTIVE`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalEmails" type="AdditionalEmail[]">
+
+      Additional emails of the contact.
+      These emails do not affect subscription status or contact matching/deduplication.
+      The main email field must be set before additional emails can be added.
+
+      Constraints: `maxItems 10`.
+
+      <Expandable title="additionalEmails properties">
+
+        <ResponseField name="email" type="string">
+
+          Additional email address for the contact.
+          Does not affect subscription status or contact matching logic.
+
+          Constraints: `format EMAIL`, `maxLength 320`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="phone" type="ContactPhone">
+
+      The main phone of the contact with subscription status and deliverability information.
+      This phone is used for contact matching and deduplication logic.
+      At least one of name, email, or phone is required for contact creation.
+
+      <Expandable title="phone properties">
+
+        <ResponseField name="tag" type="string">
+
+          Phone type classification. Helps categorize the phone number's purpose.
+
+          Default: `OTHER`
+
+          **Supported values:**
+
+          - `OTHER`
+          - `MAIN`
+          - `HOME`
+          - `MOBILE`
+          - `WORK`
+          - `FAX`
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Primary phone number for the contact. Used for communication and contact matching.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="e164" type="string">
+
+          Phone number in [ITU E.164 international](https://www.itu.int/rec/T-REC-E.164/) format (e.g., +12345550123).
+          This field is automatically generated from the phone field if it represents a valid E.164 number.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="subscriptionStatus" type="ContactSubscription">
+
+          Indicates the recipient's opt-in or opt-out status for SMS/text message marketing.
+          This field is read-only and managed by the subscription system.
+
+          Updates are eventually consistent, reflecting marketing consent changes after they're processed.
+
+          **Read-only.**
+
+          <Expandable title="subscriptionStatus properties">
+
+            <ResponseField name="status" type="string">
+
+              Indicates the recipient's opt-in or opt-out status for marketing communications.
+
+              - `NO_SUBSCRIPTION_STATUS`: No status exists. Used when a phone is not a valid E164 number.
+              - `NOT_SET`: No subscription status specified. Default value.
+              - `PENDING`: Subscription confirmation was requested, but recipient hasn't confirmed yet.
+              - `SUBSCRIBED`: Recipient has explicitly opted in to receive marketing communications.
+              - `UNSUBSCRIBED`: Recipient has opted out of marketing communications.
+
+              **Supported values:**
+
+              - `NO_SUBSCRIPTION_STATUS`
+              - `NOT_SET`
+              - `PENDING`
+              - `SUBSCRIBED`
+              - `UNSUBSCRIBED`
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time when the subscription status was last updated.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="deliverabilityStatus" type="string">
+
+          Indicates the delivery status for SMS messages sent to this phone number.
+          This field is read-only and updated automatically by the SMS delivery system.
+          - `NO_PHONE_DELIVERABILITY_STATUS`: No status exists. Used when the phone is not a valid E164 number.
+          - `NOT_SET`: No delivery status reported. Default when the phone is a valid E164 number.
+          - `VALID`: Last message was sent and delivered successfully.
+          - `INVALID`: The number is invalid (landline, number disconnected, etc.).
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NO_PHONE_DELIVERABILITY_STATUS`
+          - `NOT_SET`
+          - `VALID`
+          - `INVALID`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalPhones" type="AdditionalPhone[]">
+
+      Additional phones of the contact.
+      These phones do not affect subscription status or contact matching/deduplication.
+      The main phone field must be set before additional phones can be added.
+
+      Constraints: `maxItems 10`.
+
+      <Expandable title="additionalPhones properties">
+
+        <ResponseField name="tag" type="string">
+
+          Phone type classification for the additional phone number.
+
+          Default: `OTHER`
+
+          **Supported values:**
+
+          - `OTHER`
+          - `MAIN`
+          - `HOME`
+          - `MOBILE`
+          - `WORK`
+          - `FAX`
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Additional phone number for the contact.
+          Does not affect subscription status or contact matching logic.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="e164" type="string">
+
+          Additional phone number in [ITU E.164 international](https://www.itu.int/rec/T-REC-E.164/) format (e.g., +12345550123).
+          This field is automatically generated from the phone field if it represents a valid E.164 number.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="addresses" type="ContactAddress[]">
+
+      Contact's physical addresses.
+      Each address can be tagged (HOME, WORK, BILLING, SHIPPING, OTHER) and one can be set as default.
+      If no address is marked as default, the first address automatically becomes the default.
+
+      Constraints: `maxItems 50`.
+
+      <Expandable title="addresses properties">
+
+        <ResponseField name="tag" type="string">
+
+          Address type classification. Helps categorize the address purpose.
+
+          Default: `OTHER`
+
+          **Supported values:**
+
+          - `OTHER`
+          - `HOME`
+          - `WORK`
+          - `BILLING`
+          - `SHIPPING`
+
+        </ResponseField>
+
+        <ResponseField name="address" type="Address">
+
+          Physical address information including street, city, country, and postal code.
+          Contains structured address data following common address formatting standards.
+
+          <Expandable title="address properties">
+
+            <ResponseField name="country" type="string">
+
+              2-letter country code in an
+              [ISO-3166 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) format.
+
+            </ResponseField>
+
+            <ResponseField name="subdivision" type="string">
+
+              Subdivision shorthand. Usually, a short code (2 or 3 letters) that represents a state, region, prefecture, or province. For example, `NY`.
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string">
+
+              City name.
+
+            </ResponseField>
+
+            <ResponseField name="postalCode" type="string">
+
+              Postal or zip code.
+
+            </ResponseField>
+
+            <ResponseField name="addressLine2" type="string">
+
+              Free text providing more detailed address information,
+              such as apartment, suite, or floor.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAddress" type="string">
+
+              Human-readable address string.
+              If not provided, the value is generated from the available address data.
+
+            </ResponseField>
+
+            <ResponseField name="hint" type="string">
+
+              Instructions to help someone find the address, such as landmarks or where the entrance is.
+
+            </ResponseField>
+
+            <ResponseField name="geocode" type="AddressLocation">
+
+              Coordinates of the physical address.
+
+              <Expandable title="geocode properties">
+
+                <ResponseField name="latitude" type="number">
+
+                  Address latitude.
+
+                </ResponseField>
+
+                <ResponseField name="longitude" type="number">
+
+                  Address longitude.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="countryFullname" type="string">
+
+              Full country name.
+
+            </ResponseField>
+
+            <ResponseField name="subdivisions" type="Subdivision[]">
+
+              Hierarchical list of subdivisions, where the first array item is the highest level of hierarchy, and so on.
+
+              Constraints: `maxItems 6`.
+
+              <Expandable title="subdivisions properties">
+
+                <ResponseField name="code" type="string">
+
+                  Subdivision short code.
+
+                  Constraints: `maxLength 20`.
+
+                </ResponseField>
+
+                <ResponseField name="name" type="string">
+
+                  Full subdivision name.
+
+                  Constraints: `maxLength 100`.
+
+                </ResponseField>
+
+                <ResponseField name="type" type="string">
+
+                  Subdivision level.
+
+                  **Supported values:**
+
+                  - `UNKNOWN_SUBDIVISION_TYPE`
+                  - `ADMINISTRATIVE_AREA_LEVEL_1` — State.
+                  - `ADMINISTRATIVE_AREA_LEVEL_2` — County.
+                  - `ADMINISTRATIVE_AREA_LEVEL_3` — City/town.
+                  - `ADMINISTRATIVE_AREA_LEVEL_4` — Neighborhood/quarter.
+                  - `ADMINISTRATIVE_AREA_LEVEL_5` — Street/block.
+                  - `COUNTRY` — Equivalent to `ADMINISTRATIVE_AREA_LEVEL_0`. Indicates the national political entity, and is typically the highest order type returned by the Geocoder.
+
+                </ResponseField>
+
+                <ResponseField name="typeInfo" type="string">
+
+                  Free text description of subdivision type.
+                  Examples: `"state"`, `"province"`, `"prefecture"`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="subdivisionFullname" type="string">
+
+              Subdivision full name.
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="street" type="street">
+
+              street
+
+              <Expandable title="street properties">
+
+                <ResponseField name="streetAddress" type="StreetAddress">
+
+                  Street address object, with number and name in separate fields.
+
+                  _Nested structure omitted for brevity — see the `StreetAddress` object._
+
+                </ResponseField>
+
+                <ResponseField name="addressLine" type="string">
+
+                  Main address line, usually street and number, as free text.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="defaultAddress" type="boolean">
+
+          Whether this address is the contact's default address.
+          Only one address can be designated as default per contact.
+          If no address is explicitly set as default, the first address automatically becomes the default.
+
+        </ResponseField>
+
+        <ResponseField name="id" type="string">
+
+          Address ID.
+
+        </ResponseField>
+
+        <ResponseField name="recipient" type="Recipient">
+
+          Address recipient information for delivery purposes.
+
+          <Expandable title="recipient properties">
+
+            <ResponseField name="firstName" type="string">
+
+              Recipient's first name.
+
+            </ResponseField>
+
+            <ResponseField name="lastName" type="string">
+
+              Recipient's last name.
+
+            </ResponseField>
+
+            <ResponseField name="company" type="string">
+
+              Recipient's company name.
+
+            </ResponseField>
+
+            <ResponseField name="phone" type="string">
+
+              Recipient's phone number.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="company" type="ContactCompany">
+
+      Contact's company information including company name and job title.
+
+      <Expandable title="company properties">
+
+        <ResponseField name="name" type="string">
+
+          Contact's company name.
+
+        </ResponseField>
+
+        <ResponseField name="jobTitle" type="string">
+
+          Contact's job title.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="locale" type="string">
+
+      Locale in
+      [IETF BCP 47 language tag](https://en.wikipedia.org/wiki/IETF_language_tag) format.
+      Typically, this is a lowercase 2-letter language code,
+      followed by a hyphen, followed by an uppercase 2-letter country code.
+      For example, `en-US` for U.S. English, and `de-DE` for Germany German.
+
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string">
+
+      Birth date in `YYYY-MM-DD` format. For example, `2020-03-15`.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      IANA time zone identifier for the contact's location.
+      Valid values are IANA time zone IDs, such as 'Europe/Rome' or 'America/New_York'.
+
+    </ResponseField>
+
+    <ResponseField name="assigneeId" type="string">
+
+      Site contributor user ID assigned to manage communication with this contact.
+      Must be a valid GUID referencing an existing site contributor.
+      Only one assignee can be set per contact.
+
+    </ResponseField>
+
+    <ResponseField name="locationIds" type="string[]">
+
+      List of business location IDs associated with this contact.
+      Used for multi-location businesses to organize contacts by physical business locations.
+      Each ID must be a valid GUID referencing an existing business location.
+
+      Constraints: `format GUID`, `maxItems 50`.
+
+    </ResponseField>
+
+    <ResponseField name="image" type="Image">
+
+      Contact's profile image.
+      If the contact is also a site member, clients should prefer to view `member_info.profile_info.photo`
+      when it exists, as it reflects the member's current profile photo.
+
+      <Expandable title="image properties">
+
+        <ResponseField name="id" type="string">
+
+          Media Manager image ID.
+
+          Constraints: `maxLength 255`.
+
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+
+          Image URL. The URL is valid until the date in `urlExpirationDate`.
+
+          Constraints: `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="height" type="integer">
+
+          Original image height.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="width" type="integer">
+
+          Original image width.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="altText" type="string">
+
+          Image alt text.
+
+        </ResponseField>
+
+        <ResponseField name="urlExpirationDate" type="datetime">
+
+          Image URL expiration date (when relevant).
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="sizeInBytes" type="string">
+
+          Image size in bytes.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="source" type="ContactSource">
+
+      Details about the origin of the contact.
+      This field is immutable and set automatically when the contact is created.
+
+      Constraints: `immutable`.
+
+      <Expandable title="source properties">
+
+        <ResponseField name="userId" type="string">
+
+          ID of the user who created this contact.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="appId" type="string">
+
+          ID of the application that created this contact.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="additionalInfo" type="string">
+
+          Additional information about the contact's origin or creation context.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lastActivity" type="ContactActivity">
+
+      Details about the contact's most recent activity on the site.
+      Includes activity date and template ID. This field is read-only and updated automatically.
+
+      **Read-only.**
+
+      <Expandable title="lastActivity properties">
+
+        <ResponseField name="date" type="datetime">
+
+          Date and time when the contact's most recent activity occurred.
+
+        </ResponseField>
+
+        <ResponseField name="templateId" type="string">
+
+          ID of the activity template that defines the type of activity performed.
+          References a template in the contacts activity log system.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="segmentIds" type="string[]">
+
+      IDs of the segments the contact belongs to.
+      Segments are used for organizing and targeting groups of contacts.
+
+      **Read-only.** Constraints: `format GUID`, `maxItems 60`.
+
+    </ResponseField>
+
+    <ResponseField name="memberInfo" type="MemberInfo">
+
+      Contact's site membership information including member ID, status, and profile details.
+      This field is read-only and populated automatically when the contact is also a site member.
+
+      Updates are eventually consistent: changes to the underlying member, identity, or profile are reflected after the corresponding events are processed.
+
+      **Read-only.**
+
+      <Expandable title="memberInfo properties">
+
+        <ResponseField name="memberId" type="string">
+
+          Member ID.
+
+        </ResponseField>
+
+        <ResponseField name="signupDate" type="datetime">
+
+          Date and time the member signed up.
+
+        </ResponseField>
+
+        <ResponseField name="email" type="string">
+
+          Email the member uses to log in.
+
+        </ResponseField>
+
+        <ResponseField name="emailVerified" type="boolean">
+
+          Whether the email is verified.
+
+        </ResponseField>
+
+        <ResponseField name="emailVerificationRequired" type="boolean">
+
+          Whether the member is required to verify their email before they can log in.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Member status.
+          - `PENDING`: Member created and is waiting for approval by site owner.
+          - `ACTIVE`: Member can log in to the site.
+          - `BLOCKED`: Member is blocked and cannot log in to the site.
+          - `OFFLINE`: Member is a [managed writer](https://support.wix.com/en/article/wix-blog-adding-managed-writers-to-your-blog) for the site blog and cannot log in to the site.
+
+          **Supported values:**
+
+          - `PENDING`
+          - `ACTIVE`
+          - `BLOCKED`
+          - `OFFLINE`
+
+        </ResponseField>
+
+        <ResponseField name="profileInfo" type="ProfileInfo">
+
+          Information about the member's public profile.
+
+          <Expandable title="profileInfo properties">
+
+            <ResponseField name="nickname" type="string">
+
+              Member's nickname.
+
+            </ResponseField>
+
+            <ResponseField name="privacyStatus" type="string">
+
+              Whether the member's profile is visible to other site members and visitors.
+
+              **Supported values:**
+
+              - `PRIVATE`
+              - `PUBLIC`
+
+            </ResponseField>
+
+            <ResponseField name="reported" type="boolean">
+
+              Whether the member has been reported by another member.
+
+            </ResponseField>
+
+            <ResponseField name="muted" type="boolean">
+
+              Whether the member has been muted and can't post or comment on the site.
+
+            </ResponseField>
+
+            <ResponseField name="photo" type="Image">
+
+              Member's profile photo.
+
+              <Expandable title="photo properties">
+
+                <ResponseField name="id" type="string">
+
+                  Media Manager image ID.
+
+                  Constraints: `maxLength 255`.
+
+                </ResponseField>
+
+                <ResponseField name="url" type="string">
+
+                  Image URL. The URL is valid until the date in `urlExpirationDate`.
+
+                  Constraints: `maxLength 2048`.
+
+                </ResponseField>
+
+                <ResponseField name="height" type="integer">
+
+                  Original image height.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="width" type="integer">
+
+                  Original image width.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="altText" type="string">
+
+                  Image alt text.
+
+                </ResponseField>
+
+                <ResponseField name="urlExpirationDate" type="datetime">
+
+                  Image URL expiration date (when relevant).
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="sizeInBytes" type="string">
+
+                  Image size in bytes.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="userInfo" type="UserInfo">
+
+          Information about the member's user account.
+
+          <Expandable title="userInfo properties">
+
+            <ResponseField name="userId" type="string">
+
+              User ID.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="role" type="string">
+
+              Member's role on the site.
+
+              **Supported values:**
+
+              - `OWNER`
+              - `CONTRIBUTOR`
+              - `MEMBER`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="sessionInfo" type="SessionInfo">
+
+          Information about the member's login sessions.
+
+          <Expandable title="sessionInfo properties">
+
+            <ResponseField name="lastWebLogin" type="datetime">
+
+              Date and time the member last logged in to the site from a browser.
+
+            </ResponseField>
+
+            <ResponseField name="lastMobileLogin" type="datetime">
+
+              Date and time the member last logged in from one of the mobile apps.
+
+            </ResponseField>
+
+            <ResponseField name="mobileAppNames" type="string[]">
+
+              Mobile apps the member has ever logged in to.
+
+              Constraints: `maxLength 50`, `maxItems 50`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="groupInfo" type="GroupInfo">
+
+          Information about the groups the member belongs to.
+
+          <Expandable title="groupInfo properties">
+
+            <ResponseField name="groupIds" type="string[]">
+
+              IDs of the groups the member belongs to.
+
+              Constraints: `format GUID`, `maxItems 1000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="PrivateTags">
+
+      Tags assigned to the contact for organization and filtering.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission to access, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              A list of tag IDs.
+              To create a tag, use the [Tags API](https://dev.wix.com/docs/api-reference/business-management/tags/introduction) with the contacts FQDN: `wix.contacts.*.contact`.
+
+              Constraints: `maxLength 5`, `maxItems 1000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Extended fields for storing custom contact data beyond the standard fields.
+      Allows adding custom properties specific to business needs.
+      To define a custom extended field, use the [Schema Service API](https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/about-the-data-extension-schema-api) with the contacts FQDN: `wix.contacts.*.contact`.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "contact": {
+          "id": "e2b220e3-9b41-4040-a86f-d5d23266259a",
+          "revision": "3",
+          "createdDate": "2025-01-13T12:26:54.318Z",
+          "updatedDate": "2025-01-13T12:28:36.048Z",
+          "externalId": "asf567890",
+          "name": {
+            "first": "John",
+            "last": "Smith"
+          },
+          "email": {
+            "email": "john.smith@example.com",
+            "subscriptionStatus": {
+              "status": "SUBSCRIBED",
+              "updatedDate": "2025-01-13T12:28:35.048Z"
+            },
+            "deliverabilityStatus": "VALID"
+          },
+          "additionalEmails": [
+            {
+              "email": "another.email1@example.com"
+            },
+            {
+              "email": "another.email2@example.com"
+            }
+          ],
+          "phone": {
+            "tag": "HOME",
+            "phone": "+1 (234) 555-0133",
+            "e164": "+12345550133",
+            "subscriptionStatus": {
+              "status": "UNSUBSCRIBED",
+              "updatedDate": "2025-01-13T12:28:36.048Z"
+            },
+            "deliverabilityStatus": "VALID"
+          },
+          "additionalPhones": [
+            {
+              "tag": "OTHER",
+              "phone": "+1 (234) 555-0111",
+              "e164": "+12345550111"
+            },
+            {
+              "tag": "WORK",
+              "phone": "+1 (234) 555-0199",
+              "e164": "+12345550199"
+            }
+          ],
+          "addresses": [
+            {
+              "tag": "HOME",
+              "address": {
+                "country": "US",
+                "subdivision": "US-IL",
+                "city": "Chicago",
+                "postalCode": "60602",
+                "streetAddress": {
+                  "number": "121",
+                  "name": "North LaSalle Street",
+                  "apt": "4B",
+                  "formattedAddressLine": "121 North LaSalle Street, Apt 4B"
+                },
+                "formattedAddress": "121 North LaSalle Street, Apt 4B, Chicago, IL 60602",
+                "hint": "Blue house with a white fence",
+                "geocode": {
+                  "latitude": 41.8837,
+                  "longitude": 87.6315
+                },
+                "countryFullname": "United States",
+                "subdivisions": [
+                  {
+                    "code": "US-IL",
+                    "name": "Illinois",
+                    "type": "ADMINISTRATIVE_AREA_LEVEL_1"
+                  }
+                ],
+                "subdivisionFullname": "Illinois"
+              },
+              "defaultAddress": true,
+              "id": "6f6a237e-4a2f-4a97-9c9b-df9f2b9c1a11"
+            },
+            {
+              "tag": "SHIPPING",
+              "address": {
+                "country": "US",
+                "subdivision": "US-DC",
+                "city": "Washington",
+                "postalCode": "20500",
+                "addressLine": "1600 Pennsylvania Avenue NW ",
+                "addressLine2": "Washington, DC 20500",
+                "formattedAddress": "1600 Pennsylvania Avenue NW, Washington, DC 20500, United States of America",
+                "countryFullname": "United States",
+                "subdivisions": [],
+                "subdivisionFullname": "District of Columbia"
+              },
+              "defaultAddress": false,
+              "id": "1a6a237e-4a2f-4a97-9c9b-df9f2b9c1a22",
+              "recipient": {
+                "firstName": "John",
+                "lastName": "Smith",
+                "company": "Wix",
+                "phone": "+1 (234) 555-0133"
+              }
+            }
+          ],
+          "company": {
+            "name": "Wix",
+            "jobTitle": "Software Engineer"
+          },
+          "locale": "en-US",
+          "birthdate": "2000-10-25",
+          "timeZone": "America/Chicago",
+          "assigneeId": "7da2220c-aa6c-4371-a739-1499617b82ab",
+          "locationIds": [
+            "bc8d8e52-647d-4985-944b-c3106b49a552",
+            "d235d4ae-cb07-477d-a2df-c60924614d94"
+          ],
+          "image": {
+            "id": "2752897b-bea0-45bf-b8cf-1be652ba25b7",
+            "url": "https://img-wixmp-8be454c954980f083caba37c.wixmp.com/sites/c0c4070f-a3b6-4a7d-88fb-93a7f48d2f9b/e2b220e3-9b41-4040-a86f-d5d23266259a/2752897b-bea0-45bf-b8cf-1be652ba25b7-avatar-v5.jpeg/v1/fit/w_100,h_100/image.jpeg?token=<TOKEN>",
+            "height": 512,
+            "width": 512,
+            "altText": "john doe",
+            "urlExpirationDate": "2026-01-13T12:29:12.865961939Z",
+            "sizeInBytes": "27446"
+          },
+          "source": {
+            "userId": "8046df3c-7575-4098-a5ab-c91ad8f33c47",
+            "appId": "e9ff4742-bbf6-4e05-821b-a8b3cf9a5f24",
+            "additionalInfo": "Imported from external CRM"
+          },
+          "lastActivity": {
+            "date": "2025-01-13T12:28:35.389Z",
+            "templateId": "41ee7fba-50ce-4a66-8281-14f8c8d29dc1"
+          },
+          "segmentIds": [
+            "3f6a237e-4a2f-4a97-9c9b-df9f2b9c1a33",
+            "4f6a237e-4a2f-4a97-9c9b-df9f2b9c1a44"
+          ],
+          "memberInfo": {
+            "memberId": "204e902b-74f1-4373-9a1b-f05d1553d411",
+            "signupDate": "2025-01-13T12:28:31Z",
+            "email": "john.smith@example.com",
+            "emailVerified": false,
+            "emailVerificationRequired": true,
+            "status": "ACTIVE",
+            "profileInfo": {
+              "nickname": "johnny",
+              "privacyStatus": "PRIVATE",
+              "reported": false,
+              "muted": false,
+              "photo": {
+                "id": "9a1e237e-4a2f-4a97-9c9b-df9f2b9c1a55",
+                "url": "https://static.wixstatic.com/media/9a1e23_7575409809af5eab.jpg",
+                "height": 300,
+                "width": 300,
+                "altText": "john doe profile photo",
+                "urlExpirationDate": "2026-01-13T12:29:12.865961939Z",
+                "sizeInBytes": "18230"
+              }
+            },
+            "userInfo": {
+              "userId": "204e902b-74f1-4373-9a1b-f05d1553d488",
+              "role": "CONTRIBUTOR"
+            },
+            "sessionInfo": {
+              "lastWebLogin": "2025-01-13T12:26:54.318Z",
+              "lastMobileLogin": "2025-01-13T12:26:54.318Z",
+              "mobileAppNames": ["WixOneApp", "WixAdminApp"]
+            },
+            "groupInfo": {
+              "groupIds": ["1d14d5c6-47a6-44e8-a295-f5c5e83dc177", "2c7e6d4a-fb67-4dbc-99fe-a9ad2bc4b38c"]
+            }
+          },
+          "tags": {
+            "privateTags": {
+              "tagIds": [
+                "anght",
+                "zfgtr"
+              ]
+            }
+          },
+          "extendedFields": {
+            "namespaces": {
+              "_user_fields": {
+                "employment_date": "2019-05-15",
+                "seniority": 5,
+                "department_name": "Research"
+              },
+              "@get-paid/invoices": {
+                "vatId": "123456789"
+              }
+            }
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Contact ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the Contact is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the Contact.
+
+      Ignored when creating a Contact.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the contact was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the contact was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="externalId" type="string">
+
+      Contact external ID. Used to identify contacts from external systems.
+      This field can only be set once and can't be updated after creation.
+
+    </ResponseField>
+
+    <ResponseField name="name" type="ContactName">
+
+      Contact's name information including first and last name.
+
+      <Expandable title="name properties">
+
+        <ResponseField name="first" type="string">
+
+          Contact's first name.
+
+        </ResponseField>
+
+        <ResponseField name="last" type="string">
+
+          Contact's last name.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="email" type="ContactEmail">
+
+      The main email of the contact with subscription status and deliverability information.
+      This email is used for contact matching and deduplication logic.
+
+      <Expandable title="email properties">
+
+        <ResponseField name="email" type="string">
+
+          Main email address for the contact. Used for communication and contact matching.
+
+          Stored in normalized form: leading and trailing whitespace is trimmed and the address is lowercased.
+
+          Constraints: `format EMAIL`, `maxLength 320`.
+
+        </ResponseField>
+
+        <ResponseField name="subscriptionStatus" type="ContactSubscription">
+
+          Indicates the recipient's opt-in or opt-out status for marketing emails.
+          This field is read-only and managed by the subscription system.
+
+          Updates are eventually consistent, reflecting marketing consent changes after they're processed.
+
+          **Read-only.**
+
+          <Expandable title="subscriptionStatus properties">
+
+            <ResponseField name="status" type="string">
+
+              Indicates the recipient's opt-in or opt-out status for marketing communications.
+
+              - `NO_SUBSCRIPTION_STATUS`: No status exists. Used when a phone is not a valid E164 number.
+              - `NOT_SET`: No subscription status specified. Default value.
+              - `PENDING`: Subscription confirmation was requested, but recipient hasn't confirmed yet.
+              - `SUBSCRIBED`: Recipient has explicitly opted in to receive marketing communications.
+              - `UNSUBSCRIBED`: Recipient has opted out of marketing communications.
+
+              **Supported values:**
+
+              - `NO_SUBSCRIPTION_STATUS`
+              - `NOT_SET`
+              - `PENDING`
+              - `SUBSCRIBED`
+              - `UNSUBSCRIBED`
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time when the subscription status was last updated.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="deliverabilityStatus" type="string">
+
+          Indicates the last reported delivery status of emails sent to this address.
+          This field is read-only and updated automatically by the email delivery system.
+
+          - `NOT_SET`: No delivery status reported. Default value.
+          - `VALID`: Emails are being successfully delivered to this address.
+          - `BOUNCED`: The last email to this address bounced or was rejected by the recipient's email server.
+          - `SPAM_COMPLAINT`: Recipient registered a spam complaint with their email provider.
+          - `INACTIVE`: Multiple emails have been delivered without any engagement from the recipient.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NOT_SET`
+          - `VALID`
+          - `BOUNCED`
+          - `SPAM_COMPLAINT`
+          - `INACTIVE`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalEmails" type="AdditionalEmail[]">
+
+      Additional emails of the contact.
+      These emails do not affect subscription status or contact matching/deduplication.
+      The main email field must be set before additional emails can be added.
+
+      Constraints: `maxItems 10`.
+
+      <Expandable title="additionalEmails properties">
+
+        <ResponseField name="email" type="string">
+
+          Additional email address for the contact.
+          Does not affect subscription status or contact matching logic.
+
+          Constraints: `format EMAIL`, `maxLength 320`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="phone" type="ContactPhone">
+
+      The main phone of the contact with subscription status and deliverability information.
+      This phone is used for contact matching and deduplication logic.
+      At least one of name, email, or phone is required for contact creation.
+
+      <Expandable title="phone properties">
+
+        <ResponseField name="tag" type="string">
+
+          Phone type classification. Helps categorize the phone number's purpose.
+
+          Default: `OTHER`
+
+          **Supported values:**
+
+          - `OTHER`
+          - `MAIN`
+          - `HOME`
+          - `MOBILE`
+          - `WORK`
+          - `FAX`
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Primary phone number for the contact. Used for communication and contact matching.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="e164" type="string">
+
+          Phone number in [ITU E.164 international](https://www.itu.int/rec/T-REC-E.164/) format (e.g., +12345550123).
+          This field is automatically generated from the phone field if it represents a valid E.164 number.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="subscriptionStatus" type="ContactSubscription">
+
+          Indicates the recipient's opt-in or opt-out status for SMS/text message marketing.
+          This field is read-only and managed by the subscription system.
+
+          Updates are eventually consistent, reflecting marketing consent changes after they're processed.
+
+          **Read-only.**
+
+          <Expandable title="subscriptionStatus properties">
+
+            <ResponseField name="status" type="string">
+
+              Indicates the recipient's opt-in or opt-out status for marketing communications.
+
+              - `NO_SUBSCRIPTION_STATUS`: No status exists. Used when a phone is not a valid E164 number.
+              - `NOT_SET`: No subscription status specified. Default value.
+              - `PENDING`: Subscription confirmation was requested, but recipient hasn't confirmed yet.
+              - `SUBSCRIBED`: Recipient has explicitly opted in to receive marketing communications.
+              - `UNSUBSCRIBED`: Recipient has opted out of marketing communications.
+
+              **Supported values:**
+
+              - `NO_SUBSCRIPTION_STATUS`
+              - `NOT_SET`
+              - `PENDING`
+              - `SUBSCRIBED`
+              - `UNSUBSCRIBED`
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time when the subscription status was last updated.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="deliverabilityStatus" type="string">
+
+          Indicates the delivery status for SMS messages sent to this phone number.
+          This field is read-only and updated automatically by the SMS delivery system.
+          - `NO_PHONE_DELIVERABILITY_STATUS`: No status exists. Used when the phone is not a valid E164 number.
+          - `NOT_SET`: No delivery status reported. Default when the phone is a valid E164 number.
+          - `VALID`: Last message was sent and delivered successfully.
+          - `INVALID`: The number is invalid (landline, number disconnected, etc.).
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NO_PHONE_DELIVERABILITY_STATUS`
+          - `NOT_SET`
+          - `VALID`
+          - `INVALID`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalPhones" type="AdditionalPhone[]">
+
+      Additional phones of the contact.
+      These phones do not affect subscription status or contact matching/deduplication.
+      The main phone field must be set before additional phones can be added.
+
+      Constraints: `maxItems 10`.
+
+      <Expandable title="additionalPhones properties">
+
+        <ResponseField name="tag" type="string">
+
+          Phone type classification for the additional phone number.
+
+          Default: `OTHER`
+
+          **Supported values:**
+
+          - `OTHER`
+          - `MAIN`
+          - `HOME`
+          - `MOBILE`
+          - `WORK`
+          - `FAX`
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Additional phone number for the contact.
+          Does not affect subscription status or contact matching logic.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="e164" type="string">
+
+          Additional phone number in [ITU E.164 international](https://www.itu.int/rec/T-REC-E.164/) format (e.g., +12345550123).
+          This field is automatically generated from the phone field if it represents a valid E.164 number.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="addresses" type="ContactAddress[]">
+
+      Contact's physical addresses.
+      Each address can be tagged (HOME, WORK, BILLING, SHIPPING, OTHER) and one can be set as default.
+      If no address is marked as default, the first address automatically becomes the default.
+
+      Constraints: `maxItems 50`.
+
+      <Expandable title="addresses properties">
+
+        <ResponseField name="tag" type="string">
+
+          Address type classification. Helps categorize the address purpose.
+
+          Default: `OTHER`
+
+          **Supported values:**
+
+          - `OTHER`
+          - `HOME`
+          - `WORK`
+          - `BILLING`
+          - `SHIPPING`
+
+        </ResponseField>
+
+        <ResponseField name="address" type="Address">
+
+          Physical address information including street, city, country, and postal code.
+          Contains structured address data following common address formatting standards.
+
+          <Expandable title="address properties">
+
+            <ResponseField name="city" type="string" />
+
+            <ResponseField name="subdivision" type="string" />
+
+            <ResponseField name="country" type="string" />
+
+            <ResponseField name="postalCode" type="string" />
+
+            <ResponseField name="addressLine1" type="string" />
+
+            <ResponseField name="addressLine2" type="string" />
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="defaultAddress" type="boolean">
+
+          Whether this address is the contact's default address.
+          Only one address can be designated as default per contact.
+          If no address is explicitly set as default, the first address automatically becomes the default.
+
+        </ResponseField>
+
+        <ResponseField name="_id" type="string">
+
+          Address ID.
+
+        </ResponseField>
+
+        <ResponseField name="recipient" type="Recipient">
+
+          Address recipient information for delivery purposes.
+
+          <Expandable title="recipient properties">
+
+            <ResponseField name="firstName" type="string">
+
+              Recipient's first name.
+
+            </ResponseField>
+
+            <ResponseField name="lastName" type="string">
+
+              Recipient's last name.
+
+            </ResponseField>
+
+            <ResponseField name="company" type="string">
+
+              Recipient's company name.
+
+            </ResponseField>
+
+            <ResponseField name="phone" type="string">
+
+              Recipient's phone number.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="company" type="ContactCompany">
+
+      Contact's company information including company name and job title.
+
+      <Expandable title="company properties">
+
+        <ResponseField name="name" type="string">
+
+          Contact's company name.
+
+        </ResponseField>
+
+        <ResponseField name="jobTitle" type="string">
+
+          Contact's job title.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="locale" type="string">
+
+      Locale in
+      [IETF BCP 47 language tag](https://en.wikipedia.org/wiki/IETF_language_tag) format.
+      Typically, this is a lowercase 2-letter language code,
+      followed by a hyphen, followed by an uppercase 2-letter country code.
+      For example, `en-US` for U.S. English, and `de-DE` for Germany German.
+
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string">
+
+      Birth date in `YYYY-MM-DD` format. For example, `2020-03-15`.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      IANA time zone identifier for the contact's location.
+      Valid values are IANA time zone IDs, such as 'Europe/Rome' or 'America/New_York'.
+
+    </ResponseField>
+
+    <ResponseField name="assigneeId" type="string">
+
+      Site contributor user ID assigned to manage communication with this contact.
+      Must be a valid GUID referencing an existing site contributor.
+      Only one assignee can be set per contact.
+
+    </ResponseField>
+
+    <ResponseField name="locationIds" type="string[]">
+
+      List of business location IDs associated with this contact.
+      Used for multi-location businesses to organize contacts by physical business locations.
+      Each ID must be a valid GUID referencing an existing business location.
+
+      Constraints: `format GUID`, `maxItems 50`.
+
+    </ResponseField>
+
+    <ResponseField name="image" type="string">
+
+      Contact's profile image.
+      If the contact is also a site member, clients should prefer to view `member_info.profile_info.photo`
+      when it exists, as it reflects the member's current profile photo.
+
+    </ResponseField>
+
+    <ResponseField name="source" type="ContactSource">
+
+      Details about the origin of the contact.
+      This field is immutable and set automatically when the contact is created.
+
+      Constraints: `immutable`.
+
+      <Expandable title="source properties">
+
+        <ResponseField name="userId" type="string">
+
+          ID of the user who created this contact.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="appId" type="string">
+
+          ID of the application that created this contact.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="additionalInfo" type="string">
+
+          Additional information about the contact's origin or creation context.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lastActivity" type="ContactActivity">
+
+      Details about the contact's most recent activity on the site.
+      Includes activity date and template ID. This field is read-only and updated automatically.
+
+      **Read-only.**
+
+      <Expandable title="lastActivity properties">
+
+        <ResponseField name="date" type="datetime">
+
+          Date and time when the contact's most recent activity occurred.
+
+        </ResponseField>
+
+        <ResponseField name="templateId" type="string">
+
+          ID of the activity template that defines the type of activity performed.
+          References a template in the contacts activity log system.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="segmentIds" type="string[]">
+
+      IDs of the segments the contact belongs to.
+      Segments are used for organizing and targeting groups of contacts.
+
+      **Read-only.** Constraints: `format GUID`, `maxItems 60`.
+
+    </ResponseField>
+
+    <ResponseField name="memberInfo" type="MemberInfo">
+
+      Contact's site membership information including member ID, status, and profile details.
+      This field is read-only and populated automatically when the contact is also a site member.
+
+      Updates are eventually consistent: changes to the underlying member, identity, or profile are reflected after the corresponding events are processed.
+
+      **Read-only.**
+
+      <Expandable title="memberInfo properties">
+
+        <ResponseField name="memberId" type="string">
+
+          Member ID.
+
+        </ResponseField>
+
+        <ResponseField name="signupDate" type="datetime">
+
+          Date and time the member signed up.
+
+        </ResponseField>
+
+        <ResponseField name="email" type="string">
+
+          Email the member uses to log in.
+
+        </ResponseField>
+
+        <ResponseField name="emailVerified" type="boolean">
+
+          Whether the email is verified.
+
+        </ResponseField>
+
+        <ResponseField name="emailVerificationRequired" type="boolean">
+
+          Whether the member is required to verify their email before they can log in.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Member status.
+          - `PENDING`: Member created and is waiting for approval by site owner.
+          - `ACTIVE`: Member can log in to the site.
+          - `BLOCKED`: Member is blocked and cannot log in to the site.
+          - `OFFLINE`: Member is a [managed writer](https://support.wix.com/en/article/wix-blog-adding-managed-writers-to-your-blog) for the site blog and cannot log in to the site.
+
+          **Supported values:**
+
+          - `PENDING`
+          - `ACTIVE`
+          - `BLOCKED`
+          - `OFFLINE`
+
+        </ResponseField>
+
+        <ResponseField name="profileInfo" type="ProfileInfo">
+
+          Information about the member's public profile.
+
+          <Expandable title="profileInfo properties">
+
+            <ResponseField name="nickname" type="string">
+
+              Member's nickname.
+
+            </ResponseField>
+
+            <ResponseField name="privacyStatus" type="string">
+
+              Whether the member's profile is visible to other site members and visitors.
+
+              **Supported values:**
+
+              - `PRIVATE`
+              - `PUBLIC`
+
+            </ResponseField>
+
+            <ResponseField name="reported" type="boolean">
+
+              Whether the member has been reported by another member.
+
+            </ResponseField>
+
+            <ResponseField name="muted" type="boolean">
+
+              Whether the member has been muted and can't post or comment on the site.
+
+            </ResponseField>
+
+            <ResponseField name="photo" type="string">
+
+              Member's profile photo.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="userInfo" type="UserInfo">
+
+          Information about the member's user account.
+
+          <Expandable title="userInfo properties">
+
+            <ResponseField name="userId" type="string">
+
+              User ID.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="role" type="string">
+
+              Member's role on the site.
+
+              **Supported values:**
+
+              - `OWNER`
+              - `CONTRIBUTOR`
+              - `MEMBER`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="sessionInfo" type="SessionInfo">
+
+          Information about the member's login sessions.
+
+          <Expandable title="sessionInfo properties">
+
+            <ResponseField name="lastWebLogin" type="datetime">
+
+              Date and time the member last logged in to the site from a browser.
+
+            </ResponseField>
+
+            <ResponseField name="lastMobileLogin" type="datetime">
+
+              Date and time the member last logged in from one of the mobile apps.
+
+            </ResponseField>
+
+            <ResponseField name="mobileAppNames" type="string[]">
+
+              Mobile apps the member has ever logged in to.
+
+              Constraints: `maxLength 50`, `maxItems 50`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="groupInfo" type="GroupInfo">
+
+          Information about the groups the member belongs to.
+
+          <Expandable title="groupInfo properties">
+
+            <ResponseField name="groupIds" type="string[]">
+
+              IDs of the groups the member belongs to.
+
+              Constraints: `format GUID`, `maxItems 1000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="PrivateTags">
+
+      Tags assigned to the contact for organization and filtering.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission to access, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              A list of tag IDs.
+              To create a tag, use the [Tags API](https://dev.wix.com/docs/api-reference/business-management/tags/introduction) with the contacts FQDN: `wix.contacts.*.contact`.
+
+              Constraints: `maxLength 5`, `maxItems 1000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Extended fields for storing custom contact data beyond the standard fields.
+      Allows adding custom properties specific to business needs.
+      To define a custom extended field, use the [Schema Service API](https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/about-the-data-extension-schema-api) with the contacts FQDN: `wix.contacts.*.contact`.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

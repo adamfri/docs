@@ -1,0 +1,76 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Sync promotions to an external content management system
+
+If a site owner manages promotional content in an external system, you can periodically export new and updated promotions to keep both systems in sync.
+
+To sync promotions to an external system:
+
+1. For the initial sync after the app is installed, call [Query Promotions](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/promotions-v3/query-promotions) to retrieve all existing promotions.
+
+1. Upload the returned promotions to the external system.
+
+1. Save the current date and time to use as a reference for subsequent syncs.
+
+1. For each subsequent sync, call [Query Promotions](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/promotions-v3/query-promotions) and filter for promotions updated since the last sync:
+
+    ```json
+    {
+      "filter": {
+        "updatedDate": {
+          "$gt": "<LAST_SYNC_DATETIME>"
+        }
+      }
+    }
+    ```
+
+1. Upload any new or updated promotions to the external system.
+
+1. Repeat steps 4 and 5 at your desired interval. You can allow the site admin to configure the sync frequency through your app.
+
+## Assign seasonal promotions to multiple categories
+
+When a site owner runs a seasonal sale, you can create promotions and assign them to multiple categories at once using the bulk API.
+
+To assign seasonal promotions to multiple categories:
+
+1. Prepare an array of promotion objects, each with a `name`, `media`, and the `categories` to assign to. Set `appliedToSubcategories` to `true` if the promotion should also appear in subcategories. For example:
+
+    ```json
+    {
+      "promotions": [
+        {
+          "name": "Summer Sale",
+          "media": {
+            "url": "https://example.com/summer-sale-banner.jpg"
+          },
+          "categories": [
+            {
+              "id": "<CATEGORY_ID>",
+              "position": 1,
+              "appliedToSubcategories": true
+            }
+          ],
+          "enabled": true
+        }
+      ]
+    }
+    ```
+
+1. Call [Bulk Create Promotions](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/promotions-v3/bulk-create-promotions) with the array and set `returnEntity` to `true` to get the created promotions in the response.
+
+1. Verify that the promotions were created successfully by checking the `bulkActionMetadata.totalSuccesses` field in the response.
+
+1. To verify how the promotions appear for a specific category, call [Resolve Promotions](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/promotions-v3/resolve-promotions) with the category ID. The response returns the effective promotions sorted by position.
+
+    <Note>
+
+    When media is set with a URL, Wix Media Manager imports the image asynchronously, and the promotion becomes enabled only after the import completes successfully. Until then, Resolve Promotions doesn't return the promotion.
+
+    </Note>

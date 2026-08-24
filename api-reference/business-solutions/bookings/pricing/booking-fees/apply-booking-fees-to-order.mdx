@@ -1,0 +1,708 @@
+---
+title: "Apply Booking Fees To Order"
+description: "Applies booking fees to an eCommerce order."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Applies booking fees to an [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction).
+
+    The booking fees are added as a single additional fee to the eCommerce order.
+    The order's `additionalFee.lineItemIds` array is set to the list of corresponding
+    booking IDs. By default, the `additionalFee.price.amount` is the sum of all
+    booking fee prices. But you may provide a `priceOverride` instead. The override
+    price can't be higher than the sum of all booking fees.
+
+    Apply Booking Fees to Order also updates the prices of all affected line items
+    in the relevant eCommerce order to zero. After a cancellation fee is applied
+    to an eCommerce order, the cancellation fee's `price.value` is updated to `0.00`
+    and its trigger is set to `UNKNOWN_TRIGGER`. You can retrieve the fee amount
+    from the corresponding `additionalFee` object of the eCommerce order with
+    [Search Orders](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/search-orders).
+
+    If you apply multiple booking fees to an eCommerce order, they either all fail or
+    all succeed together. For example, the call fails if the booking fees are associated
+    with different eCommmerce orders.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/booking-fees/v1/booking-fees/apply
+    ```
+
+    ## Body Params
+
+    <ParamField body="bookingIds" type="string[]" required>
+
+      IDs of the bookings for which to apply booking fees to an eCommerce order.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 5`.
+
+    </ParamField>
+
+    <ParamField body="priceOverride" type="Money">
+
+      Custom price override for the additional fee that's added to the eCommerce
+      order. The override mustn't exceed the sum of all booking fees. You must have
+      the `OVERRIDE_BOOKING_FEE_PRICE` permission to use this property.
+
+      <Expandable title="priceOverride properties">
+
+        <ParamField body="value" type="string" required>
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string" required>
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ParamField>
+
+        <ParamField body="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+          **Read-only.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="businessNotification" type="BusinessNotification">
+
+      Information about the message to the business and whether to send it if the
+      booking fee application to the eCommerce order fails.
+
+      <Expandable title="businessNotification properties">
+
+        <ParamField body="notifyBusiness" type="boolean">
+
+          Whether to notify the business about changes made to the booking fees.
+          Default is false.
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Optional custom message to send.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="bookingFees" type="BookingFee[]">
+
+      Booking fees that were applied as a single additional fee to the eCommerce
+      order.
+
+      See the [Booking Fee Object](/api-reference/business-solutions/bookings/pricing/booking-fees/booking-fee-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="ecomOrderInfo" type="EcomOrderInfo">
+
+      Information about the eCommerce order to which the booking fees are applied.
+
+      <Expandable title="ecomOrderInfo properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+        </ResponseField>
+
+        <ResponseField name="additionalFeePrice" type="Price">
+
+          Additional fee price.
+
+          <Expandable title="additionalFeePrice properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.** Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFeeId" type="string">
+
+          The eCommerce additional fee id that was created on the order.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_IDS_BELONG_TO_DIFFERENT_ORDERS` | The specified booking IDs are associated with different eCommerce orders. All bookings must belong to the same order. |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `428` | `FAILED_PRECONDITION` | `PRICE_OVERRIDE_EXCEEDS_MAX` | The `priceOverride` exceeds the total of all booking fees. Reduce the override amount or omit it to use the calculated fee total. |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_FEE_ALREADY_APPLIED` | The booking fee was already applied to the order. |
+    | `404` | `NOT_FOUND` | `BOOKING_FEE_NOT_FOUND` | Couldn't find the booking fee. |
+    | `409` | `ALREADY_EXISTS` | `ORDER_IS_ALREADY_EDITED` | The order was already edited. |
+    | `428` | `FAILED_PRECONDITION` | `PARTIALLY_OR_FULLY_REFUNDED_ORDER_CANNOT_BE_EDITED` | The order was partially or fully refunded and can't be edited. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_WITH_TAXABLE_EXISTING_ADDITIONAL_FEE_CANNOT_BE_EDITED` | The order has a taxable additional fee and can't be edited. Contact support for assistance. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANNOT_BE_EDITED` | The order can't be edited. Verify the order status and try again. |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_FEE_AND_ORDER_CURRENCIES_ARE_INCONSISTENT` | The booking fee currency doesn't match the order currency. Ensure both use the same currency. |
+    | `403` | `PERMISSION_DENIED` | `PRICE_OVERRIDE_INSUFFICIENT_PERMISSIONS` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `500` | `INTERNAL` | `FAILED_CALCULATING_BOOKING_FEE` | Couldn't calculate the booking fee. Verify the booking details and try again. |
+    | `500` | `INTERNAL` | `FAILED_APPLYING_BOOKING_FEE_TO_ORDER` | Couldn't apply the booking fee to the order. Try again later. |
+    | `428` | `FAILED_PRECONDITION` | `UPDATING_ITEM_WITH_RELATED_DISCOUNT_IS_FORBIDDEN` | The order line item has an associated discount and can't be updated. Remove the discount before updating the item. |
+    | `428` | `FAILED_PRECONDITION` | `UPDATING_ITEM_WITH_RELATED_ADDITIONAL_FEE_IS_FORBIDDEN` | The order line item has an associated additional fee and can't be updated. Remove the additional fee before updating the item. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-apply-booking-fees-to-order" id="ex-rest-apply-booking-fees-to-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-apply-booking-fees-to-order" id="ex-rest-apply-booking-fees-to-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-apply-booking-fees-to-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-apply-booking-fees-to-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Apply booking fees with price override to order</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Apply booking fees to order</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-apply-booking-fees-to-order-0"><span className="wix-picker-name">Apply booking fees with price override to order</span></label>
+    <label htmlFor="ex-rest-apply-booking-fees-to-order-1"><span className="wix-picker-name">Apply booking fees to order</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/_api/booking-fees/v1/booking-fees/apply' \
+      -H 'Authorization: <AUTH>'
+      -d '{
+        "bookingIds": [
+          "52384da2-f6cf-45ac-9537-d92e2ca514e8"
+        ],
+        "priceOverride": {
+          "value": "4",
+          "currency": "USD"
+        },
+        "businessNotification": {
+          "notifyBusiness": true
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "bookingFees": [
+          {
+            "id": "52384da2-f6cf-45ac-9537-d92e2ca514e8",
+            "bookingId": "52384da2-f6cf-45ac-9537-d92e2ca514e8",
+            "cancellationFee": {
+              "price": {
+                "value": "5.0",
+                "currency": "USD"
+              },
+              "status": "APPLIED_TO_ORDER",
+              "trigger": "NOT_ATTENDED"
+            },
+            "policyDetails": {
+              "id": "295e2750-852f-4c52-9693-fc6c0d0c587b",
+              "description": "This is our policy"
+            }
+          }
+        ],
+        "ecomOrderInfo": {
+          "orderId": "f2b9f4ee-be9d-436a-ad07-30c96c48933d",
+          "additionalFeePrice": {
+            "amount": "4.0",
+            "formattedAmount": "$4.00"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/_api/booking-fees/v1/booking-fees/apply' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "bookingIds": [
+          "a717b687-aaa8-4e35-85ba-adbd88bbadd8",
+          "ff04b4b3-b386-4db1-8990-60c5ec6f4229"
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "bookingFees": [
+          {
+            "id": "a717b687-aaa8-4e35-85ba-adbd88bbadd8",
+            "bookingId": "a717b687-aaa8-4e35-85ba-adbd88bbadd8",
+            "cancellationFee": {
+              "price": {
+                "value": "5.0",
+                "currency": "USD"
+              },
+              "status": "APPLIED_TO_ORDER",
+              "trigger": "NOT_ATTENDED"
+            },
+            "policyDetails": {
+              "id": "295e2750-852f-4c52-9693-fc6c0d0c587b",
+              "description": "This is our policy"
+            }
+          },
+          {
+            "id": "ff04b4b3-b386-4db1-8990-60c5ec6f4229",
+            "bookingId": "ff04b4b3-b386-4db1-8990-60c5ec6f4229",
+            "cancellationFee": {
+              "price": {
+                "value": "5.0",
+                "currency": "USD"
+              },
+              "status": "APPLIED_TO_ORDER",
+              "trigger": "NOT_ATTENDED"
+            },
+            "policyDetails": {
+              "id": "295e2750-852f-4c52-9693-fc6c0d0c587b",
+              "description": "This is our policy"
+            }
+          }
+        ],
+        "ecomOrderInfo": {
+          "orderId": "f8131b11-4a40-461e-939e-f67961ecf593",
+          "additionalFeePrice": {
+            "amount": "10.0",
+            "formattedAmount": "$10.00"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Applies booking fees to an [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction).
+
+    The booking fees are added as a single additional fee to the eCommerce order.
+    The order's `additionalFee.lineItemIds` array is set to the list of corresponding
+    booking IDs. By default, the `additionalFee.price.amount` is the sum of all
+    booking fee prices. But you may provide a `priceOverride` instead. The override
+    price can't be higher than the sum of all booking fees.
+
+    Apply Booking Fees to Order also updates the prices of all affected line items
+    in the relevant eCommerce order to zero. After a cancellation fee is applied
+    to an eCommerce order, the cancellation fee's `price.value` is updated to `0.00`
+    and its trigger is set to `UNKNOWN_TRIGGER`. You can retrieve the fee amount
+    from the corresponding `additionalFee` object of the eCommerce order with
+    [Search Orders](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/search-orders).
+
+    If you apply multiple booking fees to an eCommerce order, they either all fail or
+    all succeed together. For example, the call fails if the booking fees are associated
+    with different eCommmerce orders.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookingFees } from '@wix/bookings';
+
+    bookingFees.applyBookingFeesToOrder(bookingIds, options): Promise<ApplyBookingFeesToOrderResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="bookingIds" type="string[]" required>
+
+      IDs of the bookings for which to apply booking fees to an eCommerce order.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 5`.
+
+    </ParamField>
+
+    <ParamField body="options" type="ApplyBookingFeesToOrderOptions">
+
+      Options to use when applying booking fees to an eCommerce order.
+
+      <Expandable title="options properties">
+
+        <ParamField body="priceOverride" type="Money">
+
+          Custom price override for the additional fee that's added to the eCommerce
+          order. The override mustn't exceed the sum of all booking fees. You must have
+          the `OVERRIDE_BOOKING_FEE_PRICE` permission to use this property.
+
+          <Expandable title="priceOverride properties">
+
+            <ParamField body="value" type="string" required>
+
+              Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`.
+
+            </ParamField>
+
+            <ParamField body="currency" type="string" required>
+
+              Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+              Constraints: `format CURRENCY`.
+
+            </ParamField>
+
+            <ParamField body="formattedValue" type="string">
+
+              Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="businessNotification" type="BusinessNotification">
+
+          Information about the message to the business and whether to send it if the
+          booking fee application to the eCommerce order fails.
+
+          <Expandable title="businessNotification properties">
+
+            <ParamField body="notifyBusiness" type="boolean">
+
+              Whether to notify the business about changes made to the booking fees.
+              Default is false.
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Optional custom message to send.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ApplyBookingFeesToOrderResponse>`.
+
+    <ResponseField name="bookingFees" type="BookingFee[]">
+
+      Booking fees that were applied as a single additional fee to the eCommerce
+      order.
+
+      See the [Booking Fee Object](/api-reference/business-solutions/bookings/pricing/booking-fees/booking-fee-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="ecomOrderInfo" type="EcomOrderInfo">
+
+      Information about the eCommerce order to which the booking fees are applied.
+
+      <Expandable title="ecomOrderInfo properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+        </ResponseField>
+
+        <ResponseField name="additionalFeePrice" type="Price">
+
+          Additional fee price.
+
+          <Expandable title="additionalFeePrice properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.** Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalFeeId" type="string">
+
+          The eCommerce additional fee id that was created on the order.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_IDS_BELONG_TO_DIFFERENT_ORDERS` | The specified booking IDs are associated with different eCommerce orders. All bookings must belong to the same order. |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `428` | `FAILED_PRECONDITION` | `PRICE_OVERRIDE_EXCEEDS_MAX` | The `priceOverride` exceeds the total of all booking fees. Reduce the override amount or omit it to use the calculated fee total. |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_FEE_ALREADY_APPLIED` | The booking fee was already applied to the order. |
+    | `404` | `NOT_FOUND` | `BOOKING_FEE_NOT_FOUND` | Couldn't find the booking fee. |
+    | `409` | `ALREADY_EXISTS` | `ORDER_IS_ALREADY_EDITED` | The order was already edited. |
+    | `428` | `FAILED_PRECONDITION` | `PARTIALLY_OR_FULLY_REFUNDED_ORDER_CANNOT_BE_EDITED` | The order was partially or fully refunded and can't be edited. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_WITH_TAXABLE_EXISTING_ADDITIONAL_FEE_CANNOT_BE_EDITED` | The order has a taxable additional fee and can't be edited. Contact support for assistance. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANNOT_BE_EDITED` | The order can't be edited. Verify the order status and try again. |
+    | `428` | `FAILED_PRECONDITION` | `BOOKING_FEE_AND_ORDER_CURRENCIES_ARE_INCONSISTENT` | The booking fee currency doesn't match the order currency. Ensure both use the same currency. |
+    | `403` | `PERMISSION_DENIED` | `PRICE_OVERRIDE_INSUFFICIENT_PERMISSIONS` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+    | `500` | `INTERNAL` | `FAILED_CALCULATING_BOOKING_FEE` | Couldn't calculate the booking fee. Verify the booking details and try again. |
+    | `500` | `INTERNAL` | `FAILED_APPLYING_BOOKING_FEE_TO_ORDER` | Couldn't apply the booking fee to the order. Try again later. |
+    | `428` | `FAILED_PRECONDITION` | `UPDATING_ITEM_WITH_RELATED_DISCOUNT_IS_FORBIDDEN` | The order line item has an associated discount and can't be updated. Remove the discount before updating the item. |
+    | `428` | `FAILED_PRECONDITION` | `UPDATING_ITEM_WITH_RELATED_ADDITIONAL_FEE_IS_FORBIDDEN` | The order line item has an associated additional fee and can't be updated. Remove the additional fee before updating the item. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Fee Failed Apply Booking Fee | `wix.bookings.fees.v1.booking_fee_failed_apply_booking_fee` | Triggered when [Apply Booking Fees to Order](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/apply-booking-fees-to-order) fails. If several booking fee are applied to the same eCommerce order all of them fail or succeed together. Then, the event is triggered for each fee individually and not only once. But only a single of these events includes the `businessNotification`. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-apply-booking-fees-to-order" id="ex-sdk-apply-booking-fees-to-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-apply-booking-fees-to-order" id="ex-sdk-apply-booking-fees-to-order-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-apply-booking-fees-to-order" id="ex-sdk-apply-booking-fees-to-order-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-apply-booking-fees-to-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-apply-booking-fees-to-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">applyBookingFeesToOrder</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">applyBookingFeesToOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">applyBookingFeesToOrder (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-apply-booking-fees-to-order-0"><span className="wix-picker-name">applyBookingFeesToOrder</span></label>
+    <label htmlFor="ex-sdk-apply-booking-fees-to-order-1"><span className="wix-picker-name">applyBookingFeesToOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-apply-booking-fees-to-order-2"><span className="wix-picker-name">applyBookingFeesToOrder (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript applyBookingFeesToOrder
+    import { bookingFees } from '@wix/bookings';
+
+    async function applyBookingFeesToOrder(bookingIds,options) {
+      const response = await bookingFees.applyBookingFeesToOrder(bookingIds,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript applyBookingFeesToOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookingFees } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookingFees },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function applyBookingFeesToOrder(bookingIds,options) {
+      const response = await myWixClient.bookingFees.applyBookingFeesToOrder(bookingIds,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript applyBookingFeesToOrder (with elevated permissions)
+    import { bookingFees } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myApplyBookingFeesToOrderMethod(bookingIds,options) {
+      const elevatedApplyBookingFeesToOrder = auth.elevate(bookingFees.applyBookingFeesToOrder);
+      const response = await elevatedApplyBookingFeesToOrder(bookingIds,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

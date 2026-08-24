@@ -1,0 +1,47 @@
+---
+title: "Sample Flows"
+description: "This article shares some possible use cases your app could support, as well as a sample flow that could support each use case."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article shares some possible use cases your app could support, as well as
+a sample flow that could support each use case. This can be a helpful jumping
+off point as you plan your app's implementation.
+
+## Authorize and capture with a saved payment method
+
+To authorize a payment for an order with a saved payment method, follow these steps:
+
+1. Ensure the order has a saved payment method. To do this, pass the order ID to the [List Transactions For Single Order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/order-transactions/list-transactions-for-single-order) method.
+2. Search the response for a payment with `regularPaymentDetails.savedPaymentMethod` set to `true`. If no such payment exists, you will not be able to use Authorize Charge With Saved Payment Method.
+3. Pass the order ID and the other required fields to [Authorize Charge With Saved Payment Method](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/authorize-charge-with-saved-payment-method). Use the `delayedCaptureSettings` field to define whether to automatically capture or void the authorized charge.
+4. To capture the payment manually, pass the order ID and payment ID to [Capture Authorized Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments). Currently, capturing only the full amount is supported.
+5. To void the payment, pass the order ID and payment ID to [Void Authorized Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments).
+
+## Process the refund of an entire order
+
+To fully refund an entire order, follow these steps:
+
+1. Pass the selected order's ID to [Get Order Refundability](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/get-order-refundability) to retrieve the refundable items and amounts.
+2. Retrieve the refundable payments from the response.
+3. Pass the order ID and payment IDs to [Refund Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/refund-payments). Use the response from Get Order Refundability to provide the amount and items related to the refund.
+
+## Process the partial refund of an order
+
+Sometimes you may want to refund only a certain item. To partially refund an order, follow these steps:
+
+1. Pass the selected order's ID to [Get Order Refundability](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/get-order-refundability) to retrieve the refundable items and amounts.
+2. Retrieve the refundable payments from the response.
+3. Pass the order ID and line item ID to [Calculate Refund](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/calculate-refund) to compute the refund amount for the required item, including associated taxes and discounts.
+4. Pass the received amount and the line item ID to [Refund Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/refund-payments) to execute the partial refund for the selected item.
+
+## Record a refund made on an external system
+
+In cases where the payment provider is not supported by Wix or the refund was processed outside of Wix, you can still record the refund using the Order Billing API.
+To do this, follow these steps:
+
+1. Call [Refund Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/refund-payments).
+2. Pass the order ID, payment ID, and refund amount.
+3. Set `externalRefund` to `true`.

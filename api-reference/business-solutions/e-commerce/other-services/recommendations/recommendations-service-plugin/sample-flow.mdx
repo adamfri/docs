@@ -1,0 +1,73 @@
+---
+title: "Sample Flow"
+description: "This article presents a sample flow your app can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents a sample flow your app can support. You aren't limited to this exact flow, but it can be a helpful jumping off point as you plan your Recommendations integration.
+
+## Provide recommendation algorithms that Wix users can use to recommend products
+
+In this flow, a Wix user selects a recommendation algorithm provided by your app, and adds a "Related Products" widget to display the recommendations. Wix calls the Recommendations service plugin to get a list of items recommended by the algorithm, which are then sent to the widget.
+
+Before implementing this flow, configure your app, so it can communicate with your Recommendations service plugin implementation.
+
+<Note>
+
+Currently, only the Online Stores app has a user interface (UI) that supports recommendations. To work with the Online Stores app, ensure that you include `catalogAppIds: ["215238eb-22a5-4c36-9e7b-e7c08025e04e"]` when configuring your Ecom Recommendations Provider extension in your app's dashboard. 
+
+Alternatively, you can implement your own custom UI to display recommendations by leveraging one of [Wix’s Development Frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks) and the [Recommendations API](https://dev.wix.com/docs/rest/business-solutions/e-commerce/recommendations/introduction).
+
+</Note>
+
+### Customize recommendations in the Wix editor
+
+1. The Wix user installs and authorizes your app to provide recommendation algorithms.
+1. The Wix user navigates to the Wix Editor and adds a **Related Products** widget to their products page by selecting **Add Elements → Store → Related Products**.
+1. The Wix user clicks the **Settings** button on the widget. Your recommendation algorithms are shown in the dropdown alongside other algorithms provided by the Wix Stores app. Algorithms with the `algorithmType` of `RELATED_ITEMS` are listed under the "Related Products" section. 
+
+### Recommend related products on a store page
+
+1. A site visitor navigates to a page with the Related Products widget.
+1. Wix sends a [Get Recommendations](https://dev.wix.com/docs/rest/business-solutions/e-commerce/service-plugins/recommendations-service-plugin/get-recommendations) service plugin request to your app. The payload includes the `algorithmId` of the selected algorithm. If the widget is installed on a products page, the `items` field is populated with the product's ID as `catalogItemId` and the Wix Stores app ID as `appId`: 
+
+    ```json
+    {
+      "algorithmId": "945a457f-0a57-4cf4-95a1-95991b545119",
+      "items": [
+        {
+          "catalogItemId": "ec7914e8-208b-0069-5850-1a965643508d",
+          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+        }
+      ]
+    }
+    ```
+   On any other page, the `items` field is empty.
+   
+1. Your app responds with a list of recommendations.
+
+    Example of a successful response from your app:
+    
+    ```json
+    {
+       "recommendationPerAlgorithm": [
+        {
+          "algorithmId": "945a457f-0a57-4cf4-95a1-95991b545119",
+          "recommendedItems": [
+            {
+              "catalogItemId": "1ce6198f-5fad-5ac9-5b36-ecb2175929ef",
+              "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+            },
+            {
+              "catalogItemId": "58a7ab15-5c65-d836-7934-86f78b17996b",
+              "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+            }
+          ]
+        }
+      ]
+    }
+    ```
+    
+1. The site displays the recommended products in the widget based on the IDs of the products returned in your response.

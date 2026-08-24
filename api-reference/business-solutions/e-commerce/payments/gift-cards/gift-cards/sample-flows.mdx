@@ -1,0 +1,79 @@
+---
+title: "Sample Flows"
+description: "This article shares some typical use cases you can support, as well as an example flow that supports each use case."
+icon: "file-lines"
+---
+
+This article shares some typical use cases you can support, as well as an example flow that supports each use case. You're certainly not limited to these use cases, but they can be a helpful jumping off point as you plan your implementation.
+
+The following sample flows describe the use of gift card balances that are managed via Wix, in checkout flows on non-Wix clients.
+
+## Check a gift card balance during checkout 
+
+When a customer begins the checkout flow for a purchase of $100 on your client, and they have a gift card balance of $50:
+1. A customer chooses to use their gift card to pay for their $100 purchase, enters the gift card code in the designated slot and clicks **Apply**.
+2. The client calls [Get Gift Card](https://dev.wix.com/docs/rest/business-solutions/e-commerce/gift-cards/gift-cards/get-gift-card) with the gift card code in the request path.
+
+    Example request:
+    ```
+    POST https://www.wixapis.com/ecom/v1/gift-cards/GIFT-CARD-CODE-123
+    ```
+
+3. The Gift Card service identifies the appropriate gift card provider, requests the gift card data from the provider, and returns the details of the customer's gift card.
+
+    Example response:
+    ```json
+    {
+      "giftCard": {
+        "obfuscatedCode": "****-****-****-123",
+        "balance": {
+          "value": "50.00",
+          "currency": "USD"
+        },
+        "status": "VALID",
+        "appId": "11169077-1222-3331-ba4f-36ef8c4c1e11"
+      }
+    }
+    ```
+
+4. The client collects the card balance and the app ID from the response, and displays the card balance to the customer as part of the price summary at Checkout as though the gift card is used for the purchase, showing that $50 is remaining to be paid.
+
+## Apply a gift card balance to a purchase
+Continuing the example from above, the customer continues with the checkout flow:
+1. The customer enters credit card details to cover the remaining $50, and clicks "Place Order".
+2. The client calls [Redeem Gift Card](https://dev.wix.com/docs/rest/business-solutions/e-commerce/gift-cards/gift-cards/redeem-gift-card) with the previously entered gift card code, the amount to be redeemed, the ID of the purchase order, and the `appId` collected from the Get Gift Card response. 
+
+    Example request:
+    ```json
+    {
+        "code": "GIFT-CARD-CODE-123",
+        "amount": {
+          "currency": "USD",
+          "value": "50.00"
+          },
+        "orderId": "12345678-1111-2222-3333-444455556666",
+        "appId": "11169077-1222-3331-ba4f-36ef8c4c1e11"
+    }
+    ```
+
+3. The Gift Card service calls the appropriate gift card provider using the provided `appId`, and returns a transaction ID for the redeem operation. The gift card balance is updated to $0.
+
+    Example response:
+    ```json
+    { "transactionId": "12121212-1212-2121-2121-122112211221" }
+    ```
+
+## Void a gift card transaction
+Continuing the example from above, the customer chooses to complete the checkout flow:
+1. The customer's credit card payment fails to process, and the purchase is canceled.
+2. The client calls [Void Transaction](https://dev.wix.com/docs/rest/business-solutions/e-commerce/gift-cards/gift-cards/void-transaction) with the `transactionId` from the Redeem Gift Card response, and the `appId` from the Get Gift Card response.
+
+    Example request:
+    ```json
+    {
+        "transactionId": "12121212-1212-2121-2121-122112211221",
+        "appId": "11169077-1222-3331-ba4f-36ef8c4c1e11"
+    }
+    ```
+
+3. The Gift Card service calls the appropriate gift card provider with the provided `appId` and voids the transaction. The customer's gift card balance is restored to $50.

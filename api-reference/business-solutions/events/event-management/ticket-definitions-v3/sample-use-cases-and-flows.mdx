@@ -1,0 +1,84 @@
+---
+title: "Sample Use Cases and Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation. 
+
+## Add a specific-price ticket counter for an event
+
+This use case demonstrates how you can update an event site with a ticket counter for specific-price tickets. This counter provides real-time information on the availability of tickets for customers to see. For example, you can have a counter that says "Only 3 tickets left at this price." By displaying the number of tickets remaining, you can motivate customers to buy tickets promptly. 
+
+<Note>
+
+This flow assumes you have already created the UI component of the counter for a site.
+
+</Note>
+
+To create a ticket counter, follow these steps:
+    
+1. Call [Get Ticket Definition](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/get-ticket-definition) and retrieve either:
+ - The `salesDetails.unsoldCount` and `fixedPrice.value` values, for a `fixedPrice` pricing method.
+ - The `salesDetails.unsoldCount` and `pricingOptions.optionDetails.price.value` values, for an `optionalPrice` pricing method.
+
+1. Pass these retrieved values to initialize the counter on a website, displaying the number of available tickets at the specified price.
+
+1. On an ongoing basis, use [Order Confirmed](fallback::https://dev.wix.com/docs/rest/business-solutions/events/orders/order-confirmed) to listen for each new ticket purchase.
+
+1. When the Order Confirmed is triggered, you'll receive an order. Retrieve the `ticketDefinitionId` value from the event data.
+
+1. Send the extracted `ticketDefinitionId` value to a site and compare it with the ticket definition ID for which the counter is set. If they match, call [Get Ticket Definition](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/get-ticket-definition) again to retrieve the updated `salesDetails.unsoldCount` value. Send this new decreased value to update the ticket counter.
+
+## Sync ticket definitions with an external ticketing system
+
+If you're using a Wix site to manage events and another system to handle ticketing, you can synchronize ticket definitions between them whenever a definition is updated on the site. This includes aspects such as ticket types, pricing, availability, and any other relevant ticket settings. This synchronization eliminates the need for manual updates and reduces the risk of discrepancies between systems.
+
+To upload and update all ticket definitions defined on the Wix site to an external system for the first time, follow these flows:
+
+- [Initial setup](fallback::#part-1-initial-setup)
+- [Synchronize to the external system](fallback::#part-2-synchronize-to-the-external-system)
+
+### Part 1: Initial setup
+
+1. Create a custom field in that stores the ticket definition ID for a particular event to ensure a 1-to-1 relationship with the external ticketing system. Craft your code so that this ID won't be overwritten by future updates.
+
+1. Create a mapping from the site ticket definition fields to the system fields that will be used whenever site ticket definitions and the external system are synchronized.
+
+1. Call [Query Ticket Definitions](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/query-ticket-definitions) by `eventId` and send the relevant information to the external ticketing system.
+
+### Part 2: Synchronize to the external system
+
+1. On an ongoing basis, listen for changes to site ticket definitions with:
+
+    - [Ticket Definition Created](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/ticket-definition-created)
+    - [Ticket Definition Updated](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/ticket-definition-updated)
+    - [Ticket Definition Deleted](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/ticket-definition-deleted)
+      
+1. When one of the above is triggered, you'll receive the ticket definition. You can bring those changes to the ticketing system by retrieving the relevant info from, and with mapping to take action on the external system:
+
+    - For created and updated ticket definitions retrieve the relevant info from the `createdEvent.currentEntity` object.
+
+    - For deleted ticket definitions retrieve the `createdEvent.currentEntity.id` value.
+
+## Notify customers when tickets go on sale 
+
+Let customers know when ticket sales for an event begin. You can send automated notifications to customers with email or push notifications. These notifications make customers aware of ticket availability so they can secure their tickets promptly.
+
+<Note>
+
+This flow assumes customers already have the ability to subscribe to a site's newsletters.
+
+</Note>
+
+To send notifications about the start of ticket sales, follow these steps:
+
+1. Call [Get Ticket Definition](https://dev.wix.com/docs/rest/business-solutions/events/ticket-definition-v3/get-ticket-definition).
+
+2. Retrieve the `salePeriod.startDate`, and write code so that the value can be passed to a marketing tool.
+
+3. Request and filter the list of subscribers in an external marketing tool based on customers subscription status for the current event. 
+
+4. When the ticket sale start date arrives, send notifications to the customers who have opted in to receive marketing emails.

@@ -1,0 +1,211 @@
+---
+title: "Migration Mapping"
+description: "This article provides a comprehensive field-by-field mapping between Cart V1, Checkout V1, and Cart V2, covering entities, API methods, line items, and events."
+icon: "file-lines"
+---
+
+This article provides a comprehensive field-by-field mapping between Cart V1, Checkout V1, and Cart V2, covering entities, API methods, line items, and events. Use it alongside the [Migration Guide](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-guide) when migrating your app or integration.
+
+## API method mapping
+
+### Cart V1 to Cart V2
+
+| Cart V1 method | Cart V2 method | Notes |
+|---|---|---|
+| [Create Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/create-cart) | [Create Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-cart) | Request field: `cartInfo` → `cart`, `lineItems` → `catalogItems`. Coupon and gift card are now separate inputs. |
+| [Get Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/get-cart) | [Get Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-cart) | Request field: `id` → `cartId`. |
+| [Update Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/update-cart) | [Update Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-cart) | Request field: `cartInfo` → `cart`. |
+| [Add To Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/add-to-cart) | [Add Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-line-items) | Request field: `id` → `cartId`, `lineItems` → `catalogItems`. |
+| [Remove Line Items](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/remove-line-items) | [Remove Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-line-items) | Request field: `id` → `cartId`. |
+| [Update Line Items Quantity](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/update-line-items-quantity) | [Update Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-line-items) | Request field: `id` → `cartId`. Response shape differs. V2 uses `LineItemUpdate` with `QuantityUpdate`. |
+| [Remove Coupon](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/remove-coupon) | [Remove Coupon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-coupon) | Request field: `id` → `cartId`. V2 also requires `couponId`. |
+| [Estimate Totals](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/estimate-totals) | [Estimate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/estimate-cart) | Request field: `id` → `cartId`. Response: totals are in `summary` (`CartSummary`). |
+| [Delete Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/delete-cart) | [Delete Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/delete-cart) | Request field: `id` → `cartId`. |
+| [Create Checkout From Cart](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart/create-checkout-from-cart) | None | No V2 equivalent. In V1, this created a Checkout entity from a cart. In V2 there is no checkout step: prepare the cart with `UpdateCart` and `SetDeliveryMethod`, then call `PlaceOrder` directly. |
+| None | [Refresh Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/refresh-cart) | New in V2. Re-evaluates prices, inventory, and discounts. |
+| None | [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) | New in V2. Full calculation returning `CartSummary`. |
+| None | [Add Coupon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-coupon) | New in V2. Dedicated method (was inline in create/update). |
+| None | [Add Gift Card](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-gift-card) | New in V2. Dedicated method. |
+| None | [Remove Gift Card](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-gift-card) | New in V2. |
+| None | [Set Delivery Method](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/set-delivery-method) | New in V2. Dedicated method. |
+| None | [Remove Delivery Method](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-delivery-method) | New in V2. |
+
+### Checkout V1 to Cart V2
+
+Cart V2 unifies the cart and checkout models into a single Cart entity, so there is no separate Checkout V2 API. Each Checkout V1 method is replaced by a cart method that performs the same operation. For example, [Create Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/create-checkout) is replaced by [Create Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-cart), because in V2 the cart itself carries the checkout information, such as billing, delivery, and payment details, all the way through placing the order. The checkout ID from Checkout V1 is the cart ID in V2, so you can pass IDs from existing checkouts directly to the V2 cart methods.
+
+| Checkout V1 method | Cart V2 method | Notes |
+|---|---|---|
+| [Create Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/create-checkout) | [Create Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-cart) | `checkoutInfo` → `cart`, `lineItems` → `catalogItems`, `channelType` → `cart.source.channelType`, `couponCode` → `coupons[0].code`, `giftCardCode` → `giftCards[0].code`. |
+| [Get Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/get-checkout) | [Get Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-cart) | The checkout ID is the cart ID in V2. For calculated totals, call `CalculateCart` separately. |
+| [Get Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/get-checkout) (with `refresh`) | [Refresh Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/refresh-cart) | Use `RefreshCart` to re-evaluate prices, inventory, and discounts. |
+| [Update Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/update-checkout) | [Update Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-cart) | `checkout` → `cart`. See the entity field mapping below for the changed field paths. |
+| [Add To Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/add-to-checkout) | [Add Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-line-items) | `id` → `cartId`, `lineItems` → `catalogItems`. |
+| [Remove Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/remove-line-items) | [Remove Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-line-items) | `id` → `cartId`. |
+| [Update Line Items Quantity](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/update-line-items-quantity) | [Update Line Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-line-items) | `id` → `cartId`. |
+| [Remove Coupon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/remove-coupon) | [Remove Coupon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-coupon) | `id` → `cartId`. |
+| [Remove Gift Card](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/remove-gift-card) | [Remove Gift Card](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/remove-gift-card) | `id` → `cartId`. |
+| [Create Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/create-order) | [Place Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/place-order) | `id` → `cartId`. |
+| [Mark Checkout As Completed](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/mark-checkout-as-completed) | [Mark Cart As Completed](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/mark-cart-as-completed) | `id` → `cartId`. |
+| [Get Checkout URL](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/get-checkout-url) | [Get Checkout URL](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-checkout-url) | `id` → `cartId`. |
+| Delete Checkout | [Delete Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/delete-cart) | `id` → `cartId`. |
+
+## Cart entity field mapping
+
+### Cart V1 to Cart V2
+
+| Cart V1 field | Cart V2 field | Notes |
+|---|---|---|
+| `id` | `id` | |
+| `createdDate` | `createdDate` | |
+| `updatedDate` | `updatedDate` | |
+| `revision` | `revision` | |
+| `lineItems` | `lineItems` | Structure differs. See the line item mapping below. |
+| `buyerNote` | `note` | |
+| `buyerInfo.id` (visitor/member/user) | `customerInfo.id` (visitorId/memberId/userId) | Same oneof pattern. |
+| `buyerInfo.email` | `customerInfo.email` | |
+| `buyerInfo.contactId` | `customerInfo.contactId` | |
+| `contactInfo.contactDetails.firstName` | `customerInfo.firstName` | Flattened from nested `AddressWithContact`. |
+| `contactInfo.contactDetails.lastName` | `customerInfo.lastName` | Flattened. |
+| `contactInfo.contactDetails.phone` | `customerInfo.phone` | Flattened. |
+| `contactInfo.contactDetails.company` | `customerInfo.company` | Flattened. |
+| `contactInfo.contactDetails.vatId` | `customerInfo.vatId` | Flattened. |
+| `contactInfo.address` | `deliveryInfo.address` | Moved to delivery info. Also mapped to `paymentInfo.billingAddress` (see the note below). |
+| `currency` | `businessInfo.currencyCode` | Moved into a sub-message. |
+| `conversionCurrency` | `customerInfo.currencyCode` | Moved into a sub-message. |
+| `paymentCurrency` | `paymentInfo.currencyCode` | Moved into a sub-message. |
+| `buyerLanguage` | `customerInfo.languageCode` | Moved into a sub-message. |
+| `siteLanguage` | `businessInfo.languageCode` | Moved into a sub-message. |
+| `businessLocationId` | `businessInfo.locationId` | Moved into a sub-message. |
+| `taxIncludedInPrices` | `taxInfo.pricesIncludeTax` | Moved into a sub-message. |
+| `weightUnit` | `deliveryInfo.weightUnit` | Moved into a sub-message. |
+| `checkoutId` | None | No separate checkout. The cart ID is the checkout ID. |
+| `appliedDiscounts` | `coupons` (for coupon discounts) | Coupons are stored on the cart entity. Automatic discounts are on `lineItems[].discounts`. The full discount breakdown is in `CartSummary.discounts`. |
+| `selectedShippingOption` | `deliveryInfo.method` | Type changed. Use `SetDeliveryMethod` to set. |
+| `overrideCheckoutUrl` | `customCheckoutUrl` | Renamed. |
+| `purchaseFlowId` | `purchaseFlowId` | |
+| `extendedFields` | `extendedFields` | |
+
+<Note>
+
+In Cart V1, `contactInfo.address` is a single address used for both delivery and billing. In Cart V2, the address is mapped to `deliveryInfo.address` for shippable carts and `paymentInfo.billingAddress` for non-shippable carts.
+
+</Note>
+
+### Checkout V1 to Cart V2
+
+| Checkout V1 field | Cart V2 field | Notes |
+|---|---|---|
+| `id` | `id` | The checkout ID is the cart ID in V2. |
+| `createdDate` | `createdDate` | |
+| `updatedDate` | `updatedDate` | |
+| `lineItems` | `lineItems` | See the line item mapping below. |
+| `buyerNote` | `note` | |
+| `buyerInfo.id` | `customerInfo.id` | |
+| `buyerInfo.email` | `customerInfo.email` | |
+| `billingInfo.address` | `paymentInfo.billingAddress` | |
+| `billingInfo.contactDetails` | `paymentInfo.billingContact` | |
+| `shippingInfo.shippingDestination.address` | `deliveryInfo.address` | |
+| `shippingInfo.shippingDestination.contactDetails.firstName` | `customerInfo.firstName` | Flattened. |
+| `shippingInfo.shippingDestination.contactDetails.lastName` | `customerInfo.lastName` | Flattened. |
+| `shippingInfo.shippingDestination.contactDetails.phone` | `customerInfo.phone` | Flattened. |
+| `shippingInfo.shippingDestination.contactDetails.company` | `customerInfo.company` | Flattened. |
+| `shippingInfo.shippingDestination.contactDetails.vatId` | `customerInfo.vatId` | Flattened. |
+| `shippingInfo.selectedCarrierServiceOption` | `deliveryInfo.method` | Use `SetDeliveryMethod`. |
+| `channelType` | `source.channelType` | Moved into a sub-message. |
+| `currency` | `businessInfo.currencyCode` | Moved into a sub-message. |
+| `conversionCurrency` | `customerInfo.currencyCode` | Moved into a sub-message. |
+| `paymentCurrency` | `paymentInfo.currencyCode` | Moved into a sub-message. |
+| `buyerLanguage` | `customerInfo.languageCode` | Moved into a sub-message. |
+| `siteLanguage` | `businessInfo.languageCode` | Moved into a sub-message. |
+| `businessLocationId` | `businessInfo.locationId` | Moved into a sub-message. |
+| `taxIncludedInPrice` | `taxInfo.pricesIncludeTax` | Moved into a sub-message. |
+| `taxExemptGroupId` | `taxInfo.taxExemptGroupId` | Moved into a sub-message. |
+| `weightUnit` | `deliveryInfo.weightUnit` | Moved into a sub-message. |
+| `completed` | `orderPlaced` | Renamed. |
+| `orderId` | `orderId` | |
+| `purchaseFlowId` | `purchaseFlowId` | |
+| `customSettings` | `settings` | Renamed. `disabledPolicyAgreementCheckbox` → `policyAgreementCheckboxDisabled`, `disabledManualPayment` → `manualPaymentDisabled`. |
+| `customFields` | None | No public V2 equivalent. |
+| `externalReference` | `source.externalReferences` | Moved to cart source. Singular in V1, repeated in V2. |
+| `customContentReference` | `source.customContentReference` | Moved to cart source. |
+| `extendedFields` | `extendedFields` | |
+| `priceSummary` | None | Not stored on the cart. Call `CalculateCart` → `summary.priceSummary`. |
+| `taxSummary` | None | Not stored. Call `CalculateCart` → `summary.taxSummary`. |
+| `payNow` | None | Not stored. Call `CalculateCart` → `summary.paymentSummary`. |
+| `payLater` | None | Not stored. Call `CalculateCart` → `summary.paymentSummary`. |
+| `giftCard` | `paymentInfo.giftCards` | Use `AddGiftCard` / `RemoveGiftCard`. |
+| `appliedDiscounts` | None | Not stored. Call `CalculateCart` → `summary.discounts`. Item-level discounts are on `lineItems[].discounts`. |
+| `additionalFees` | None | Not stored. Call `CalculateCart` → `summary.additionalFees`. |
+| `calculationErrors` | None | Not stored. Call `CalculateCart` → `summary.violations`. V2 reports calculation errors as violations. |
+| `violations` | None | Not stored. Call `CalculateCart` → `summary.violations`. |
+| `membershipOptions.selectedMemberships` | `lineItems[].paymentConfig.selectedMembership` | Moved to the line item level. Deprecated in V2. Memberships charged with the order are in `CalculateCart` → `summary.paymentSummary.memberships`. |
+| `cartId` | None | No separate entity. The cart is the checkout. |
+| `createdBy` | `source.createdBy` | Moved to cart source. |
+
+## Line item field mapping
+
+### Cart V1 `LineItem` to Cart V2 `LineItem`
+
+| Cart V1 / Checkout V1 field | Cart V2 field | Notes |
+|---|---|---|
+| `id` | `id` | |
+| `productName` | `name` | Type changed: `ProductName` → `TranslatableString`. |
+| `quantity` | `quantityInfo.confirmedQuantity` | Moved into a sub-message. |
+| None | `quantityInfo.requestedQuantity` | New in V2. |
+| None | `quantityInfo.availableQuantity` | New in V2. |
+| `fixedQuantity` | `quantityInfo.fixedQuantity` | Moved into a sub-message. |
+| `catalogReference` | `source.catalogReference` | Moved into a sub-message. |
+| `catalogOverrideFields` | `source.catalogOverrideFields` | Moved into a sub-message. |
+| `rootCatalogItemId` | `source.rootCatalogItemId` | Moved into a sub-message. |
+| `inventoryAppId` | `source.inventoryAppId` | Moved into a sub-message. |
+| `price` (unit price after discounts) | `pricing.unitPrice` | Moved into a sub-message. Type changed: `MultiCurrencyPrice` → `ConvertedMoney`. |
+| `fullPrice` | `pricing.breakdown.fullPrice` | Moved into a sub-message. |
+| `priceBeforeDiscounts` | `pricing.breakdown.salePrice` | Renamed and moved. |
+| `lineItemPrice` | `pricing.totalPrice` | Moved into a sub-message. |
+| `priceDescription` | `pricing.priceDescription` | Moved into a sub-message. |
+| `priceUndetermined` | `pricing.priceUndetermined` | Moved into a sub-message. |
+| `modifiersTotalPrice` | `pricing.breakdown.totalModifiersPrice` | Moved into a sub-message. |
+| `descriptionLines` | `attributes.descriptionLines` | Moved into a sub-message. |
+| `image` | `attributes.image` | Moved into a sub-message. |
+| `url` | `attributes.url` | Moved into a sub-message. |
+| `policies` | `attributes.policies` | Moved into a sub-message. |
+| `itemType` | `attributes.itemType` | Moved into a sub-message. |
+| `physicalProperties` | `attributes.physicalProperties` | Moved into a sub-message. |
+| `subscriptionOptionInfo` | `attributes.subscriptionInfo` | Renamed and moved. |
+| `serviceProperties` | `attributes.serviceProperties` | Moved into a sub-message. |
+| `membersOnly` | `attributes.membersOnly` | Moved into a sub-message. |
+| `deliveryProfileId` | `deliveryConfig.deliveryProfileId` | Moved into a sub-message. |
+| None | `deliveryConfig.fulfillerId` | New in V2. |
+| `taxGroupId` | `taxConfig.taxGroupId` | Moved into a sub-message. |
+| `taxableAddress` | `taxConfig.taxableAddress` | Moved into a sub-message. |
+| `paymentOption` | `paymentConfig.paymentOption` | Moved into a sub-message. |
+| `savePaymentMethod` | `paymentConfig.savePaymentMethod` | Moved into a sub-message. |
+| `consentRequiredPaymentPolicy` | `paymentConfig.consentRequiredPaymentPolicy` | Moved into a sub-message. |
+| `depositAmount` | `paymentConfig.depositAmount` | Moved into a sub-message. |
+| `selectedMembership` | `paymentConfig.selectedMembership` | Moved into a sub-message. Deprecated in V2. |
+| `availability.status` | `status` | Promoted to a top-level enum. Values: `AVAILABLE` → `IN_STOCK`, `PARTIALLY_AVAILABLE` → `PARTIALLY_IN_STOCK`, `NOT_AVAILABLE` → `OUT_OF_STOCK`, `NOT_FOUND` → `REMOVED_FROM_CATALOG`. |
+| `availability.quantityAvailable` | `quantityInfo.availableQuantity` | Moved. |
+| `customLineItem` | `customLineItem` | |
+| `modifierGroups` | `modifierGroups` | |
+| `extendedFields` | `extendedFields` | |
+| `shippingGroupId` | None | No V2 equivalent. |
+
+## Event mapping
+
+| Cart V1 event | Checkout V1 event | Cart V2 event |
+|---|---|---|
+| `CartUpdated` | None | `CartUpdated` |
+| None | `CheckoutCreated` | `CartCreated` |
+| None | `CheckoutUpdated` | `CartUpdated` |
+| None | `CheckoutDeleted` | `CartDeleted` |
+| None | `CheckoutMarkedAsCompleted` | `CartUpdated` (with `orderPlaced = true`) |
+| None | None | `CartCalculated` |
+
+The `CartCalculated` event is new in V2. It's emitted after [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) and [Estimate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/estimate-cart), and its payload is a `CartSummary`.
+
+## See also
+
+- [Introduction](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/introduction)
+- [Migration Guide](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-guide)
+- [Sample Flows](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows)

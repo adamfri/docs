@@ -1,0 +1,764 @@
+---
+title: "Capture Authorized Payments"
+description: "Captures (charges) previously authorized payments, converting the authorization hold into an actual charge."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Captures (charges) previously authorized payments, converting the authorization hold into an actual charge.
+
+    Use this method to complete payment when you're ready to fulfill an order, typically after confirming
+    inventory availability and preparing for shipment.
+
+    *Note**: Only payments with `AUTHORIZED` status can be captured. The capture amount cannot exceed the authorized amount.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/capture-authorized-payments
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      ID of the order containing the payments to capture.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="payments" type="PaymentCapture[]" required>
+
+      Payment authorizations to capture with their respective amounts.
+
+      If no amount is specified, the full authorized amount will be captured.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ParamField body="paymentId" type="string" required>
+
+          ID of the payment to capture.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="amount" type="Price">
+
+          Capture amount.
+
+          > **Note:** If not provided, the full authorized amount will be captured.
+
+          <Expandable title="amount properties">
+
+            <ParamField body="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history with captured payments marked as paid.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PAYMENT_NOT_FOUND` | Couldn't find the payment. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Capture amount doesn't match the authorized amount. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_VOIDED` | Payment was already voided. |
+    | `409` | `ALREADY_EXISTS` | `PAYMENT_ALREADY_CAPTURED` | Payment was already captured. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_NOT_AUTHORIZED` | Payment doesn't have `AUTHORIZED` status. |
+    | `409` | `ALREADY_EXISTS` | `PAYMENT_HAS_PENDING_CAPTURE` | Payment already has a capture in progress. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_HAS_CHARGEBACKS` | Order has chargebacks and can't be captured. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Capture previously authorized payments.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/capture-authorized-payments' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+      	  "orderId": "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+      	  "payments": [
+      	    {
+      	      "paymentId": "496aaea1-4e2f-4cb1-9522-6b85f49b91e2",
+      	      "amount": {
+      	        "amount": "1"
+      	      }
+      	    }
+      	  ]
+      	}'
+      ```
+
+      ```json Response
+      {
+        "orderTransactions": {
+          "orderId": "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+          "payments": [
+            {
+              "id": "23af2de7-b24d-41d5-8d27-cf925d378d32",
+              "regularPaymentDetails": {
+                "paymentOrderId": "eead5fa5-29c2-4f7e-957c-a5eb0286c235",
+                "gatewayTransactionId": "afba164b-a96c-4cb2-a22d-6eec692e1148",
+                "paymentMethod": "Credit/Debit Cards",
+                "providerTransactionId": "afba164b-a96c-4cb2-a22d-6eec692e1148",
+                "offlinePayment": false,
+                "status": "APPROVED",
+                "savedPaymentMethod": true,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                }
+              },
+              "createdDate": "2024-12-25T08:36:29.499Z",
+              "updatedDate": "2024-12-25T08:36:32.351Z",
+              "amount": {
+                "amount": "2.0",
+                "formattedAmount": "$2.00"
+              },
+              "refundDisabled": false
+            },
+            {
+              "id": "496aaea1-4e2f-4cb1-9522-6b85f49b91e2",
+              "regularPaymentDetails": {
+                "paymentOrderId": "dc6e6d53-51d6-48a4-8755-ca87a4e370bf",
+                "gatewayTransactionId": "3376e961-48c7-4093-b8be-0320ace06777",
+                "providerTransactionId": "3376e961-48c7-4093-b8be-0320ace06777",
+                "offlinePayment": false,
+                "status": "AUTHORIZED",
+                "savedPaymentMethod": false,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                },
+                "authorizationDetails": {
+                  "delayedCapture": true,
+                  "authorizedDate": "2024-12-25T08:46:05.539Z",
+                  "captures": [
+                    {
+                      "status": "PENDING",
+                      "amount": {
+                        "amount": "1",
+                        "formattedAmount": "$1.00"
+                      },
+                      "createdDate": "2024-12-25T08:51:51.167Z",
+                      "id": "053aa1b1-e589-4850-b67c-9755af1a73e4"
+                    }
+                  ],
+                  "scheduledAction": {
+                    "actionType": "VOID",
+                    "executionDate": "2024-12-26T08:46:05.539Z"
+                  }
+                }
+              },
+              "createdDate": "2024-12-25T08:46:04.257Z",
+              "updatedDate": "2024-12-25T08:51:51.167Z",
+              "amount": {
+                "amount": "1",
+                "formattedAmount": "$1.00"
+              },
+              "refundDisabled": false
+            }
+          ],
+          "refunds": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Captures (charges) previously authorized payments, converting the authorization hold into an actual charge.
+
+    Use this method to complete payment when you're ready to fulfill an order, typically after confirming
+    inventory availability and preparing for shipment.
+
+    *Note**: Only payments with `AUTHORIZED` status can be captured. The capture amount cannot exceed the authorized amount.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.captureAuthorizedPayments(orderId, options): Promise<CaptureAuthorizedPaymentsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      ID of the order containing the payments to capture.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CaptureAuthorizedPaymentsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="payments" type="PaymentCapture[]" required>
+
+          Payment authorizations to capture with their respective amounts.
+
+          If no amount is specified, the full authorized amount will be captured.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ParamField body="paymentId" type="string" required>
+
+              ID of the payment to capture.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="Price">
+
+              Capture amount.
+
+              > **Note:** If not provided, the full authorized amount will be captured.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CaptureAuthorizedPaymentsResponse>`.
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history with captured payments marked as paid.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="_id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="_id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PAYMENT_NOT_FOUND` | Couldn't find the payment. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Capture amount doesn't match the authorized amount. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_VOIDED` | Payment was already voided. |
+    | `409` | `ALREADY_EXISTS` | `PAYMENT_ALREADY_CAPTURED` | Payment was already captured. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_NOT_AUTHORIZED` | Payment doesn't have `AUTHORIZED` status. |
+    | `409` | `ALREADY_EXISTS` | `PAYMENT_HAS_PENDING_CAPTURE` | Payment already has a capture in progress. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_HAS_CHARGEBACKS` | Order has chargebacks and can't be captured. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-capture-authorized-payments" id="ex-sdk-capture-authorized-payments-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-capture-authorized-payments" id="ex-sdk-capture-authorized-payments-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-capture-authorized-payments-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-capture-authorized-payments-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Capture Authorized Payments</span><span className="wix-picker-desc">Capture a previously authorized payment</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">captureAuthorizedPayments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-capture-authorized-payments-0"><span className="wix-picker-name">Capture Authorized Payments</span><span className="wix-picker-desc">Capture a previously authorized payment</span></label>
+    <label htmlFor="ex-sdk-capture-authorized-payments-1"><span className="wix-picker-name">captureAuthorizedPayments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Capture Authorized Payments
+    import { orderBilling } from "@wix/ecom";
+
+    async function captureAuthorizedPayments() {
+      const response = await orderBilling.captureAuthorizedPayments(
+        "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+        {
+          payments: [
+            {
+              paymentId: "496aaea1-4e2f-4cb1-9522-6b85f49b91e2",
+              amount: { amount: "1" },
+            },
+          ],
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "orderTransactions": {
+     *     "orderId": "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+     *     "payments": [
+     *       {
+     *         "regularPaymentDetails": {
+     *           "offlinePayment": false,
+     *           "status": "AUTHORIZED",
+     *           "savedPaymentMethod": false,
+     *           "authorizationDetails": {
+     *             "delayedCapture": true,
+     *             "captures": [
+     *               {
+     *                 "status": "PENDING",
+     *                 "amount": { "amount": "1", "formattedAmount": "$1.00" }
+     *               }
+     *             ]
+     *           }
+     *         },
+     *         "refundDisabled": false
+     *       }
+     *     ],
+     *     "refunds": []
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript captureAuthorizedPayments (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function captureAuthorizedPayments(orderId,options) {
+      const response = await myWixClient.orderBilling.captureAuthorizedPayments(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

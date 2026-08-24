@@ -1,0 +1,71 @@
+---
+title: "About Subscription Payments"
+description: "Subscription payments allow businesses to charge customers recurring monthly payments for course services instead of a one-time fee."
+icon: "file-lines"
+---
+
+Subscription payments allow businesses to charge customers recurring monthly payments for [course](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-types) services instead of a one-time fee. For example, a yoga studio can offer a 6-month Pilates course where customers pay monthly rather than upfront.
+
+You configure subscription pricing on a service using the [Services V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction), and track subscription status on bookings using the [Bookings Reader V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-reader-v2/introduction).
+
+## How subscription payments work
+
+1. **Service setup**: The business creates a course service with `rateType` set to `SUBSCRIPTION`. They configure the price per billing cycle, total number of payments, and when billing starts.
+2. **Booking creation**: A customer books the course. During [eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction), a subscription order is created and recurring billing begins. 
+3. **Recurring billing**: Payments are charged automatically each billing cycle by the billing subscription. The subscription's status and payment progress are tracked on the booking.
+4. **Completion**: After all billing cycles are charged, the subscription status changes to `ENDED`.
+
+## Billing schedule
+
+The subscription billing schedule is controlled by two fields on the service's `payment.subscription` object:
+
+- **`firstChargeDate`**: Determines when the first payment is collected.
+  - `CHECKOUT`: The first payment is charged immediately at checkout. Subsequent billing cycles start from `recurringStartDate`.
+  - `SCHEDULED`: The first payment is charged on `recurringStartDate`.
+
+- **`recurringStartDate`**: The date when recurring billing begins. All future billing cycle dates are calculated from this date.
+
+For example, if `recurringStartDate` is set to February 1st with `MONTHLY` frequency and `totalPayments` of `6`, the customer is billed on the 1st of each month from February through July.
+
+Customers who book after recurring billing starts are billed from the current cycle onward, for the remaining billing cycles only. For example, a customer who books the same course in April pays 4 monthly payments instead of 6, at the same price per cycle.
+
+## Subscription statuses
+
+Once a customer books a course with subscription pricing, the subscription progresses through these statuses: 
+
+| Status | Description |
+|--------|-------------|
+| `DRAFT` | Subscription created but not yet paid for. Transitions to `PENDING` or `ACTIVE` after the first successful payment. |
+| `PENDING` | Subscription is paid but the start date is in the future. |
+| `ACTIVE` | Subscription is active and billing. |
+| `PAUSED` | Subscription is temporarily paused. |
+| `CANCELED` | Subscription was canceled before completing all billing cycles. |
+| `ENDED` | Subscription completed all billing cycles. |
+
+## Monitoring subscriptions
+
+To track a booking's subscription status, call [Query Extended Bookings](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings) with `withEcomOrder` set to `true`. The response includes a `subscriptionInfo` object with:
+
+- `currentCycle`: Number of billing cycles successfully charged so far.
+- `totalCycles`: Total number of billing cycles in the subscription.
+- `status`: Current subscription status.
+- `subscriptionId`: ID of the underlying billing subscription.
+- `cyclePrice`: The amount charged for the most recent billing cycle, including tax and discounts.
+
+If a subscription payment fails, the booking's `paymentStatus` changes to `FAILED`. If the payment is later recovered, `paymentStatus` changes back to `PAID`. If it isn't recovered, the subscription is eventually canceled.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Subscription payments are supported for course services only. Appointment and class services don't support subscriptions.
+- Billing frequency currently supports `MONTHLY` only.
+- Subscription payments are processed through [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction). Custom payment flows don't support subscription payments.
+
+## See also
+
+- [About Service Payments](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-payments)
+
+- [Services V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction)
+- [Bookings Reader V2 API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-reader-v2/introduction)
+- [End-to-End Booking Flows](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows)

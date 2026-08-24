@@ -1,0 +1,91 @@
+---
+title: "Introduction"
+description: "A data extension schema allows you to define and validate the structure of custom fields that can be added to Wix objects."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+A data extension schema allows you to define and validate the structure of custom fields that can be added to Wix objects. A data extension schema acts as a blueprint, describing the properties, data types, and constraints of custom fields. For example, a data extension schema can describe custom shipping data added to the [Wix eCommerce Checkout object](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/checkout-object).
+
+The Data Extension Schema API enables you to: 
+- [Retrieve all the data extension schemas](fallback::https://dev.wix.com/docs/rest/business-management/data-extension-schema/list-data-extension-schemas) installed on a specific site.
+- [Create](fallback::https://dev.wix.com/docs/rest/business-management/data-extension-schema/create-data-extension-schema) and [update](fallback::https://dev.wix.com/docs/rest/business-management/data-extension-schema/update-data-extension-schema) user-defined schemas for a specific site.  
+- [Delete fields](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/delete-user-defined-fields) from user-defined schemas.
+
+## Before you begin
+
+- App [schema plugin extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions), including their JSON schemas, are created and maintained in the [app dashboard](fallback::https://manage.wix.com/studio/custom-apps). You can use the Data Extension Schema API to retrieve schema plugins. However, the Data Extension Schema API doesn't support creating and updating schema plugins. Learn more about when to use [Schema plugins](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/schema-plugin-faq).
+- Before creating a data extension schema, check the object to make sure you don't add fields that already exist. Only use the data extension schema when an object doesn't have a field to support your data. 
+
+## Supported objects
+
+You can extend the following objects: 
+
+| Object | FQDN | Supports filtering |
+|--------|------|-------------------|
+| [Products](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction) | `wix.stores.catalog.*.product` | Yes |
+| [eCommerce Orders](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction) | `wix.ecom.*.order` | No |
+| [eCommerce Checkout](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/introduction) | `wix.ecom.*.checkout` | No |
+| [Bookings](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/introduction) | `wix.bookings.*.booking` | No |
+| [Booking Services](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) | `wix.bookings.services.*.service` | No |
+
+### FQDNs
+
+A [Fully Qualified Domain Name (FQDN)](fallback::https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-fqdns) is a unique identifier for a Wix object type. When creating or managing data extension schemas, you use the FQDN to specify which object type to extend.
+
+The FQDNs in the table above contain a wildcard (`*`) in place of the version number, for example:
+
+- `wix.ecom.*.order`
+- `wix.stores.catalog.*.product`
+
+The wildcard ensures your schema remains valid when Wix releases a new version of the API. We recommend using the wildcard form rather than a specific version number.
+
+### Filtering
+
+Extended fields behave like native fields. However, not all objects support operations such as filtering. To learn more, see [The JSON Schema](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/the-json-schema).
+
+## How extended fields work
+
+Supported objects contain an `extendedFields` property. When you create a data extension schema, you define extended fields that are stored in `extendedFields`. Extended fields can exist at the following levels:
+
+* **Root level:** Extended fields appear directly in the object's `extendedFields` property.
+* **Nested in an existing field:** Extended fields appear in the `extendedFields` property of items in an array. For example, each line item in an order has its own `extendedFields` property.
+
+## Namespaces
+
+The `extendedFields` property contains a nested `namespaces` object that keeps extended fields from different sources separate:
+
+- **`_user_fields`**: Contains extended fields from user-defined schemas, created through this API or the site dashboard.
+- **App namespaces**: Contains extended fields defined using a [schema plugin extension](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions). 
+
+For example, a [Checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/checkout-object) object might have extended fields from both sources:
+
+```json
+"extendedFields": {
+  "namespaces": {
+    "_user_fields": {
+      "myCustomField": "value"
+    },
+    "@company/app-name": {
+      "appCustomField": "value"
+    }
+  }
+}
+```
+
+When reading or writing extended field data, always reference the correct namespace.
+
+## Use cases
+- [Retrieve a list of all data extension schemas for the Wix eCommerce Checkout object](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/sample-flows#retrieve-a-list-of-all-data-extension-schemas-for-the-wix-ecommerce-checkout-object)
+- [Add a field to a user-defined data extension schema](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/sample-flows#add-a-field-to-a-user-defined-data-extension-schema-for-the-wix-ecommerce-order-object)
+  
+## Terminology
+- **Data extension schema**: A JSON Schema defining the data structure of the custom fields to add to a Wix object. 
+- **Extended fields**: Custom fields defined by a schema added to the `extendedFields` field of an object.
+- **User-defined schema**: The schema created when a Wix user creates extended fields for a specific site. This schema uses the `_user_fields` namespace.
+- **Schema plugin extension**: Specific functionality that extends a Wix object with custom fields for a specific app. 
+- **FQDN**: Fully qualified domain name, a unique identifier for a Wix object. Learn more about [FQDNs](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/introduction).
+- **Namespace**: A unique identifier for your app or project. Learn more about [namespaces](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/introduction). 
+
+@sdk_package_setup

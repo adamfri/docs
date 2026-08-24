@@ -1,0 +1,116 @@
+---
+title: "Create an SDK Client with OAuth"
+description: "Note: This article is relevant for self-managed headless projects, and for Wix-managed headless projects built with a framework other than Astro."
+---
+
+<Note>
+
+This article is relevant for [self-managed headless projects](https://dev.wix.com/docs/go-headless/self-managed-headless/about-self-managed-headless), and for [Wix-managed headless projects](https://dev.wix.com/docs/go-headless/wix-managed-headless/about-wix-managed-headless) built with a framework other than Astro. If you build with [Wix's Astro integration](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/about-the-astro-integration), authentication is handled automatically, so you don't need to create an OAuth client yourself.
+
+</Note>
+
+After you [create an OAuth app](/kb/authentication/set-up-a-headless-client) for your client site or app in your project dashboard, you can begin coding by installing the Wix JavaScript SDK, importing modules in your code, and creating an SDK client.
+
+<Note>
+
+To implement this flow, you must install Node.js version 18 or higher.
+
+</Note>
+
+## Step 1 — Install packages
+
+Install `@wix/sdk` and the packages for the domain-specific APIs you wish to work with. Domain-specific packages follow the naming convention `@wix/{domain}`. For example:
+
+```bash
+npm install @wix/sdk
+npm install @wix/bookings
+npm install @wix/stores
+```
+
+or
+
+```bash
+yarn add @wix/sdk
+yarn add @wix/bookings
+yarn add @wix/stores
+```
+
+## Step 2 — Import modules in your code
+
+To use the APIs you have installed, import `createClient` from the `@wix/sdk` package along with an authentication strategy, and import functionality from the desired domain-specific packages you installed. For example:
+
+```js
+import { createClient, OAuthStrategy } from '@wix/sdk';
+import { availabilityCalendar, services } from '@wix/bookings';
+import { products } from '@wix/stores';
+```
+
+Make sure to import both `createClient` and `OAuthStrategy` from `@wix/sdk`.
+
+## Step 3 — Create a client
+
+<Note>
+
+OAuth for Wix Headless only requires a client ID. It doesn't require a client secret. You need a client secret only to perform [admin operations](/kb/authentication/about-admin-operations) using the OAuth `client_credentials` flow.
+
+</Note>
+
+If you haven't created an OAuth client yet, see [Set Up a Headless Client](/kb/authentication/set-up-a-headless-client).
+
+To get started connecting to a Wix project, use the [`createClient()`](https://dev.wix.com/docs/sdk/core-modules/sdk/wix-client) method imported from the `@wix/sdk` package to create a new client.
+
+For example:
+
+```js
+  const myWixClient = createClient({
+    modules: {
+      products,
+      services
+    },
+    auth: OAuthStrategy({
+      clientId: '<YOUR_CLIENT_ID>',
+      tokens: {
+        accessToken: {
+          value: '<ACCESS_TOKEN_VALUE>',
+          expiresAt: '<ACCESS_TOKEN_EXPIRY_DATE>'
+        },
+        refreshToken: {
+          value: '<REFRESH_TOKEN_VALUE>'
+        }
+      }
+    })
+  })
+```
+
+Pass the modules you want to use and authorization information when creating the client.
+
+- The `modules` property contains key:value pairs. Each value is an imported module you wish to enable in the client, and the key defines the name to use for working with that module.
+- The `auth` property contains the authentication method and credentials for connecting with your Wix project. To use the OAuth authentication strategy, call `OAuthStrategy()` with an object containing:
+  - `clientId`: Your Wix Headless client ID. You can find it in the [**Headless Settings**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings) of your project dashboard. For [Wix-managed headless](https://dev.wix.com/docs/go-headless/wix-managed-headless/about-wix-managed-headless) projects, you can also find your client ID locally as the `appId` in your project's `wix.config.json` file.
+  - `tokens`: Optional. An object containing access and refresh tokens for a site visitor or member. If you pass tokens, every call made by the client uses these tokens to maintain a persistent session.
+
+<Tip>
+
+Create your client once and reuse it throughout your app to maintain authentication state.
+
+</Tip>
+
+## Step 4 — Call APIs with a client
+
+After creating a client, you can use it to call APIs.
+
+For example:
+
+```js
+const { items } = await myWixClient.products.queryProducts({});
+```
+
+## Step 5 — Work with visitor or member sessions
+
+Often, you'll need to maintain a persistent session to work with site or app visitors and members. Sessions are maintained using tokens. Most of the token management is handled by the client object, but there is some work you need to do, which differs depending on your situation.
+
+- To handle site visitor sessions, see [Authenticate Visitors (JS SDK)](/kb/authentication/authenticate-visitors-js-sdk).
+- To handle member sessions with a Wix login page, see [Add a Wix Login Page (JS SDK)](/kb/authentication/add-a-wix-login-page-js-sdk).
+- To handle member sessions with a custom login page, see [Build a Custom Login Page (JS SDK)](/kb/authentication/build-a-custom-login-page-js-sdk).
+- To handle member sessions with an external identity provider, see [Sign In with Google or Facebook (JS SDK)](https://dev.wix.com/docs/go-headless/authentication/members/identity-providers/sign-in-with-google-or-facebook-js-sdk).
+- For a complete list of available methods, see the [OAuthStrategy reference](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy).

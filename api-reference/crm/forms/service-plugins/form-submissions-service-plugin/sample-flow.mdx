@@ -1,0 +1,66 @@
+---
+title: "Sample Flow"
+description: "This article presents sample flows your app can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents sample flows your app can support. You aren't limited to this exact flow, but it can be a helpful jumping off point as you plan your Submissions service plugin integration.
+
+## Validate an email field
+
+1. A site visitor enters an email address into a form field and submits the form.
+1. Wix sends a [Validate Submission](fallback::https://dev.wix.com/docs/rest/crm/forms/service-plugins/form-submissions-service-plugin/validate-submission) service plugin request to your app.
+1. Your server validates the request. The email isn't valid, and the server sends an object containing the error.
+    
+    Example of a violation response from your app:
+
+    ```json
+        {
+            "validationResult": 
+            {
+                "errors": 
+                [
+                    {
+                        "errorPath": "submission.submissions.email",
+                        "errorMessage": "Wrong email format",
+                        "params": {},
+                        "useCustomErrorMessage": true
+                    }
+                ]
+            }
+        }
+    ```
+
+1. The email field is highlighted on the form, notifying the site visitor that the email is invalid.
+1. After this validation, the site visitor corrects the email and submits the form.
+1. Again Wix sends a [Validate Submission](fallback::https://dev.wix.com/docs/rest/crm/forms/service-plugins/form-submissions-service-plugin/validate-submission) service plugin request to your app.
+1. Your server validates the request. The email is valid and the server sends an object containing an empty list.
+
+## Prevent duplicate submissions
+
+1. A site visitor submits the same form again, which is permitted.
+1. Wix sends a [Validate Submission](fallback::https://dev.wix.com/docs/rest/crm/forms/service-plugins/form-submissions-service-plugin/validate-submission) service plugin request to your app.
+1. Your server checks for a unique submission token and validates the request. The server finds the duplicate and returns an object containing error.
+
+    Example of a violations response from your app:
+
+    ```json
+        {
+            "validationResult": 
+            {
+                "errors": 
+                [
+                    {
+                        "errorPath": "submission.count.forbidden",
+                        "errorMessage": "Form submitted more than 1 time",
+                        "params": {},
+                        "useCustomErrorMessage": true
+                    }
+                ]
+            }
+        }
+    ```
+
+1. With this validation violation, the site visitor can't submit this form again.

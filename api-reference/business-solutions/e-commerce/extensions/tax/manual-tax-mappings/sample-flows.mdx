@@ -1,0 +1,57 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Set up custom tax rates for a new region
+
+You need to configure tax rates for a business expanding into a new geographical region.
+
+To set up custom tax rates for a new region:
+
+1. Identify the tax groups that need custom rates in the new region. Call [Query Tax Groups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-groups/query-tax-groups) to get custom tax group IDs, or [List Default Tax Groups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-groups/list-default-tax-groups) to get system group IDs such as `Products`. Query Tax Groups doesn't return default groups.
+
+1. Identify the tax region representing the new geographical area. Call [Query Tax Regions](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-regions/query-tax-regions) to get the tax region ID.
+
+1. [Create the manual tax mapping](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/create-manual-tax-mapping) with the custom rate.
+
+1. Verify the mapping was created successfully by calling [Get Manual Tax Mapping](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/get-manual-tax-mapping) with the returned ID.
+
+## Import tax mappings from an external system
+
+You need to migrate existing tax configuration from a legacy tax system or import rates from a spreadsheet.
+
+To import multiple tax mappings:
+
+1. Structure your data as an array of manual tax mapping objects. Ensure each mapping has valid tax group and region IDs.
+
+1. Group the mappings into batches of up to 100 items to comply with bulk operation limits.
+
+1. For each batch, call [Bulk Create Manual Tax Mappings](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/bulk-create-manual-tax-mappings).
+
+1. Process any failed mappings from the `results` array and retry them in a separate request if needed.
+
+## Update tax rates after regulatory changes
+
+Local tax authorities have announced rate changes that affect your existing manual tax mappings.
+
+To update existing tax rates:
+
+1. Query existing mappings that need updates. For example, to find all mappings for a specific region.
+
+1. For each mapping that needs updating, call [Update Manual Tax Mapping](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/update-manual-tax-mapping) with the new rate.
+
+1. Verify the updates by querying the updated mappings to confirm the new rates are in effect.
+
+## Show a multi-component tax breakdown
+
+Some jurisdictions charge tax as multiple components (for example, GST plus PST in parts of Canada, or state plus county tax in the US) that should appear as separate lines at checkout.
+
+To create a breakdown for one tax group and region:
+
+1. Call [Create Manual Tax Mapping](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/create-manual-tax-mapping) once per component, all with the same `taxGroupId` and `taxRegionId` but a distinct `taxName` (for example, `GST` and `PST`) and its own `taxRate`. Use [Bulk Create Manual Tax Mappings](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/bulk-create-manual-tax-mappings) to create them in a single request.
+
+1. Tax calculation applies all matching mappings, and each `taxName` renders as its own line at checkout. No extra flag is needed. The set of mappings is the breakdown.

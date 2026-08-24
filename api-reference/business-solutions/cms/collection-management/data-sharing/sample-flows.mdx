@@ -1,0 +1,87 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. These flows aren't the only ways to use this API, but they can be a helpful starting point as you plan your implementation.
+
+## Distribute content across multi-locale marketing networks
+
+You manage a global brand with regional marketing sites that need to display localized content from a central content hub. Each regional site should only show content relevant to its specific market and locale, while maintaining consistent branding and messaging from the central team.
+
+To distribute content across multi-locale marketing networks:
+
+1. On the central content hub site, call [Create Data Sharing Policy](https://dev.wix.com/docs/api-reference/business-solutions/cms/data-sharing-policy-v1/create-data-sharing-policy) to create a sharing policy for your articles collection with locale filtering:
+
+    ```json
+    {
+      "dataSharingPolicy": {
+        "dataCollectionId": "Articles",
+        "dataItemsFilter": {
+          "filter": {
+            "$and": [
+              {"locale": {"$eq": "en-US"}},
+              {"status": {"$eq": "published"}}
+            ]
+          }
+        }
+      }
+    }
+    ```
+
+2. Repeat step 1 to create additional policies for other locales. For example, `"fr-FR"`, `"de-DE"`.
+
+3. On each regional marketing site, call [Connect To Shared Collection](https://dev.wix.com/docs/api-reference/business-solutions/cms/data-sharing-policy-v1/connect-to-shared-collection) using the appropriate locale policy ID:
+
+    ```json
+    {
+      "namespace": "central-content",
+      "displayNamespace": "Central Marketing Content",
+      "dataSharingPolicyId": "your-locale-policy-id"
+    }
+    ```
+
+4. Access the shared content on regional sites using the namespaced collection ID `central-content/Articles` through standard data collection APIs.
+
+5. When the shared collection's content is modified on any site (central hub or regional sites), the changes automatically propagate to the source site and all target sites in real time.
+
+## Notify connected sites when sharing policies change
+
+You manage a customer reviews database that multiple partner sites access through sharing policies. When you update a policy and remove a field from being shared, you want to identify all affected sites and notify them about the change so they can adjust their implementations accordingly.
+
+To notify connected sites when sharing policies change:
+
+1. Update your sharing policy to remove restrictions by calling [Update Data Sharing Policy](https://dev.wix.com/docs/api-reference/business-solutions/cms/data-sharing-policy-v1/update-data-sharing-policy).
+
+2. Identify the affected sites by calling [List Shared Data Collections](https://dev.wix.com/docs/api-reference/business-solutions/cms/data-sharing-policy-v1/list-shared-data-collections) for your collection.
+
+3. Extract the target site IDs from the response to identify all connected partner sites.
+
+4. Create a Notification template in the app dashboard and send a message about the update to each affected site's dashboard using the [Notifications API](fallback::https://dev.wix.com/docs/api-reference/business-management/notifications/notifications/introduction).
+
+## Display per-collection sharing indicators in a CMS admin dashboard
+
+You manage a central content hub that shares multiple collections with regional sites. Your CMS admin dashboard needs to show how many sites each collection is shared with, without loading the full list of sharing connections for every collection.
+
+To display per-collection sharing indicators:
+
+1. On the source site, call [Bulk Get Shared Collection Stats](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-sharing-policy-v1/bulk-get-shared-collection-stats) with an empty `sourceDataCollectionIds` array to retrieve stats for every collection currently shared out from the site:
+
+    ```json
+    {}
+    ```
+
+2. For each result where `itemMetadata.success` is `true`, read `stats.connectedSitesCount` and display a label such as "Shared with 3 sites" next to the collection identified by `stats.sourceDataCollectionId`.
+
+3. When you only need stats for specific collections (for example, the collections visible on the current page), pass their IDs in `sourceDataCollectionIds`:
+
+    ```json
+    {
+      "sourceDataCollectionIds": ["Articles", "Products"]
+    }
+    ```
+
+4. If a provided collection ID has no active sharing connections, the corresponding result has `itemMetadata.success` set to `false` and `itemMetadata.error.code` set to `"NOT_FOUND"`. Treat this as "not currently shared" in your UI.
+
+5. When you need target site IDs or target collection IDs (for example, to send notifications), call [List Shared Data Collections](https://dev.wix.com/docs/api-reference/business-solutions/cms/data-sharing-policy-v1/list-shared-data-collections) with `sharedWithCurrentSite` set to `false` for the relevant collection.

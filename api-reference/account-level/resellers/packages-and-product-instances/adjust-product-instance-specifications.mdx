@@ -1,0 +1,509 @@
+---
+title: "Adjust Product Instance Specifications"
+description: "Upgrades or downgrades a product instance."
+icon: "pen"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-patch">PATCH</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Upgrades or downgrades a product instance. For example, you can upgrade a
+    customer's `Business Unlimited Premium` plan to `Business VIP` using this
+    endpoint.
+
+    You must pass the ID of the Wix account that the product instance belongs
+    to in the header of the call. The call fails, if the product instance and
+    Wix account don't match.
+
+    The customer has immediate access to new features, while losing access to
+    features not included in the new service. It's up to the reseller to
+    decide whether the adjustment affects the customer’s payment.
+
+    You can only exchange a product instance with a service of the same type.
+    Contact the [Wix B2B sales team](mailto:bizdev@wix.com) for details about
+    which services belong to the same type.
+
+    You must provide either a new `catalogProductId` or a new `billingInfo`
+    object. The new billing cycle must be supported for the product. Contact the
+    [Wix B2B sales team](mailto:bizdev@wix.com) for information
+    about which billing cycles are supported for each product. If you adjust the
+    billing cycle for a product instance with `RECURRING` payments, you must
+    also provide `billingInfo.cycleDuration.unit`.
+
+    If a removed feature is a requirement for another service, that service
+    may not be available to the customer any longer. For example, if you downgrade a
+    `Business Unlimited` plan to `Business Basic`, the site owners won’t be
+    able to use `Pro eCommerce Features` any longer.
+
+    <Note>
+
+    This call requires an account level API key and cannot be
+    authenticated with the standard authorization header.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="premium.reseller-package.manage">premium.reseller-package.manage</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Endpoint
+
+    ```http
+    PATCH https://www.wixapis.com/resellers/v1/packages/product-instances/{instanceId}
+    ```
+
+    ## Path Params
+
+    <ParamField path="instanceId" type="string" required>
+
+      ID of the product instance to adjust.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="idempotencyKey" type="string">
+
+      Idempotency key.
+
+    </ParamField>
+
+    <ParamField body="catalogProductId" type="string">
+
+      ID of the product to replace the original instance. Required in case you don't
+      provide a new `billingInfo` object.
+
+    </ParamField>
+
+    <ParamField body="billingInfo" type="Cycle">
+
+      Information about the billing cycle. Required in case you don't provide a new
+      `catalogProductId`. The new billing cycle must be supported for the service.
+      Contact the [Wix B2B sales team](mailto:bizdev@wix.com) for
+      information about a service's supported billing cycles. If
+      you adjust the billing cycle for a product instance with `RECURRING`
+      payments, you must also provide `billingInfo.cycleDuration.unit`.
+
+      <Expandable title="billingInfo properties">
+
+        <ParamField body="type" type="string">
+
+          Payment type.
+
+          **Supported values:**
+
+          - `ONE_TIME` — The reseller pays Wix in a single payment.
+          - `RECURRING` — The reseller pays Wix on a recurring schedule.
+
+        </ParamField>
+
+        <ParamField body="cycleDuration" type="Interval">
+
+          Duration of the billing cycle. Available only for `RECURRING` payments.
+
+          <Expandable title="cycleDuration properties">
+
+            <ParamField body="unit" type="string">
+
+              Unit of the billing cycle.
+
+              **Supported values:**
+
+              - `DAY` — Day
+              - `WEEK` — Week
+              - `MONTH` — Month
+              - `YEAR` — Year
+
+            </ParamField>
+
+            <ParamField body="count" type="integer">
+
+              Count of units that make up the billing cycle.
+
+              Constraints: `min 1`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="discountCode" type="string">
+
+      Discount code indicating that the reseller provisioned the product instance
+      during a sale. In case you pass a code that isn't valid, the call succeeds and
+      no discount is applied to the product instance. Wix doesn't guarantee that a
+      discount code reduces the price between Wix and the reseller, even when it's
+      valid. You can't add a discount code after you've created the
+      product instance. Contact the [Wix B2B sales team](mailto:bizdev@wix.com) for
+      more information about supported codes.
+
+      Max: 25 characters
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="idempotencyKey" type="string">
+
+      Idempotency key.
+
+    </ResponseField>
+
+    <ResponseField name="package" type="Package">
+
+      Updated package that includes the adjusted product instance.
+
+      See the [Packages Object](/api-reference/account-level/resellers/packages-and-product-instances/packages-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/resellers/v1/packages/product-instances/d3b88a39-f62e-4164-8b29-08369b9ea71c' \
+      -H 'wix-account-id: <ACCOUNT_ID>' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "catalogProductId": "2c6db353-458a-41dd-b4f5-cb8a05be6bff"
+      }'
+      ```
+
+      ```json Response
+      {
+          "package": {
+              "id": "828b98fb-7114-4b3c-90fd-8d0db76aa72b",
+              "accountId": "<ACCOUNT_ID>",
+              "externalId": "some-external-id",
+              "productInstances": [
+                  {
+                      "instanceId": "d3b88a39-f62e-4164-8b29-08369b9ea71c",
+                      "siteId": "918aa943-ab4f-40bc-88c3-8dfd02fae7cd",
+                      "catalogProductId": "2c6db353-458a-41dd-b4f5-cb8a05be6bff",
+                      "status": "PENDING",
+                      "billingInfo": {
+                          "type": "RECURRING",
+                          "cycleDuration": {
+                              "unit": "YEAR",
+                              "count": 1
+                          }
+                      },
+                      "createdDate": "2021-12-02T15:45:30.941Z",
+                      "updatedDate": "2021-12-02T15:45:30.941Z"
+                  }
+              ],
+              "createdDate": "2021-12-02T15:45:31.815Z",
+              "updatedDate": "2021-12-02T15:45:31.815Z"
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Upgrades or downgrades a product instance. For example, you can upgrade a
+    customer's `Business Unlimited Premium` plan to `Business VIP` using this
+    endpoint.
+
+    You must pass the ID of the Wix account that the product instance belongs
+    to in the header of the call. The call fails, if the product instance and
+    Wix account don't match.
+
+    The customer has immediate access to new features, while losing access to
+    features not included in the new service. It's up to the reseller to
+    decide whether the adjustment affects the customer’s payment.
+
+    You can only exchange a product instance with a service of the same type.
+    Contact the [Wix B2B sales team](mailto:bizdev@wix.com) for details about
+    which services belong to the same type.
+
+    You must provide either a new `catalogProductId` or a new `billingInfo`
+    object. The new billing cycle must be supported for the product. Contact the
+    [Wix B2B sales team](mailto:bizdev@wix.com) for information
+    about which billing cycles are supported for each product. If you adjust the
+    billing cycle for a product instance with `RECURRING` payments, you must
+    also provide `billingInfo.cycleDuration.unit`.
+
+    If a removed feature is a requirement for another service, that service
+    may not be available to the customer any longer. For example, if you downgrade a
+    `Business Unlimited` plan to `Business Basic`, the site owners won’t be
+    able to use `Pro eCommerce Features` any longer.
+
+    <Note>
+
+    This call requires an account level API key and cannot be
+    authenticated with the standard authorization header.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="premium.reseller-package.manage">premium.reseller-package.manage</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Method Declaration
+
+    ```typescript
+    import { packages } from '@wix/packages';
+
+    packages.adjustProductInstanceSpecifications(instanceId, options): Promise<AdjustProductInstanceSpecificationsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="instanceId" type="string" required>
+
+      ID of the product instance to adjust.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="AdjustProductInstanceSpecificationsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="idempotencyKey" type="string">
+
+          Idempotency key.
+
+        </ParamField>
+
+        <ParamField body="catalogProductId" type="string">
+
+          ID of the product to replace the original instance. Required in case you don't
+          provide a new `billingInfo` object.
+
+        </ParamField>
+
+        <ParamField body="billingInfo" type="Cycle">
+
+          Information about the billing cycle. Required in case you don't provide a new
+          `catalogProductId`. The new billing cycle must be supported for the service.
+          Contact the [Wix B2B sales team](mailto:bizdev@wix.com) for
+          information about a service's supported billing cycles. If
+          you adjust the billing cycle for a product instance with `RECURRING`
+          payments, you must also provide `billingInfo.cycleDuration.unit`.
+
+          <Expandable title="billingInfo properties">
+
+            <ParamField body="type" type="string">
+
+              Payment type.
+
+              **Supported values:**
+
+              - `ONE_TIME` — The reseller pays Wix in a single payment.
+              - `RECURRING` — The reseller pays Wix on a recurring schedule.
+
+            </ParamField>
+
+            <ParamField body="cycleDuration" type="Interval">
+
+              Duration of the billing cycle. Available only for `RECURRING` payments.
+
+              _Nested structure omitted for brevity — see the `Interval` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="discountCode" type="string">
+
+          Discount code indicating that the reseller provisioned the product instance
+          during a sale. In case you pass a code that isn't valid, the call succeeds and
+          no discount is applied to the product instance. Wix doesn't guarantee that a
+          discount code reduces the price between Wix and the reseller, even when it's
+          valid. You can't add a discount code after you've created the
+          product instance. Contact the [Wix B2B sales team](mailto:bizdev@wix.com) for
+          more information about supported codes.
+
+          Max: 25 characters
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<AdjustProductInstanceSpecificationsResponse>`.
+
+    <ResponseField name="idempotencyKey" type="string">
+
+      Idempotency key.
+
+    </ResponseField>
+
+    <ResponseField name="package" type="Package">
+
+      Updated package that includes the adjusted product instance.
+
+      See the [Packages Object](/api-reference/account-level/resellers/packages-and-product-instances/packages-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Packages Adjusted Product Instance Specifications | `wix.premium.reseller.v1.packages_adjusted_product_instance_specifications` | Triggered when the specifications of a product instance are adjusted. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-adjust-product-instance-specifications" id="ex-sdk-adjust-product-instance-specifications-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-adjust-product-instance-specifications" id="ex-sdk-adjust-product-instance-specifications-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-adjust-product-instance-specifications-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-adjust-product-instance-specifications-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Adjust product instance specifications with an API key</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">adjustProductInstanceSpecifications (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-adjust-product-instance-specifications-0"><span className="wix-picker-name">Adjust product instance specifications with an API key</span></label>
+    <label htmlFor="ex-sdk-adjust-product-instance-specifications-1"><span className="wix-picker-name">adjustProductInstanceSpecifications (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Adjust product instance specifications with an API key
+    import { createClient, ApiKeyStrategy } from "@wix/sdk";
+    import { packages } from "@wix/packages";
+
+    const wixClient = createClient({
+     modules: { packages },
+     auth: ApiKeyStrategy({
+        apiKey: "MY-API-KEY",
+      }),
+    });
+
+    async function adjustProductInstanceSpecifications(instanceId, options) {
+      const response = await packages.adjustProductInstanceSpecifications(
+        instanceId,
+        options,
+      );
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript adjustProductInstanceSpecifications (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { packages } from '@wix/packages';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { packages },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function adjustProductInstanceSpecifications(instanceId,options) {
+      const response = await myWixClient.packages.adjustProductInstanceSpecifications(instanceId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

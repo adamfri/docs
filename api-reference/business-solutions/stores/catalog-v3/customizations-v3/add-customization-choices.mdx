@@ -1,0 +1,620 @@
+---
+title: "Add Customization Choices"
+description: "Adds choices to a customization."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds choices to a customization.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/customizations/{customizationId}/add-choices
+    ```
+
+    ## Path Params
+
+    <ParamField path="customizationId" type="string" required>
+
+      Customization ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="choices" type="Choice[]" required>
+
+      Choices to add.
+
+      Constraints: `minItems 1`, `maxItems 1000`.
+
+      <Expandable title="choices properties">
+
+        <ParamField body="id" type="string">
+
+          Choice ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="choiceType" type="string">
+
+          Choice type.
+
+          > **Notes:**
+          > + For `customizationRenderType: SWATCH_CHOICES`, the supported `choiceType` value is: `ONE_COLOR`.
+          > + For a `customizationRenderType` of `TEXT_CHOICES`, the supported `choiceType` value is: `CHOICE_TEXT`.
+
+          Constraints: `immutable`.
+
+          **Supported values:**
+
+          - `CHOICE_TEXT` — For a `customizationRenderType` of `TEXT_CHOICES`.
+          - `ONE_COLOR` — For `customizationRenderType: SWATCH_CHOICES`.
+
+        </ParamField>
+
+        <ParamField body="key" type="string">
+
+          A read-only identifier generated from the choice name.
+
+          Use `key` in the `catalogReference.options` object when [integrating Catalog V3 with eCommerce APIs](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration).
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Choice name.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ParamField>
+
+        <ParamField body="defaultAddedPrice" type="string">
+
+          Default amount added to a product's price when this customization is assigned to a modifier.
+
+        </ParamField>
+
+        <ParamField body="displayImage" type="Image">
+
+          Optional image displayed alongside a `ONE_COLOR` choice in the storefront.
+          Only valid for `ONE_COLOR` choices; not populated for other choice types.
+
+          <Expandable title="displayImage properties">
+
+            <ParamField body="id" type="string">
+
+              WixMedia image ID.
+
+              Constraints: `maxLength 400`.
+
+            </ParamField>
+
+            <ParamField body="url" type="string">
+
+              Image URL.
+
+              Constraints: `format WEB_URL`.
+
+            </ParamField>
+
+            <ParamField body="height" type="integer">
+
+              Original image height.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="width" type="integer">
+
+              Original image width.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="altText" type="string">
+
+              Image alt text.
+
+            </ParamField>
+
+            <ParamField body="filename" type="string">
+
+              Image filename.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="primaryChoiceIds" type="string[]">
+
+          IDs of the primary choices this choice is grouped under.
+
+          A choice that has `primaryChoiceIds` is a "linked" choice; a choice without `primaryChoiceIds` is a "primary" choice.
+          A linked choice can reference up to 4 primary choices and appears nested under each of them on the storefront,
+          rather than in the top-level choice list.
+
+          Only one level of grouping is supported: a primary choice cannot itself be a linked choice.
+
+          **Developer Preview.** Constraints: `format GUID`, `maxItems 4`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Supported values: `ASSIGNED_PRODUCTS_COUNT`
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `ASSIGNED_PRODUCTS_COUNT` — Assigned products count.
+      - `CHOICE_DISPLAY_IMAGE` — Returns display images for choices.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="customization" type="Customization">
+
+      Updated customization.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CHOICES_LIMIT_EXCEEDED` | Number of choices exceeded the limit of 100 per customization. |
+    | `400` | `INVALID_ARGUMENT` | `DOESNT_SUPPORT_CHOICES` | `FREE_TEXT` render type doesn't support choices. Use `SWATCH_CHOICES` or `TEXT_CHOICES` render type instead. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_TYPE` | Choice type doesn't match the customization type. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_VALUE` | Choice value doesn't match the choice type. For `SWATCH_CHOICES`, use `ONE_COLOR` choice type. For `TEXT_CHOICES`, use `CHOICE_TEXT` choice type. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_CHOICE_NAME` | Duplicate choice name found. Each choice name must be unique within the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_SELF_REFERENCE` | Choice references itself in `primaryChoiceIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_NOT_FOUND` | `primaryChoiceIds` contains an ID that doesn't match any existing choice in the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_HIERARCHY_VIOLATION` | A choice that is a primary of other choices can't also be a linked choice. Only a single level of grouping is supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Updated | `wix.stores.catalog.v3.customization_updated` | Triggered when a customization is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Adds given choices to an existing customization by its id
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+       'https://www.wixapis.com/stores/v3/customizations/06b6abfd-002d-437d-ad08-91f8537cd96d/add-choices' \
+       -H 'Content-Type: application/json' \
+       -H 'Authorization: <AUTH>' \
+       -d '{
+        "choices": [
+          {
+            "choiceType": "ONE_COLOR",
+            "name": "Purple",
+            "colorCode": "#A020F0"
+          }
+        ]
+       }'
+      ```
+
+      ```json Response
+      {
+          "customization": {
+              "id": "06b6abfd-002d-437d-ad08-91f8537cd96d",
+              "revision": "4",
+              "createdDate": "2024-06-26T09:44:11.306Z",
+              "updatedDate": "2024-07-03T08:40:32.789Z",
+              "key": "Color",
+              "name": "Color",
+              "customizationType": "PRODUCT_OPTION",
+              "customizationRenderType": "SWATCH_CHOICES",
+              "choicesSettings": {
+                  "choices": [{
+                      "id": "92e94db7-832c-42fd-be1e-55670df24ccf",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Blue",
+                      "name": "Blue",
+                      "colorCode": "#0000FF"
+                  }, {
+                      "id": "30be51d2-cc1e-4ef6-84c0-ac59f9410bc2",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Yellow",
+                      "name": "Yellow",
+                      "colorCode": "#FFFF00"
+                  }, {
+                      "id": "4e787c64-8901-4031-b4cc-63bb9fa0a96a",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Green",
+                      "name": "Green",
+                      "colorCode": "#008000"
+                  }, {
+                      "id": "ef6bf1ca-bdc8-4158-af95-c299de38dec6",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Purple",
+                      "name": "Purple",
+                      "colorCode": "#A020F0"
+                  }]
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds choices to a customization.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { customizationsV3 } from '@wix/stores';
+
+    customizationsV3.addCustomizationChoices(customizationId, choices, options): Promise<NonNullablePaths>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="customizationId" type="string" required>
+
+      Customization ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="choices" type="AddCustomizationChoices[]" required>
+
+      Choices to add.
+
+      Constraints: `minItems 1`, `maxItems 1000`.
+
+      <Expandable title="choices properties">
+
+        <ParamField body="_id" type="string">
+
+          Choice ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="choiceType" type="string">
+
+          Choice type.
+
+          > **Notes:**
+          > + For `customizationRenderType: SWATCH_CHOICES`, the supported `choiceType` value is: `ONE_COLOR`.
+          > + For a `customizationRenderType` of `TEXT_CHOICES`, the supported `choiceType` value is: `CHOICE_TEXT`.
+
+          Constraints: `immutable`.
+
+          **Supported values:**
+
+          - `CHOICE_TEXT` — For a `customizationRenderType` of `TEXT_CHOICES`.
+          - `ONE_COLOR` — For `customizationRenderType: SWATCH_CHOICES`.
+
+        </ParamField>
+
+        <ParamField body="key" type="string">
+
+          A read-only identifier generated from the choice name.
+
+          Use `key` in the `catalogReference.options` object when [integrating Catalog V3 with eCommerce APIs](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration).
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Choice name.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ParamField>
+
+        <ParamField body="defaultAddedPrice" type="string">
+
+          Default amount added to a product's price when this customization is assigned to a modifier.
+
+        </ParamField>
+
+        <ParamField body="displayImage" type="string">
+
+          Optional image displayed alongside a `ONE_COLOR` choice in the storefront.
+          Only valid for `ONE_COLOR` choices; not populated for other choice types.
+
+        </ParamField>
+
+        <ParamField body="primaryChoiceIds" type="string[]">
+
+          IDs of the primary choices this choice is grouped under.
+
+          A choice that has `primaryChoiceIds` is a "linked" choice; a choice without `primaryChoiceIds` is a "primary" choice.
+          A linked choice can reference up to 4 primary choices and appears nested under each of them on the storefront,
+          rather than in the top-level choice list.
+
+          Only one level of grouping is supported: a primary choice cannot itself be a linked choice.
+
+          **Developer Preview.** Constraints: `format GUID`, `maxItems 4`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="AddCustomizationChoicesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Supported values: `ASSIGNED_PRODUCTS_COUNT`
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `ASSIGNED_PRODUCTS_COUNT` — Assigned products count.
+          - `CHOICE_DISPLAY_IMAGE` — Returns display images for choices.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<NonNullablePaths>`.
+
+    <ResponseField name="customization" type="Customization">
+
+      Updated customization.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CHOICES_LIMIT_EXCEEDED` | Number of choices exceeded the limit of 100 per customization. |
+    | `400` | `INVALID_ARGUMENT` | `DOESNT_SUPPORT_CHOICES` | `FREE_TEXT` render type doesn't support choices. Use `SWATCH_CHOICES` or `TEXT_CHOICES` render type instead. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_TYPE` | Choice type doesn't match the customization type. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CHOICE_VALUE` | Choice value doesn't match the choice type. For `SWATCH_CHOICES`, use `ONE_COLOR` choice type. For `TEXT_CHOICES`, use `CHOICE_TEXT` choice type. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_CHOICE_NAME` | Duplicate choice name found. Each choice name must be unique within the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_SELF_REFERENCE` | Choice references itself in `primaryChoiceIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_NOT_FOUND` | `primaryChoiceIds` contains an ID that doesn't match any existing choice in the customization. |
+    | `400` | `INVALID_ARGUMENT` | `PRIMARY_CHOICE_HIERARCHY_VIOLATION` | A choice that is a primary of other choices can't also be a linked choice. Only a single level of grouping is supported. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Updated | `wix.stores.catalog.v3.customization_updated` | Triggered when a customization is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-add-customization-choices" id="ex-sdk-add-customization-choices-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-add-customization-choices" id="ex-sdk-add-customization-choices-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-add-customization-choices-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-add-customization-choices-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Add choices to a customization</span><span className="wix-picker-desc">Add a new color swatch choice to an existing customization</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">addCustomizationChoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-add-customization-choices-0"><span className="wix-picker-name">Add choices to a customization</span><span className="wix-picker-desc">Add a new color swatch choice to an existing customization</span></label>
+    <label htmlFor="ex-sdk-add-customization-choices-1"><span className="wix-picker-name">addCustomizationChoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Add choices to a customization
+    import { customizationsV3 } from "@wix/stores";
+
+    const customizationId = "06b6abfd-002d-437d-ad08-91f8537cd96d";
+
+    const choices = [
+      {
+        choiceType: customizationsV3.ChoiceType.ONE_COLOR,
+        name: "Purple",
+        colorCode: "#A020F0"
+      }
+    ];
+
+    async function addCustomizationChoices() {
+      const response = await customizationsV3.addCustomizationChoices(customizationId, choices);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "_id": "06b6abfd-002d-437d-ad08-91f8537cd96d",
+     *   "_createdDate": "2025-12-11T09:27:12.000Z",
+     *   "_updatedDate": "2025-12-11T09:27:14.000Z",
+     *   "revision": "2",
+     *   "name": "Color",
+     *   "customizationType": "PRODUCT_OPTION",
+     *   "customizationRenderType": "SWATCH_CHOICES",
+     *   "choicesSettings": {
+     *     "choices": [
+     *       { "_id": "existing-1", "choiceType": "ONE_COLOR", "name": "Blue", "colorCode": "#0000FF" },
+     *       { "_id": "new-choice", "choiceType": "ONE_COLOR", "name": "Purple", "colorCode": "#A020F0" }
+     *     ]
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript addCustomizationChoices (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { customizationsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { customizationsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function addCustomizationChoices(customizationId,choices,options) {
+      const response = await myWixClient.customizationsV3.addCustomizationChoices(customizationId,choices,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

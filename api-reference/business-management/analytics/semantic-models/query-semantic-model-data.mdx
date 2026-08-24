@@ -1,0 +1,904 @@
+---
+title: "Query Semantic Model Data"
+description: "Retrieves data from a semantic model for the specified fields, filters, sorting, and paging."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves data from a semantic model for the specified fields, filters, sorting, and paging.
+
+    Query Semantic Model Data runs with these defaults, which you can override:
+
+    - `paging.limit` is `50`
+    - `paging.offset` is `0`
+
+    To learn about working with Query methods, see [API Query Language](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language), [Sorting and Paging](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-sorting-and-paging), and [Field Projection](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-field-projection).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ANALYTICS-AND-REPORTS.READ-SITE-ANALYTICS">Site Analytics - read permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/analytics/semantic-model/v3/semantic-models/query-data
+    ```
+
+    ## Body Params
+
+    <ParamField body="semanticModelId" type="string" required>
+
+      ID of the semantic model to query.
+
+      Constraints: `maxLength 5120`.
+
+    </ParamField>
+
+    <ParamField body="interval" type="DateTimeInterval" required>
+
+      Time interval for the data query.
+
+      <Expandable title="interval properties">
+
+        <ParamField body="start" type="datetime">
+
+          Period start as an absolute instant. The query timezone determines its
+          wall-clock representation when querying Snowflake and formatting results.
+
+        </ParamField>
+
+        <ParamField body="end" type="datetime">
+
+          Period end as an absolute instant. The query timezone determines its
+          wall-clock representation when querying Snowflake and formatting results.
+
+        </ParamField>
+
+        <ParamField body="timezone" type="string">
+
+          Timezone used to interpret and format the instant boundaries for the query.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]" required>
+
+      List of field names to retrieve from the semantic model. Call `Get Semantic Model` to retrieve the semantic model's available fields. Fields with unmet dependencies (see the `dependencies` property in the semantic model schema) are silently omitted from results.
+
+      Constraints: `maxLength 5120`, `maxItems 60`.
+
+    </ParamField>
+
+    <ParamField body="sort" type="Sorting">
+
+      Sort order for the results. Supports sorting by a single field only.
+
+      <Expandable title="sort properties">
+
+        <ParamField body="fieldName" type="string">
+
+          Name of the field to sort the results by.
+
+          Constraints: `maxLength 5120`.
+
+        </ParamField>
+
+        <ParamField body="order" type="string">
+
+          Sort direction.
+
+          Default: `ASC`
+
+          **Supported values:**
+
+          - `ASC` — Ascending order.
+          - `DESC` — Descending order.
+
+        </ParamField>
+
+        <ParamField body="nullsLast" type="boolean">
+
+          Whether to place null values last in the result set. Applies to descending order.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="filters" type="FieldFilter[]">
+
+      Filters to apply to the data query. Supported conditions: `EQUAL`, `GREATER_THAN`, `GREATER_THAN_OR_EQUAL`, `LESS_THAN`, `LESS_THAN_OR_EQUAL`, `NULL`, `EMPTY`, `START_WITH`, `END_WITH`, `CONTAINS_ANY`, `CONTAINS_ALL`, `RANGE_II` (inclusive start, inclusive end), `RANGE_IE` (inclusive start, exclusive end), `RANGE_EI` (exclusive start, inclusive end), and `RANGE_EE` (exclusive start, exclusive end).
+
+      Constraints: `maxItems 60`.
+
+      <Expandable title="filters properties">
+
+        <ParamField body="field" type="string">
+
+          Name of the field to filter by. Must match a field name from the semantic model's measures or dimensions.
+
+          Constraints: `maxLength 5120`.
+
+        </ParamField>
+
+        <ParamField body="values" type="string[]">
+
+          Values to compare against. For range conditions, provide exactly 2 values representing the start and end of the range.
+
+          Constraints: `maxLength 5120`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="prefix" type="string">
+
+          Whether to match or negate the condition.
+
+          Default: `IS`
+
+          **Supported values:**
+
+          - `IS` — Positive match. For example, `IS` + `EQUAL` means "is equal to".
+          - `NOT` — Negated match. For example, `NOT` + `EQUAL` means "is not equal to".
+
+        </ParamField>
+
+        <ParamField body="condition" type="string">
+
+          Comparison condition to apply.
+
+          Default: `EQUAL`
+
+          **Supported values:**
+
+          - `EQUAL` — Value equals the filter value.
+          - `GREATER_THAN` — Value is greater than the filter value.
+          - `GREATER_THAN_OR_EQUAL` — Value is greater than or equal to the filter value.
+          - `LESS_THAN` — Value is less than the filter value.
+          - `LESS_THAN_OR_EQUAL` — Value is less than or equal to the filter value.
+          - `NULL` — Value is null.
+          - `EMPTY` — Value is an empty string.
+          - `START_WITH` — String value starts with the filter value.
+          - `END_WITH` — String value ends with the filter value.
+          - `CONTAINS_ANY` — For strings, matches if any of the filter values appear as a substring. For arrays, matches if any of the filter values are present in the array.
+          - `RANGE_II` — Inclusive start, inclusive end range. The value must fall within `[a, b]`.
+          - `RANGE_IE` — Inclusive start, exclusive end range. The value must fall within `[a, b)`.
+          - `RANGE_EI` — Exclusive start, inclusive end range. The value must fall within `(a, b]`.
+          - `RANGE_EE` — Exclusive start, exclusive end range. The value must fall within `(a, b)`.
+          - `CONTAINS_ALL` — For strings, matches if all filter values appear as substrings. For arrays, matches if all filter values are present in the array.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="paging" type="Paging">
+
+      Pagination options.
+
+      <Expandable title="paging properties">
+
+        <ParamField body="limit" type="integer">
+
+          Number of items to load.
+
+        </ParamField>
+
+        <ParamField body="offset" type="integer">
+
+          Number of items to skip in the current sort order.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="formattingEnabled" type="boolean">
+
+      Whether to format numeric values as human-readable strings. For example, `1500` displays as `$1,500.00` or `1.5K` when enabled.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="totalsIncluded" type="boolean">
+
+      Whether to include a totals row in the response. When `true`, the `totals` field contains the sum of all numeric fields across the full (unpaginated) result set.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="DataRow[]">
+
+      Retrieved data rows.
+
+      **Read-only.** Constraints: `maxItems 1000`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="fields" type="object">
+
+          Map of field name to its value for this row.
+
+          Constraints: `format map`, `maxItems 100`.
+
+          <Expandable title="fields properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="FieldValue">
+
+              Value of a single field in a data row. Contains both the raw typed value and an optional formatted string representation.
+
+              _Nested structure omitted for brevity — see the `FieldValue` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="PagingMetadata">
+
+      Pagination metadata.
+
+      **Read-only.**
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="offset" type="integer">
+
+          Offset that was requested.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="totals" type="DataRow">
+
+      Totals row with the sum of all numeric fields across the full result set.
+
+      Returned only when `totalsIncluded` is `true`.
+
+      **Read-only.**
+
+      <Expandable title="totals properties">
+
+        <ResponseField name="fields" type="object">
+
+          Map of field name to its value for this row.
+
+          Constraints: `format map`, `maxItems 100`.
+
+          <Expandable title="fields properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="FieldValue">
+
+              Value of a single field in a data row. Contains both the raw typed value and an optional formatted string representation.
+
+              _Nested structure omitted for brevity — see the `FieldValue` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `401` | `UNAUTHENTICATED` | `NO_ACCOUNT_IDENTITY` | The caller isn't authenticated. Provide valid credentials and try again. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/analytics/semantic-model/v3/semantic-models/query-data' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+        "semanticModelId": "cad7fd34-2c8b-4dda-8296-3f9d47fb484d",
+        "interval": {
+          "start": "2024-06-01T00:00:00.000Z",
+          "end": "2025-05-31T23:59:59.000Z"
+        },
+        "fields": [
+          "traffic.referrer_category_name",
+          "traffic.sessions_count",
+          "traffic.views_count"
+        ],
+        "sort": {
+          "fieldName": "traffic.sessions_count",
+          "order": "DESC"
+        },
+        "paging": {
+          "limit": 5,
+          "offset": 0
+        },
+        "formattingEnabled": true,
+        "totalsIncluded": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [],
+        "pagingMetadata": {
+          "count": 0,
+          "offset": 0
+        },
+        "totals": {
+          "fields": {
+            "traffic.referrer_category_name": {
+              "formattedValue": "Unknown"
+            },
+            "traffic.sessions_count": {
+              "numericValue": 0,
+              "formattedValue": "0"
+            },
+            "traffic.views_count": {
+              "numericValue": 0,
+              "formattedValue": "0"
+            }
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves data from a semantic model for the specified fields, filters, sorting, and paging.
+
+    Query Semantic Model Data runs with these defaults, which you can override:
+
+    - `paging.limit` is `50`
+    - `paging.offset` is `0`
+
+    To learn about working with Query methods, see [API Query Language](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language), [Sorting and Paging](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-sorting-and-paging), and [Field Projection](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-field-projection).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ANALYTICS-AND-REPORTS.READ-SITE-ANALYTICS">Site Analytics - read permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { analyticsSemanticModel } from '@wix/analytics-semantic-model';
+
+    analyticsSemanticModel.querySemanticModelData(semanticModelId, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="semanticModelId" type="string" required>
+
+      ID of the semantic model to query.
+
+      Constraints: `maxLength 5120`.
+
+    </ParamField>
+
+    <ParamField body="options" type="QuerySemanticModelDataOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="interval" type="DateTimeInterval" required>
+
+          Time interval for the data query.
+
+          <Expandable title="interval properties">
+
+            <ParamField body="start" type="datetime">
+
+              Period start as an absolute instant. The query timezone determines its
+              wall-clock representation when querying Snowflake and formatting results.
+
+            </ParamField>
+
+            <ParamField body="end" type="datetime">
+
+              Period end as an absolute instant. The query timezone determines its
+              wall-clock representation when querying Snowflake and formatting results.
+
+            </ParamField>
+
+            <ParamField body="timezone" type="string">
+
+              Timezone used to interpret and format the instant boundaries for the query.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]" required>
+
+          List of field names to retrieve from the semantic model. Call `Get Semantic Model` to retrieve the semantic model's available fields. Fields with unmet dependencies (see the `dependencies` property in the semantic model schema) are silently omitted from results.
+
+          Constraints: `maxLength 5120`, `maxItems 60`.
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting">
+
+          Sort order for the results. Supports sorting by a single field only.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort the results by.
+
+              Constraints: `maxLength 5120`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort direction.
+
+              Default: `ASC`
+
+              **Supported values:**
+
+              - `ASC` — Ascending order.
+              - `DESC` — Descending order.
+
+            </ParamField>
+
+            <ParamField body="nullsLast" type="boolean">
+
+              Whether to place null values last in the result set. Applies to descending order.
+
+              Default: `false`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="filters" type="FieldFilter[]">
+
+          Filters to apply to the data query. Supported conditions: `EQUAL`, `GREATER_THAN`, `GREATER_THAN_OR_EQUAL`, `LESS_THAN`, `LESS_THAN_OR_EQUAL`, `NULL`, `EMPTY`, `START_WITH`, `END_WITH`, `CONTAINS_ANY`, `CONTAINS_ALL`, `RANGE_II` (inclusive start, inclusive end), `RANGE_IE` (inclusive start, exclusive end), `RANGE_EI` (exclusive start, inclusive end), and `RANGE_EE` (exclusive start, exclusive end).
+
+          Constraints: `maxItems 60`.
+
+          <Expandable title="filters properties">
+
+            <ParamField body="field" type="string">
+
+              Name of the field to filter by. Must match a field name from the semantic model's measures or dimensions.
+
+              Constraints: `maxLength 5120`.
+
+            </ParamField>
+
+            <ParamField body="values" type="string[]">
+
+              Values to compare against. For range conditions, provide exactly 2 values representing the start and end of the range.
+
+              Constraints: `maxLength 5120`, `maxItems 100`.
+
+            </ParamField>
+
+            <ParamField body="prefix" type="string">
+
+              Whether to match or negate the condition.
+
+              Default: `IS`
+
+              **Supported values:**
+
+              - `IS` — Positive match. For example, `IS` + `EQUAL` means "is equal to".
+              - `NOT` — Negated match. For example, `NOT` + `EQUAL` means "is not equal to".
+
+            </ParamField>
+
+            <ParamField body="condition" type="string">
+
+              Comparison condition to apply.
+
+              Default: `EQUAL`
+
+              **Supported values:**
+
+              - `EQUAL` — Value equals the filter value.
+              - `GREATER_THAN` — Value is greater than the filter value.
+              - `GREATER_THAN_OR_EQUAL` — Value is greater than or equal to the filter value.
+              - `LESS_THAN` — Value is less than the filter value.
+              - `LESS_THAN_OR_EQUAL` — Value is less than or equal to the filter value.
+              - `NULL` — Value is null.
+              - `EMPTY` — Value is an empty string.
+              - `START_WITH` — String value starts with the filter value.
+              - `END_WITH` — String value ends with the filter value.
+              - `CONTAINS_ANY` — For strings, matches if any of the filter values appear as a substring. For arrays, matches if any of the filter values are present in the array.
+              - `RANGE_II` — Inclusive start, inclusive end range. The value must fall within `[a, b]`.
+              - `RANGE_IE` — Inclusive start, exclusive end range. The value must fall within `[a, b)`.
+              - `RANGE_EI` — Exclusive start, inclusive end range. The value must fall within `(a, b]`.
+              - `RANGE_EE` — Exclusive start, exclusive end range. The value must fall within `(a, b)`.
+              - `CONTAINS_ALL` — For strings, matches if all filter values appear as substrings. For arrays, matches if all filter values are present in the array.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="paging" type="Paging">
+
+          Pagination options.
+
+          <Expandable title="paging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Number of items to load.
+
+            </ParamField>
+
+            <ParamField body="offset" type="integer">
+
+              Number of items to skip in the current sort order.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="formattingEnabled" type="boolean">
+
+          Whether to format numeric values as human-readable strings. For example, `1500` displays as `$1,500.00` or `1.5K` when enabled.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="totalsIncluded" type="boolean">
+
+          Whether to include a totals row in the response. When `true`, the `totals` field contains the sum of all numeric fields across the full (unpaginated) result set.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="DataRow[]">
+
+      Retrieved data rows.
+
+      **Read-only.** Constraints: `maxItems 1000`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="fields" type="object">
+
+          Map of field name to its value for this row.
+
+          Constraints: `format map`, `maxItems 100`.
+
+          <Expandable title="fields properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="FieldValue">
+
+              Value of a single field in a data row. Contains both the raw typed value and an optional formatted string representation.
+
+              _Nested structure omitted for brevity — see the `FieldValue` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="PagingMetadata">
+
+      Pagination metadata.
+
+      **Read-only.**
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="offset" type="integer">
+
+          Offset that was requested.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="totals" type="DataRow">
+
+      Totals row with the sum of all numeric fields across the full result set.
+
+      Returned only when `totalsIncluded` is `true`.
+
+      **Read-only.**
+
+      <Expandable title="totals properties">
+
+        <ResponseField name="fields" type="object">
+
+          Map of field name to its value for this row.
+
+          Constraints: `format map`, `maxItems 100`.
+
+          <Expandable title="fields properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="FieldValue">
+
+              Value of a single field in a data row. Contains both the raw typed value and an optional formatted string representation.
+
+              _Nested structure omitted for brevity — see the `FieldValue` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `401` | `UNAUTHENTICATED` | `NO_ACCOUNT_IDENTITY` | The caller isn't authenticated. Provide valid credentials and try again. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-semantic-model-data" id="ex-sdk-query-semantic-model-data-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-semantic-model-data" id="ex-sdk-query-semantic-model-data-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-semantic-model-data-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-semantic-model-data-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Query semantic model data with sorting and totals.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">querySemanticModelData (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-semantic-model-data-0"><span className="wix-picker-name">Query semantic model data with sorting and totals.</span></label>
+    <label htmlFor="ex-sdk-query-semantic-model-data-1"><span className="wix-picker-name">querySemanticModelData (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Query semantic model data with sorting and totals.
+    import { analyticsSemanticModel } from '@wix/analytics-semantic-model'
+
+    async function querySemanticModelData() {
+      const response = await analyticsSemanticModel.querySemanticModelData(
+        'cad7fd34-2c8b-4dda-8296-3f9d47fb484d',
+        {
+          interval: {
+            start: '2024-06-01T00:00:00.000Z',
+            end: '2025-05-31T23:59:59.000Z',
+          },
+          fields: ['traffic.referrer_category_name', 'traffic.sessions_count', 'traffic.views_count'],
+          sort: {
+            fieldName: 'traffic.sessions_count',
+            order: 'DESC',
+          },
+          paging: {
+            limit: 5,
+            offset: 0,
+          },
+          formattingEnabled: true,
+          totalsIncluded: true,
+        }
+      )
+    }
+
+    /* Promise resolves to:
+    {
+      "results": [],
+      "pagingMetadata": {
+        "count": 0,
+        "offset": 0
+      },
+      "totals": {
+        "fields": {
+          "traffic.referrer_category_name": {
+            "formattedValue": "Unknown"
+          },
+          "traffic.sessions_count": {
+            "numericValue": 0,
+            "formattedValue": "0"
+          },
+          "traffic.views_count": {
+            "numericValue": 0,
+            "formattedValue": "0"
+          }
+        }
+      }
+    }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript querySemanticModelData (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { analyticsSemanticModel } from '@wix/analytics-semantic-model';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { analyticsSemanticModel },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function querySemanticModelData(semanticModelId,options) {
+      const response = await myWixClient.analyticsSemanticModel.querySemanticModelData(semanticModelId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

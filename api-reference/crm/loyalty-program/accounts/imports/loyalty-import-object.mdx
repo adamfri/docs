@@ -1,0 +1,519 @@
+---
+title: "Loyalty Import Object"
+description: "An Import object is a batch import of loyalty points for existing customers."
+icon: "cube"
+---
+
+An Import object is a batch import of loyalty points for existing customers.
+You can use Loyalty Imports to import loyalty points from 3rd-party providers or update existing customer point balances.
+This object tracks the entire import process from file upload to data processing.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      The ID of the import.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="asyncImportJobId" type="string">
+
+      ID of the asynchronous import job associated with this import.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the loyalty import is updated.
+      To prevent conflicting changes, the current `revision` must be passed when updating the loyalty import.
+
+      Ignored when creating a loyalty import.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the loyalty import was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the loyalty import was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the import process.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `INITIATED` — The import has initiated but processing hasn't started yet.
+      - `PARSING` — The system is currently parsing the import file.
+      - `PARSED` — The import file has been successfully parsed and is ready to import.
+      - `IMPORTING` — The system is currently importing the parsed data.
+      - `IMPORTED` — The import process is complete. This status indicates the process finished, but doesn't guarantee all data imported successfully.
+      - `FAILED` — The import process has failed.
+
+    </ResponseField>
+
+    <ResponseField name="fileMetadata" type="FileMetadata">
+
+      Metadata of the uploaded file containing loyalty points data.
+
+      <Expandable title="fileMetadata properties">
+
+        <ResponseField name="size" type="integer">
+
+          Size of the uploaded file in bytes. Max: `10 MB`.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Name of the uploaded file.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+
+          URL of the uploaded file.
+
+          Constraints: `minLength 3`, `maxLength 10000`.
+
+        </ResponseField>
+
+        <ResponseField name="header" type="FileHeader">
+
+          Column headings from the first row of the uploaded CSV file.
+
+          <Expandable title="header properties">
+
+            <ResponseField name="values" type="string[]">
+
+              Column headings from the first row of the uploaded file.
+
+              Constraints: `maxLength 1000`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="headerMappingInfo" type="HeaderMappingInfo">
+
+          Mapping between loyalty data fields and the corresponding columns in the uploaded file.
+
+          Must include mappings for both `EMAIL` and `POINTS` to be valid.
+
+          <Expandable title="headerMappingInfo properties">
+
+            <ResponseField name="headerMappings" type="HeaderMapping[]">
+
+              Mappings between required loyalty data fields and file columns.
+              Must contain exactly 2 mappings: one for `"EMAIL"` and one for `"POINTS"`.
+
+              Constraints: `minItems 2`, `maxItems 2`.
+
+              <Expandable title="headerMappings properties">
+
+                <ResponseField name="columnName" type="string">
+
+                  The required loyalty data field that this mapping corresponds to. Must be either `"EMAIL"` or `"POINTS"`.
+
+                  **Supported values:**
+
+                  - `EMAIL` — Column containing the customer's email address.
+                  - `POINTS` — Column containing the customer's loyalty point balance to be imported or updated.
+
+                </ResponseField>
+
+                <ResponseField name="columnIndex" type="integer">
+
+                  The zero-based index of the column in the uploaded file that contains the data for this loyalty field.
+                  For example, if the email addresses are in the second column of the CSV file, this value would be `1`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="sampleDataRows" type="SampleDataRow[]">
+
+          Up to 5 sample rows from the import file, providing a preview of the data to be imported.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="sampleDataRows properties">
+
+            <ResponseField name="values" type="string[]">
+
+              Values in one sample data row. Each value corresponds to a column in the CSV file.
+              The number of values matches the number of columns in the file.
+
+              Constraints: `maxLength 1000`, `maxItems 20`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="parseResult" type="ParseResult">
+
+      Results of parsing the uploaded file, including the number of rows parsed and any parse errors.
+
+      <Expandable title="parseResult properties">
+
+        <ResponseField name="parsedRowCount" type="integer">
+
+          Number of rows parsed from the uploaded import file.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="parseErrorReason" type="string">
+
+          Reason code explaining why parsing failed, if applicable.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="importResult" type="ImportResult">
+
+      Results of the import process, including success and failure counts.
+
+      <Expandable title="importResult properties">
+
+        <ResponseField name="errorFileExists" type="boolean">
+
+          Whether an error file detailing import failures is available for download. The file includes row-by-row import status, error reasons, and original data.
+
+        </ResponseField>
+
+        <ResponseField name="successCount" type="integer">
+
+          Number of rows successfully imported.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="failureCount" type="integer">
+
+          Number of rows that failed to import due to errors.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "loyaltyImport": {
+          "id": "5cc0b472-e488-4de3-92ba-bd718a44933a",
+          "revision": "1",
+          "createdDate": "2024-09-17T10:58:00.100Z",
+          "updatedDate": "2024-09-17T10:58:00.100Z",
+          "status": "INITIATED",
+          "fileMetadata": {
+            "size": 20915,
+            "name": "data-8NkK3PqxWwQlOBzFF3izU.csv",
+            "url": "/sites/dbba027b-3ad1-49dc-abdc-e1167a75290b/6099ebc5-0cce-4a2b-9903-2429c214d757.csv",
+            "sampleDataRows": []
+          },
+          "parseResult": {
+            "parsedRowCount": 0
+          },
+          "importResult": {
+            "errorFileExists": false
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      The ID of the import.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="asyncImportJobId" type="string">
+
+      ID of the asynchronous import job associated with this import.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the loyalty import is updated.
+      To prevent conflicting changes, the current `revision` must be passed when updating the loyalty import.
+
+      Ignored when creating a loyalty import.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the loyalty import was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the loyalty import was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the import process.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `INITIATED` — The import has initiated but processing hasn't started yet.
+      - `PARSING` — The system is currently parsing the import file.
+      - `PARSED` — The import file has been successfully parsed and is ready to import.
+      - `IMPORTING` — The system is currently importing the parsed data.
+      - `IMPORTED` — The import process is complete. This status indicates the process finished, but doesn't guarantee all data imported successfully.
+      - `FAILED` — The import process has failed.
+
+    </ResponseField>
+
+    <ResponseField name="fileMetadata" type="FileMetadata">
+
+      Metadata of the uploaded file containing loyalty points data.
+
+      <Expandable title="fileMetadata properties">
+
+        <ResponseField name="size" type="integer">
+
+          Size of the uploaded file in bytes. Max: `10 MB`.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Name of the uploaded file.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+
+          URL of the uploaded file.
+
+          Constraints: `minLength 3`, `maxLength 10000`.
+
+        </ResponseField>
+
+        <ResponseField name="header" type="FileHeader">
+
+          Column headings from the first row of the uploaded CSV file.
+
+          <Expandable title="header properties">
+
+            <ResponseField name="values" type="string[]">
+
+              Column headings from the first row of the uploaded file.
+
+              Constraints: `maxLength 1000`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="headerMappingInfo" type="HeaderMappingInfo">
+
+          Mapping between loyalty data fields and the corresponding columns in the uploaded file.
+
+          Must include mappings for both `EMAIL` and `POINTS` to be valid.
+
+          <Expandable title="headerMappingInfo properties">
+
+            <ResponseField name="headerMappings" type="HeaderMapping[]">
+
+              Mappings between required loyalty data fields and file columns.
+              Must contain exactly 2 mappings: one for `"EMAIL"` and one for `"POINTS"`.
+
+              Constraints: `minItems 2`, `maxItems 2`.
+
+              <Expandable title="headerMappings properties">
+
+                <ResponseField name="columnName" type="string">
+
+                  The required loyalty data field that this mapping corresponds to. Must be either `"EMAIL"` or `"POINTS"`.
+
+                  **Supported values:**
+
+                  - `EMAIL` — Column containing the customer's email address.
+                  - `POINTS` — Column containing the customer's loyalty point balance to be imported or updated.
+
+                </ResponseField>
+
+                <ResponseField name="columnIndex" type="integer">
+
+                  The zero-based index of the column in the uploaded file that contains the data for this loyalty field.
+                  For example, if the email addresses are in the second column of the CSV file, this value would be `1`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="sampleDataRows" type="SampleDataRow[]">
+
+          Up to 5 sample rows from the import file, providing a preview of the data to be imported.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="sampleDataRows properties">
+
+            <ResponseField name="values" type="string[]">
+
+              Values in one sample data row. Each value corresponds to a column in the CSV file.
+              The number of values matches the number of columns in the file.
+
+              Constraints: `maxLength 1000`, `maxItems 20`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="parseResult" type="ParseResult">
+
+      Results of parsing the uploaded file, including the number of rows parsed and any parse errors.
+
+      <Expandable title="parseResult properties">
+
+        <ResponseField name="parsedRowCount" type="integer">
+
+          Number of rows parsed from the uploaded import file.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="parseErrorReason" type="string">
+
+          Reason code explaining why parsing failed, if applicable.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="importResult" type="ImportResult">
+
+      Results of the import process, including success and failure counts.
+
+      <Expandable title="importResult properties">
+
+        <ResponseField name="errorFileExists" type="boolean">
+
+          Whether an error file detailing import failures is available for download. The file includes row-by-row import status, error reasons, and original data.
+
+        </ResponseField>
+
+        <ResponseField name="successCount" type="integer">
+
+          Number of rows successfully imported.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="failureCount" type="integer">
+
+          Number of rows that failed to import due to errors.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,61 @@
+---
+title: "About Authentication"
+description: "When you call a Wix API from a headless project, a specific identity makes the call, and you authenticate to establish that identity."
+---
+
+When you call a Wix API from a headless project, a specific [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) makes the call, and you authenticate to establish that identity. How much of this you handle yourself depends on how you build your project:
+
+- **With [Wix's Astro integration](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/about-the-astro-integration)**, visitor and member authentication is automatic. The integration configures OAuth and manages tokens for you, so you don't set up authentication yourself.
+- **With any other setup**, such as a [self-managed](https://dev.wix.com/docs/go-headless/self-managed-headless/about-self-managed-headless) project or a [Wix-managed](https://dev.wix.com/docs/go-headless/wix-managed-headless/about-wix-managed-headless) project built with another framework, you handle authentication manually, as described here.
+
+## Terminology
+
+The dashboard and APIs use a few overlapping terms for the same concepts:
+
+- **Headless client**: An external site or app that connects to your Wix project, such as the frontend you're building. You register and manage clients in your project's **Headless Settings**. To get started, see [Set Up a Headless Client](/kb/authentication/set-up-a-headless-client).
+- **OAuth app**: The registration that a headless client authenticates through. It holds the client's credentials and settings: the client ID, the client secret, and allowed URLs.
+- **Client ID**: The public identifier of a headless client. Your code passes it to authenticate visitors and members. It's safe to use in frontend code.
+- **Client secret**: A confidential credential belonging to a headless client, needed only for [admin operations with client credentials](https://dev.wix.com/docs/go-headless/authentication/admin/make-admin-api-calls-with-client-credentials). Use it only in backend code.
+
+## Identities
+
+Every API call runs as a specific [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities), determined by where your code runs and how you authenticated. Wix restricts some methods based on identity, roles, and permissions. A headless project can use the following identities:
+
+- **Visitor**: Someone browsing a site who isn't logged in.
+- **Member**: A logged-in visitor.
+- **Wix app**: Your headless project acting on its own behalf. A headless project is itself an app, so it uses this identity for elevated calls, such as admin operations.
+- **API key admin**: Administrative access through an API key.
+
+A Wix-managed headless project can also act as a Wix user in dashboard contexts, such as a dashboard extension.
+
+## Visitor authentication
+
+Anyone browsing your site starts as a visitor. Visitor tokens maintain the visitor's anonymous session, so data such as cart items or event reservations is preserved across API calls. What you need to do depends on how you call Wix APIs:
+
+- **With the JS SDK:** The client generates visitor tokens automatically on your first API call. Generate them explicitly only when you want more control, most commonly to persist a visitor's session: store the tokens, then pass them back the next time the visitor returns, so their cart or reservations survive page reloads and app restarts. Learn how in [Authenticate Visitors (JS SDK)](/kb/authentication/authenticate-visitors-js-sdk).
+- **With the REST API:** Not automatic. You request visitor tokens explicitly and pass an access token with each call. Learn how in [Authenticate Visitors (REST)](/kb/authentication/authenticate-visitors-rest).
+
+## Member authentication
+
+Members are visitors who sign in. Wix verifies the member's identity through a login process, then issues member tokens that replace the visitor's tokens, so API calls run as that member and can access their data, such as their profile or order history. Wix Headless supports several login flows. To choose one, see [About Member Login](/kb/authentication/about-member-login).
+
+<Note>
+
+Visitor and member authentication requires only a client ID, not a client secret. You need a client secret only to perform [admin operations](/kb/authentication/about-admin-operations) using the OAuth `client_credentials` flow.
+
+</Note>
+
+## Admin and elevated access
+
+Some methods need more permissions than a visitor or member has. A headless project gets them by acting as its own app or by using an admin API key. How you do this depends on your project type:
+
+- **Wix-managed headless**: [Elevate a backend call](https://dev.wix.com/docs/go-headless/authentication/admin/elevate-api-call-permissions-with-the-astro-integration) so it runs with the app's permissions instead of the visitor's or member's. Elevation must run in backend code.
+- **Self-managed headless**: Authenticate with [client credentials](https://dev.wix.com/docs/go-headless/authentication/admin/make-admin-api-calls-with-client-credentials), exchanging your client ID and secret for an access token. For admin access beyond your own site, such as account-level operations, use an [API key](/kb/authentication/generate-an-api-key) instead. See [About Admin Operations](/kb/authentication/about-admin-operations).
+
+## See also
+
+- [Set Up a Headless Client](/kb/authentication/set-up-a-headless-client)
+- [Create an SDK Client with OAuth](https://dev.wix.com/docs/go-headless/authentication/setup/create-an-sdk-client-with-oauth)
+- [Make REST API Calls with OAuth](/kb/authentication/make-rest-api-calls-with-oauth)
+- [About Member Login](/kb/authentication/about-member-login)
+- [About Admin Operations](/kb/authentication/about-admin-operations)

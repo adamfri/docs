@@ -1,0 +1,677 @@
+---
+title: "Void Authorized Payments"
+description: "Voids (cancels) previously authorized payments, releasing the authorization hold without charging the customer."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Voids (cancels) previously authorized payments, releasing the authorization hold without charging the customer.
+
+    Use this method when you no longer need to capture an authorized payment, such as when an order is cancelled
+    or when inventory becomes unavailable after authorization.
+
+    *Note**: Only payments with `AUTHORIZED` status can be voided. Already captured payments cannot be voided.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/void-authorized-payments
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      ID of the order containing the payments to void.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="paymentIds" type="string[]" required>
+
+      IDs of authorized payments to void (cancel).
+
+      Only payments with `AUTHORIZED` status can be voided.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history with voided payments marked as cancelled.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PAYMENT_NOT_FOUND` | Couldn't find the payment. |
+    | `404` | `NOT_FOUND` | `GATEWAY_TRANSACTION_NOT_FOUND` | Couldn't find the gateway transaction. |
+    | `409` | `ALREADY_EXISTS` | `PAYMENT_ALREADY_VOIDED` | Payment was already voided. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_CAPTURED` | Payment was already captured. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_NOT_AUTHORIZED` | Payment doesn't have `AUTHORIZED` status. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Void previously authorized payments.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/void-authorized-payments' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+      	  "orderId": "fdac1270-f581-4c43-af7d-f347cda9f1ec",
+      	  "paymentIds": [
+      	    "ae063baf-e276-447d-94b3-4503561876a1"
+      	  ]
+      	}'
+      ```
+
+      ```json Response
+      {
+        "orderTransactions": {
+          "orderId": "fdac1270-f581-4c43-af7d-f347cda9f1ec",
+          "payments": [
+            {
+              "id": "953df6c8-7d51-4207-b99e-a3f13f16284f",
+              "regularPaymentDetails": {
+                "paymentOrderId": "6a568092-66c5-4de9-9f2a-1ced6e0ce28e",
+                "gatewayTransactionId": "6cfccb9a-060e-4de0-a321-4017d3eb977b",
+                "paymentMethod": "Credit/Debit Cards",
+                "providerTransactionId": "6cfccb9a-060e-4de0-a321-4017d3eb977b",
+                "offlinePayment": false,
+                "status": "APPROVED",
+                "savedPaymentMethod": true,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                }
+              },
+              "createdDate": "2024-12-25T08:56:48.258Z",
+              "updatedDate": "2024-12-25T08:56:50.732Z",
+              "amount": {
+                "amount": "2.0",
+                "formattedAmount": "$2.00"
+              },
+              "refundDisabled": false
+            },
+            {
+              "id": "ae063baf-e276-447d-94b3-4503561876a1",
+              "regularPaymentDetails": {
+                "paymentOrderId": "b4f3d414-0237-4861-9ef1-1a6afdc48555",
+                "gatewayTransactionId": "6bed010d-3176-4a88-a7ac-4b2b0c99efdb",
+                "providerTransactionId": "6bed010d-3176-4a88-a7ac-4b2b0c99efdb",
+                "offlinePayment": false,
+                "status": "AUTHORIZED",
+                "savedPaymentMethod": false,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                },
+                "authorizationDetails": {
+                  "delayedCapture": true,
+                  "authorizedDate": "2024-12-25T08:58:20.338Z",
+                  "captures": [],
+                  "void": {
+                    "status": "PENDING",
+                    "reason": "UNKNOWN_REASON"
+                  },
+                  "scheduledAction": {
+                    "actionType": "VOID",
+                    "executionDate": "2024-12-26T08:58:20.338Z"
+                  }
+                }
+              },
+              "createdDate": "2024-12-25T08:58:18.226Z",
+              "updatedDate": "2024-12-25T09:02:14.681Z",
+              "amount": {
+                "amount": "1",
+                "formattedAmount": "$1.00"
+              },
+              "refundDisabled": false
+            }
+          ],
+          "refunds": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Voids (cancels) previously authorized payments, releasing the authorization hold without charging the customer.
+
+    Use this method when you no longer need to capture an authorized payment, such as when an order is cancelled
+    or when inventory becomes unavailable after authorization.
+
+    *Note**: Only payments with `AUTHORIZED` status can be voided. Already captured payments cannot be voided.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.voidAuthorizedPayments(orderId, options): Promise<VoidAuthorizedPaymentsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      ID of the order containing the payments to void.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="VoidAuthorizedPaymentsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="paymentIds" type="string[]" required>
+
+          IDs of authorized payments to void (cancel).
+
+          Only payments with `AUTHORIZED` status can be voided.
+
+          Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<VoidAuthorizedPaymentsResponse>`.
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history with voided payments marked as cancelled.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="_id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="_id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PAYMENT_NOT_FOUND` | Couldn't find the payment. |
+    | `404` | `NOT_FOUND` | `GATEWAY_TRANSACTION_NOT_FOUND` | Couldn't find the gateway transaction. |
+    | `409` | `ALREADY_EXISTS` | `PAYMENT_ALREADY_VOIDED` | Payment was already voided. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_CAPTURED` | Payment was already captured. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_NOT_AUTHORIZED` | Payment doesn't have `AUTHORIZED` status. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-void-authorized-payments" id="ex-sdk-void-authorized-payments-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-void-authorized-payments" id="ex-sdk-void-authorized-payments-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-void-authorized-payments-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-void-authorized-payments-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Void Authorized Payments</span><span className="wix-picker-desc">Void previously authorized payments</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">voidAuthorizedPayments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-void-authorized-payments-0"><span className="wix-picker-name">Void Authorized Payments</span><span className="wix-picker-desc">Void previously authorized payments</span></label>
+    <label htmlFor="ex-sdk-void-authorized-payments-1"><span className="wix-picker-name">voidAuthorizedPayments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Void Authorized Payments
+    import { orderBilling } from "@wix/ecom";
+
+    async function voidAuthorizedPayments() {
+      const response = await orderBilling.voidAuthorizedPayments(
+        "fdac1270-f581-4c43-af7d-f347cda9f1ec",
+        {
+          paymentIds: ["ae063baf-e276-447d-94b3-4503561876a1"],
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "orderTransactions": {
+     *     "orderId": "fdac1270-f581-4c43-af7d-f347cda9f1ec",
+     *     "payments": [
+     *       {
+     *         "regularPaymentDetails": {
+     *           "offlinePayment": false,
+     *           "status": "AUTHORIZED",
+     *           "savedPaymentMethod": false,
+     *           "authorizationDetails": {
+     *             "delayedCapture": true,
+     *             "void": { "status": "PENDING", "reason": "UNKNOWN_REASON" }
+     *           }
+     *         },
+     *         "refundDisabled": false
+     *       }
+     *     ],
+     *     "refunds": []
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript voidAuthorizedPayments (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function voidAuthorizedPayments(orderId,options) {
+      const response = await myWixClient.orderBilling.voidAuthorizedPayments(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

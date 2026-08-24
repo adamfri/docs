@@ -1,0 +1,46 @@
+---
+title: "Introduction"
+description: "The Account API creates and manages the Google Ads account linked to a Wix site."
+icon: "file-lines"
+---
+
+The Account API creates and manages the Google Ads account linked to a Wix site. It handles account creation, incentive offers for new accounts, Merchant Center linking, and provides live account status and budget information.
+
+A Google Ads account is a prerequisite for creating campaigns. It must be created before any Campaign API calls can succeed.
+
+## With the Account API, you can:
+
+- Create a Google Ads account linked to a Wix site.
+- Retrieve live account details, including current budget and account status.
+- Update account settings such as the linked Merchant Center account.
+- Select a promotional incentive offer before purchase, which is applied automatically after a budget is assigned.
+- Subscribe to events when an account is suspended by Google or when its budget is exhausted.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The Wix Google Ads app must be installed using the App Installer API before calling this service.
+- Only one Google Ads account can be linked to a Wix site at a time. Attempting to create a second account for the same site returns an `ACCOUNT_ALREADY_EXISTS` error.
+- `GetAccountForCurrentSite` returns an empty response (not an error) when no Google Ads account has been created for the site yet. Check whether the returned `account` field is present before assuming an account exists.
+- `GetAccountForCurrentSite` returns fully enriched data by default, including live `accountStatus`, `currentBudget`, and `appliedIncentive` details fetched from Google Ads at call time.
+- The currency set when creating an account determines which Google Ads manager account is used and cannot be changed after creation.
+- Subscription and billing fields — including `wixServiceFeePercentage`, `premiumSubscriptionId`, `boosterSubscriptions`, `budgetInSupportedCurrency`, and `couponInfo` — are managed internally and cannot be changed via `UpdateAccount`. You can update fields such as `merchantCenterAccountId` and `googleBillingSetupId`.
+- When a Google Ads premium subscription is purchased for a site, it is automatically connected to the existing account for that site. The account must already exist at purchase time.
+- Wix may block an account for fraud, an unpaid balance, or a chargeback. The reason and date are available in the `blockReason` and `blockedDate` fields. A CHARGEBACK block is automatically cleared when a new subscription is created for the site, and any block reason is cleared after a subsequent recurring charge succeeds.
+- Incentive offers (promotional credits) are only available to new accounts that have not yet spent on Google Ads. To apply an incentive: call `GetIncentives` (Suggestions API) to list available offers, call `SelectIncentive` to record the chosen offer before checkout, and the incentive is applied automatically after a budget is assigned to the account.
+
+## Use cases
+
+- [Install the app and create a Google Ads account](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/ads/google-ads/sample-flows#install-the-app-and-create-a-google-ads-account).
+
+## Terminology
+
+- **Account**: The Google Ads account linked to the Wix site, used to create and fund campaigns.
+- **Account Status**: The live state of the account — `ACTIVE`, `SUSPENDED` (by Google), `CANCELED` (by Google), or `BLOCKED` (by Wix). Computed at call time and not persisted.
+- **Incentive Offer**: A promotional credit applied to a new Google Ads account after the account meets a minimum spend threshold within a set time window.
+- **Applied Incentive**: The full incentive lifecycle object, tracking progress from `REDEEMED` through `FULFILLED` to `REWARD_GRANTED`. Use `appliedIncentive` (not `couponInfo`) for incentive tracking.
+- **blockReason**: The reason Wix blocked the account — `FRAUD`, `UNPAID_BALANCE`, or `CHARGEBACK`.
+- **Merchant Center**: The Google Merchant Center account that can be linked to the Google Ads account to enable Shopping campaigns.
+
+@sdk_package_setup

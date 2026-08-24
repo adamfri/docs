@@ -1,0 +1,102 @@
+---
+title: "Fix 403 Errors"
+description: "Some Wix SDK methods return 403 Forbidden when called with a visitor or member context."
+---
+
+Some Wix SDK methods return `403 Forbidden` when called with a visitor or member context. This usually happens when the method needs higher permissions than the current identity has.
+
+For example, you have a function that returns the 403 error:
+
+```ts
+const createdItem = await items.insert("uploadedimages", {
+  _id: crypto.randomUUID(),
+  imageTitle: "Example title",
+  uploaderName: "Example uploader"
+});
+```
+
+In Wix-managed headless projects, fix this by moving the method call to an [HTTP endpoint](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/extensions/backend/http-endpoints/add-http-endpoints-to-your-project) and wrapping the SDK method with [`auth.elevate()`](https://dev.wix.com/docs/sdk/core-modules/essentials/auth#elevate). This way the frontend calls the HTTP endpoint, and the endpoint calls the protected API on the backend.
+
+<Note>
+
+- To determine whether a method requires elevation, check that method's [reference documentation](https://dev.wix.com/docs/api-reference?apiView=SDK).
+- In self-managed headless use [API keys](https://dev.wix.com/docs/api-reference/articles/authentication/api-keys/about-api-keys).
+
+</Note>
+
+## Step 1 — Create a backend endpoint
+
+Create an [HTTP endpoint](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/extensions/backend/http-endpoints/add-http-endpoints-to-your-project) in your project, for example:
+
+- `src/pages/api/upload-image.ts`
+
+## Step 2 — Import modules
+
+In your endpoint file, import:
+
+- `APIRoute` from `astro`
+- `auth` from `@wix/essentials`
+- The SDK module that contains the method you need
+
+```ts
+import type { APIRoute } from "astro";
+import { auth } from "@wix/essentials";
+import { items } from "@wix/data";
+```
+
+## Step 3 — Wrap the SDK method
+
+Expose an endpoint that calls the API method you need:
+
+```ts
+export const POST: APIRoute = async () => {
+  const createdItem = await items.insert("uploadedimages", {
+    _id: crypto.randomUUID(),
+    imageTitle: "Example title",
+    uploaderName: "Example uploader",
+  });
+  return new Response(JSON.stringify(createdItem));
+};
+```
+
+Wrap the method with `auth.elevate()` before calling it:
+
+```ts
+export const POST: APIRoute = async () => {
+  const elevatedInsert = auth.elevate(items.insert);
+  const createdItem = await elevatedInsert("uploadedimages", {
+    _id: crypto.randomUUID(),
+    imageTitle: "Example title",
+    uploaderName: "Example uploader",
+  });
+  return new Response(JSON.stringify(createdItem));
+};
+```
+
+## Step 4 — Call the endpoint from your frontend
+
+From frontend code, send a request to your endpoint:
+
+```ts
+  async function uploadImage(payload) {
+    const response = await fetch("/api/upload-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+  }
+```
+
+<Note>
+
+This example is applicable for headless projects only. To call the endpoint in apps, see [Elevate API Call Permissions](https://dev.wix.com/docs/build-apps/develop-your-app/develop-an-app-with-the-cli/project-development/elevate-api-call-permissions#step-2--call-the-endpoint-from-your-frontend).
+
+</Note>
+
+## See also
+
+- [Elevate API Call Permissions](https://dev.wix.com/docs/build-apps/develop-your-app/develop-an-app-with-the-cli/project-development/elevate-api-call-permissions)
+- [About Elevated Permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions?apiView=SDK)
+- [About HTTP Endpoints](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/extensions/backend/http-endpoints/about-http-endpoints)

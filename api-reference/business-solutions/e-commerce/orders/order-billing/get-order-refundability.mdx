@@ -1,0 +1,1208 @@
+---
+title: "Get Order Refundability"
+description: "Retrieves refund information about an order's payments, line items, shipping, and additional fees."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves refund information about an order's payments, line items, shipping, and additional fees.
+
+    Returns detailed refundability status for each payment:
+    - `refundable`: Automatic refund is available.
+    - `manuallyRefundable`: Refund is expected to be processed externally. Can be manually marked as refunded.
+    - `nonRefundable`: Refund cannot be performed.
+
+    Use this method before processing refunds to understand what can be refunded and through which method (automatic vs manual).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/get-order-refundability
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="payments" type="PaymentRefundability[]">
+
+      Payment refundability status and amounts for each payment method used in the order.
+
+      Shows whether payments can be refunded automatically, manually, or not at all.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="payment" type="PaymentInfo">
+
+          Payment details including method, amounts, and transaction information.
+
+          <Expandable title="payment properties">
+
+            <ResponseField name="paymentId" type="string">
+
+              Payment ID used to reference this payment in refund operations.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="paymentMethod" type="string">
+
+              Payment method type used for this transaction.
+
+              Non-exhaustive list of supported values: `CreditCard`, `Alipay`, `AstropayCash`, `AstropayDBT`, `AstropayMBT`, `Bitcoin`, `BitPay`, `Cash`, `ConvenienceStore`, `EPay`, `Fake`, `Giropay`, `IDeal`, `InPerson`, `Klarna`, `MercadoPago`, `Netpay`, `NordeaSolo`, `Offline`, `PagSeguro`, `PayEasy`, `PayPal`, `Paysafecard`, `Paysafecash`, `PointOfSale`, `Poli`, `Privat24`, `Przelewy24`, `RapidTransfer`, `Sepa`, `Skrill`, `Sofort`, `Trustly`, `Neteller`, `Unionpay`, `UniPay`, `Yandex`
+
+            </ResponseField>
+
+            <ResponseField name="offlinePayment" type="boolean">
+
+              Whether this payment was processed offline (not through an online payment gateway).
+              Offline payments typically require manual refund processing.
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="summary" type="summary">
+
+              summary
+
+              _Nested structure omitted for brevity — see the `summary` object._
+
+            </ResponseField>
+
+            <ResponseField name="paymentMethodDetails" type="paymentMethodDetails">
+
+              paymentMethodDetails
+
+              _Nested structure omitted for brevity — see the `paymentMethodDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="providerLink" type="string">
+
+          URL to the payment provider's dashboard for manual refund processing.
+          Required when payment has manual refund status.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="paymentsSummary" type="PaymentsSummary">
+
+      Aggregated summary of all payment amounts across all payment methods.
+
+      <Expandable title="paymentsSummary properties">
+
+        <ResponseField name="monetary" type="MonetaryPaymentSummary">
+
+          Summary of cash-based payment methods (credit cards, PayPal, etc.).
+
+          <Expandable title="monetary properties">
+
+            <ResponseField name="paid" type="Price">
+
+              Amount paid.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Total amount already refunded from this payment method.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundPending" type="Price">
+
+              Amount currently being processed for refund but not yet completed.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="maxRefund" type="Price">
+
+              Maximum amount available for additional refunds if the payment is refundable.
+              Calculated as: `paid` - `refunded` - `refundPending`
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="membership" type="MembershipPaymentSummary">
+
+          Summary of membership-based payments using credits, plans, or benefits.
+
+          <Expandable title="membership properties">
+
+            <ResponseField name="paidLineItemIds" type="string[]">
+
+              Line item IDs that were originally paid using membership credits or benefits.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ResponseField>
+
+            <ResponseField name="refundedLineItemIds" type="string[]">
+
+              Line item IDs that were previously refunded and had been paid with membership benefits.
+              These items have already been processed for membership credit restoration.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ResponseField>
+
+            <ResponseField name="refundableLineItemIds" type="string[]">
+
+              Line item IDs paid with membership benefits that can still be refunded.
+              Refunding these items may restore membership credits to the customer's account.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lineItems" type="LineItemRefundability[]">
+
+      Line item refundability showing available refund quantities for each product.
+
+      Constraints: `maxItems 300`.
+
+      <Expandable title="lineItems properties">
+
+        <ResponseField name="lineItemId" type="string">
+
+          Line item ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="originalQuantity" type="integer">
+
+          Total quantity of this item originally ordered.
+
+        </ResponseField>
+
+        <ResponseField name="refundedQuantity" type="integer">
+
+          Quantity of this item previously refunded across all refund transactions.
+
+        </ResponseField>
+
+        <ResponseField name="availableRefundQuantity" type="integer">
+
+          Maximum quantity of this item that can still be refunded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="shipping" type="ShippingRefundability">
+
+      Shipping refundability including original amount, previously refunded amount, and remaining refundable amount.
+
+      Only present if the order includes shipping charges.
+
+      <Expandable title="shipping properties">
+
+        <ResponseField name="amount" type="Price">
+
+          Original shipping fee amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundedAmount" type="Price">
+
+          Previously refunded shipping fee amount.
+
+          <Expandable title="refundedAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="availableRefundAmount" type="Price">
+
+          Shipping fee amount available for refund.
+
+          <Expandable title="availableRefundAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalFees" type="AdditionalFeeRefundability[]">
+
+      List of additional fee refund amounts - both previously refunded and the amount still available for refund.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="additionalFees properties">
+
+        <ResponseField name="additionalFeeId" type="string">
+
+          Additional fee ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Original additional fee amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundedAmount" type="Price">
+
+          Previously refunded additional fee amount.
+
+          <Expandable title="refundedAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="availableRefundAmount" type="Price">
+
+          Additional fee amount available for refund.
+
+          <Expandable title="availableRefundAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Get refundability for partially refunded order.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/get-order-refundability' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "orderId": "585daa0c-08d2-42ae-bd6b-18fe59c75836"
+        }'
+      ```
+
+      ```json Response
+      {
+        "payments": [
+          {
+            "payment": {
+              "paymentId": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+              "paymentMethod": "WixPayments",
+              "offlinePayment": false,
+              "monetary": {
+                "paid": {
+                  "amount": "111.97",
+                  "formattedAmount": "$111.97"
+                },
+                "refunded": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "refundPending": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "maxRefund": {
+                  "amount": "111.97",
+                  "formattedAmount": "$111.97"
+                }
+              },
+              "creditCardDetails": {
+                "lastFourDigits": "1111",
+                "brand": "visa"
+              }
+            },
+            "refundable": true
+          },
+          {
+            "payment": {
+              "paymentId": "360755cf-c684-4678-89cb-7615f48c256a",
+              "paymentMethod": "WixPayments",
+              "offlinePayment": false,
+              "monetary": {
+                "paid": {
+                  "amount": "77.00",
+                  "formattedAmount": "$77.00"
+                },
+                "refunded": {
+                  "amount": "77.00",
+                  "formattedAmount": "$77.00"
+                },
+                "refundPending": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "maxRefund": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "creditCardDetails": {
+                "lastFourDigits": "1111",
+                "brand": "visa"
+              }
+            },
+            "nonRefundable": {
+              "reason": "ALREADY_REFUNDED"
+            }
+          }
+        ],
+        "paymentsSummary": {
+          "monetary": {
+            "paid": {
+              "amount": "188.97",
+              "formattedAmount": "$188.97"
+            },
+            "refunded": {
+              "amount": "77.00",
+              "formattedAmount": "$77.00"
+            },
+            "refundPending": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "maxRefund": {
+              "amount": "111.97",
+              "formattedAmount": "$111.97"
+            }
+          }
+        },
+        "lineItems": [
+          {
+            "lineItemId": "00000000-0000-0000-0000-000000000001",
+            "originalQuantity": 5,
+            "refundedQuantity": 3,
+            "availableRefundQuantity": 2
+          },
+          {
+            "lineItemId": "00000000-0000-0000-0000-000000000002",
+            "originalQuantity": 3,
+            "refundedQuantity": 0,
+            "availableRefundQuantity": 3
+          }
+        ],
+        "shipping": {
+          "amount": {
+            "amount": "11.00",
+            "formattedAmount": "$11.00"
+          },
+          "refundedAmount": {
+            "amount": "11",
+            "formattedAmount": "$11.00"
+          },
+          "availableRefundAmount": {
+            "amount": "0.00",
+            "formattedAmount": "$0.00"
+          }
+        },
+        "additionalFees": [
+          {
+            "additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+            "amount": {
+              "amount": "2.00",
+              "formattedAmount": "$2.00"
+            },
+            "refundedAmount": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "availableRefundAmount": {
+              "amount": "2.00",
+              "formattedAmount": "$2.00"
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves refund information about an order's payments, line items, shipping, and additional fees.
+
+    Returns detailed refundability status for each payment:
+    - `refundable`: Automatic refund is available.
+    - `manuallyRefundable`: Refund is expected to be processed externally. Can be manually marked as refunded.
+    - `nonRefundable`: Refund cannot be performed.
+
+    Use this method before processing refunds to understand what can be refunded and through which method (automatic vs manual).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.getOrderRefundability(orderId): Promise<GetOrderRefundabilityResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<GetOrderRefundabilityResponse>`.
+
+    <ResponseField name="payments" type="PaymentRefundability[]">
+
+      Payment refundability status and amounts for each payment method used in the order.
+
+      Shows whether payments can be refunded automatically, manually, or not at all.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="payment" type="PaymentInfo">
+
+          Payment details including method, amounts, and transaction information.
+
+          <Expandable title="payment properties">
+
+            <ResponseField name="paymentId" type="string">
+
+              Payment ID used to reference this payment in refund operations.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="paymentMethod" type="string">
+
+              Payment method type used for this transaction.
+
+              Non-exhaustive list of supported values: `CreditCard`, `Alipay`, `AstropayCash`, `AstropayDBT`, `AstropayMBT`, `Bitcoin`, `BitPay`, `Cash`, `ConvenienceStore`, `EPay`, `Fake`, `Giropay`, `IDeal`, `InPerson`, `Klarna`, `MercadoPago`, `Netpay`, `NordeaSolo`, `Offline`, `PagSeguro`, `PayEasy`, `PayPal`, `Paysafecard`, `Paysafecash`, `PointOfSale`, `Poli`, `Privat24`, `Przelewy24`, `RapidTransfer`, `Sepa`, `Skrill`, `Sofort`, `Trustly`, `Neteller`, `Unionpay`, `UniPay`, `Yandex`
+
+            </ResponseField>
+
+            <ResponseField name="offlinePayment" type="boolean">
+
+              Whether this payment was processed offline (not through an online payment gateway).
+              Offline payments typically require manual refund processing.
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="summary" type="summary">
+
+              summary
+
+              _Nested structure omitted for brevity — see the `summary` object._
+
+            </ResponseField>
+
+            <ResponseField name="paymentMethodDetails" type="paymentMethodDetails">
+
+              paymentMethodDetails
+
+              _Nested structure omitted for brevity — see the `paymentMethodDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="providerLink" type="string">
+
+          URL to the payment provider's dashboard for manual refund processing.
+          Required when payment has manual refund status.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="paymentsSummary" type="PaymentsSummary">
+
+      Aggregated summary of all payment amounts across all payment methods.
+
+      <Expandable title="paymentsSummary properties">
+
+        <ResponseField name="monetary" type="MonetaryPaymentSummary">
+
+          Summary of cash-based payment methods (credit cards, PayPal, etc.).
+
+          <Expandable title="monetary properties">
+
+            <ResponseField name="paid" type="Price">
+
+              Amount paid.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Total amount already refunded from this payment method.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundPending" type="Price">
+
+              Amount currently being processed for refund but not yet completed.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="maxRefund" type="Price">
+
+              Maximum amount available for additional refunds if the payment is refundable.
+              Calculated as: `paid` - `refunded` - `refundPending`
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="membership" type="MembershipPaymentSummary">
+
+          Summary of membership-based payments using credits, plans, or benefits.
+
+          <Expandable title="membership properties">
+
+            <ResponseField name="paidLineItemIds" type="string[]">
+
+              Line item IDs that were originally paid using membership credits or benefits.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ResponseField>
+
+            <ResponseField name="refundedLineItemIds" type="string[]">
+
+              Line item IDs that were previously refunded and had been paid with membership benefits.
+              These items have already been processed for membership credit restoration.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ResponseField>
+
+            <ResponseField name="refundableLineItemIds" type="string[]">
+
+              Line item IDs paid with membership benefits that can still be refunded.
+              Refunding these items may restore membership credits to the customer's account.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lineItems" type="LineItemRefundability[]">
+
+      Line item refundability showing available refund quantities for each product.
+
+      Constraints: `maxItems 300`.
+
+      <Expandable title="lineItems properties">
+
+        <ResponseField name="lineItemId" type="string">
+
+          Line item ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="originalQuantity" type="integer">
+
+          Total quantity of this item originally ordered.
+
+        </ResponseField>
+
+        <ResponseField name="refundedQuantity" type="integer">
+
+          Quantity of this item previously refunded across all refund transactions.
+
+        </ResponseField>
+
+        <ResponseField name="availableRefundQuantity" type="integer">
+
+          Maximum quantity of this item that can still be refunded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="shipping" type="ShippingRefundability">
+
+      Shipping refundability including original amount, previously refunded amount, and remaining refundable amount.
+
+      Only present if the order includes shipping charges.
+
+      <Expandable title="shipping properties">
+
+        <ResponseField name="amount" type="Price">
+
+          Original shipping fee amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundedAmount" type="Price">
+
+          Previously refunded shipping fee amount.
+
+          <Expandable title="refundedAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="availableRefundAmount" type="Price">
+
+          Shipping fee amount available for refund.
+
+          <Expandable title="availableRefundAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalFees" type="AdditionalFeeRefundability[]">
+
+      List of additional fee refund amounts - both previously refunded and the amount still available for refund.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="additionalFees properties">
+
+        <ResponseField name="additionalFeeId" type="string">
+
+          Additional fee ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Original additional fee amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundedAmount" type="Price">
+
+          Previously refunded additional fee amount.
+
+          <Expandable title="refundedAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="availableRefundAmount" type="Price">
+
+          Additional fee amount available for refund.
+
+          <Expandable title="availableRefundAmount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-order-refundability" id="ex-sdk-get-order-refundability-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-order-refundability" id="ex-sdk-get-order-refundability-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-order-refundability-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-order-refundability-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Get Order Refundability</span><span className="wix-picker-desc">Get refundability for a partially refunded order</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getOrderRefundability (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-order-refundability-0"><span className="wix-picker-name">Get Order Refundability</span><span className="wix-picker-desc">Get refundability for a partially refunded order</span></label>
+    <label htmlFor="ex-sdk-get-order-refundability-1"><span className="wix-picker-name">getOrderRefundability (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Get Order Refundability
+    import { orderBilling } from "@wix/ecom";
+
+    async function getOrderRefundability() {
+      const response = await orderBilling.getOrderRefundability(
+        "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "payments": [
+     *     {
+     *       "payment": {
+     *         "paymentId": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+     *         "offlinePayment": false
+     *       },
+     *       "refundable": true
+     *     },
+     *     {
+     *       "payment": {
+     *         "paymentId": "360755cf-c684-4678-89cb-7615f48c256a",
+     *         "offlinePayment": false
+     *       },
+     *       "nonRefundable": { "reason": "ALREADY_REFUNDED" }
+     *     }
+     *   ],
+     *   "paymentsSummary": {
+     *     "monetary": {
+     *       "paid": { "amount": "188.97", "formattedAmount": "$188.97" }
+     *     }
+     *   },
+     *   "lineItems": [
+     *     {
+     *       "lineItemId": "00000000-0000-0000-0000-000000000001",
+     *       "originalQuantity": 5,
+     *       "refundedQuantity": 3,
+     *       "availableRefundQuantity": 2
+     *     }
+     *   ],
+     *   "shipping": {
+     *     "amount": { "amount": "11.00", "formattedAmount": "$11.00" }
+     *   },
+     *   "additionalFees": [
+     *     {
+     *       "additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+     *       "amount": { "amount": "2.00", "formattedAmount": "$2.00" }
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getOrderRefundability (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getOrderRefundability(orderId) {
+      const response = await myWixClient.orderBilling.getOrderRefundability(orderId);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

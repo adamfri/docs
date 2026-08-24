@@ -1,0 +1,651 @@
+---
+title: "Dispute Object"
+description: "A dispute is a customer-initiated challenge of a payment through their payment service provider (PSP) or bank."
+icon: "cube"
+---
+
+A dispute is a customer-initiated challenge of a payment through their payment service provider (PSP) or bank.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Dispute ID.
+
+      Constraints: `format GUID`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="chargeId" type="string">
+
+      ID of the charge that is being disputed.
+
+      Constraints: `format GUID`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="providerDisputeId" type="string">
+
+      Unique identifier assigned by the payment service provider for this dispute.
+
+      Constraints: `minLength 1`, `maxLength 64`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="stage" type="string">
+
+      Stage of the dispute process.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `CHARGEBACK` — Formal dispute filed through the card network or issuing bank.
+      - `INQUIRY` — Initial inquiry from the customer requesting information about the charge.
+
+    </ResponseField>
+
+    <ResponseField name="reason" type="string">
+
+      Reason why the customer initiated the dispute.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `FRAUD_CARD_PRESENT` — Fraudulent use of a physical card.
+      - `FRAUD_CARD_ABSENT` — Fraudulent use without the physical card present.
+      - `DUPLICATE_PROCESSING` — Duplicate charge processing.
+      - `SERVICES_NOT_PROVIDED` — Services or goods were not provided as promised.
+      - `CANCELED_RECURRING` — Recurring payment that should have been canceled.
+      - `NOT_AS_DESCRIBED` — Item received was not as described.
+      - `COUNTERFEIT` — Item received was counterfeit.
+      - `MISREPRESENTATION` — Merchant misrepresented the transaction.
+      - `CANCELED` — Transaction was canceled but still charged.
+      - `OTHER` — Other dispute reason not covered by specific categories.
+
+    </ResponseField>
+
+    <ResponseField name="currencyCode" type="string">
+
+      Three-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format. Matches the currency of the disputed charge.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="string">
+
+      Disputed amount in the currency's main units. For example, `"12.95"` for $12.95.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the dispute. This indicates what action is required and who needs to take it.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `WAITING_MERCHANT` — Merchant action required to proceed with the dispute.
+      - `UNDER_REVIEW` — Dispute is being reviewed by the payment service provider or bank.
+      - `WAITING_BUYER` — Customer action required to proceed with the dispute.
+      - `WON` — Dispute resolved in favor of the merchant.
+      - `LOST` — Dispute resolved in favor of the customer. When a dispute is lost, the refund is processed automatically.
+
+    </ResponseField>
+
+    <ResponseField name="sellerProtection" type="string">
+
+      Level of seller protection coverage for this dispute.
+
+      Seller protection is set by the payment provider. For example, PayPal offers a [seller protection program](https://www.paypal.com/ua/legalhub/paypal/seller-protection).
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `NOT_ELIGIBLE` — Transaction is not eligible for seller protection.
+      - `ELIGIBLE` — Transaction is eligible for basic seller protection.
+      - `EXTENDED` — Transaction is eligible for extended seller protection coverage.
+
+    </ResponseField>
+
+    <ResponseField name="channel" type="string">
+
+      Channel through which the dispute is being processed.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `INTERNAL` — Dispute is processed by the payment service provider.
+      - `EXTERNAL` — Dispute is processed through the card network or issuing bank.
+
+    </ResponseField>
+
+    <ResponseField name="dueDate" type="datetime">
+
+      The latest date and time until which the dispute can remain in its current status.
+
+      If this date passes, the dispute will be resolved against the party that is required to take action. For example, if the status is `WAITING_MERCHANT`, and the due date passes, the dispute will be `LOST` and a refund will be processed automatically.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="networkReasonCode" type="string">
+
+      Network reason code provided by the card network or issuing bank that initiated the dispute.
+
+    </ResponseField>
+
+    <ResponseField name="defendable" type="boolean">
+
+      Whether the dispute can be defended with evidence.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="autoDefended" type="boolean">
+
+      Whether the dispute was automatically defended by the payment processor.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="defendedDate" type="datetime">
+
+      Date and time at which the dispute was defended.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="acceptedDate" type="datetime">
+
+      Date and time at which the dispute was accepted.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="actions" type="DisputeAction[]">
+
+      List of actions that can be performed on the dispute.
+      Each action has a specific due date by which it must be completed.
+      Available actions depend on the dispute's current status and stage.
+
+      **Read-only.** Constraints: `maxItems 20`.
+
+      <Expandable title="actions properties">
+
+        <ResponseField name="type" type="string">
+
+          Type of action that can be performed.
+
+          **Supported values:**
+
+          - `ACCEPT` — Dispute can be accepted.
+          - `DEFEND` — Dispute can be defended.
+
+        </ResponseField>
+
+        <ResponseField name="dueDate" type="datetime">
+
+          Latest date and time by which this action must be performed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="defendedBy" type="string">
+
+      Identifies who submitted the defence for this dispute.
+
+      Set when the dispute is defended:
+      `MERCHANT` when the merchant submits evidence via the site-level defend flow,
+      `WIX_AUTO` when Wix auto-defence submits on the merchant's behalf,
+      `PROVIDER` when the payment service provider defends on the merchant's behalf.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `MERCHANT` — Merchant submitted the defence manually via the site-level defend flow.
+      - `WIX_AUTO` — Wix auto-defence submitted the defence automatically on the merchant's behalf.
+      - `PROVIDER` — Payment service provider defended the dispute on the merchant's behalf.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the dispute was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the dispute was updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the dispute is updated. To prevent conflicting changes, the current revision must be passed when updating the dispute. Ignored when creating a dispute.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Custom field data for the dispute object.
+
+      [Extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions) must be configured in the app dashboard before they can be accessed with API calls.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tags">
+
+      Tags assigned to the dispute for organization and filtering purposes.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="publicTags" type="TagList">
+
+          Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+          <Expandable title="publicTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Dispute ID.
+
+      Constraints: `format GUID`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="chargeId" type="string">
+
+      ID of the charge that is being disputed.
+
+      Constraints: `format GUID`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="providerDisputeId" type="string">
+
+      Unique identifier assigned by the payment service provider for this dispute.
+
+      Constraints: `minLength 1`, `maxLength 64`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="stage" type="string">
+
+      Stage of the dispute process.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `CHARGEBACK` — Formal dispute filed through the card network or issuing bank.
+      - `INQUIRY` — Initial inquiry from the customer requesting information about the charge.
+
+    </ResponseField>
+
+    <ResponseField name="reason" type="string">
+
+      Reason why the customer initiated the dispute.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `FRAUD_CARD_PRESENT` — Fraudulent use of a physical card.
+      - `FRAUD_CARD_ABSENT` — Fraudulent use without the physical card present.
+      - `DUPLICATE_PROCESSING` — Duplicate charge processing.
+      - `SERVICES_NOT_PROVIDED` — Services or goods were not provided as promised.
+      - `CANCELED_RECURRING` — Recurring payment that should have been canceled.
+      - `NOT_AS_DESCRIBED` — Item received was not as described.
+      - `COUNTERFEIT` — Item received was counterfeit.
+      - `MISREPRESENTATION` — Merchant misrepresented the transaction.
+      - `CANCELED` — Transaction was canceled but still charged.
+      - `OTHER` — Other dispute reason not covered by specific categories.
+
+    </ResponseField>
+
+    <ResponseField name="currencyCode" type="string">
+
+      Three-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format. Matches the currency of the disputed charge.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="string">
+
+      Disputed amount in the currency's main units. For example, `"12.95"` for $12.95.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the dispute. This indicates what action is required and who needs to take it.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `WAITING_MERCHANT` — Merchant action required to proceed with the dispute.
+      - `UNDER_REVIEW` — Dispute is being reviewed by the payment service provider or bank.
+      - `WAITING_BUYER` — Customer action required to proceed with the dispute.
+      - `WON` — Dispute resolved in favor of the merchant.
+      - `LOST` — Dispute resolved in favor of the customer. When a dispute is lost, the refund is processed automatically.
+
+    </ResponseField>
+
+    <ResponseField name="sellerProtection" type="string">
+
+      Level of seller protection coverage for this dispute.
+
+      Seller protection is set by the payment provider. For example, PayPal offers a [seller protection program](https://www.paypal.com/ua/legalhub/paypal/seller-protection).
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `NOT_ELIGIBLE` — Transaction is not eligible for seller protection.
+      - `ELIGIBLE` — Transaction is eligible for basic seller protection.
+      - `EXTENDED` — Transaction is eligible for extended seller protection coverage.
+
+    </ResponseField>
+
+    <ResponseField name="channel" type="string">
+
+      Channel through which the dispute is being processed.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `INTERNAL` — Dispute is processed by the payment service provider.
+      - `EXTERNAL` — Dispute is processed through the card network or issuing bank.
+
+    </ResponseField>
+
+    <ResponseField name="dueDate" type="datetime">
+
+      The latest date and time until which the dispute can remain in its current status.
+
+      If this date passes, the dispute will be resolved against the party that is required to take action. For example, if the status is `WAITING_MERCHANT`, and the due date passes, the dispute will be `LOST` and a refund will be processed automatically.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="networkReasonCode" type="string">
+
+      Network reason code provided by the card network or issuing bank that initiated the dispute.
+
+    </ResponseField>
+
+    <ResponseField name="defendable" type="boolean">
+
+      Whether the dispute can be defended with evidence.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="autoDefended" type="boolean">
+
+      Whether the dispute was automatically defended by the payment processor.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="defendedDate" type="datetime">
+
+      Date and time at which the dispute was defended.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="acceptedDate" type="datetime">
+
+      Date and time at which the dispute was accepted.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="actions" type="DisputeAction[]">
+
+      List of actions that can be performed on the dispute.
+      Each action has a specific due date by which it must be completed.
+      Available actions depend on the dispute's current status and stage.
+
+      **Read-only.** Constraints: `maxItems 20`.
+
+      <Expandable title="actions properties">
+
+        <ResponseField name="type" type="string">
+
+          Type of action that can be performed.
+
+          **Supported values:**
+
+          - `ACCEPT` — Dispute can be accepted.
+          - `DEFEND` — Dispute can be defended.
+
+        </ResponseField>
+
+        <ResponseField name="dueDate" type="datetime">
+
+          Latest date and time by which this action must be performed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="defendedBy" type="string">
+
+      Identifies who submitted the defence for this dispute.
+
+      Set when the dispute is defended:
+      `MERCHANT` when the merchant submits evidence via the site-level defend flow,
+      `WIX_AUTO` when Wix auto-defence submits on the merchant's behalf,
+      `PROVIDER` when the payment service provider defends on the merchant's behalf.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `MERCHANT` — Merchant submitted the defence manually via the site-level defend flow.
+      - `WIX_AUTO` — Wix auto-defence submitted the defence automatically on the merchant's behalf.
+      - `PROVIDER` — Payment service provider defended the dispute on the merchant's behalf.
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the dispute was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the dispute was updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the dispute is updated. To prevent conflicting changes, the current revision must be passed when updating the dispute. Ignored when creating a dispute.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Custom field data for the dispute object.
+
+      [Extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions) must be configured in the app dashboard before they can be accessed with API calls.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tags">
+
+      Tags assigned to the dispute for organization and filtering purposes.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="publicTags" type="TagList">
+
+          Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+          <Expandable title="publicTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

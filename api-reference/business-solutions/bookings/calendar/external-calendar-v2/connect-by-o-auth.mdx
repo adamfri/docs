@@ -1,0 +1,418 @@
+---
+title: "Connect By O Auth"
+description: "Connects a Wix schedule to an external calendar account following OAuth authorization protocol."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Connects a [Wix schedule](https://dev.wix.com/docs/api-reference/business-management/calendar/schedules-v3/introduction)
+    to an external calendar account following [OAuth authorization protocol](https://oauth.net/2/).
+
+    ### Authorization flow
+
+    The full authorization flow looks like this:
+
+    1. Call *Connect By OAuth* with the appropriate parameters.
+    2. Redirect the owner of the external calendar account to the returned
+    `oAUthUrl`.
+    3. The account owner authorizes access.
+    4. The account owner is automatically redirected to the URL you've provided
+    in `redirectUrl` of the *Connect By OAuth* call.
+    5. Save the new `connectionId`. You find it as a query parameter in the URL
+    to which the account owner is redirected.
+
+    See this [sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/sample-flows)
+    for more details.
+
+    ### Failure consequences
+
+    If the attempt to connect fails, the account owner is still redirected to
+    the URL you specify in `redirectUrl`, but it incudes an `error` query
+    parameter set to 1 of the following values:
+
+    - `reject`: The external calendar owner has rejected the authorization request.
+    - `unsupported`: Connecting to the user's external account type is not supported by the provider.
+    - `internal`: An error unrelated to the client or the request that prevents the server from fulfilling the request.
+
+    ### Next steps
+
+    After connecting an external calendar account to a Wix schedule, you can do
+    the following.
+
+    #### Check the 2-way-sync settings
+
+    Call [List Connections](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/list-connections)
+    and filter by the relevant schedule ID.
+
+    If needed, call [Update Sync Config](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/update-sync-config)
+    to adjust the syncing configuration.
+
+    #### Retrieve external calendar events
+
+    Once a connection is successfully created, you can call [List Events](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/list-events)
+    to obtain an up-to-date list of events in the connected external calendars.
+
+    ### When to call Connect By Credentials instead
+
+    You can call [Connect By Credentials](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/connect-by-credentials)
+    if:
+
+    + The external calendar provider doesn't support OAuth.
+    + You don't want to redirect the account owner.
+
+    Call [List Providers](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/list-providers)
+    for a complete list of external calendar providers supported on the Wix site,
+    including which authorization methods they support.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-EXTERNAL-CALENDARS">Manage External Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/external-calendars/connections:connectByOAuth
+    ```
+
+    ## Body Params
+
+    <ParamField body="scheduleId" type="string" required>
+
+      ID of the schedule to connect with the external calendar account.
+
+    </ParamField>
+
+    <ParamField body="providerId" type="string" required>
+
+      ID of the external calendar provider. Find this with the [List Providers](#list-providers) endpoint.
+
+    </ParamField>
+
+    <ParamField body="redirectUrl" type="string" required>
+
+      URL to redirect the user to after they authorize access to the external calendar account.
+
+      If the connection is successfully established, the user is redirected to this URL with a query parameter `connectionId` containing the new connection ID.
+      If the attempt to connect fails, the user is redirected to this URL with a query parameter `error` containing the error type.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="oauthUrl" type="string">
+
+      URL of the external calendar authorization page to redirect the user to.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `NOT_SUPPORTED_BY_PROVIDER` | The external calendar provider doesn't support this operation. Use a different connection method or provider. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/bookings/v2/external-calendars/connections:connectByOAuth' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      --data-raw '{
+          "providerId": "6c533722-f1f9-4847-95c7-d4c4922ae9b0",
+          "scheduleId": "3e47ec65-2975-447c-a7ed-75041e850d5e",
+          "redirectUrl": "https://mysite.com/oauth_completed"
+      }'
+      ```
+
+      ```json Response
+      {
+          "oauthUrl": "https://authorize-url-to-redirect-user-to.com/..."
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Connects a [Wix schedule](https://dev.wix.com/docs/api-reference/business-management/calendar/schedules-v3/introduction)
+    to an external calendar account following [OAuth authorization protocol](https://oauth.net/2/).
+
+    ### Authorization flow
+
+    The full authorization flow looks like this:
+
+    1. Call *Connect By OAuth* with the appropriate parameters.
+    2. Redirect the owner of the external calendar account to the returned
+    `oAUthUrl`.
+    3. The account owner authorizes access.
+    4. The account owner is automatically redirected to the URL you've provided
+    in `redirectUrl` of the *Connect By OAuth* call.
+    5. Save the new `connectionId`. You find it as a query parameter in the URL
+    to which the account owner is redirected.
+
+    See this [sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/sample-flows)
+    for more details.
+
+    ### Failure consequences
+
+    If the attempt to connect fails, the account owner is still redirected to
+    the URL you specify in `redirectUrl`, but it incudes an `error` query
+    parameter set to 1 of the following values:
+
+    - `reject`: The external calendar owner has rejected the authorization request.
+    - `unsupported`: Connecting to the user's external account type is not supported by the provider.
+    - `internal`: An error unrelated to the client or the request that prevents the server from fulfilling the request.
+
+    ### Next steps
+
+    After connecting an external calendar account to a Wix schedule, you can do
+    the following.
+
+    #### Check the 2-way-sync settings
+
+    Call [List Connections](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/list-connections)
+    and filter by the relevant schedule ID.
+
+    If needed, call [Update Sync Config](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/update-sync-config)
+    to adjust the syncing configuration.
+
+    #### Retrieve external calendar events
+
+    Once a connection is successfully created, you can call [List Events](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/list-events)
+    to obtain an up-to-date list of events in the connected external calendars.
+
+    ### When to call Connect By Credentials instead
+
+    You can call [Connect By Credentials](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/connect-by-credentials)
+    if:
+
+    + The external calendar provider doesn't support OAuth.
+    + You don't want to redirect the account owner.
+
+    Call [List Providers](https://dev.wix.com/docs/api-reference/business-solutions/bookings/calendar/external-calendar-v2/list-providers)
+    for a complete list of external calendar providers supported on the Wix site,
+    including which authorization methods they support.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-EXTERNAL-CALENDARS">Manage External Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { externalCalendars } from '@wix/bookings';
+
+    externalCalendars.connectByOAuth(providerId, scheduleId, redirectUrl): Promise<ConnectByOAuthResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="providerId" type="string" required>
+
+      ID of the external calendar provider. Find this with the `listProviders()` function.
+
+    </ParamField>
+
+    <ParamField body="scheduleId" type="string" required>
+
+      ID of the schedule to connect with the external calendar account.
+
+    </ParamField>
+
+    <ParamField body="redirectUrl" type="string" required>
+
+      URL to redirect the user to after they authorize access to the external calendar account.
+
+      If the connection is successfully established, the user is redirected to this URL with a query parameter `connectionId` containing the new connection ID.
+      If the attempt to connect fails, the user is redirected to this URL with a query parameter `error` containing the error type.
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ConnectByOAuthResponse>`.
+
+    <ResponseField name="oauthUrl" type="string">
+
+      URL of the external calendar authorization page to redirect the user to.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `NOT_SUPPORTED_BY_PROVIDER` | The external calendar provider doesn't support this operation. Use a different connection method or provider. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-connect-by-o-auth" id="ex-sdk-connect-by-o-auth-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-connect-by-o-auth" id="ex-sdk-connect-by-o-auth-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-connect-by-o-auth" id="ex-sdk-connect-by-o-auth-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-connect-by-o-auth-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-connect-by-o-auth-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">connectByOAuth</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">connectByOAuth (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">connectByOAuth (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-connect-by-o-auth-0"><span className="wix-picker-name">connectByOAuth</span></label>
+    <label htmlFor="ex-sdk-connect-by-o-auth-1"><span className="wix-picker-name">connectByOAuth (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-connect-by-o-auth-2"><span className="wix-picker-name">connectByOAuth (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript connectByOAuth
+    import { externalCalendars } from '@wix/bookings';
+
+    async function connectByOAuth(providerId,scheduleId,redirectUrl) {
+      const response = await externalCalendars.connectByOAuth(providerId,scheduleId,redirectUrl);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript connectByOAuth (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { externalCalendars } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { externalCalendars },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function connectByOAuth(providerId,scheduleId,redirectUrl) {
+      const response = await myWixClient.externalCalendars.connectByOAuth(providerId,scheduleId,redirectUrl);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript connectByOAuth (with elevated permissions)
+    import { externalCalendars } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myConnectByOAuthMethod(providerId,scheduleId,redirectUrl) {
+      const elevatedConnectByOAuth = auth.elevate(externalCalendars.connectByOAuth);
+      const response = await elevatedConnectByOAuth(providerId,scheduleId,redirectUrl);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

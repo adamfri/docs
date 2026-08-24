@@ -1,0 +1,853 @@
+---
+title: "Item Seo Tags Object"
+description: "The SEO tags of a single item on a site, such as a page, a blog post, a store product, or a bookings service."
+icon: "cube"
+---
+
+The SEO tags of a single item on a site, such as a page, a blog post, a store product,
+or a bookings service.
+
+An item is addressed by an item type and an item ID together. Item SEO tags always
+exist for a valid item: when the item has no tags of its own, it inherits them, and
+`resolvedTags` reports the tags the item is expected to render with.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Item SEO tags ID, in the format `{itemType}:{itemId}`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="itemType" type="string">
+
+      Type of item the tags belong to. For example, `STATIC_PAGE`, `BLOG_POST`, or
+      `STORES_PRODUCT`.
+
+      For an item on a page built from a Wix Data collection, the item type takes the form
+      `WIX_DATA_PAGE_ITEM-{pageId}`.
+
+      **Read-only.** Constraints: `maxLength 100`.
+
+    </ResponseField>
+
+    <ResponseField name="itemId" type="string">
+
+      ID of the item the tags belong to. For a static page, this is the page ID.
+
+      **Read-only.** Constraints: `maxLength 200`.
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tag[]">
+
+      Tags set for this item alone, which take precedence over the tags it would otherwise
+      inherit.
+
+      Empty when the item has no tags of its own.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="type" type="string">
+
+          SEO tag type.
+
+          Supported values: `title`, `meta`, `script`, `link`.
+
+        </ResponseField>
+
+        <ResponseField name="props" type="object">
+
+          A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+          For example: `{"name": "description", "content": "the description itself"}`.
+
+        </ResponseField>
+
+        <ResponseField name="meta" type="object">
+
+          SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+        </ResponseField>
+
+        <ResponseField name="children" type="string">
+
+          SEO tag inner content. For example, `<title> inner content </title>`.
+
+        </ResponseField>
+
+        <ResponseField name="custom" type="boolean">
+
+          Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+          i.e. an entry from the site's Advanced/Custom Tags list.
+
+          This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+          (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+          default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+          from a page's manually saved SEO title/description override. Don't use this field to verify whether
+          a live page reflects a manual per-page SEO edit.
+
+          Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+          only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+          or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+          response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+          Pass `seoData` explicitly to resolve against a known set of tags.
+
+        </ResponseField>
+
+        <ResponseField name="disabled" type="boolean">
+
+          Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="focusKeywords" type="Keyword[]">
+
+      Keywords the item's content is intended to rank for. Used by Wix's SEO tools to assess
+      the item's content; they aren't rendered on the page.
+
+      Mark the item's main keyword with `isMain` rather than relying on its position in the
+      list.
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="focusKeywords properties">
+
+        <ResponseField name="term" type="string">
+
+          Keyword value.
+
+        </ResponseField>
+
+        <ResponseField name="isMain" type="boolean">
+
+          Whether the keyword is the main focus keyword.
+
+        </ResponseField>
+
+        <ResponseField name="origin" type="string">
+
+          The source that added the keyword terms to the SEO settings.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hasOverride" type="boolean">
+
+      Whether the item has tags of its own, as opposed to inheriting them.
+
+      `false` doesn't mean the item shows Wix's built-in tags: it may inherit from the
+      pattern for its item type, from the site's tags, or from the page that hosts it. See
+      `resolvedTags` for the tags the item is expected to render with.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="resolvedTags" type="ResolvedTag[]">
+
+      The tags the item is expected to render with, each marked with where it came from.
+
+      Derived by combining every source Wix manages, so it reflects inherited tags as well
+      as the item's own. Tags that site code, apps, or page components add while the page
+      renders aren't included, so this isn't a literal copy of the page's rendered head.
+
+      If a tag's source can't be determined, the tag is still exact but its `source` is
+      `TAG_SOURCE_UNSPECIFIED`.
+
+      **Read-only.** Constraints: `maxItems 500`.
+
+      <Expandable title="resolvedTags properties">
+
+        <ResponseField name="tag" type="Tag">
+
+          Resolved SEO tag.
+
+          <Expandable title="tag properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="source" type="string">
+
+          Where the tag came from.
+
+          **Supported values:**
+
+          - `TAG_SOURCE_SITE` — The site's own site-wide tags.
+          - `TAG_SOURCE_DEFAULT_PATTERN` — The pattern Wix provides for the page type.
+          - `TAG_SOURCE_USER_PATTERN` — The pattern the Wix user customized for the page type.
+          - `TAG_SOURCE_HOST_PAGE` — The tags of the page the item is displayed on.
+          - `TAG_SOURCE_ITEM` — The item's own tags, which the Wix user set for that item alone.
+
+        </ResponseField>
+
+        <ResponseField name="inheritedTag" type="Tag">
+
+          The tag that `tag` replaced: what this tag would be if the source that set it
+          didn't. Returned only when a source replaced a value an earlier source had set,
+          so it's absent when `source` is the only source that set the tag.
+
+          It reports the value from one source down the list, not the Wix built-in. For a
+          tag an item sets on a page type whose pattern the site customized, it's the
+          customized pattern's tag, because that's what the item inherits and what
+          resetting the item surfaces.
+
+          **Read-only.**
+
+          <Expandable title="inheritedTag properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hostPageId" type="string">
+
+      ID of the page that displays the item, for items shown on a shared page, such as a
+      blog post or a store product.
+
+      Informational: the hosting page can't be addressed through this API.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="publishStatus" type="string">
+
+      Whether the item's SEO tags are live on the published site.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `PUBLISH_STATUS_PUBLISHED` — The item's SEO tags are live on the published site. Item types that keep no separate
+      draft, such as store products, events, and portfolio collections, always report this
+      status.
+      - `PUBLISH_STATUS_NOT_PUBLISHED` — The item has never been published, so its SEO tags exist only as a draft and aren't on
+      the live site. For example, a blog post that's still a draft.
+
+    </ResponseField>
+
+    <ResponseField name="language" type="string">
+
+      Language the tags apply to, as an IETF BCP 47 language tag. For example, `en-US` for
+      U.S. English.
+
+      Tags can currently be written only for the site's primary language, so leave this
+      unset on a write. Sending a language fails with `LANGUAGE_NOT_SUPPORTED`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="origin" type="string">
+
+      What made the most recent change to the item's tags, for example a user or the site
+      migration flow. Derived from the caller, not from the request.
+
+      `ORIGIN_UNSPECIFIED` when the caller isn't one Wix identifies as a specific origin.
+      Origin isn't stored with the tags either, so Get Item SEO Tags and List Item SEO Tags
+      always return `ORIGIN_UNSPECIFIED`.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `ORIGIN_USER` — A user, working in the dashboard or editor, or calling the API on their own behalf.
+      - `ORIGIN_MIGRATION` — The flow that imports an existing site into Wix.
+      - `ORIGIN_AI` — An AI agent or an automated suggestion flow.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "itemSeoTags": {
+          "id": "BLOG_POST:7f3c9b21-4d5e-4a18-9c02-6e8a1b7d5f40",
+          "itemType": "BLOG_POST",
+          "itemId": "7f3c9b21-4d5e-4a18-9c02-6e8a1b7d5f40",
+          "tags": [
+            {
+              "type": "title",
+              "children": "Glazing in winter | Ceramics studio",
+              "custom": false,
+              "disabled": false
+            },
+            {
+              "type": "meta",
+              "props": {
+                "name": "description",
+                "content": "How we adjust our glazes when the studio runs cold."
+              },
+              "children": "",
+              "custom": false,
+              "disabled": false
+            }
+          ],
+          "focusKeywords": [
+            {
+              "term": "winter glazing",
+              "isMain": true
+            },
+            {
+              "term": "ceramic glaze temperature",
+              "isMain": false
+            }
+          ],
+          "hasOverride": true,
+          "resolvedTags": [
+            {
+              "tag": {
+                "type": "title",
+                "children": "Glazing in winter | Ceramics studio",
+                "custom": false,
+                "disabled": false
+              },
+              "source": "TAG_SOURCE_ITEM"
+            },
+            {
+              "tag": {
+                "type": "meta",
+                "props": {
+                  "name": "description",
+                  "content": "How we adjust our glazes when the studio runs cold."
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              "source": "TAG_SOURCE_ITEM"
+            },
+            {
+              "tag": {
+                "type": "link",
+                "props": {
+                  "rel": "canonical",
+                  "href": "https://ceramics-studio.wixstudio.com/blog/glazing-in-winter"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              "source": "TAG_SOURCE_DEFAULT_PATTERN"
+            },
+            {
+              "tag": {
+                "type": "meta",
+                "props": {
+                  "property": "og:image",
+                  "content": "https://static.wixstatic.com/media/a1b2c3_9f8e7d6c5b4a3210.jpg"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              },
+              "source": "TAG_SOURCE_SITE"
+            }
+          ],
+          "hostPageId": "n4kxq",
+          "publishStatus": "PUBLISH_STATUS_PUBLISHED",
+          "language": "en",
+          "origin": "ORIGIN_UNSPECIFIED"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Item SEO tags ID, in the format `{itemType}:{itemId}`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="itemType" type="string">
+
+      Type of item the tags belong to. For example, `STATIC_PAGE`, `BLOG_POST`, or
+      `STORES_PRODUCT`.
+
+      For an item on a page built from a Wix Data collection, the item type takes the form
+      `WIX_DATA_PAGE_ITEM-{pageId}`.
+
+      **Read-only.** Constraints: `maxLength 100`.
+
+    </ResponseField>
+
+    <ResponseField name="itemId" type="string">
+
+      ID of the item the tags belong to. For a static page, this is the page ID.
+
+      **Read-only.** Constraints: `maxLength 200`.
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tag[]">
+
+      Tags set for this item alone, which take precedence over the tags it would otherwise
+      inherit.
+
+      Empty when the item has no tags of its own.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="type" type="string">
+
+          SEO tag type.
+
+          Supported values: `title`, `meta`, `script`, `link`.
+
+        </ResponseField>
+
+        <ResponseField name="props" type="object">
+
+          A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+          For example: `{"name": "description", "content": "the description itself"}`.
+
+        </ResponseField>
+
+        <ResponseField name="meta" type="object">
+
+          SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+        </ResponseField>
+
+        <ResponseField name="children" type="string">
+
+          SEO tag inner content. For example, `<title> inner content </title>`.
+
+        </ResponseField>
+
+        <ResponseField name="custom" type="boolean">
+
+          Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+          i.e. an entry from the site's Advanced/Custom Tags list.
+
+          This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+          (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+          default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+          from a page's manually saved SEO title/description override. Don't use this field to verify whether
+          a live page reflects a manual per-page SEO edit.
+
+          Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+          only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+          or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+          response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+          Pass `seoData` explicitly to resolve against a known set of tags.
+
+        </ResponseField>
+
+        <ResponseField name="disabled" type="boolean">
+
+          Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="focusKeywords" type="Keyword[]">
+
+      Keywords the item's content is intended to rank for. Used by Wix's SEO tools to assess
+      the item's content; they aren't rendered on the page.
+
+      Mark the item's main keyword with `isMain` rather than relying on its position in the
+      list.
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="focusKeywords properties">
+
+        <ResponseField name="term" type="string">
+
+          Keyword value.
+
+        </ResponseField>
+
+        <ResponseField name="isMain" type="boolean">
+
+          Whether the keyword is the main focus keyword.
+
+        </ResponseField>
+
+        <ResponseField name="origin" type="string">
+
+          The source that added the keyword terms to the SEO settings.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hasOverride" type="boolean">
+
+      Whether the item has tags of its own, as opposed to inheriting them.
+
+      `false` doesn't mean the item shows Wix's built-in tags: it may inherit from the
+      pattern for its item type, from the site's tags, or from the page that hosts it. See
+      `resolvedTags` for the tags the item is expected to render with.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="resolvedTags" type="ResolvedTag[]">
+
+      The tags the item is expected to render with, each marked with where it came from.
+
+      Derived by combining every source Wix manages, so it reflects inherited tags as well
+      as the item's own. Tags that site code, apps, or page components add while the page
+      renders aren't included, so this isn't a literal copy of the page's rendered head.
+
+      If a tag's source can't be determined, the tag is still exact but its `source` is
+      `TAG_SOURCE_UNSPECIFIED`.
+
+      **Read-only.** Constraints: `maxItems 500`.
+
+      <Expandable title="resolvedTags properties">
+
+        <ResponseField name="tag" type="Tag">
+
+          Resolved SEO tag.
+
+          <Expandable title="tag properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="source" type="string">
+
+          Where the tag came from.
+
+          **Supported values:**
+
+          - `TAG_SOURCE_SITE` — The site's own site-wide tags.
+          - `TAG_SOURCE_DEFAULT_PATTERN` — The pattern Wix provides for the page type.
+          - `TAG_SOURCE_USER_PATTERN` — The pattern the Wix user customized for the page type.
+          - `TAG_SOURCE_HOST_PAGE` — The tags of the page the item is displayed on.
+          - `TAG_SOURCE_ITEM` — The item's own tags, which the Wix user set for that item alone.
+
+        </ResponseField>
+
+        <ResponseField name="inheritedTag" type="Tag">
+
+          The tag that `tag` replaced: what this tag would be if the source that set it
+          didn't. Returned only when a source replaced a value an earlier source had set,
+          so it's absent when `source` is the only source that set the tag.
+
+          It reports the value from one source down the list, not the Wix built-in. For a
+          tag an item sets on a page type whose pattern the site customized, it's the
+          customized pattern's tag, because that's what the item inherits and what
+          resetting the item surfaces.
+
+          **Read-only.**
+
+          <Expandable title="inheritedTag properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hostPageId" type="string">
+
+      ID of the page that displays the item, for items shown on a shared page, such as a
+      blog post or a store product.
+
+      Informational: the hosting page can't be addressed through this API.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="publishStatus" type="string">
+
+      Whether the item's SEO tags are live on the published site.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `PUBLISH_STATUS_PUBLISHED` — The item's SEO tags are live on the published site. Item types that keep no separate
+      draft, such as store products, events, and portfolio collections, always report this
+      status.
+      - `PUBLISH_STATUS_NOT_PUBLISHED` — The item has never been published, so its SEO tags exist only as a draft and aren't on
+      the live site. For example, a blog post that's still a draft.
+
+    </ResponseField>
+
+    <ResponseField name="language" type="string">
+
+      Language the tags apply to, as an IETF BCP 47 language tag. For example, `en-US` for
+      U.S. English.
+
+      Tags can currently be written only for the site's primary language, so leave this
+      unset on a write. Sending a language fails with `LANGUAGE_NOT_SUPPORTED`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="origin" type="string">
+
+      What made the most recent change to the item's tags, for example a user or the site
+      migration flow. Derived from the caller, not from the request.
+
+      `ORIGIN_UNSPECIFIED` when the caller isn't one Wix identifies as a specific origin.
+      Origin isn't stored with the tags either, so Get Item SEO Tags and List Item SEO Tags
+      always return `ORIGIN_UNSPECIFIED`.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `ORIGIN_USER` — A user, working in the dashboard or editor, or calling the API on their own behalf.
+      - `ORIGIN_MIGRATION` — The flow that imports an existing site into Wix.
+      - `ORIGIN_AI` — An AI agent or an automated suggestion flow.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

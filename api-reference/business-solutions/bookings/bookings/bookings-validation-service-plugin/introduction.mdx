@@ -1,0 +1,207 @@
+---
+title: "Introduction"
+description: "The Bookings Validation service plugin lets you implement custom validation logic for booking operations."
+icon: "file-lines"
+---
+
+The Bookings Validation service plugin lets you implement custom validation logic for booking operations. When a customer attempts to create, cancel, or reschedule a booking on a Wix site, Wix calls your validation method before executing the operation. Your implementation can approve or reject the operation based on your own business rules.
+
+With the Bookings Validation service plugin, you can:
+
+- Enforce membership and pricing plan limits on booking creation and rescheduling, including validation against plan limits and external calendar availability.
+- Apply custom cancellation policies, such as minimum notice periods or cancellation fees.
+- Implement fraud prevention by blocking suspicious booking attempts.
+- Coordinate validation rules across all bookings in a multi-service package.
+
+## Validation flow
+
+Wix Bookings calls your service plugin at specific points during booking operations. The flow differs slightly depending on whether the operation involves a single-service booking or a multi-service package.
+
+### Single-service booking operations
+
+For a single-service booking, Wix calls the validation method that corresponds to the operation being performed.
+
+1. A customer initiates a booking operation (create, cancel, or reschedule).
+2. Wix calls your corresponding validation method with the booking details.
+3. Your implementation evaluates the request and returns a validation result.
+4. If `valid` is `true`, Wix continues with the operation.
+5. If `valid` is `false`, Wix blocks the operation and displays your error message to the customer.
+
+### Multi-service booking operations
+
+Multi-service bookings are packages containing multiple related bookings, such as a spa day that includes a massage, facial, and manicure.
+
+1. A customer initiates an operation on a multi-service booking package.
+2. Wix calls your multi-service validation method with all bookings in the package.
+3. Your implementation evaluates the request and returns a validation result for each booking.
+4. If any booking in the package fails validation, the entire operation is blocked.
+5. Error messages from failed validations are displayed to the customer.
+
+## Error and timeout behavior
+
+Each method handles errors and timeouts differently:
+
+| Method | On error or timeout |
+|--------|---------------------|
+| Validate Before Create | Operation is blocked (fail-closed). |
+| Validate Before Cancel | Operation is blocked (fail-closed). |
+| Validate Before Reschedule | Operation continues (fail-open). |
+| Validate Before Create Multi Service | Operation is blocked (fail-closed). |
+| Validate Before Cancel Multi Service | Operation is blocked (fail-closed). |
+| Validate Before Reschedule Multi Service | Operation continues (fail-open). |
+
+## Writing error messages
+
+The `FieldViolation.description` and `InvalidReason.message` values are displayed to the customer when validation fails. Make them clear and actionable, and avoid technical jargon. The `FieldViolation.code` field is optional and intended for programmatic handling by your system, not for display to customers.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Your implementation should respond as quickly as possible to avoid timeouts.
+- Multiple service plugin providers can be registered for the same validation target. When this happens, all providers are called concurrently. If any provider rejects the operation or returns an error, the operation is blocked.
+- Booking data sent to your validation method is sanitized before transmission. All fields in `contactDetails` (including `firstName`, `lastName`, `email`, `phone`, and `fullAddress`) are redacted. The `name` and `email` fields for primary and additional resources in `bookedEntity.slot.resource` are also redacted.
+- For bulk create operations, validation is per item. Items that pass continue normally, and items that fail are excluded from the operation. If your response omits a result for any item, that item is treated as valid. For single-service and multi-service operations, validation follows all-or-nothing semantics.
+
+<Tabs>
+
+<Tab title="REST">
+
+## Get started
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **Bookings** in the left menu, then find **Bookings Validation service plugin** and click **Create**.
+1. Provide the following configuration in the JSON editor and then click **Save**.
+
+    | Name | Type | Description |
+    | --- | --- | --- |
+    | `deploymentUri`|object|**Required.** Object with a `baseUri` property specifying the base URI where your service plugin methods are deployed. For example, to call the Validate Before Create method at `https://my-validation-service.com/v1/validate-before-create`, set `baseUri` to `https://my-validation-service.com`. |
+    | `validationTargets`|Array\&lt;object\>|**Required.** Array of objects specifying which booking operations this provider handles. Each object contains a `method` field with one of: `CREATE`, `CANCEL`, `RESCHEDULE`, `CREATE_MULTI_SERVICE`, `CANCEL_MULTI_SERVICE`, `RESCHEDULE_MULTI_SERVICE`. |
+
+</Tab>
+
+<Tab title="SDK">
+
+## Get started
+
+Follow these steps to begin implementing your service plugin.
+
+### Step 1 | Choose a framework
+
+You can implement this service plugin with the following [frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks):
+
+- **Wix CLI:** Learn how to [implement a service plugin with the CLI and the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
+- **Self-hosted:** Learn how to [implement a self-hosted service plugin with the SDK and the Wix Dev Center](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk).
+
+### Step 2 | Configure your service plugin
+
+Configure your plugin by specifying a `deploymentUri` and the `validationTargets` your implementation handles. For the full configuration reference, see [Bookings Validation Provider Extension Configuration](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-validation-service-plugin/extension-config).
+
+### Step 3 | Define handler functions
+
+Use [`bookingsValidation.provideHandlers()`](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions) to define handler functions that implement your custom validation logic. Implement the handlers that match the validation targets your app supports.
+
+| Function | Description |
+|----------|-------------|
+| `validateBeforeCreate()` | Validates whether a booking can be created. |
+| `validateBeforeCancel()` | Validates whether a booking can be canceled. |
+| `validateBeforeReschedule()` | Validates whether a booking can be rescheduled. |
+| `validateBeforeCreateMultiService()` | Validates whether a multi-service booking can be created. |
+| `validateBeforeCancelMultiService()` | Validates whether a multi-service booking can be canceled. |
+| `validateBeforeRescheduleMultiService()` | Validates whether a multi-service booking can be rescheduled. |
+
+## Code examples
+
+Below are examples for implementing the Bookings Validation service plugin in your code.
+
+### CLI: Basic code structure
+
+This is the basic code structure for implementing the Bookings Validation service plugin with the Wix CLI:
+
+```js
+import { bookingsValidation } from '@wix/bookings/service-plugins'
+
+bookingsValidation.provideHandlers({
+  validateBeforeCreate: async (payload) => {
+    const { request, metadata } = payload;
+
+    // Add your validation logic here
+
+  },
+  validateBeforeCancel: async (payload) => {
+    const { request, metadata } = payload;
+
+    // Add your validation logic here
+
+  },
+  // Add additional handlers as needed
+});
+```
+
+### Self-hosted: Basic code structure
+
+This is the basic code structure for implementing a self-hosted Bookings Validation service plugin:
+
+```js
+import { createClient } from '@wix/sdk';
+import { bookingsValidation } from '@wix/bookings/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { bookingsValidation }
+});
+
+wixClient.bookingsValidation.provideHandlers({
+  validateBeforeCreate: async (payload) => {
+    const { request, metadata } = payload;
+
+    // Add your validation logic here
+
+  },
+  validateBeforeCancel: async (payload) => {
+    const { request, metadata } = payload;
+
+    // Add your validation logic here
+
+  },
+  // Add additional handlers as needed
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## Use cases
+
+- [Enforce limits or validate against an external system](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-validation-service-plugin/sample-flows#enforce-limits-or-validate-against-an-external-system).
+- [Apply cancellation policies](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-validation-service-plugin/sample-flows#apply-cancellation-policies).
+- [Validate multi-service bookings](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-validation-service-plugin/sample-flows#validate-multi-service-bookings).
+
+## Terminology
+
+- __Validation target__: The booking operation your service plugin handles. Supported targets are `CREATE`, `CANCEL`, `RESCHEDULE`, `CREATE_MULTI_SERVICE`, `CANCEL_MULTI_SERVICE`, and `RESCHEDULE_MULTI_SERVICE`.
+- __Validation result__: Your response to a validation request. Contains a `valid` boolean and, when `valid` is `false`, an `InvalidReason` with optional error details.
+- __Field violation__: A specific field-level error in a validation result. Describes which field failed validation and why. Use dot notation for the field path, such as `target.startDate`.
+
+For a comprehensive glossary of Wix Bookings terms, see [Terminology](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/terminology).
+
+## See also
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)
++ [Bookings APIs](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/introduction)
+
+@sdk_package_setup

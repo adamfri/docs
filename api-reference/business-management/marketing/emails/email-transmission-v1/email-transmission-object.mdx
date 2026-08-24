@@ -1,0 +1,585 @@
+---
+title: "Email Transmission Object"
+description: "An email transmission represents a single email send request, including its recipients, HTML content, sender information, type, and delivery status."
+icon: "cube"
+---
+
+An email transmission represents a single email send request,
+including its recipients, HTML content, sender information, type, and delivery status.
+Creating an email transmission triggers the email to be sent asynchronously to all specified recipients.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Email transmission ID.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the email transmission was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the email transmission was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the email transmission is updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="emailSubject" type="string">
+
+      Subject line of the email.
+
+      Constraints: `maxLength 200`.
+
+    </ResponseField>
+
+    <ResponseField name="emailHtmlContent" type="string">
+
+      Full HTML content of the email.
+
+      Not returned in `queryEmailTransmissions`. Use `getEmailTransmission` to retrieve the HTML content of a specific transmission.
+
+      Stored for 30 days after the transmission is created. After that, this field returns `"<expired>"`.
+
+      Constraints: `maxLength 1000000`.
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+
+      Custom key-value pairs attached to the transmission to identify the context in which the email was sent.
+      These values are passed to the email service provider and included in domain event payloads.
+      Keys and values support alphanumeric characters only (letters and numbers, no spaces or special characters).
+
+      Default: `{}`
+
+      Constraints: `format map`, `maxItems 10`.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="key" type="string" />
+
+        <ResponseField name="value" type="string" />
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="senderName" type="string">
+
+      Display name shown as the sender.
+
+      Default: None (no display name is set).
+
+    </ResponseField>
+
+    <ResponseField name="senderEmailAddress" type="string">
+
+      Sender email address. Must be verified using the Sender Emails API before use.
+
+      If the provided address can't be used as a FROM address (for example, addresses from free email providers
+      such as gmail.com), the email is sent from `no-reply@wixsitemail.com` and the provided address is
+      automatically used as the reply-to address instead.
+
+      Default: `no-reply@wixsitemail.com`
+
+    </ResponseField>
+
+    <ResponseField name="replyTo" type="Recipient">
+
+      Recipient that receives replies to this email. When a recipient replies, the reply is directed to this
+      address instead of the sender address.
+
+      Default: When `senderEmailAddress` is provided and the email is sent from the Wix shared sender address,
+      replies are automatically directed to `senderEmailAddress`.
+
+      <Expandable title="replyTo properties">
+
+        <ResponseField name="name" type="string">
+
+          Display name of the recipient.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Status of this particular recipient.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `PENDING` — Recipient is still waiting to be processed.
+          - `SENT` — Email for this recipient was sent (it's not the same as "delivered" because it can still bounce).
+          - `FAILED` — Recipient was excluded (see "failureReason" for more details).
+
+        </ResponseField>
+
+        <ResponseField name="failureReason" type="string">
+
+          Reason why the email couldn't be delivered to this recipient. `NONE` means the email was successfully sent.
+
+          Returned once the transmission reaches `PROCESSED` status.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NONE` — Email was successfully sent to this recipient.
+          - `RECIPIENT_NOT_FOUND` — Contact or user wasn't found by the provided ID.
+          - `EMAIL_ADDRESS_MISSING` — Contact or user doesn't have an email address.
+          - `EMAIL_ADDRESS_INVALID` — Email address doesn't exist or is invalid.
+          - `EMAIL_ADDRESS_BOUNCED` — Email address has previously bounced and can't be sent to.
+          - `MARKETING_CONSENT_NOT_GIVEN` — Recipient hasn't given consent to receive marketing emails.
+          - `NOT_SITE_COLLABORATOR` — User isn't a collaborator on this site. Only site collaborators can be specified as recipients by user ID.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="value" type="value">
+
+          value
+
+          <Expandable title="value properties">
+
+            <ResponseField name="contactId" type="string">
+
+              ID of the contact to send the email to. The contact's email address is retrieved from the Contacts API.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="userId" type="string">
+
+              ID of the Wix user to send the email to. The user must be a site collaborator.
+
+              The user's email address is retrieved from the Users API.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="emailAddress" type="string">
+
+              Email address to send the email to. A contact is created with this address if one doesn't already exist.
+
+              Constraints: `format EMAIL`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="toRecipients" type="Recipient[]">
+
+      List of recipients the email is sent to.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="toRecipients properties">
+
+        <ResponseField name="name" type="string">
+
+          Display name of the recipient.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Status of this particular recipient.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `PENDING` — Recipient is still waiting to be processed.
+          - `SENT` — Email for this recipient was sent (it's not the same as "delivered" because it can still bounce).
+          - `FAILED` — Recipient was excluded (see "failureReason" for more details).
+
+        </ResponseField>
+
+        <ResponseField name="failureReason" type="string">
+
+          Reason why the email couldn't be delivered to this recipient. `NONE` means the email was successfully sent.
+
+          Returned once the transmission reaches `PROCESSED` status.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NONE` — Email was successfully sent to this recipient.
+          - `RECIPIENT_NOT_FOUND` — Contact or user wasn't found by the provided ID.
+          - `EMAIL_ADDRESS_MISSING` — Contact or user doesn't have an email address.
+          - `EMAIL_ADDRESS_INVALID` — Email address doesn't exist or is invalid.
+          - `EMAIL_ADDRESS_BOUNCED` — Email address has previously bounced and can't be sent to.
+          - `MARKETING_CONSENT_NOT_GIVEN` — Recipient hasn't given consent to receive marketing emails.
+          - `NOT_SITE_COLLABORATOR` — User isn't a collaborator on this site. Only site collaborators can be specified as recipients by user ID.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="type" type="string">
+
+      Email type.
+
+      **Supported values:**
+
+      - `TRANSACTIONAL` — Email triggered by a specific action, such as an order confirmation or booking reminder. No unsubscribe link is added.
+      - `MARKETING` — Email sent to multiple recipients as part of a campaign, such as a newsletter or promotion. An unsubscribe link is automatically added.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the email transmission.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `ACCEPTED` — Email transmission was accepted and is queued for processing.
+      - `IN_PROGRESS` — Email transmission is being processed. The content is being checked, recipients are being resolved, and emails are being sent.
+      - `PROCESSED` — Email transmission has been fully processed. Per-recipient delivery information is available in `toRecipients`.
+      - `REJECTED` — Email transmission failed an abuse check. No emails were sent. See `rejectedOptions` for details.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "emailTransmission": {
+          "id": "30057014-8ecc-4a1b-9c53-bcc7dd033bb5",
+          "createdDate": "2024-03-14T09:17:22.431Z",
+          "updatedDate": "2024-03-14T09:17:24.805Z",
+          "revision": "1",
+          "emailSubject": "Your order has shipped",
+          "emailHtmlContent": "<h1>Hello John,</h1><p>Your order has shipped and will arrive in 3-5 business days.</p>",
+          "metadata": {
+            "orderId": "ORD12345"
+          },
+          "senderName": "My Store",
+          "senderEmailAddress": "noreply@mystore.com",
+          "replyTo": {
+            "emailAddress": "support@mystore.com"
+          },
+          "toRecipients": [
+            {
+              "name": "John Doe",
+              "contactId": "5c06af42-b6c7-49ef-a87e-5a0d2d8cde1f",
+              "failureReason": "NONE"
+            }
+          ],
+          "type": "TRANSACTIONAL",
+          "status": "PROCESSED"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Email transmission ID.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the email transmission was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the email transmission was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the email transmission is updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="emailSubject" type="string">
+
+      Subject line of the email.
+
+      Constraints: `maxLength 200`.
+
+    </ResponseField>
+
+    <ResponseField name="emailHtmlContent" type="string">
+
+      Full HTML content of the email.
+
+      Not returned in `queryEmailTransmissions`. Use `getEmailTransmission` to retrieve the HTML content of a specific transmission.
+
+      Stored for 30 days after the transmission is created. After that, this field returns `"<expired>"`.
+
+      Constraints: `maxLength 1000000`.
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+
+      Custom key-value pairs attached to the transmission to identify the context in which the email was sent.
+      These values are passed to the email service provider and included in domain event payloads.
+      Keys and values support alphanumeric characters only (letters and numbers, no spaces or special characters).
+
+      Default: `{}`
+
+      Constraints: `format map`, `maxItems 10`.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="key" type="string" />
+
+        <ResponseField name="value" type="string" />
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="senderName" type="string">
+
+      Display name shown as the sender.
+
+      Default: None (no display name is set).
+
+    </ResponseField>
+
+    <ResponseField name="senderEmailAddress" type="string">
+
+      Sender email address. Must be verified using the Sender Emails API before use.
+
+      If the provided address can't be used as a FROM address (for example, addresses from free email providers
+      such as gmail.com), the email is sent from `no-reply@wixsitemail.com` and the provided address is
+      automatically used as the reply-to address instead.
+
+      Default: `no-reply@wixsitemail.com`
+
+    </ResponseField>
+
+    <ResponseField name="replyTo" type="Recipient">
+
+      Recipient that receives replies to this email. When a recipient replies, the reply is directed to this
+      address instead of the sender address.
+
+      Default: When `senderEmailAddress` is provided and the email is sent from the Wix shared sender address,
+      replies are automatically directed to `senderEmailAddress`.
+
+      <Expandable title="replyTo properties">
+
+        <ResponseField name="name" type="string">
+
+          Display name of the recipient.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Status of this particular recipient.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `PENDING` — Recipient is still waiting to be processed.
+          - `SENT` — Email for this recipient was sent (it's not the same as "delivered" because it can still bounce).
+          - `FAILED` — Recipient was excluded (see "failureReason" for more details).
+
+        </ResponseField>
+
+        <ResponseField name="failureReason" type="string">
+
+          Reason why the email couldn't be delivered to this recipient. `NONE` means the email was successfully sent.
+
+          Returned once the transmission reaches `PROCESSED` status.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NONE` — Email was successfully sent to this recipient.
+          - `RECIPIENT_NOT_FOUND` — Contact or user wasn't found by the provided ID.
+          - `EMAIL_ADDRESS_MISSING` — Contact or user doesn't have an email address.
+          - `EMAIL_ADDRESS_INVALID` — Email address doesn't exist or is invalid.
+          - `EMAIL_ADDRESS_BOUNCED` — Email address has previously bounced and can't be sent to.
+          - `MARKETING_CONSENT_NOT_GIVEN` — Recipient hasn't given consent to receive marketing emails.
+          - `NOT_SITE_COLLABORATOR` — User isn't a collaborator on this site. Only site collaborators can be specified as recipients by user ID.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="value" type="value">
+
+          value
+
+          <Expandable title="value properties">
+
+            <ResponseField name="contactId" type="string">
+
+              ID of the contact to send the email to. The contact's email address is retrieved from the Contacts API.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="userId" type="string">
+
+              ID of the Wix user to send the email to. The user must be a site collaborator.
+
+              The user's email address is retrieved from the Users API.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="emailAddress" type="string">
+
+              Email address to send the email to. A contact is created with this address if one doesn't already exist.
+
+              Constraints: `format EMAIL`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="toRecipients" type="Recipient[]">
+
+      List of recipients the email is sent to.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="toRecipients properties">
+
+        <ResponseField name="name" type="string">
+
+          Display name of the recipient.
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Status of this particular recipient.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `PENDING` — Recipient is still waiting to be processed.
+          - `SENT` — Email for this recipient was sent (it's not the same as "delivered" because it can still bounce).
+          - `FAILED` — Recipient was excluded (see "failureReason" for more details).
+
+        </ResponseField>
+
+        <ResponseField name="failureReason" type="string">
+
+          Reason why the email couldn't be delivered to this recipient. `NONE` means the email was successfully sent.
+
+          Returned once the transmission reaches `PROCESSED` status.
+
+          **Read-only.**
+
+          **Supported values:**
+
+          - `NONE` — Email was successfully sent to this recipient.
+          - `RECIPIENT_NOT_FOUND` — Contact or user wasn't found by the provided ID.
+          - `EMAIL_ADDRESS_MISSING` — Contact or user doesn't have an email address.
+          - `EMAIL_ADDRESS_INVALID` — Email address doesn't exist or is invalid.
+          - `EMAIL_ADDRESS_BOUNCED` — Email address has previously bounced and can't be sent to.
+          - `MARKETING_CONSENT_NOT_GIVEN` — Recipient hasn't given consent to receive marketing emails.
+          - `NOT_SITE_COLLABORATOR` — User isn't a collaborator on this site. Only site collaborators can be specified as recipients by user ID.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="type" type="string">
+
+      Email type.
+
+      **Supported values:**
+
+      - `TRANSACTIONAL` — Email triggered by a specific action, such as an order confirmation or booking reminder. No unsubscribe link is added.
+      - `MARKETING` — Email sent to multiple recipients as part of a campaign, such as a newsletter or promotion. An unsubscribe link is automatically added.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Current status of the email transmission.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `ACCEPTED` — Email transmission was accepted and is queued for processing.
+      - `IN_PROGRESS` — Email transmission is being processed. The content is being checked, recipients are being resolved, and emails are being sent.
+      - `PROCESSED` — Email transmission has been fully processed. Per-recipient delivery information is available in `toRecipients`.
+      - `REJECTED` — Email transmission failed an abuse check. No emails were sent. See `rejectedOptions` for details.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

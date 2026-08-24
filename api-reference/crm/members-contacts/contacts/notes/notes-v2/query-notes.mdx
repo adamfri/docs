@@ -1,0 +1,813 @@
+---
+title: "Query Notes"
+description: "Retrieves a list of up to 1,000 notes given the provided filtering, paging, and sorting."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of up to 1,000 notes given the provided filtering, paging, and sorting.
+
+    <Note>
+
+    When making the first query request without a cursor, the `contactId` field is required. For subsequent requests using cursor pagination, `contactId` becomes optional as the cursor contains the context from the previous query.
+
+    </Note>
+
+    By default, notes are sorted by created date in descending order.
+
+    Refer to [*Notes: Supported Filters and Sorting*](https://dev.wix.com/docs/rest/crm/members-contacts/contacts/notes/notes-v2/supported-filters-and-sorting) for a complete list of supported filters and sorting options.
+
+    To learn about working with *Query* endpoints, see [API Query Language](https://dev.wix.com/api/rest/getting-started/api-query-language) and [Sorting and Paging](https://dev.wix.com/docs/rest/articles/get-started/sorting-and-paging).
+
+    | Property | Filters | Sort |
+    | --- | --- | --- |
+    | `id` | `$eq`, `$in` | None |
+    | `type` | `$eq`, `$in`, `$ne`, `$nin` | None |
+    | `contactId` | `$eq`, `$in` | None |
+    | `createdDate` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte` | Sort: `ASC`, `DESC` |
+    | `updatedDate` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte` | Sort: `ASC`, `DESC` |
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CRM.READ-NOTES">Read Notes</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/crm/notes/v2/notes/query
+    ```
+
+    ## Body Params
+
+    <ParamField body="query" type="CursorQuery">
+
+      WQL query object.
+
+      For more information, see [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language).
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="contactId" type="string">
+
+      Contact ID to retrieve notes for. Required when not using cursor pagination.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="notes" type="Note[]">
+
+      Retrieved notes.
+
+      See the [Note Object](/api-reference/crm/members-contacts/contacts/notes/notes-v2/note-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging information.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_CONTACT_ID` | Contact ID is required when cursor pagination isn't provided. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-query-notes" id="ex-rest-query-notes-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-query-notes" id="ex-rest-query-notes-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-query-notes" id="ex-rest-query-notes-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-query-notes-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-query-notes-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Queries Notes</span><span className="wix-picker-desc">Retrieves notes by a query</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Queries Notes</span><span className="wix-picker-desc">Retrieves notes by a query</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Queries Notes</span><span className="wix-picker-desc">Retrieves notes by a query</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-query-notes-0"><span className="wix-picker-name">Queries Notes</span><span className="wix-picker-desc">Retrieves notes by a query</span></label>
+    <label htmlFor="ex-rest-query-notes-1"><span className="wix-picker-name">Queries Notes</span><span className="wix-picker-desc">Retrieves notes by a query</span></label>
+    <label htmlFor="ex-rest-query-notes-2"><span className="wix-picker-name">Queries Notes</span><span className="wix-picker-desc">Retrieves notes by a query</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/crm/notes/v2/notes/query' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        --data-raw '
+        {
+          "query": {
+            "sort": [
+              {
+                "field_name": "type",
+                "order": "DESC"
+              }
+            ],
+            "filter": {
+              "$and": [
+                {
+                  "type": "MEETING_SUMMARY"
+                },
+                {
+                  "createdDate": {"$gt": "2023-08-20T12:00:00.000Z"}
+                }
+              ]
+            },
+            "cursor_paging": {
+              "limit": 50
+            }
+          },
+          "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874"
+        }'
+      ```
+
+      ```json Response
+      {
+          "notes": [
+            {
+              "id": "95c3f7cf-ee34-49cd-9c14-020fdb4ce442",
+              "revision": "1",
+              "created_date": "2023-08-22T06:18:59.373Z",
+              "updated_date": "2023-08-22T06:18:59.373Z",
+              "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874",
+              "text": "Sample text of a note",
+              "type": "CALL_SUMMARY",
+              "source": {
+                "source_type": "USER",
+                "app_id": null,
+                "user_id": "204e902b-74f1-4373-9a1b-f05d1553d477"
+              }
+            },
+            {
+              "id": "5805338c-c36f-41dc-915b-8ee7401de9ff",
+              "revision": "1",
+              "created_date": "2023-08-21T11:46:24.129Z",
+              "updated_date": "2023-08-21T11:46:24.129Z",
+              "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874",
+              "text": "test",
+              "type": "MEETING_SUMMARY",
+              "source": {
+                "source_type": "APP",
+                "app_id": "9a58c526-6430-4e1c-9f19-d23e28894baf",
+                "user_id": "204e902b-74f1-4373-9a1b-f05d1553d477"
+              }
+            }
+          ],
+          "paging_metadata": {
+            "count": 2,
+            "cursors": {
+              "next": null,
+              "prev": null
+            },
+            "has_next": false
+          }
+        }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/crm/notes/v2/notes/query' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        --data-raw '
+        {
+          "query": {
+            "sort": [
+              {
+                "field_name": "type",
+                "order": "DESC"
+              }
+            ],
+            "filter": {
+              "contactId":
+                {
+                  "$in": ["2ad187df-405c-47a1-a4ea-5f112feba87", "2ad187df-405c-47a1-a4ea-5f112feba88"]
+                }
+            },
+            "cursor_paging": {
+              "limit": 50
+            }
+          },
+          "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874"
+        }'
+      ```
+
+      ```json Response
+      {
+          "notes": [
+            {
+              "id": "95c3f7cf-ee34-49cd-9c14-020fdb4ce442",
+              "revision": "1",
+              "created_date": "2023-08-22T06:18:59.373Z",
+              "updated_date": "2023-08-22T06:18:59.373Z",
+              "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba87",
+              "text": "Sample text of a note",
+              "type": "CALL_SUMMARY",
+              "source": {
+                "source_type": "USER",
+                "app_id": null,
+                "user_id": "204e902b-74f1-4373-9a1b-f05d1553d477"
+              }
+            },
+            {
+              "id": "5805338c-c36f-41dc-915b-8ee7401de9ff",
+              "revision": "1",
+              "created_date": "2023-08-21T11:46:24.129Z",
+              "updated_date": "2023-08-21T11:46:24.129Z",
+              "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba88",
+              "text": "Sample text of another note",
+              "type": "MEETING_SUMMARY",
+              "source": {
+                "source_type": "APP",
+                "app_id": "9a58c526-6430-4e1c-9f19-d23e28894baf",
+                "user_id": "204e902b-74f1-4373-9a1b-f05d1553d478"
+              }
+            }
+          ],
+          "paging_metadata": {
+            "count": 2,
+            "cursors": {
+              "next": null,
+              "prev": null
+            },
+            "has_next": false
+          }
+        }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/crm/notes/v2/notes/query' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        --data-raw '
+        {
+          "query": {
+            "sort": [
+              {
+                "field_name": "type",
+                "order": "DESC"
+              }
+            ],
+            "filter": {
+              "type": "CALL_SUMMARY"
+            },
+            "cursor_paging": {
+              "limit": 50
+            }
+          },
+          "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874"
+        }'
+      ```
+
+      ```json Response
+      {
+          "notes": [
+            {
+              "id": "95c3f7cf-ee34-49cd-9c14-020fdb4ce442",
+              "revision": "1",
+              "created_date": "2023-08-22T06:18:59.373Z",
+              "updated_date": "2023-08-22T06:18:59.373Z",
+              "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874",
+              "text": "Sample text of a call summary",
+              "type": "CALL_SUMMARY",
+              "source": {
+                "source_type": "USER",
+                "app_id": null,
+                "user_id": "204e902b-74f1-4373-9a1b-f05d1553d477"
+              }
+            },
+            {
+              "id": "5805338c-c36f-41dc-915b-8ee7401de9ff",
+              "revision": "1",
+              "created_date": "2023-08-21T11:46:24.129Z",
+              "updated_date": "2023-08-21T11:46:24.129Z",
+              "contact_id": "2ad187df-405c-47a1-a4ea-5f112feba874",
+              "text": "Another sample text of a call summary",
+              "type": "CALL_SUMMARY",
+              "source": {
+                "source_type": "APP",
+                "app_id": "9a58c526-6430-4e1c-9f19-d23e28894baf",
+                "user_id": "204e902b-74f1-4373-9a1b-f05d1553d477"
+              }
+            }
+          ],
+          "paging_metadata": {
+            "count": 2,
+            "cursors": {
+              "next": null,
+              "prev": null
+            },
+            "has_next": false
+          }
+        }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of up to 1,000 notes given the provided filtering, paging, and sorting.
+
+    <Note>
+
+    When making the first query request without a cursor, the `contactId` field is required. For subsequent requests using cursor pagination, `contactId` becomes optional as the cursor contains the context from the previous query.
+
+    </Note>
+
+    By default, notes are sorted by created date in descending order.
+
+    Refer to [*Notes: Supported Filters and Sorting*](https://dev.wix.com/docs/rest/crm/members-contacts/contacts/notes/notes-v2/supported-filters-and-sorting) for a complete list of supported filters and sorting options.
+
+    To learn about working with *Query* endpoints, see [API Query Language](https://dev.wix.com/api/rest/getting-started/api-query-language) and [Sorting and Paging](https://dev.wix.com/docs/rest/articles/get-started/sorting-and-paging).
+
+    | Property | Filters | Sort |
+    | --- | --- | --- |
+    | `_id` | `$eq`, `$in` | None |
+    | `type` | `$eq`, `$in`, `$ne`, `$nin` | None |
+    | `contactId` | `$eq`, `$in` | None |
+    | `_createdDate` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte` | Sort: `ASC`, `DESC` |
+    | `_updatedDate` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte` | Sort: `ASC`, `DESC` |
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CRM.READ-NOTES">Read Notes</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { notes } from '@wix/crm';
+
+    notes.queryNotes(query, options): NotesQueryBuilder
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="query" type="NoteQuery" required>
+
+      WQL query object.
+
+      For more information, see [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language).
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="QueryNotesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="contactId" type="string">
+
+          Contact ID to retrieve notes for. Required when not using cursor pagination.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `NotesQueryBuilder`.
+
+    <ResponseField name="notes" type="Note[]">
+
+      Retrieved notes.
+
+      See the [Note Object](/api-reference/crm/members-contacts/contacts/notes/notes-v2/note-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging information.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_CONTACT_ID` | Contact ID is required when cursor pagination isn't provided. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-notes" id="ex-sdk-query-notes-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-notes" id="ex-sdk-query-notes-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-query-notes" id="ex-sdk-query-notes-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-notes-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-notes-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">queryNotes</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryNotes (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryNotes (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-notes-0"><span className="wix-picker-name">queryNotes</span></label>
+    <label htmlFor="ex-sdk-query-notes-1"><span className="wix-picker-name">queryNotes (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-query-notes-2"><span className="wix-picker-name">queryNotes (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryNotes
+    import { notes } from '@wix/crm';
+
+    async function queryNotes(query,options) {
+      const response = await notes.queryNotes(query,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryNotes (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { notes } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { notes },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function queryNotes(query,options) {
+      const response = await myWixClient.notes.queryNotes(query,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryNotes (with elevated permissions)
+    import { notes } from '@wix/crm';
+    import { auth } from '@wix/essentials';
+
+    async function myQueryNotesMethod(query,options) {
+      const elevatedQueryNotes = auth.elevate(notes.queryNotes);
+      const response = await elevatedQueryNotes(query,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

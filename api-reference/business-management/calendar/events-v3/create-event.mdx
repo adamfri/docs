@@ -1,0 +1,586 @@
+---
+title: "Create Event"
+description: "Creates an event."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an event.
+
+    ### Required fields
+
+    What you need to provide depends on the type of event:
+
+    - **Single-occurrence event**, for example a vacation day or one-off time block:
+    Only `event.scheduleId`, `event.start.localDate`, and `event.end.localDate` are required.
+    Don't include `recurrenceRule`, omitting it creates a single-occurrence event. All other fields like `location`, `resources`, and `conferencingDetails` are optional.
+    - **Recurring MASTER event**, for example weekly working hours:
+    In addition to the fields above, you must also provide `recurrenceRule` with at least `frequency` and `days`.
+    Currently only `WEEKLY` frequency is supported, and only a single day per event, for example `["MONDAY"]`.
+
+    The required parameters shown in the schema include fields that are conditionally required within their parent objects.
+    For example, `recurrenceRule.frequency` is required only if you include `recurrenceRule`.
+    For a minimal single-occurrence event, none of these parent objects are needed.
+
+    ### Recurring events
+
+    If you provide `recurrenceRule`, an event with `{"recurrenceType": "MASTER"}` is
+    created. Then, you can't set `start.localDate` to a past date, though the time can be
+    earlier on the same day. You can, however, create single-occurrence events for
+    past dates.
+
+    You can't create an event with `recurrenceType` set to `INSTANCE` or `EXCEPTION`.
+    `INSTANCE` events are generated automatically based on the recurrence rule in the
+    relevant `MASTER` event. `EXCEPTION` events are automatically created when you
+    [update](https://dev.wix.com/docs/api-reference/business-management/calendar/events-v3/update-event)
+    an `INSTANCE` event, which changes its `recurrenceType` to `EXCEPTION`.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CALENDAR.MANAGE">Manage Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/calendar/v3/events
+    ```
+
+    ## Body Params
+
+    <ParamField body="event" type="Event" required>
+
+      Event to create.
+
+      See the [Event Object](/api-reference/business-management/calendar/events-v3/event-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database)
+      for calculating `adjustedStart` and `adjustedEnd`. For example,
+      `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/rest/business-management/site-properties/properties/get-site-properties).
+
+    </ParamField>
+
+    <ParamField body="idempotencyKey" type="string">
+
+      Idempotency key guaranteeing that you don't create the same event more than once.
+      Must be a valid UUID/GUID, for example `550e8400-e29b-41d4-a716-446655440000`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="event" type="Event">
+
+      Created event.
+
+      See the [Event Object](/api-reference/business-management/calendar/events-v3/event-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Event Created | `wix.calendar.v3.event_created` | Triggered when an event is created, including when an existing `MASTER` event is split. Not triggered when `INSTANCE` events are created. You can use the [Events View API](https://dev.wix.com/docs/rest/business-management/calendar/event-views-v3/introduction) to get notified about `INSTANCE` events. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-event" id="ex-rest-create-event-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-event" id="ex-rest-create-event-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-event-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-event-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Wix Bookings Class Event</span><span className="wix-picker-desc">Creates a Wix Bookings Class event including a location and a Staff Member resource</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Event</span><span className="wix-picker-desc">Creates an event with basic title and time</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-event-0"><span className="wix-picker-name">Create Wix Bookings Class Event</span><span className="wix-picker-desc">Creates a Wix Bookings Class event including a location and a Staff Member resource</span></label>
+    <label htmlFor="ex-rest-create-event-1"><span className="wix-picker-name">Create Event</span><span className="wix-picker-desc">Creates an event with basic title and time</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/calendar/v3/events' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "event": {
+              "scheduleId": "a96c3c31-c9fc-495d-b55b-40c694fe196c",
+              "type": "CLASS",
+              "start": {
+                "localDate": "2024-11-01T13:00:00"
+              },
+              "end": {
+                "localDate": "2024-11-01T15:00:00"
+              },
+              "location": {
+                "type": "BUSINESS"
+              },
+              "resources": [
+                {
+                  "id": "c27dfdce-666a-4e56-8933-be249f2011b7"
+                }
+              ]
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "event": {
+          "id": "9337230d-68c0-411a-b190-8dd182cac12c",
+          "scheduleId": "a96c3c31-c9fc-495d-b55b-40c694fe196c",
+          "externalScheduleId": "0cc230a0-9158-4c5e-a5da-9161bed0f6b1",
+          "scheduleName": "Pump It Up",
+          "type": "CLASS",
+          "status": "CONFIRMED",
+          "title": "Pump It Up",
+          "start": {
+            "localDate": "2024-11-01T13:00:00",
+            "timeZone": "Europe/Dublin",
+            "utcDate": "2024-11-01T13:00:00Z"
+          },
+          "end": {
+            "localDate": "2024-11-01T15:00:00",
+            "timeZone": "Europe/Dublin",
+            "utcDate": "2024-11-01T15:00:00Z"
+          },
+          "adjustedStart": {
+            "localDate": "2024-11-01T13:00:00",
+            "timeZone": "Europe/Dublin"
+          },
+          "adjustedEnd": {
+            "localDate": "2024-11-01T15:00:00",
+            "timeZone": "Europe/Dublin"
+          },
+          "timeZone": "Europe/Dublin",
+          "recurrenceType": "NONE",
+          "transparency": "OPAQUE",
+          "location": {
+            "type": "BUSINESS"
+          },
+          "resources": [
+            {
+              "id": "c27dfdce-666a-4e56-8933-be249f2011b7",
+              "name": "Emily",
+              "type": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+              "scheduleId": "99fb6b69-8c8f-4578-bd7f-f11a87a88aad",
+              "transparency": "OPAQUE"
+            }
+          ],
+          "totalCapacity": 40,
+          "remainingCapacity": 40,
+          "inheritedFields": [
+            "TITLE",
+            "CAPACITY",
+            "TIME_ZONE",
+            "CONFERENCING_DETAILS"
+          ],
+          "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+          "permissions": [],
+          "revision": "1",
+          "createdDate": "2024-10-13T18:58:40.028Z",
+          "updatedDate": "2024-10-13T18:58:40.028Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/calendar/v3/events' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "event": {
+             "scheduleId": "10d021eb-f94c-4a12-97b4-26701423a828",
+             "title": "Consulting Appointment",
+             "start": {
+               "localDate": "2024-10-10T12:00:00"
+             },
+             "end": {
+               "localDate": "2024-10-10T13:00:00"
+             }
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "event": {
+          "id": "9f78be4d-7b29-4201-89ef-cea0b4c79e6d",
+          "scheduleId": "10d021eb-f94c-4a12-97b4-26701423a828",
+          "externalScheduleId": "2019cd8c-9687-4bd3-95ba-e274579c0441",
+          "scheduleName": "Consulting Schedule",
+          "type": "DEFAULT",
+          "status": "CONFIRMED",
+          "start": {
+            "localDate": "2024-10-10T12:00:00",
+            "timeZone": "Europe/Dublin",
+            "utcDate": "2024-10-10T11:00:00Z"
+          },
+          "end": {
+            "localDate": "2024-10-10T13:00:00",
+            "timeZone": "Europe/Dublin",
+            "utcDate": "2024-10-10T12:00:00Z"
+          },
+          "adjustedStart": {
+            "localDate": "2024-10-10T12:00:00",
+            "timeZone": "Europe/Dublin"
+          },
+          "adjustedEnd": {
+            "localDate": "2024-10-10T13:00:00",
+            "timeZone": "Europe/Dublin"
+          },
+          "timeZone": "Europe/Dublin",
+          "recurrenceType": "NONE",
+          "transparency": "OPAQUE",
+          "resources": [],
+          "inheritedFields": [
+            "CAPACITY",
+            "LOCATION",
+            "CONFERENCING_DETAILS"
+          ],
+          "permissions": [],
+          "revision": "1",
+          "createdDate": "2024-10-07T07:29:32.993Z",
+          "updatedDate": "2024-10-07T07:29:32.993Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an event.
+
+    ### Required fields
+
+    What you need to provide depends on the type of event:
+
+    - **Single-occurrence event**, for example a vacation day or one-off time block:
+    Only `event.scheduleId`, `event.start.localDate`, and `event.end.localDate` are required.
+    Don't include `recurrenceRule`, omitting it creates a single-occurrence event. All other fields like `location`, `resources`, and `conferencingDetails` are optional.
+    - **Recurring MASTER event**, for example weekly working hours:
+    In addition to the fields above, you must also provide `recurrenceRule` with at least `frequency` and `days`.
+    Currently only `WEEKLY` frequency is supported, and only a single day per event, for example `["MONDAY"]`.
+
+    The required parameters shown in the schema include fields that are conditionally required within their parent objects.
+    For example, `recurrenceRule.frequency` is required only if you include `recurrenceRule`.
+    For a minimal single-occurrence event, none of these parent objects are needed.
+
+    ### Recurring events
+
+    If you provide `recurrenceRule`, an event with `{"recurrenceType": "MASTER"}` is
+    created. Then, you can't set `start.localDate` to a past date, though the time can be
+    earlier on the same day. You can, however, create single-occurrence events for
+    past dates.
+
+    You can't create an event with `recurrenceType` set to `INSTANCE` or `EXCEPTION`.
+    `INSTANCE` events are generated automatically based on the recurrence rule in the
+    relevant `MASTER` event. `EXCEPTION` events are automatically created when you
+    [update](https://dev.wix.com/docs/api-reference/business-management/calendar/events-v3/update-event)
+    an `INSTANCE` event, which changes its `recurrenceType` to `EXCEPTION`.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CALENDAR.MANAGE">Manage Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { events } from '@wix/calendar';
+
+    events.createEvent(event, options): Promise<Event>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="event" type="Event" required>
+
+      Event to create.
+
+      See the [Event Object](/api-reference/business-management/calendar/events-v3/event-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateEventOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="timeZone" type="string">
+
+          Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database)
+          for calculating `adjustedStart` and `adjustedEnd`. For example,
+          `America/New_York` or `UTC`.
+
+          Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/rest/business-management/site-properties/properties/get-site-properties).
+
+        </ParamField>
+
+        <ParamField body="idempotencyKey" type="string">
+
+          Idempotency key guaranteeing that you don't create the same event more than once.
+          Must be a valid UUID/GUID, for example `550e8400-e29b-41d4-a716-446655440000`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<Event>`.
+
+    See the [Event Object](/api-reference/business-management/calendar/events-v3/event-object) for this object's fields.
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Event Created | `wix.calendar.v3.event_created` | Triggered when an event is created, including when an existing `MASTER` event is split. Not triggered when `INSTANCE` events are created. You can use the [Events View API](https://dev.wix.com/docs/rest/business-management/calendar/event-views-v3/introduction) to get notified about `INSTANCE` events. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-event" id="ex-sdk-create-event-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-event" id="ex-sdk-create-event-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-event" id="ex-sdk-create-event-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-event-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-event-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create event with basic title and time</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Wix Bookings Class event with location and staff resource</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-event-0"><span className="wix-picker-name">Create event with basic title and time</span></label>
+    <label htmlFor="ex-sdk-create-event-1"><span className="wix-picker-name">Create Wix Bookings Class event with location and staff resource</span></label>
+    <label htmlFor="ex-sdk-create-event-2"><span className="wix-picker-name">createEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create event with basic title and time
+    import { events } from "@wix/calendar";
+
+    const event = {
+      scheduleId: "10d021eb-f94c-4a12-97b4-26701423a828",
+      title: "Consulting Appointment",
+      start: {
+        localDate: "2024-10-10T12:00:00",
+      },
+      end: {
+        localDate: "2024-10-10T13:00:00",
+      },
+    };
+
+    async function createEvent() {
+      const response = await events.createEvent(event);
+      return response;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create Wix Bookings Class event with location and staff resource
+    import { events } from "@wix/calendar";
+
+    const event = {
+      scheduleId: "a96c3c31-c9fc-495d-b55b-40c694fe196c",
+      type: "CLASS" as const,
+      start: {
+        localDate: "2024-11-01T13:00:00",
+      },
+      end: {
+        localDate: "2024-11-01T15:00:00",
+      },
+      location: {
+        type: "BUSINESS" as const,
+      },
+      resources: [
+        {
+          _id: "c27dfdce-666a-4e56-8933-be249f2011b7",
+        },
+      ],
+    };
+
+    async function createEvent() {
+      const response = await events.createEvent(event);
+      return response;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createEvent (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { events } from '@wix/calendar';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { events },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createEvent(event,options) {
+      const response = await myWixClient.events.createEvent(event,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

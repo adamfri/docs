@@ -1,0 +1,366 @@
+---
+title: "Compliance Review Request Object"
+description: "A compliance review request represents a single CMS publishing or unpublishing action a user submitted for review."
+icon: "cube"
+---
+
+A compliance review request represents a single CMS publishing or unpublishing action
+a user submitted for review.
+
+It isn't persisted and can't be queried. It exists only as the payload of the
+`ReviewRequested` event, emitted when a user submits a compliance action.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Compliance review request ID. Matches the `_id` of the submitted data item.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="action" type="string">
+
+      Publishing or unpublishing action the user requested for the data item.
+
+      **Supported values:**
+
+      - `PUBLISH_DRAFT` — Publish an item that currently exists only as a draft.
+      - `PUBLISH_CHANGED` — Publish a draft containing changes to an existing published item.
+      - `UNPUBLISH_PUBLISHED` — Unpublish an item that has no pending draft changes.
+      - `PUBLISH_PUBLISHED` — Submit an already-published item for review without content changes.
+      - `UNPUBLISH_CHANGED` — Unpublish an item that also has pending draft changes.
+
+    </ResponseField>
+
+    <ResponseField name="currentDataItem" type="DataItem">
+
+      Published (live) version of the data item.
+      Returned for every action except `PUBLISH_DRAFT`.
+
+      **Read-only.**
+
+      <Expandable title="currentDataItem properties">
+
+        <ResponseField name="id" type="string">
+
+          Data item ID.
+
+          When an item is inserted into a collection, the item's ID is automatically assigned a random value. You can optionally provide a custom ID in `dataItem.id` when inserting the item. If you specify an ID that already exists in the collection, the insertion will fail.
+
+          Constraints: `maxLength 128`, `immutable`.
+
+        </ResponseField>
+
+        <ResponseField name="dataCollectionId" type="string">
+
+          ID of the collection this item belongs to.
+
+          This is the user-defined collection identifier set when the collection is created (for example, `EvalCustomers`), not a GUID.
+
+          **Read-only.** Constraints: `maxLength 256`.
+
+        </ResponseField>
+
+        <ResponseField name="data" type="object">
+
+          Data item contents.
+
+          Property-value pairs representing the data item's payload. When retrieving a data item, it also includes the following read-only fields:
+
+          + `_id`: Item ID.
+          + `_createdDate`: Date and time the item was added to the collection.
+          + `_updatedDate`: Date and time the item was last modified. When the item is first inserted, `_createdDate` and `_updatedDate` have the same value.
+          + `_ownerId`: ID of the user who created the item. Can be modified with site owner permissions.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="proposedDataItem" type="DataItem">
+
+      Version of the data item proposed by the request.
+      For `PUBLISH_PUBLISHED`, this is the same published item as `current_data_item`.
+      Absent only for `UNPUBLISH_PUBLISHED`.
+
+      **Read-only.**
+
+      <Expandable title="proposedDataItem properties">
+
+        <ResponseField name="id" type="string">
+
+          Data item ID.
+
+          When an item is inserted into a collection, the item's ID is automatically assigned a random value. You can optionally provide a custom ID in `dataItem.id` when inserting the item. If you specify an ID that already exists in the collection, the insertion will fail.
+
+          Constraints: `maxLength 128`, `immutable`.
+
+        </ResponseField>
+
+        <ResponseField name="dataCollectionId" type="string">
+
+          ID of the collection this item belongs to.
+
+          This is the user-defined collection identifier set when the collection is created (for example, `EvalCustomers`), not a GUID.
+
+          **Read-only.** Constraints: `maxLength 256`.
+
+        </ResponseField>
+
+        <ResponseField name="data" type="object">
+
+          Data item contents.
+
+          Property-value pairs representing the data item's payload. When retrieving a data item, it also includes the following read-only fields:
+
+          + `_id`: Item ID.
+          + `_createdDate`: Date and time the item was added to the collection.
+          + `_updatedDate`: Date and time the item was last modified. When the item is first inserted, `_createdDate` and `_updatedDate` have the same value.
+          + `_ownerId`: ID of the user who created the item. Can be modified with site owner permissions.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="submittedAt" type="datetime">
+
+      Date and time the action was submitted.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="submittedByUserId" type="string">
+
+      ID of the user who submitted the action.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="submittedByAccountId" type="string">
+
+      ID of the account the action was submitted under.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="versionOnUnpublish" type="string">
+
+      Version to preserve as a draft after a changed item is unpublished.
+      Returned only for `UNPUBLISH_CHANGED` when the caller provides a meaningful value.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `KEEP_LATEST_DRAFT_VERSION` — Preserve the item's latest draft edits.
+      - `KEEP_LIVE_PUBLISHED_VERSION` — Preserve the item's current live version.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "complianceReviewRequest": {
+          "id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+          "action": "UNPUBLISH_CHANGED",
+          "currentDataItem": {
+            "id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+            "dataCollectionId": "Announcements",
+            "data": {
+              "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+              "title": "Q3 disclosure",
+              "status": "published"
+            }
+          },
+          "proposedDataItem": {
+            "id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+            "dataCollectionId": "Announcements__drafts",
+            "data": {
+              "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+              "title": "Q3 disclosure (revised)",
+              "status": "draft"
+            }
+          },
+          "versionOnUnpublish": "KEEP_LATEST_DRAFT_VERSION",
+          "submittedAt": "2024-01-15T10:30:00.000Z",
+          "submittedByUserId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+          "submittedByAccountId": "4f907f5d-bb05-4d99-90a4-7f55d34e9fe8"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Compliance review request ID. Matches the `_id` of the submitted data item.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="action" type="string">
+
+      Publishing or unpublishing action the user requested for the data item.
+
+      **Supported values:**
+
+      - `PUBLISH_DRAFT` — Publish an item that currently exists only as a draft.
+      - `PUBLISH_CHANGED` — Publish a draft containing changes to an existing published item.
+      - `UNPUBLISH_PUBLISHED` — Unpublish an item that has no pending draft changes.
+      - `PUBLISH_PUBLISHED` — Submit an already-published item for review without content changes.
+      - `UNPUBLISH_CHANGED` — Unpublish an item that also has pending draft changes.
+
+    </ResponseField>
+
+    <ResponseField name="currentDataItem" type="DataItem">
+
+      Published (live) version of the data item.
+      Returned for every action except `PUBLISH_DRAFT`.
+
+      **Read-only.**
+
+      <Expandable title="currentDataItem properties">
+
+        <ResponseField name="_id" type="string">
+
+          Data item ID.
+
+          When an item is inserted into a collection, the item's ID is automatically assigned a random value. You can optionally provide a custom ID in `dataItem.id` when inserting the item. If you specify an ID that already exists in the collection, the insertion will fail.
+
+          Constraints: `maxLength 128`, `immutable`.
+
+        </ResponseField>
+
+        <ResponseField name="dataCollectionId" type="string">
+
+          ID of the collection this item belongs to.
+
+          This is the user-defined collection identifier set when the collection is created (for example, `EvalCustomers`), not a GUID.
+
+          **Read-only.** Constraints: `maxLength 256`.
+
+        </ResponseField>
+
+        <ResponseField name="data" type="object">
+
+          Data item contents.
+
+          Property-value pairs representing the data item's payload. When retrieving a data item, it also includes the following read-only fields:
+
+          + `_id`: Item ID.
+          + `_createdDate`: Date and time the item was added to the collection.
+          + `_updatedDate`: Date and time the item was last modified. When the item is first inserted, `_createdDate` and `_updatedDate` have the same value.
+          + `_ownerId`: ID of the user who created the item. Can be modified with site owner permissions.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="proposedDataItem" type="DataItem">
+
+      Version of the data item proposed by the request.
+      For `PUBLISH_PUBLISHED`, this is the same published item as `current_data_item`.
+      Absent only for `UNPUBLISH_PUBLISHED`.
+
+      **Read-only.**
+
+      <Expandable title="proposedDataItem properties">
+
+        <ResponseField name="_id" type="string">
+
+          Data item ID.
+
+          When an item is inserted into a collection, the item's ID is automatically assigned a random value. You can optionally provide a custom ID in `dataItem.id` when inserting the item. If you specify an ID that already exists in the collection, the insertion will fail.
+
+          Constraints: `maxLength 128`, `immutable`.
+
+        </ResponseField>
+
+        <ResponseField name="dataCollectionId" type="string">
+
+          ID of the collection this item belongs to.
+
+          This is the user-defined collection identifier set when the collection is created (for example, `EvalCustomers`), not a GUID.
+
+          **Read-only.** Constraints: `maxLength 256`.
+
+        </ResponseField>
+
+        <ResponseField name="data" type="object">
+
+          Data item contents.
+
+          Property-value pairs representing the data item's payload. When retrieving a data item, it also includes the following read-only fields:
+
+          + `_id`: Item ID.
+          + `_createdDate`: Date and time the item was added to the collection.
+          + `_updatedDate`: Date and time the item was last modified. When the item is first inserted, `_createdDate` and `_updatedDate` have the same value.
+          + `_ownerId`: ID of the user who created the item. Can be modified with site owner permissions.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="submittedAt" type="datetime">
+
+      Date and time the action was submitted.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="submittedByUserId" type="string">
+
+      ID of the user who submitted the action.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="submittedByAccountId" type="string">
+
+      ID of the account the action was submitted under.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="versionOnUnpublish" type="string">
+
+      Version to preserve as a draft after a changed item is unpublished.
+      Returned only for `UNPUBLISH_CHANGED` when the caller provides a meaningful value.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `KEEP_LATEST_DRAFT_VERSION` — Preserve the item's latest draft edits.
+      - `KEEP_LIVE_PUBLISHED_VERSION` — Preserve the item's current live version.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

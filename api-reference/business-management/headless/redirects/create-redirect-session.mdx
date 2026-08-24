@@ -1,0 +1,643 @@
+---
+title: "Create Redirect Session"
+description: "Creates a URL for redirecting a visitor from an external client site to a Wix page for Wix-managed functionality."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a URL for redirecting a visitor from an external client site to a Wix page for Wix-managed functionality.
+
+    The Create Redirect Session method enables your external Wix Headless client site, built on any platform, to integrate Wix-managed frontend functionality for specific processes.
+    For example, your site can temporarily redirect a visitor to Wix for authentication, or for a checkout process for bookings, eCommerce, events, or paid plans transactions.
+
+    To initiate a redirect session:
+
+    1. Call Create Redirect Session with the details required for Wix to take care of one specific process (for example, authentication or a bookings checkout). Provide one or more callback URLs, so Wix can redirect the visitor back to your site as appropriate when the process is over.
+    1. Redirect your visitor to the URL provided in the response. This URL includes query parameters informing Wix where to redirect the visitor back to on your external site.
+    1. Make sure the pages at the callback URLs you provided take care of the next stages in your visitor flow.
+
+    <Note>
+
+    When creating a redirect session for a multilingual site:
+
+    * If you don't specify the `lang` parameter in `additional_query_parameters` and the request contains an `x-wix-linguist` header, the language from the header will be added to the redirect URL as `lang`.
+    * If you specify the `lang` parameter, it takes priority over the header.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-GOOGLE-ADS">View google ads campaigns</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/headless/v1/redirect-session
+    ```
+
+    ## Body Params
+
+    <ParamField body="callbacks" type="CallbackParams">
+
+      Details of pages to redirect the visitor back to on the Wix Headless client site.
+      When redirecting to any callback URL, Wix specifies the boolean `wixMemberLoggedIn` parameter.
+      If `true`, a member logged in during the preceding Wix-managed process.
+
+      **Note**: For an authentication redirect, don't specify a post-flow URL here. Instead, specify one in `auth.authRequest.redirectUri`.
+
+      <Expandable title="callbacks properties">
+
+        <ParamField body="thankYouPageUrl" type="string">
+
+          The URL for a custom thank you page implemented on a site outside of Wix. The visitor is directed to this page after the Wix-managed process is completed.
+          When redirecting to this URL, Wix passes different query parameters depending on the preceding transaction:
+
+          After a pricing plans checkout:
+          + `planOrderId`: ID of a pricing plan order.
+
+          After an eCommerce checkout:
+          + `orderId`: ID of an eCommerce order.
+
+          After an Events checkout:
+          + `orderNumber`: Unique order number for the transaction.
+          + `eventId`: ID of the event.
+
+          If the process is abandoned or interrupted, the visitor is redirected to the URL specified in `postFlowUrl` instead.
+
+          Default: If you don't specify a URL, the visitor is redirected to a Wix thank you page, and from there to the URL specified in `postFlowUrl`.
+
+        </ParamField>
+
+        <ParamField body="postFlowUrl" type="string">
+
+          The URL Wix should redirect the visitor to when the Wix-managed process is completed, abandoned, or interrupted.
+
+          **Note**: For an authentication redirect, don't specify a URL here. Instead, specify one in `auth.authRequest.redirectUri`.
+
+        </ParamField>
+
+        <ParamField body="loginUrl" type="string">
+
+          The URL for a custom login page implemented outside of Wix.
+
+          Default: If you don't specify a URL, a Wix login page is used.
+
+        </ParamField>
+
+        <ParamField body="bookingsServiceListUrl" type="string">
+
+          The URL for a custom bookings services page implemented outside of Wix.
+
+          Default: If you don't specify a URL, a Wix bookings services page is used.
+
+        </ParamField>
+
+        <ParamField body="cartPageUrl" type="string">
+
+          The URL for a custom eCommerce cart page implemented outside of Wix.
+
+          Default: If you don't specify a URL, a Wix cart page is used.
+
+        </ParamField>
+
+        <ParamField body="planListUrl" type="string">
+
+          The URL for a custom pricing plans page implemented outside of Wix.
+          When redirecting to this URL, Wix specifies the following query parameters:
+          + `planIds`:  IDs of the pricing plans on the custom page.
+          + `checkoutData`: Pass this string back in `paidPlansCheckout.checkoutData` when redirecting back to Wix for checkout.
+
+          Default: If you don't specify a URL, a Wix pricing plans page is used.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="preferences" type="RedirectSessionPreferences">
+
+      Optional preferences for customizing redirection to Wix pages.
+
+      <Expandable title="preferences properties">
+
+        <ParamField body="useGenericWixPages" type="boolean">
+
+          Whether to use a standard Wix template for Wix-managed pages the visitor is redirected to. Set to `false` only if your client site connects with a Wix site that has custom pages.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="maintainIdentity" type="boolean">
+
+          Whether to maintain the identity used in the redirect to Wix (not relevant for `logout` and `auth` intents), or to use a new visitor identity.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="additionalQueryParameters" type="object">
+
+          Map of global query parameters to append to the Wix URL.
+
+          Common parameters include:
+          - [UTM parameters](https://en.wikipedia.org/wiki/UTM_parameters): Use to track the source of site traffic.
+
+          - `lang`: Use to control the displayed language of the Wix-managed page. For supported values, see [ISO 639 language codes](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes).
+
+          Constraints: `format map`.
+
+          <Expandable title="additionalQueryParameters properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="checkIfPublish" type="boolean">
+
+          Check if Wix page for the requested intent is published and return it if possible. Otherwise, return a standard Wix template for it.
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="origin" type="string">
+
+      The origin of the request
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="redirectSession" type="RedirectSession">
+
+      Details for redirecting the visitor to a Wix page.
+
+      See the [Redirect Session Object](/api-reference/business-management/headless/redirects/redirect-session-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Redirect Session Created | `wix.headless.v1.redirect_session_created` | Triggered when a redirect session is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/redirect-session/v1/redirect-session' \
+        -H 'authorization: <AUTH>' \
+        -d '{
+           "ecomCheckout": {
+              "checkoutId": "7d2b240c-5c60-4580-8bc3-948bca6b4e4e"
+           },
+           "callbacks": {
+              "postFlowUrl": "https://www.my-store.com"
+           }
+        }'
+      ```
+
+      ```json Response
+      {
+          "redirectSession": {
+              "id": "<REDIRECT_SESSION_ID>",
+              "fullUrl": "https://www.checkout.my-site.com/checkout?appSectionParams=%7B%22checkoutId%22%3A%227d2b240c-5c60-4580-8bc3-948bca6b4e4e%22%7D&headlessExternalUrls=~%28home~%27https*3a*2f*2fwww.my-store.com*%29"
+           }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a URL for redirecting a visitor from an external client site to a Wix page for Wix-managed functionality.
+
+    The Create Redirect Session method enables your external Wix Headless client site, built on any platform, to integrate Wix-managed frontend functionality for specific processes.
+    For example, your site can temporarily redirect a visitor to Wix for authentication, or for a checkout process for bookings, eCommerce, events, or paid plans transactions.
+
+    To initiate a redirect session:
+
+    1. Call Create Redirect Session with the details required for Wix to take care of one specific process (for example, authentication or a bookings checkout). Provide one or more callback URLs, so Wix can redirect the visitor back to your site as appropriate when the process is over.
+    1. Redirect your visitor to the URL provided in the response. This URL includes query parameters informing Wix where to redirect the visitor back to on your external site.
+    1. Make sure the pages at the callback URLs you provided take care of the next stages in your visitor flow.
+
+    <Note>
+
+    When creating a redirect session for a multilingual site:
+
+    * If you don't specify the `lang` parameter in `additional_query_parameters` and the request contains an `x-wix-linguist` header, the language from the header will be added to the redirect URL as `lang`.
+    * If you specify the `lang` parameter, it takes priority over the header.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-GOOGLE-ADS">View google ads campaigns</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { redirects } from '@wix/redirects';
+
+    redirects.createRedirectSession(options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="CreateRedirectSessionOptions" required>
+
+      Options for creating a redirect session.
+
+      <Expandable title="options properties">
+
+        <ParamField body="callbacks" type="CallbackParams">
+
+          Details of pages to redirect the visitor back to on the Wix Headless client site.
+          When redirecting to any callback URL, Wix specifies the boolean `wixMemberLoggedIn` parameter.
+          If `true`, a member logged in during the preceding Wix-managed process.
+
+          **Note**: For an authentication redirect, don't specify a post-flow URL here. Instead, specify one in `auth.authRequest.redirectUri`.
+
+          <Expandable title="callbacks properties">
+
+            <ParamField body="thankYouPageUrl" type="string">
+
+              The URL for a custom thank you page implemented on a site outside of Wix. The visitor is directed to this page after the Wix-managed process is completed.
+              When redirecting to this URL, Wix passes different query parameters depending on the preceding transaction:
+
+              After a pricing plans checkout:
+              + `planOrderId`: ID of a pricing plan order.
+
+              After an eCommerce checkout:
+              + `orderId`: ID of an eCommerce order.
+
+              After an Events checkout:
+              + `orderNumber`: Unique order number for the transaction.
+              + `eventId`: ID of the event.
+
+              If the process is abandoned or interrupted, the visitor is redirected to the URL specified in `postFlowUrl` instead.
+
+              Default: If you don't specify a URL, the visitor is redirected to a Wix thank you page, and from there to the URL specified in `postFlowUrl`.
+
+            </ParamField>
+
+            <ParamField body="postFlowUrl" type="string">
+
+              The URL Wix should redirect the visitor to when the Wix-managed process is completed, abandoned, or interrupted.
+
+              **Note**: For an authentication redirect, don't specify a URL here. Instead, specify one in `auth.authRequest.redirectUri`.
+
+            </ParamField>
+
+            <ParamField body="loginUrl" type="string">
+
+              The URL for a custom login page implemented outside of Wix.
+
+              Default: If you don't specify a URL, a Wix login page is used.
+
+            </ParamField>
+
+            <ParamField body="bookingsServiceListUrl" type="string">
+
+              The URL for a custom bookings services page implemented outside of Wix.
+
+              Default: If you don't specify a URL, a Wix bookings services page is used.
+
+            </ParamField>
+
+            <ParamField body="cartPageUrl" type="string">
+
+              The URL for a custom eCommerce cart page implemented outside of Wix.
+
+              Default: If you don't specify a URL, a Wix cart page is used.
+
+            </ParamField>
+
+            <ParamField body="planListUrl" type="string">
+
+              The URL for a custom pricing plans page implemented outside of Wix.
+              When redirecting to this URL, Wix specifies the following query parameters:
+              + `planIds`:  IDs of the pricing plans on the custom page.
+              + `checkoutData`: Pass this string back in `paidPlansCheckout.checkoutData` when redirecting back to Wix for checkout.
+
+              Default: If you don't specify a URL, a Wix pricing plans page is used.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="preferences" type="RedirectSessionPreferences">
+
+          Optional preferences for customizing redirection to Wix pages.
+
+          <Expandable title="preferences properties">
+
+            <ParamField body="useGenericWixPages" type="boolean">
+
+              Whether to use a standard Wix template for Wix-managed pages the visitor is redirected to. Set to `false` only if your client site connects with a Wix site that has custom pages.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="maintainIdentity" type="boolean">
+
+              Whether to maintain the identity used in the redirect to Wix (not relevant for `logout` and `auth` intents), or to use a new visitor identity.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="additionalQueryParameters" type="object">
+
+              Map of global query parameters to append to the Wix URL.
+
+              Common parameters include:
+              - [UTM parameters](https://en.wikipedia.org/wiki/UTM_parameters): Use to track the source of site traffic.
+
+              - `lang`: Use to control the displayed language of the Wix-managed page. For supported values, see [ISO 639 language codes](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+            <ParamField body="checkIfPublish" type="boolean">
+
+              Check if Wix page for the requested intent is published and return it if possible. Otherwise, return a standard Wix template for it.
+              Default: `false`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="origin" type="string">
+
+          The origin of the request
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="intent" type="intent">
+
+          intent
+
+          <Expandable title="intent properties">
+
+            <ParamField body="bookingsCheckout" type="RedirectSessionBookingsCheckoutParams">
+
+              Information required for generating a custom URL for a Wix Bookings checkout.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionBookingsCheckoutParams` object._
+
+            </ParamField>
+
+            <ParamField body="ecomCheckout" type="RedirectSessionEcomCheckoutParams">
+
+              Information required for generating a custom URL for a Wix eCommerce checkout.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionEcomCheckoutParams` object._
+
+            </ParamField>
+
+            <ParamField body="eventsCheckout" type="RedirectSessionEventsCheckoutParams">
+
+              Information required for generating a custom URL for a Wix Events checkout.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionEventsCheckoutParams` object._
+
+            </ParamField>
+
+            <ParamField body="paidPlansCheckout" type="RedirectSessionPaidPlansCheckoutParams">
+
+              Information required for generating a custom URL for a Wix Paid Plans checkout.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionPaidPlansCheckoutParams` object._
+
+            </ParamField>
+
+            <ParamField body="logout" type="RedirectSessionLogoutParams">
+
+              Information required for generating a custom URL to log out from a Wix account. This process invalidates the visitor or member token and clears cookies associated with the Wix domain from their browser.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionLogoutParams` object._
+
+            </ParamField>
+
+            <ParamField body="auth" type="RedirectSessionAuthParams">
+
+              Information required for generating a custom URL for Wix authentication.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionAuthParams` object._
+
+            </ParamField>
+
+            <ParamField body="storesProduct" type="RedirectSessionStoresProductParams">
+
+              Information required for generating a custom URL for a Wix stores product page.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionStoresProductParams` object._
+
+            </ParamField>
+
+            <ParamField body="bookingsBook" type="RedirectSessionBookingsBookParams">
+
+              Information required for generating a custom URL for Wix bookings book page.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionBookingsBookParams` object._
+
+            </ParamField>
+
+            <ParamField body="ecomOrderPaymentRequest" type="RedirectSessionEcomOrderPaymentRequestParams">
+
+              Information required for generating a custom URL for a Wix eCommerce order payment request page.
+
+              _Nested structure omitted for brevity — see the `RedirectSessionEcomOrderPaymentRequestParams` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="redirectSession" type="RedirectSession">
+
+      Details for redirecting the visitor to a Wix page.
+
+      See the [Redirect Session Object](/api-reference/business-management/headless/redirects/redirect-session-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Redirect Session Created | `wix.headless.v1.redirect_session_created` | Triggered when a redirect session is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-redirect-session" id="ex-sdk-create-redirect-session-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-redirect-session" id="ex-sdk-create-redirect-session-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-redirect-session-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-redirect-session-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">createRedirectSession</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createRedirectSession (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-redirect-session-0"><span className="wix-picker-name">createRedirectSession</span></label>
+    <label htmlFor="ex-sdk-create-redirect-session-1"><span className="wix-picker-name">createRedirectSession (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript createRedirectSession
+    import { redirects } from '@wix/redirects';
+
+    async function createRedirectSession(options) {
+      const response = await redirects.createRedirectSession(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createRedirectSession (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { redirects } from '@wix/redirects';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { redirects },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createRedirectSession(options) {
+      const response = await myWixClient.redirects.createRedirectSession(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

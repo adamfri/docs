@@ -1,0 +1,57 @@
+---
+title: "Introduction"
+description: "A payout is a transfer of funds from a Wix Payments account's balance to the merchant's bank account."
+icon: "file-lines"
+---
+
+A payout is a transfer of funds from a Wix Payments account's [balance](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/balances/introduction) to the merchant's bank account. Use the Payouts API to read the payouts of a Wix Payments account.
+
+With the Payouts API, you can:
+
+- List the payouts of a Wix Payments account, filtered by account profile and by creation date range.
+- Retrieve a single payout by ID, including its status, estimated arrival date, failure reason, and bank transfer reference.
+- Get notified through webhooks when a payout is created or updated.
+
+## How payouts relate to the balance
+
+When a buyer pays a merchant through Wix Payments, the funds don't go straight to the merchant's bank. They first accumulate as the merchant's balance inside Wix Payments. A payout moves that balance out to the merchant's bank account.
+
+Wix initiates each payout automatically, on a schedule chosen by the merchant.
+
+## Payout lifecycle
+
+A payout has 2 statuses:
+
+1. `SENT`: The bank rail accepted the transfer. Funds are on their way to the merchant's bank account.
+2. `FAILED`: The bank rail rejected the transfer. The `failureReason.code` field carries the cause. The funds remain in the merchant's Wix Payments balance.
+
+A `SENT` status doesn't guarantee that the funds were delivered. The bank rail doesn't return a delivery acknowledgement, and a `SENT` payout can later transition to `FAILED` if the receiving bank rejects the transfer. The return window is up to 60 days for ACH and up to 13 months for SEPA, so a late `FAILED` transition can occur weeks or months after the payout was initiated.
+
+## Account and profile IDs
+
+Every method requires the `accountId` of the Wix Payments account whose payouts you're reading. Retrieve account IDs from the Accounts API.
+
+A Wix Payments account has 1 or more account profiles. Each profile has its own balance and its own payouts. Most merchants have 1 profile. To scope results to a single profile, specify its `accountProfileId` when listing payouts.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The Payouts API is read-only. You can't create, cancel, or modify payouts through it.
+- A newly created payout can take a short time to appear in [List Payouts](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/payouts/list-payouts) and [Get Payout](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/wix-payments-provider/payouts/get-payout) results.
+- Calls are limited to 100 requests per 10 seconds per caller. Requests over the limit fail with a `RESOURCE_EXHAUSTED` error.
+
+## Use cases
+
+- [Browse a merchant's payout history](fallback::https://github.com/wix-private/cashier/blob/120a228ca15250992e529c4d12766937f81fb553/wixpay-services/api/payouts/proto/appendices/docs/sample-flows#browse-a-merchants-payout-history*original::./sample-flows#browse-a-merchants-payout-history).
+- [Retrieve a single payout](fallback::https://github.com/wix-private/cashier/blob/120a228ca15250992e529c4d12766937f81fb553/wixpay-services/api/payouts/proto/appendices/docs/sample-flows#retrieve-a-single-payout*original::./sample-flows#retrieve-a-single-payout).
+
+## Terminology
+
+- **Payout**: A transfer of funds from a Wix Payments account's balance to the merchant's bank account.
+- **Account profile**: A sub-entity inside a Wix Payments account with its own balance and payouts. Every payout belongs to exactly 1 profile.
+- **Bank rail**: The banking network that carries the transfer to the merchant's bank account, such as ACH or SEPA.
+- **Estimated arrival date**: The predicted date the funds reach the merchant's bank account. It's a prediction, not a guarantee.
+- **Failure reason**: The cause the bank rail reported for a rejected transfer, carried in `failureReason.code` on a `FAILED` payout.
+
+@sdk_package_setup

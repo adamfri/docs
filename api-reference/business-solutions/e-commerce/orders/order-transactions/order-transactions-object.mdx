@@ -1,0 +1,1217 @@
+---
+title: "Order Transactions Object"
+description: "A record of all payments and refunds associated with an order."
+icon: "cube"
+---
+
+A record of all payments and refunds associated with an order.
+
+Use order transactions to track payment status, add payment records, process refunds, and monitor chargebacks.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="orderId" type="string">
+
+      Order ID.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Record of payments made to the merchant.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              <Expandable title="unroundedAmount properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              <Expandable title="roundingAdjustment properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount, can be negative or positive.
+
+                  Constraints: `>= -1000000000000000`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="refunds" type="Refund[]">
+
+      Record of refunds made to the buyer.
+
+      Constraints: `maxItems 300`.
+
+      <Expandable title="refunds properties">
+
+        <ResponseField name="id" type="string">
+
+          Refund ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="transactions" type="RefundTransaction[]">
+
+          List of transactions.
+
+          Constraints: `minItems 0`, `maxItems 50`.
+
+          <Expandable title="transactions properties">
+
+            <ResponseField name="paymentId" type="string">
+
+              ID of the payment associated with this refund.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Refund amount.
+
+              Constraints: `immutable`.
+
+              <Expandable title="amount properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="refundStatus" type="string">
+
+              Refund status.
+
+              **Supported values:**
+
+              - `PENDING` — Refund was initiated on payment provider side. PENDING status was assigned by provider.
+              - `SUCCEEDED` — Refund transaction succeeded.
+              - `FAILED` — Refund transaction failed.
+              - `SCHEDULED` — Refund request acknowledged, and will be executed soon.
+              - `STARTED` — Refund was initiated on payment provider side.
+
+            </ResponseField>
+
+            <ResponseField name="refundStatusInfo" type="RefundStatusInfo">
+
+              Optional details of current refund status.
+
+              <Expandable title="refundStatusInfo properties">
+
+                <ResponseField name="paymentGatewayReasonCode" type="string">
+
+                  Reason code for the refund's current status.
+
+                  Learn more about [reason codes](https://dev.wix.com/docs/rest/business-management/payments/service-plugins/payment-service-provider-service-plugin/reason-codes).
+
+                </ResponseField>
+
+                <ResponseField name="description" type="string">
+
+                  Free text explanation of current refund status.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="gatewayRefundId" type="string">
+
+              Payment gateway's refund ID.
+              This field is only returned when the value of `external_refund` is `false`.
+
+            </ResponseField>
+
+            <ResponseField name="providerRefundId" type="string">
+
+              ID of the refund in the payment provider's system. For example, at PayPal, Square, Stripe, etc. Not returned for external refunds.
+
+            </ResponseField>
+
+            <ResponseField name="externalRefund" type="boolean">
+
+              Whether refund was made externally and manually on the payment provider's side.
+
+              Constraints: `immutable`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="details" type="RefundDetails">
+
+          Refund business details.
+
+          <Expandable title="details properties">
+
+            <ResponseField name="items" type="RefundItem[]">
+
+              Order line item IDs and quantities that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              <Expandable title="items properties">
+
+                <ResponseField name="lineItemId" type="string">
+
+                  Line item ID the refunded line item.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="quantity" type="integer">
+
+                  Line item quantity refunded.
+
+                  Constraints: `min 1`, `max 100000`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="shippingIncluded" type="boolean">
+
+              Whether the shipping fee was also refunded.
+
+            </ResponseField>
+
+            <ResponseField name="reason" type="string">
+
+              Reason for the refund, provided by customer (optional).
+
+            </ResponseField>
+
+            <ResponseField name="lineItems" type="LineItemRefund[]">
+
+              Line items that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              <Expandable title="lineItems properties">
+
+                <ResponseField name="lineItemId" type="string">
+
+                  Line item ID.
+
+                  Constraints: `format GUID`, `immutable`.
+
+                </ResponseField>
+
+                <ResponseField name="quantity" type="integer">
+
+                  Refund quantity.
+
+                  Constraints: `min 1`, `max 100000`, `immutable`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="additionalFees" type="AdditionalFeeRefund[]">
+
+              Additional fees that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 100`.
+
+              <Expandable title="additionalFees properties">
+
+                <ResponseField name="additionalFeeId" type="string">
+
+                  Additional fee ID.
+
+                  Constraints: `format GUID`, `immutable`.
+
+                </ResponseField>
+
+                <ResponseField name="amount" type="Price">
+
+                  Refund amount.
+
+                  Constraints: `immutable`.
+
+                  _Nested structure omitted for brevity — see the `Price` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="ShippingRefund">
+
+              Shipping amount that was refunded.
+
+              <Expandable title="shipping properties">
+
+                <ResponseField name="amount" type="Price">
+
+                  Refund amount.
+
+                  Constraints: `immutable`.
+
+                  _Nested structure omitted for brevity — see the `Price` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="summary" type="AggregatedRefundSummary">
+
+          Aggregated refund summary.
+
+          **Read-only.**
+
+          <Expandable title="summary properties">
+
+            <ResponseField name="requestedRefund" type="Price">
+
+              Total amount requested for refund.
+
+              <Expandable title="requestedRefund properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="pendingRefund" type="Price">
+
+              Pending refund amount - the portion of `requestedRefund` that is still pending.
+
+              <Expandable title="pendingRefund properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Refunded amount - the portion of `requestedRefund` that refunded successfully.
+
+              <Expandable title="refunded properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="failedRefundAmount" type="Price">
+
+              Failed refund amount - the portion of `requestedRefund` that failed.
+
+              <Expandable title="failedRefundAmount properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="pending" type="boolean">
+
+              Whether at least one refund transaction is still in `"PENDING"` status.
+
+            </ResponseField>
+
+            <ResponseField name="breakdown" type="RefundItemsBreakdown">
+
+              Breakdown of refunded items. Available only after refund is complete.
+
+              <Expandable title="breakdown properties">
+
+                <ResponseField name="lineItems" type="LineItemRefundSummary[]">
+
+                  Refunded line items and the amount refunded for each.
+
+                  Constraints: `minItems 0`, `maxItems 300`.
+
+                  _Nested structure omitted for brevity — see the `LineItemRefundSummary[]` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="requestingServiceAppId" type="string">
+
+          ID of the app that initiated this refund.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "orderTransactions": {
+          "orderId": "8d009fbe-6600-4c7a-ad23-37e9f0477947",
+          "payments": [
+            {
+              "id": "a335aebd-4688-437e-84c3-ebe947779bc1",
+              "giftcardPaymentDetails": {
+                "giftCardPaymentId": "ff3c2b57-2dc4-47de-a261-9ae00251a60b",
+                "appId": "d80111c5-a0f4-47a8-b63a-65b54d774a27",
+                "voided": false
+              },
+              "createdDate": "2023-09-01T20:20:26.451Z",
+              "updatedDate": "2023-09-01T20:20:26.451Z",
+              "amount": {
+                "amount": "25.0",
+                "formattedAmount": "C$25.00"
+              },
+              "refundDisabled": false
+            },
+            {
+              "id": "62fdfea7-896d-438d-9b88-4d7c1a4674ac",
+              "regularPaymentDetails": {
+                "gatewayTransactionId": "42a6c722-b27d-49fc-9a18-827115c4bd66",
+                "paymentMethod": "Stripe",
+                "providerTransactionId": "pi_3NmFQZINImlhPEm01iyAurzL",
+                "offlinePayment": false,
+                "status": "REFUNDED"
+              },
+              "createdDate": "2023-09-01T20:21:26.451Z",
+              "updatedDate": "2023-09-03T12:30:12.853Z",
+              "amount": {
+                "amount": "17.99",
+                "formattedAmount": "C$17,99"
+              },
+              "refundDisabled": false
+            }
+          ],
+          "refunds": [
+            {
+              "id": "3cfa83af-94fe-4e02-a7c7-3a969557f697",
+              "transactions": [
+                {
+                  "paymentId": "62fdfea7-896d-438d-9b88-4d7c1a4674ac",
+                  "amount": {
+                    "amount": "17.99",
+                    "formattedAmount": "C$17,99"
+                  },
+                  "refundStatus": "SUCCEEDED",
+                  "gatewayRefundId": "9656f197-74de-4d9a-bac2-85155614ef5e",
+                  "providerRefundId": "re_3NmFQZINImlhPEm011HglMxH",
+                  "externalRefund": false
+                }
+              ],
+              "details": {
+                "items": [
+                  {
+                    "lineItemId": "00000000-0000-0000-0000-000000000001",
+                    "quantity": 1
+                  }
+                ],
+                "shippingIncluded": true
+              },
+              "createdDate": "2023-09-03T12:30:12.853Z"
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="orderId" type="string">
+
+      Order ID.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Record of payments made to the merchant.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="_id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="_updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              <Expandable title="unroundedAmount properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              <Expandable title="roundingAdjustment properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount, can be negative or positive.
+
+                  Constraints: `>= -1000000000000000`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="refunds" type="Refund[]">
+
+      Record of refunds made to the buyer.
+
+      Constraints: `maxItems 300`.
+
+      <Expandable title="refunds properties">
+
+        <ResponseField name="_id" type="string">
+
+          Refund ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="transactions" type="RefundTransaction[]">
+
+          List of transactions.
+
+          Constraints: `minItems 0`, `maxItems 50`.
+
+          <Expandable title="transactions properties">
+
+            <ResponseField name="paymentId" type="string">
+
+              ID of the payment associated with this refund.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Refund amount.
+
+              Constraints: `immutable`.
+
+              <Expandable title="amount properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="refundStatus" type="string">
+
+              Refund status.
+
+              **Supported values:**
+
+              - `PENDING` — Refund was initiated on payment provider side. PENDING status was assigned by provider.
+              - `SUCCEEDED` — Refund transaction succeeded.
+              - `FAILED` — Refund transaction failed.
+              - `SCHEDULED` — Refund request acknowledged, and will be executed soon.
+              - `STARTED` — Refund was initiated on payment provider side.
+
+            </ResponseField>
+
+            <ResponseField name="refundStatusInfo" type="RefundStatusInfo">
+
+              Optional details of current refund status.
+
+              <Expandable title="refundStatusInfo properties">
+
+                <ResponseField name="paymentGatewayReasonCode" type="string">
+
+                  Reason code for the refund's current status.
+
+                  Learn more about [reason codes](https://dev.wix.com/docs/rest/business-management/payments/service-plugins/payment-service-provider-service-plugin/reason-codes).
+
+                </ResponseField>
+
+                <ResponseField name="description" type="string">
+
+                  Free text explanation of current refund status.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="gatewayRefundId" type="string">
+
+              Payment gateway's refund ID.
+              This field is only returned when the value of `external_refund` is `false`.
+
+            </ResponseField>
+
+            <ResponseField name="providerRefundId" type="string">
+
+              ID of the refund in the payment provider's system. For example, at PayPal, Square, Stripe, etc. Not returned for external refunds.
+
+            </ResponseField>
+
+            <ResponseField name="externalRefund" type="boolean">
+
+              Whether refund was made externally and manually on the payment provider's side.
+
+              Constraints: `immutable`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="details" type="RefundDetails">
+
+          Refund business details.
+
+          <Expandable title="details properties">
+
+            <ResponseField name="items" type="RefundItem[]">
+
+              Order line item IDs and quantities that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              <Expandable title="items properties">
+
+                <ResponseField name="lineItemId" type="string">
+
+                  Line item ID the refunded line item.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="quantity" type="integer">
+
+                  Line item quantity refunded.
+
+                  Constraints: `min 1`, `max 100000`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="shippingIncluded" type="boolean">
+
+              Whether the shipping fee was also refunded.
+
+            </ResponseField>
+
+            <ResponseField name="reason" type="string">
+
+              Reason for the refund, provided by customer (optional).
+
+            </ResponseField>
+
+            <ResponseField name="lineItems" type="LineItemRefund[]">
+
+              Line items that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              <Expandable title="lineItems properties">
+
+                <ResponseField name="lineItemId" type="string">
+
+                  Line item ID.
+
+                  Constraints: `format GUID`, `immutable`.
+
+                </ResponseField>
+
+                <ResponseField name="quantity" type="integer">
+
+                  Refund quantity.
+
+                  Constraints: `min 1`, `max 100000`, `immutable`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="additionalFees" type="AdditionalFeeRefund[]">
+
+              Additional fees that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 100`.
+
+              <Expandable title="additionalFees properties">
+
+                <ResponseField name="additionalFeeId" type="string">
+
+                  Additional fee ID.
+
+                  Constraints: `format GUID`, `immutable`.
+
+                </ResponseField>
+
+                <ResponseField name="amount" type="Price">
+
+                  Refund amount.
+
+                  Constraints: `immutable`.
+
+                  _Nested structure omitted for brevity — see the `Price` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="ShippingRefund">
+
+              Shipping amount that was refunded.
+
+              <Expandable title="shipping properties">
+
+                <ResponseField name="amount" type="Price">
+
+                  Refund amount.
+
+                  Constraints: `immutable`.
+
+                  _Nested structure omitted for brevity — see the `Price` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="summary" type="AggregatedRefundSummary">
+
+          Aggregated refund summary.
+
+          **Read-only.**
+
+          <Expandable title="summary properties">
+
+            <ResponseField name="requestedRefund" type="Price">
+
+              Total amount requested for refund.
+
+              <Expandable title="requestedRefund properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="pendingRefund" type="Price">
+
+              Pending refund amount - the portion of `requestedRefund` that is still pending.
+
+              <Expandable title="pendingRefund properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Refunded amount - the portion of `requestedRefund` that refunded successfully.
+
+              <Expandable title="refunded properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="failedRefundAmount" type="Price">
+
+              Failed refund amount - the portion of `requestedRefund` that failed.
+
+              <Expandable title="failedRefundAmount properties">
+
+                <ResponseField name="amount" type="string">
+
+                  Amount.
+
+                  Constraints: `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="formattedAmount" type="string">
+
+                  Amount formatted with currency symbol.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="pending" type="boolean">
+
+              Whether at least one refund transaction is still in `"PENDING"` status.
+
+            </ResponseField>
+
+            <ResponseField name="breakdown" type="RefundItemsBreakdown">
+
+              Breakdown of refunded items. Available only after refund is complete.
+
+              <Expandable title="breakdown properties">
+
+                <ResponseField name="lineItems" type="LineItemRefundSummary[]">
+
+                  Refunded line items and the amount refunded for each.
+
+                  Constraints: `minItems 0`, `maxItems 300`.
+
+                  _Nested structure omitted for brevity — see the `LineItemRefundSummary[]` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="requestingServiceAppId" type="string">
+
+          ID of the app that initiated this refund.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

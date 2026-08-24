@@ -1,0 +1,975 @@
+---
+title: "Bulk Create Products"
+description: "Creates up to 100 products."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates up to 100 products.
+
+    <Note>
+
+    The following limits apply to the total number of creatable entities in a single request.
+
+    + `options`: 100
+    + `modifiers`: 100
+    + `infoSections`: 100
+    + `variantsInfo.variants`: 1000
+
+    For example, you can create 10 products with up to 10 options for each product (10 x 10 = 100), or 1 product with 100 options.
+    Alternatively, you can create 100 products with up to 10 variants in each (100 x 10 = 1000), or 1 product with 1000 variants.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_WRITE">Product write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/products/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="products" type="Product[]" required>
+
+      List of products to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the full product entities in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `URL` — The product's public storefront URL, including both relative path and full URL with base domain.
+      - `CURRENCY` — Currency information including the currency code and formatted price amounts for storefront display.
+      - `INFO_SECTION` — Returns basic info section metadata including IDs, unique names, and titles. Use with `INFO_SECTION_DESCRIPTION` or `INFO_SECTION_PLAIN_DESCRIPTION` to include content.
+      - `MERCHANT_DATA` — Returns merchant-related financial data including cost ranges and variant revenue details like cost, profit, and profit margin.
+      Requires the `SCOPE.STORES.PRODUCT_READ_ADMIN` permission scope.
+      - `PLAIN_DESCRIPTION` — Provides product description as plain HTML text.
+      - `INFO_SECTION_PLAIN_DESCRIPTION` — Returns info section descriptions as HTML content. Use with `INFO_SECTION` for complete metadata.
+      - `SUBSCRIPTION_PRICES_INFO` — Details subscription pricing options, empty for non-subscription products.
+      - `BREADCRUMBS_INFO` — Returns the category breadcrumb navigation path from root categories down to the product's main category, including category IDs, names, and slugs.
+      - `WEIGHT_MEASUREMENT_UNIT_INFO` — Returns the weight measurement unit (KG, LB) for the product.
+      - `VARIANT_OPTION_CHOICE_NAMES` — Enriches variant choices with human-readable option and choice names alongside render types.
+      - `MEDIA_ITEMS_INFO` — Returns all media items associated with the product, including detailed metadata (URLs, alt-text, dimensions, filenames, file sizes).
+      - `DESCRIPTION` — Returns the product description as rich content with complete node structure, metadata, and styling information.
+      - `DIRECT_CATEGORIES_INFO` — Provides the IDs and indexes of categories the product is directly assigned to.
+      - `ALL_CATEGORIES_INFO` — Provides IDs and indexes for all categories including inherited parent categories.
+      - `INFO_SECTION_DESCRIPTION` — Returns info section descriptions as rich content with complete node structure, metadata, and styling information. Use with `INFO_SECTION` for complete metadata.
+      - `THUMBNAIL` — Returns an optimized thumbnail image with standard dimensions, suitable for listings or previews.
+      - `PRODUCT_CHOICES_MEDIA_REFERENCES` — Returns media references associated with product option and modifier choices instead of the deprecated `linked_media` field.
+
+      When requested, choice objects will populate `media_references` with lightweight `MediaReference` objects containing only media IDs,
+      while the `linked_media` field will be returned empty to avoid duplication and reduce response payload size.
+
+      To get full media metadata (dimensions, alt text, filenames, etc.), request `MEDIA_ITEMS_INFO` on the product and correlate by media ID.
+
+      > **Note:** The `media_references` field is available on `ConnectedOptionChoice` and `ConnectedModifierChoice` objects.
+      - `PRODUCT_CHOICES_DISPLAY_IMAGE` — Returns display images for product option and modifier choices.
+      When requested, choice objects will populate `display_image` with a lightweight image containing only ID, URL, and alt text.
+      - `MIN_PRICE_VARIANT` — Returns the variant with the lowest actual price among visible variants. Populated in `variant_summary.min_price_variant`.
+      - `DISCOUNT_INFO` — Returns automatic discount info for product get/query/search responses and populates product-level `discountInfo.discountRuleNames`.
+
+      To receive discounted variant prices in get/query/search responses, request this together with `MIN_PRICE_VARIANT` (returned in `variantSummary.minPriceVariant.price.priceAfterDiscount`).
+      Formatted money amounts are returned only when `CURRENCY` is also requested.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkProductResult[]">
+
+      Products created by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Information about successful action or error for failure.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Product">
+
+          Full product entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_VARIANT_OPTION_CHOICE` | Every variant's choice must reference an existing option in `options.id`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_VARIANT_OPTION_CHOICE` | Multiple variants have identical choices in `variantsInfo.variants.choices`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_PRODUCT_OPTIONS` | Multiple options have identical `name` and `optionRenderType`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_DEFAULT_VARIANT` | Product with multiple variants has a variant with empty `choices`. Only single-variant products can have empty choices. |
+    | `428` | `FAILED_PRECONDITION` | `VARIANTS_ARE_NOT_ALIGNED_WITH_PRODUCT` | Variants aren't aligned with the product. The variant `typedProperties` must match the `productType`, measurement units must align, and each variant must have exactly 1 choice for every option. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_SLUG_ERROR` | There is already a product with this `slug`. |
+    | `404` | `NOT_FOUND` | `DIGITAL_FILE_NOT_FOUND_ERROR` | Couldn't find the digital file referenced in `variantsInfo.variants.digitalProperties`. |
+    | `409` | `ALREADY_EXISTS` | `BARCODE_ALREADY_EXIST_ERROR` | There is already a variant with this `barcode`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_BARCODE_ERROR` | Multiple variants have identical `barcode` in the request. |
+    | `409` | `ALREADY_EXISTS` | `SKU_ALREADY_EXIST_ERROR` | There is already a variant with this `sku`. |
+    | `409` | `ALREADY_EXISTS` | `VARIANT_ID_ALREADY_EXISTS` | Multiple variants have identical `id`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PRODUCT_TYPE_FOR_SUBSCRIPTION` | Subscription added to a digital product. Digital products can't have subscriptions. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_ALL_SUBSCRIPTIONS_HIDDEN_FOR_SUBSCRIPTION_ONLY_PRODUCT` | All subscriptions are hidden for a subscription-only product. At least 1 subscription must be visible when `allowOneTimePurchases` is false. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SUBSCRIPTION_DISCOUNT_AMOUNT` | Subscription discount `amountOff` exceeds the minimum variant price. |
+    | `409` | `ALREADY_EXISTS` | `SUBSCRIPTION_ID_ALREADY_EXISTS` | There is already a subscription with this `id`. |
+    | `428` | `FAILED_PRECONDITION` | `PRODUCTS_LIMIT_EXCEEDED` | Number of products exceeds the server's limit of 50000. |
+    | `404` | `NOT_FOUND` | `PRODUCT_MEDIA_NOT_EXIST` | Couldn't find the media referenced in `options.choiceSettings.choices.media`. The media must exist in the product's `media` field. |
+    | `428` | `FAILED_PRECONDITION` | `ONLY_SPACES_STRING_ERROR` | Product `name` field contains only spaces. |
+    | `500` | `INTERNAL` | `BRAND_CREATION_FAILED` | Brand creation failed. |
+    | `404` | `NOT_FOUND` | `RIBBON_NOT_FOUND` | Couldn't find the ribbon. |
+    | `500` | `INTERNAL` | `RIBBON_CREATION_FAILED` | Ribbon creation failed. |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTION_CREATION_FAILED` | Info section creation failed. |
+    | `404` | `NOT_FOUND` | `CUSTOMIZATION_NOT_EXIST` | Couldn't find the customization. |
+    | `500` | `INTERNAL` | `CUSTOMIZATIONS_CREATION_FAILED` | Customization creation failed. |
+    | `500` | `INTERNAL` | `ADD_CUSTOMIZATION_CHOICES_FAILED` | Failed to add customization choices. |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_EXIST` | Couldn't find the choice. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_NAME_AND_TYPE_REQUIRED` | Option is missing `name` or `type`. Options without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_CHOICE_NAME_AND_TYPE_REQUIRED` | Option choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_NAME_AND_TYPE_REQUIRED` | Modifier is missing `name` or `type`. Modifiers without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_CHOICE_NAME_AND_TYPE_REQUIRED` | Modifier choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `428` | `FAILED_PRECONDITION` | `TOO_MANY_OPTIONS_IN_REQUEST` | Number of options exceeds the server's limit. |
+    | `428` | `FAILED_PRECONDITION` | `COMPARE_AT_PRICE_LOWER_THAN_ACTUAL_PRICE` | The `compareAtPrice` is lower than the `actualPrice`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_ADDITIONAL` | Same ribbon appears more than once in `additionalRibbons`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_PRIMARY_AND_ADDITIONAL` | Same ribbon used as both primary ribbon and additional ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SLUG_FORMAT` | The `slug` provided is not a valid URL slug. |
+    | `400` | `INVALID_ARGUMENT` | `VARIANTS_TYPED_PROPERTIES_ARE_NOT_ALIGNED` | Variants have different `typedProperties` types. All variants must have the same type. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_INVALID_AUTO_RENEWAL` | The `autoRenewal` field is set to false. Set the number of billing cycles in `billingCycles` to prevent automatic renewal instead. |
+    | `400` | `INVALID_ARGUMENT` | `DIGITAL_PRODUCT_CANNOT_BE_VISIBLE_IN_POS` | Digital product is marked as visible in POS. Digital products can't be visible in POS. |
+    | `400` | `INVALID_ARGUMENT` | `DESCRIPTION_SIZE_TOO_BIG` | Product `description` field exceeds the maximum size of 32000 bytes. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_MEDIA_ERROR` | Multiple media items have identical IDs. Each media ID must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `ID_NOT_ALLOWED_IN_REQUEST` | Request includes the `id` field. For this operation, `id` is auto-generated and can't be passed in the request. |
+    | `400` | `INVALID_ARGUMENT` | `BRAND_MISSING_ID` | Brand is missing an `id`. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_PER_UNIT_NOT_ALIGNED` | Price per unit isn't aligned between product and variants. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION_CHOICE` | Variant choice doesn't exist in the product's option choices. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION` | Variant option doesn't exist in the product's options. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Created | `wix.stores.catalog.v3.product_created` | Triggered when a product is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/bulk/products/create' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+            "fields": [
+              "CURRENCY"
+            ],
+            "products": [
+              {
+                "name": "Coffee",
+                "variantsInfo": {
+                  "variants": [
+                    {
+                      "price": {
+                        "actualPrice": {
+                          "amount": "10.00",
+                          "formattedAmount": "$10.00"
+                        }
+                      },
+                      "sku": "12345"
+                    }
+                  ]
+                },
+                "productType": "PHYSICAL",
+                "physicalProperties": {}
+              },
+              {
+                "name": "Chocolate bar",
+                "visible": false,
+                "variantsInfo": {
+                  "variants": [
+                    {
+                      "price": {
+                        "compareAtPrice": {
+                          "amount": "7.00",
+                          "formattedAmount": "$7.00"
+                        },
+                        "actualPrice": {
+                          "amount": "6.00",
+                          "formattedAmount": "$6.00"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "productType": "PHYSICAL",
+                "physicalProperties": {}
+              }
+            ],
+            "returnEntity": true
+          }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "93f2e5ab-60a5-4173-babb-9198fc52bdd3",
+              "originalIndex": 0,
+              "success": true,
+              "error": null
+            },
+            "item": {
+              "id": "93f2e5ab-60a5-4173-babb-9198fc52bdd3",
+              "revision": "1",
+              "createdDate": "2025-01-01T09:50:31.438Z",
+              "updatedDate": "2025-01-01T09:50:31.438Z",
+              "name": "Coffee",
+              "slug": "coffee",
+              "url": null,
+              "description": null,
+              "plainDescription": null,
+              "visible": true,
+              "visibleInPos": true,
+              "media": {
+                "main": null,
+                "itemsInfo": null
+              },
+              "seoData": null,
+              "taxGroupId": null,
+              "options": [],
+              "modifiers": [],
+              "brand": null,
+              "infoSections": [],
+              "ribbon": null,
+              "directCategoriesInfo": null,
+              "allCategoriesInfo": null,
+              "mainCategoryId": null,
+              "costRange": null,
+              "inventory": {
+                "preorderAvailability": "NO_VARIANTS",
+                "availabilityStatus": "OUT_OF_STOCK",
+                "preorderStatus": "DISABLED"
+              },
+              "productType": "PHYSICAL",
+              "physicalProperties": {
+                "pricePerUnit": null,
+                "fulfillerId": null,
+                "shippingWeightRange": null,
+                "pricePerUnitRange": null,
+                "weightMeasurementUnitInfo": null,
+                "deliveryProfileId": null
+              },
+              "handle": "Product_be600651-94cf-42ad-881f-3bd69fb4a320",
+              "currency": null,
+              "breadcrumbsInfo": null,
+              "actualPriceRange": {
+                "minValue": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "maxValue": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                }
+              },
+              "compareAtPriceRange": {
+                "minValue": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "maxValue": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                }
+              },
+              "variantsInfo": {
+                "variants": [
+                  {
+                    "id": "d44f6c3f-e641-4e54-9cb3-5796e58fa1cd",
+                    "visible": true,
+                    "sku": "12345",
+                    "barcode": null,
+                    "choices": [],
+                    "price": {
+                      "actualPrice": {
+                        "amount": "10.00",
+                        "formattedAmount": "$10.00"
+                      },
+                      "compareAtPrice": null
+                    },
+                    "revenueDetails": null,
+                    "media": null,
+                    "subscriptionPricesInfo": null,
+                    "inventoryStatus": {
+                      "inStock": false,
+                      "preorderEnabled": false
+                    }
+                  }
+                ]
+              },
+              "subscriptionDetails": null,
+              "extendedFields": null,
+              "variantSummary": {
+                "variantCount": 1
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "932a7008-c31e-43a9-9ba9-d042ad79fd3e",
+              "originalIndex": 1,
+              "success": true,
+              "error": null
+            },
+            "item": {
+              "id": "932a7008-c31e-43a9-9ba9-d042ad79fd3e",
+              "revision": "1",
+              "createdDate": "2025-01-01T09:50:31.438Z",
+              "updatedDate": "2025-01-01T09:50:31.438Z",
+              "name": "Chocolate bar",
+              "slug": "chocolate-bar",
+              "url": null,
+              "description": null,
+              "plainDescription": null,
+              "visible": false,
+              "visibleInPos": true,
+              "media": {
+                "main": null,
+                "itemsInfo": null
+              },
+              "seoData": null,
+              "taxGroupId": null,
+              "options": [],
+              "modifiers": [],
+              "brand": null,
+              "infoSections": [],
+              "ribbon": null,
+              "directCategoriesInfo": null,
+              "allCategoriesInfo": null,
+              "mainCategoryId": null,
+              "costRange": null,
+              "inventory": {
+                "preorderAvailability": "NO_VARIANTS",
+                "availabilityStatus": "OUT_OF_STOCK",
+                "preorderStatus": "DISABLED"
+              },
+              "productType": "PHYSICAL",
+              "physicalProperties": {
+                "pricePerUnit": null,
+                "fulfillerId": null,
+                "shippingWeightRange": null,
+                "pricePerUnitRange": null,
+                "weightMeasurementUnitInfo": null,
+                "deliveryProfileId": null
+              },
+              "handle": "Product_b42607d1-bc36-44e7-a2a9-127be6ee3625",
+              "currency": null,
+              "breadcrumbsInfo": null,
+              "actualPriceRange": {
+                "minValue": {
+                  "amount": "6.00",
+                  "formattedAmount": "$6.00"
+                },
+                "maxValue": {
+                  "amount": "6.00",
+                  "formattedAmount": "$6.00"
+                }
+              },
+              "compareAtPriceRange": {
+                "minValue": {
+                  "amount": "7.00",
+                  "formattedAmount": "$7.00"
+                },
+                "maxValue": {
+                  "amount": "7.00",
+                  "formattedAmount": "$7.00"
+                }
+              },
+              "variantsInfo": {
+                "variants": [
+                  {
+                    "id": "2eae6a6b-05d3-46ba-85a0-2cf9e6cdd4a7",
+                    "visible": true,
+                    "sku": null,
+                    "barcode": null,
+                    "choices": [],
+                    "price": {
+                      "actualPrice": {
+                        "amount": "6.00",
+                        "formattedAmount": "$6.00"
+                      },
+                      "compareAtPrice": {
+                        "amount": "7.00",
+                        "formattedAmount": "$7.00"
+                      }
+                    },
+                    "revenueDetails": null,
+                    "media": null,
+                    "subscriptionPricesInfo": null,
+                    "inventoryStatus": {
+                      "inStock": false,
+                      "preorderEnabled": false
+                    }
+                  }
+                ]
+              },
+              "subscriptionDetails": null,
+              "extendedFields": null,
+              "variantSummary": {
+                "variantCount": 1
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates up to 100 products.
+
+    <Note>
+
+    The following limits apply to the total number of creatable entities in a single request.
+
+    + `options`: 100
+    + `modifiers`: 100
+    + `infoSections`: 100
+    + `variantsInfo.variants`: 1000
+
+    For example, you can create 10 products with up to 10 options for each product (10 x 10 = 100), or 1 product with 100 options.
+    Alternatively, you can create 100 products with up to 10 variants in each (100 x 10 = 1000), or 1 product with 1000 variants.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_WRITE">Product write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { productsV3 } from '@wix/stores';
+
+    productsV3.bulkCreateProducts(products, options): Promise<BulkCreateProductsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="products" type="Product[]" required>
+
+      List of products to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateProductsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the full product entities in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `URL` — The product's public storefront URL, including both relative path and full URL with base domain.
+          - `CURRENCY` — Currency information including the currency code and formatted price amounts for storefront display.
+          - `INFO_SECTION` — Returns basic info section metadata including IDs, unique names, and titles. Use with `INFO_SECTION_DESCRIPTION` or `INFO_SECTION_PLAIN_DESCRIPTION` to include content.
+          - `MERCHANT_DATA` — Returns merchant-related financial data including cost ranges and variant revenue details like cost, profit, and profit margin.
+          Requires the `SCOPE.STORES.PRODUCT_READ_ADMIN` permission scope.
+          - `PLAIN_DESCRIPTION` — Provides product description as plain HTML text.
+          - `INFO_SECTION_PLAIN_DESCRIPTION` — Returns info section descriptions as HTML content. Use with `INFO_SECTION` for complete metadata.
+          - `SUBSCRIPTION_PRICES_INFO` — Details subscription pricing options, empty for non-subscription products.
+          - `BREADCRUMBS_INFO` — Returns the category breadcrumb navigation path from root categories down to the product's main category, including category IDs, names, and slugs.
+          - `WEIGHT_MEASUREMENT_UNIT_INFO` — Returns the weight measurement unit (KG, LB) for the product.
+          - `VARIANT_OPTION_CHOICE_NAMES` — Enriches variant choices with human-readable option and choice names alongside render types.
+          - `MEDIA_ITEMS_INFO` — Returns all media items associated with the product, including detailed metadata (URLs, alt-text, dimensions, filenames, file sizes).
+          - `DESCRIPTION` — Returns the product description as rich content with complete node structure, metadata, and styling information.
+          - `DIRECT_CATEGORIES_INFO` — Provides the IDs and indexes of categories the product is directly assigned to.
+          - `ALL_CATEGORIES_INFO` — Provides IDs and indexes for all categories including inherited parent categories.
+          - `INFO_SECTION_DESCRIPTION` — Returns info section descriptions as rich content with complete node structure, metadata, and styling information. Use with `INFO_SECTION` for complete metadata.
+          - `THUMBNAIL` — Returns an optimized thumbnail image with standard dimensions, suitable for listings or previews.
+          - `PRODUCT_CHOICES_MEDIA_REFERENCES` — Returns media references associated with product option and modifier choices instead of the deprecated `linked_media` field.
+
+          When requested, choice objects will populate `media_references` with lightweight `MediaReference` objects containing only media IDs,
+          while the `linked_media` field will be returned empty to avoid duplication and reduce response payload size.
+
+          To get full media metadata (dimensions, alt text, filenames, etc.), request `MEDIA_ITEMS_INFO` on the product and correlate by media ID.
+
+          > **Note:** The `media_references` field is available on `ConnectedOptionChoice` and `ConnectedModifierChoice` objects.
+          - `PRODUCT_CHOICES_DISPLAY_IMAGE` — Returns display images for product option and modifier choices.
+          When requested, choice objects will populate `display_image` with a lightweight image containing only ID, URL, and alt text.
+          - `MIN_PRICE_VARIANT` — Returns the variant with the lowest actual price among visible variants. Populated in `variant_summary.min_price_variant`.
+          - `DISCOUNT_INFO` — Returns automatic discount info for product get/query/search responses and populates product-level `discountInfo.discountRuleNames`.
+
+          To receive discounted variant prices in get/query/search responses, request this together with `MIN_PRICE_VARIANT` (returned in `variantSummary.minPriceVariant.price.priceAfterDiscount`).
+          Formatted money amounts are returned only when `CURRENCY` is also requested.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkCreateProductsResponse>`.
+
+    <ResponseField name="results" type="BulkProductResult[]">
+
+      Products created by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Information about successful action or error for failure.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Product">
+
+          Full product entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_VARIANT_OPTION_CHOICE` | Every variant's choice must reference an existing option in `options.id`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_VARIANT_OPTION_CHOICE` | Multiple variants have identical choices in `variantsInfo.variants.choices`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_PRODUCT_OPTIONS` | Multiple options have identical `name` and `optionRenderType`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_DEFAULT_VARIANT` | Product with multiple variants has a variant with empty `choices`. Only single-variant products can have empty choices. |
+    | `428` | `FAILED_PRECONDITION` | `VARIANTS_ARE_NOT_ALIGNED_WITH_PRODUCT` | Variants aren't aligned with the product. The variant `typedProperties` must match the `productType`, measurement units must align, and each variant must have exactly 1 choice for every option. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_SLUG_ERROR` | There is already a product with this `slug`. |
+    | `404` | `NOT_FOUND` | `DIGITAL_FILE_NOT_FOUND_ERROR` | Couldn't find the digital file referenced in `variantsInfo.variants.digitalProperties`. |
+    | `409` | `ALREADY_EXISTS` | `BARCODE_ALREADY_EXIST_ERROR` | There is already a variant with this `barcode`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_BARCODE_ERROR` | Multiple variants have identical `barcode` in the request. |
+    | `409` | `ALREADY_EXISTS` | `SKU_ALREADY_EXIST_ERROR` | There is already a variant with this `sku`. |
+    | `409` | `ALREADY_EXISTS` | `VARIANT_ID_ALREADY_EXISTS` | Multiple variants have identical `id`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PRODUCT_TYPE_FOR_SUBSCRIPTION` | Subscription added to a digital product. Digital products can't have subscriptions. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_ALL_SUBSCRIPTIONS_HIDDEN_FOR_SUBSCRIPTION_ONLY_PRODUCT` | All subscriptions are hidden for a subscription-only product. At least 1 subscription must be visible when `allowOneTimePurchases` is false. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SUBSCRIPTION_DISCOUNT_AMOUNT` | Subscription discount `amountOff` exceeds the minimum variant price. |
+    | `409` | `ALREADY_EXISTS` | `SUBSCRIPTION_ID_ALREADY_EXISTS` | There is already a subscription with this `id`. |
+    | `428` | `FAILED_PRECONDITION` | `PRODUCTS_LIMIT_EXCEEDED` | Number of products exceeds the server's limit of 50000. |
+    | `404` | `NOT_FOUND` | `PRODUCT_MEDIA_NOT_EXIST` | Couldn't find the media referenced in `options.choiceSettings.choices.media`. The media must exist in the product's `media` field. |
+    | `428` | `FAILED_PRECONDITION` | `ONLY_SPACES_STRING_ERROR` | Product `name` field contains only spaces. |
+    | `500` | `INTERNAL` | `BRAND_CREATION_FAILED` | Brand creation failed. |
+    | `404` | `NOT_FOUND` | `RIBBON_NOT_FOUND` | Couldn't find the ribbon. |
+    | `500` | `INTERNAL` | `RIBBON_CREATION_FAILED` | Ribbon creation failed. |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTION_CREATION_FAILED` | Info section creation failed. |
+    | `404` | `NOT_FOUND` | `CUSTOMIZATION_NOT_EXIST` | Couldn't find the customization. |
+    | `500` | `INTERNAL` | `CUSTOMIZATIONS_CREATION_FAILED` | Customization creation failed. |
+    | `500` | `INTERNAL` | `ADD_CUSTOMIZATION_CHOICES_FAILED` | Failed to add customization choices. |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_EXIST` | Couldn't find the choice. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_NAME_AND_TYPE_REQUIRED` | Option is missing `name` or `type`. Options without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_CHOICE_NAME_AND_TYPE_REQUIRED` | Option choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_NAME_AND_TYPE_REQUIRED` | Modifier is missing `name` or `type`. Modifiers without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_CHOICE_NAME_AND_TYPE_REQUIRED` | Modifier choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `428` | `FAILED_PRECONDITION` | `TOO_MANY_OPTIONS_IN_REQUEST` | Number of options exceeds the server's limit. |
+    | `428` | `FAILED_PRECONDITION` | `COMPARE_AT_PRICE_LOWER_THAN_ACTUAL_PRICE` | The `compareAtPrice` is lower than the `actualPrice`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_ADDITIONAL` | Same ribbon appears more than once in `additionalRibbons`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_PRIMARY_AND_ADDITIONAL` | Same ribbon used as both primary ribbon and additional ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SLUG_FORMAT` | The `slug` provided is not a valid URL slug. |
+    | `400` | `INVALID_ARGUMENT` | `VARIANTS_TYPED_PROPERTIES_ARE_NOT_ALIGNED` | Variants have different `typedProperties` types. All variants must have the same type. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_INVALID_AUTO_RENEWAL` | The `autoRenewal` field is set to false. Set the number of billing cycles in `billingCycles` to prevent automatic renewal instead. |
+    | `400` | `INVALID_ARGUMENT` | `DIGITAL_PRODUCT_CANNOT_BE_VISIBLE_IN_POS` | Digital product is marked as visible in POS. Digital products can't be visible in POS. |
+    | `400` | `INVALID_ARGUMENT` | `DESCRIPTION_SIZE_TOO_BIG` | Product `description` field exceeds the maximum size of 32000 bytes. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_MEDIA_ERROR` | Multiple media items have identical IDs. Each media ID must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `ID_NOT_ALLOWED_IN_REQUEST` | Request includes the `id` field. For this operation, `id` is auto-generated and can't be passed in the request. |
+    | `400` | `INVALID_ARGUMENT` | `BRAND_MISSING_ID` | Brand is missing an `id`. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_PER_UNIT_NOT_ALIGNED` | Price per unit isn't aligned between product and variants. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION_CHOICE` | Variant choice doesn't exist in the product's option choices. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION` | Variant option doesn't exist in the product's options. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Created | `wix.stores.catalog.v3.product_created` | Triggered when a product is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-products" id="ex-sdk-bulk-create-products-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-products" id="ex-sdk-bulk-create-products-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-products-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-products-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk create products</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateProducts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-products-0"><span className="wix-picker-name">Bulk create products</span></label>
+    <label htmlFor="ex-sdk-bulk-create-products-1"><span className="wix-picker-name">bulkCreateProducts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk create products
+    import { productsV3 } from "@wix/stores";
+
+    const products = [
+      {
+        name: "Coffee",
+        variantsInfo: {
+          variants: [
+            {
+              price: {
+                actualPrice: {
+                  amount: "10.00",
+                  formattedAmount: "$10.00",
+                },
+              },
+              sku: "12345",
+            },
+          ],
+        },
+        productType: productsV3.ProductType.PHYSICAL,
+        physicalProperties: {},
+      },
+      {
+        name: "Chocolate bar",
+        visible: false,
+        variantsInfo: {
+          variants: [
+            {
+              price: {
+                compareAtPrice: {
+                  amount: "7.00",
+                  formattedAmount: "$7.00",
+                },
+                actualPrice: {
+                  amount: "6.00",
+                  formattedAmount: "$6.00",
+                },
+              },
+            },
+          ],
+        },
+        productType: productsV3.ProductType.PHYSICAL,
+        physicalProperties: {},
+      },
+    ];
+
+    const options = {
+      fields: [productsV3.RequestedFields.CURRENCY],
+      returnEntity: true,
+    };
+
+    async function bulkCreateProducts() {
+      const response = await productsV3.bulkCreateProducts(products, options);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateProducts (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { productsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { productsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateProducts(products,options) {
+      const response = await myWixClient.productsV3.bulkCreateProducts(products,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

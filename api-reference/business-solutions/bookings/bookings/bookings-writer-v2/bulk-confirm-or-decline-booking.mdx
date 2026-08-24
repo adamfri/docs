@@ -1,0 +1,557 @@
+---
+title: "Bulk Confirm Or Decline Booking"
+description: "Confirms or declines up to 300 bookings."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Confirms or declines up to 300 bookings.
+
+    See [Confirm Or Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking)
+    for details about when a booking is confirmed or declined.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/bulk/bookings/confirmOrDecline
+    ```
+
+    ## Body Params
+
+    <ParamField body="details" type="BookingDetails[]" required>
+
+      Bookings to confirm or decline.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="details properties">
+
+        <ParamField body="bookingId" type="string" required>
+
+          ID of the booking to confirm or decline.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="paymentStatus" type="string">
+
+          Current payment status of the booking when using a custom checkout page and
+          not the [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+
+          The booking is declined if there is a double booking conflict and you provide
+          one of these payment statuses: `UNDEFINED`, `NOT_PAID`, `REFUNDED`, or `EXEMPT`.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the confirmed or declined booking objects.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkBookingResult[]">
+
+      List of confirmed or declined bookings, including metadata.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Information about the booking that was created or updated.
+          Including its ID, index in the bulk request and whether it was
+          successfully created or updated.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Booking">
+
+          Created or updated booking. Available only if you requested
+          to return the booking entity.
+
+          See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Total successes and failures of the Bulk Confirm Or Decline call.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATED_BOOKINGS` | Request must not contain duplicate bookings. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/bookings/v2/bulk/bookings/confirmOrDecline' \
+        -H 'content-type: application/json' \
+        -H 'authorization: <AUTH>' \
+        -d '{
+          "details": [
+            {
+              "bookingId": "d0388a62-83f4-4046-9c7c-c847439e2a87",
+              "paymentStatus": "PAID"
+            },
+            {
+              "bookingId": "ca2e65bb-5aee-4118-9d7a-69ec91a30ee0",
+              "paymentStatus": "PAID"
+            }
+          ],
+          "returnEntity": false
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "ca2e65bb-5aee-4118-9d7a-69ec91a30ee0",
+              "originalIndex": 1,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "d0388a62-83f4-4046-9c7c-c847439e2a87",
+              "originalIndex": 0,
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Confirms or declines up to 300 bookings.
+
+    See [Confirm Or Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking)
+    for details about when a booking is confirmed or declined.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.bulkConfirmOrDeclineBooking(details, options): Promise<BulkConfirmOrDeclineBookingResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="details" type="BookingDetails[]" required>
+
+      Bookings to confirm or decline.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="details properties">
+
+        <ParamField body="bookingId" type="string" required>
+
+          ID of the booking to confirm or decline.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="paymentStatus" type="string">
+
+          Current payment status of the booking when using a custom checkout page and
+          not the [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+
+          The booking is declined if there is a double booking conflict and you provide
+          one of these payment statuses: `UNDEFINED`, `NOT_PAID`, `REFUNDED`, or `EXEMPT`.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkConfirmOrDeclineBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the confirmed or declined booking objects.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkConfirmOrDeclineBookingResponse>`.
+
+    <ResponseField name="results" type="BulkBookingResult[]">
+
+      List of confirmed or declined bookings, including metadata.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Information about the booking that was created or updated.
+          Including its ID, index in the bulk request and whether it was
+          successfully created or updated.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Booking">
+
+          Created or updated booking. Available only if you requested
+          to return the booking entity.
+
+          See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Total successes and failures of the Bulk Confirm Or Decline call.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATED_BOOKINGS` | Request must not contain duplicate bookings. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-confirm-or-decline-booking" id="ex-sdk-bulk-confirm-or-decline-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-confirm-or-decline-booking" id="ex-sdk-bulk-confirm-or-decline-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-confirm-or-decline-booking" id="ex-sdk-bulk-confirm-or-decline-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-confirm-or-decline-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-confirm-or-decline-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkConfirmOrDeclineBooking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkConfirmOrDeclineBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkConfirmOrDeclineBooking (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-confirm-or-decline-booking-0"><span className="wix-picker-name">bulkConfirmOrDeclineBooking</span></label>
+    <label htmlFor="ex-sdk-bulk-confirm-or-decline-booking-1"><span className="wix-picker-name">bulkConfirmOrDeclineBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-confirm-or-decline-booking-2"><span className="wix-picker-name">bulkConfirmOrDeclineBooking (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkConfirmOrDeclineBooking
+    import { bookings } from '@wix/bookings';
+
+    async function bulkConfirmOrDeclineBooking(details,options) {
+      const response = await bookings.bulkConfirmOrDeclineBooking(details,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkConfirmOrDeclineBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkConfirmOrDeclineBooking(details,options) {
+      const response = await myWixClient.bookings.bulkConfirmOrDeclineBooking(details,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkConfirmOrDeclineBooking (with elevated permissions)
+    import { bookings } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkConfirmOrDeclineBookingMethod(details,options) {
+      const elevatedBulkConfirmOrDeclineBooking = auth.elevate(bookings.bulkConfirmOrDeclineBooking);
+      const response = await elevatedBulkConfirmOrDeclineBooking(details,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

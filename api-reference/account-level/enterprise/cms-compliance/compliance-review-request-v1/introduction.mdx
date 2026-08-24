@@ -1,0 +1,59 @@
+---
+title: "Introduction"
+description: "The CMS Compliance API lets apps request a compliance review of CMS content actions at the site or account level."
+icon: "file-lines"
+---
+
+The CMS Compliance API lets apps request a compliance review of CMS content actions at
+the site or account level. Supported actions include publishing a new draft, publishing
+a changed or unchanged item, and unpublishing an item with or without pending edits.
+
+For each successful request, the service fetches the required CMS data item versions,
+returns a `ComplianceReviewRequest`, and emits the same object in one `ReviewRequested`
+domain event. Authorized consumers can subscribe to the event as a webhook and process
+the request in their own review, approval, or rejection workflow.
+
+The service is independent of the calling UI and doesn't track or apply the review
+outcome.
+
+## How it works
+
+Call `RequestReview` with the action, data item ID, and collection ID. For
+`UNPUBLISH_CHANGED`, you can also specify which version should remain as the saved draft.
+
+The action determines which CMS data item versions the service reads and returns:
+
+- `PUBLISH_DRAFT`: the proposed draft only, because nothing is live yet.
+- `PUBLISH_CHANGED`: the current published version and proposed draft.
+- `PUBLISH_PUBLISHED`: the same published item as both the current and proposed version.
+- `UNPUBLISH_PUBLISHED`: the current published version only.
+- `UNPUBLISH_CHANGED`: the current published version and proposed draft, plus the optional version the user wants to preserve as a draft.
+
+The `currentDataItem` is the version that's currently published. The `proposedDataItem`
+is the version submitted for review. Comparing them shows whether the request introduces
+a content change.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- To consume review requests, subscribe to the [Review Requested](https://dev.wix.com/docs/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/review-requested) webhook. The API doesn't store review requests, so there's no endpoint to query them later.
+- `versionOnUnpublish` is used only for `UNPUBLISH_CHANGED`. It can be omitted, and is ignored for every other action.
+
+## Use cases
+
+- [Review CMS content changes for compliance](fallback::https://dev.wix.com/docs/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/sample-flows#review-cms-content-changes-for-compliance)
+- [Forward content changes to an external compliance system](fallback::https://dev.wix.com/docs/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/sample-flows#forward-content-changes-to-an-external-compliance-system)
+
+## Terminology
+
+- **Compliance review request**: The action, current and proposed CMS data item versions, submission time, and submitting identity sent for one review.
+- **Current version**: The published, live version of a data item. Subject to change.
+- **Proposed version**: The version submitted for approval. Usually the draft version; for `PUBLISH_PUBLISHED`, the same as the current version.
+- **Version on unpublish**: For `UNPUBLISH_CHANGED`, whether to preserve the latest draft edits or the live published version as the saved draft.
+
+## See also
+
+- [CMS Data Items API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items)
+
+@sdk_package_setup

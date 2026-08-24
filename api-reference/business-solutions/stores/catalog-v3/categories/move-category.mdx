@@ -1,0 +1,514 @@
+---
+title: "Move Category"
+description: "Moves a category within its parent category, or to a different parent category."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Moves a category within its parent category, or to a different parent category.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CATEGORIES.CATEGORY_WRITE">Category write</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/categories/v1/categories/{categoryId}/move
+    ```
+
+    ## Path Params
+
+    <ParamField path="categoryId" type="string" required>
+
+      ID of the category to move.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="treeReference" type="TreeReference" required>
+
+      Category tree reference details.
+
+      <Expandable title="treeReference properties">
+
+        <ParamField body="appNamespace" type="string" required>
+
+          Namespace of the app whose catalog this category tree belongs to.
+
+          Currently, only `"@wix/stores"` is supported.
+
+          Constraints: `minLength 4`, `maxLength 150`.
+
+        </ParamField>
+
+        <ParamField body="treeKey" type="string">
+
+          Key to differentiate between multiple trees managed by the same app.
+
+          For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="parentCategoryId" type="string">
+
+      ID of the target parent category. Leave empty or omit to move the category to the top level.
+
+    </ParamField>
+
+    <ParamField body="position" type="string" required>
+
+      Where to place the subcategory.
+
+      + `FIRST`: Position the category as the first subcategory.
+      + `LAST`: Position the category as the last subcategory.
+      + `AFTER`: Position the category after the category ID passed in `moveAfterCategoryId`.
+
+      **Supported values:**
+
+      - `FIRST`
+      - `LAST`
+      - `AFTER`
+
+    </ParamField>
+
+    <ParamField body="moveAfterCategoryId" type="string">
+
+      Required when passing `position: AFTER`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="parentCategoryId" type="string">
+
+      Parent category ID.
+
+    </ResponseField>
+
+    <ResponseField name="categoriesAfterMove" type="string[]">
+
+      List of category IDs in the new order of arrangement.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PARENT_CATEGORY_NOT_IN_TREE` | Category's `parentCategoryId` must belong to the same tree as `treeReference`. |
+    | `428` | `FAILED_PRECONDITION` | `CATEGORY_DEPTH_LIMIT_EXCEEDED` | Category depth exceeds the limit of 4 levels. |
+    | `428` | `FAILED_PRECONDITION` | `TREE_CYCLE_DETECTED` | Cycles aren't allowed in the tree. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_AFTER_CATEGORY` | The `moveAfterCategoryId` field must be provided when `position` is `AFTER`. |
+    | `428` | `FAILED_PRECONDITION` | `AFTER_CATEGORY_NOT_IN_PARENT` | The category specified in `moveAfterCategoryId` must have the same `parentCategoryId` as the category being moved. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Category Moved | `wix.categories.v1.category_category_moved` | Triggered when a category is moved to a different position or parent category. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-move-category" id="ex-rest-move-category-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-move-category" id="ex-rest-move-category-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-move-category-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-move-category-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Move category to different parent</span><span className="wix-picker-desc">Moves a category after another category in root category</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Move category to last position</span><span className="wix-picker-desc">Moves a category to the last position in the parent category</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-move-category-0"><span className="wix-picker-name">Move category to different parent</span><span className="wix-picker-desc">Moves a category after another category in root category</span></label>
+    <label htmlFor="ex-rest-move-category-1"><span className="wix-picker-name">Move category to last position</span><span className="wix-picker-desc">Moves a category to the last position in the parent category</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/categories/v1/categories/df55a225-a5a6-42da-a4f9-7c805c5b3188/move' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "position": "AFTER",
+          "moveAfterCategoryId": "bbd52b32-21d2-4dbe-bfc5-d320f93f8911",
+          "treeReference": {
+            "appNamespace": "@wix/stores",
+            "treeKey": null
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "categoriesAfterMove": [
+          "880286ee-0b24-4b4d-8ca3-10f9d2c8111f",
+          "74b9a8b4-497a-4452-9ce8-9511e5f0138a",
+          "bbd52b32-21d2-4dbe-bfc5-d320f93f8911",
+          "df55a225-a5a6-42da-a4f9-7c805c5b3188",
+          "8ef7cee2-05f1-42e6-9079-a58bc6d243e3"
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/categories/v1/categories/b13e1166-fdf2-425a-a35c-d698edcbafa7/move' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+         -d '{
+             "parentCategoryId": "bbd52b32-21d2-4dbe-bfc5-d320f93f8911",
+             "position": "LAST",
+             "treeReference": {
+               "appNamespace": "@wix/stores",
+               "treeKey": null
+             }
+           }'
+      ```
+
+      ```json Response
+      {
+        "parentCategoryId": "bbd52b32-21d2-4dbe-bfc5-d320f93f8911",
+        "categoriesAfterMove": [
+          "b12487f7-cc4a-46ae-9c4f-48369f76c226",
+          "b13e1166-fdf2-425a-a35c-d698edcbafa7"
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Moves a category within its parent category, or to a different parent category.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CATEGORIES.CATEGORY_WRITE">Category write</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { categories } from '@wix/categories';
+
+    categories.moveCategory(categoryId, treeReference, options): Promise<NonNullablePaths>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="categoryId" type="string" required>
+
+      ID of the category to move.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="treeReference" type="MoveCategory" required>
+
+      Category tree reference details.
+
+      <Expandable title="treeReference properties">
+
+        <ParamField body="appNamespace" type="string" required>
+
+          Namespace of the app whose catalog this category tree belongs to.
+
+          Currently, only `"@wix/stores"` is supported.
+
+          Constraints: `minLength 4`, `maxLength 150`.
+
+        </ParamField>
+
+        <ParamField body="treeKey" type="string">
+
+          Key to differentiate between multiple trees managed by the same app.
+
+          For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="MoveCategoryOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="parentCategoryId" type="string">
+
+          ID of the target parent category. Leave empty or omit to move the category to the top level.
+
+        </ParamField>
+
+        <ParamField body="position" type="string" required>
+
+          Where to place the subcategory.
+
+          + `FIRST`: Position the category as the first subcategory.
+          + `LAST`: Position the category as the last subcategory.
+          + `AFTER`: Position the category after the category ID passed in `moveAfterCategoryId`.
+
+          **Supported values:**
+
+          - `FIRST`
+          - `LAST`
+          - `AFTER`
+
+        </ParamField>
+
+        <ParamField body="moveAfterCategoryId" type="string">
+
+          Required when passing `position: AFTER`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<NonNullablePaths>`.
+
+    <ResponseField name="parentCategoryId" type="string">
+
+      Parent category ID.
+
+    </ResponseField>
+
+    <ResponseField name="categoriesAfterMove" type="string[]">
+
+      List of category IDs in the new order of arrangement.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PARENT_CATEGORY_NOT_IN_TREE` | Category's `parentCategoryId` must belong to the same tree as `treeReference`. |
+    | `428` | `FAILED_PRECONDITION` | `CATEGORY_DEPTH_LIMIT_EXCEEDED` | Category depth exceeds the limit of 4 levels. |
+    | `428` | `FAILED_PRECONDITION` | `TREE_CYCLE_DETECTED` | Cycles aren't allowed in the tree. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_AFTER_CATEGORY` | The `moveAfterCategoryId` field must be provided when `position` is `AFTER`. |
+    | `428` | `FAILED_PRECONDITION` | `AFTER_CATEGORY_NOT_IN_PARENT` | The category specified in `moveAfterCategoryId` must have the same `parentCategoryId` as the category being moved. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Category Category Moved | `wix.categories.v1.category_category_moved` | Triggered when a category is moved to a different position or parent category. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-move-category" id="ex-sdk-move-category-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-move-category" id="ex-sdk-move-category-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-move-category" id="ex-sdk-move-category-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-move-category-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-move-category-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">moveCategory</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">moveCategory (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">moveCategory (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-move-category-0"><span className="wix-picker-name">moveCategory</span></label>
+    <label htmlFor="ex-sdk-move-category-1"><span className="wix-picker-name">moveCategory (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-move-category-2"><span className="wix-picker-name">moveCategory (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript moveCategory
+    import { categories } from '@wix/categories';
+
+    async function moveCategory(categoryId,treeReference,options) {
+      const response = await categories.moveCategory(categoryId,treeReference,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript moveCategory (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { categories } from '@wix/categories';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { categories },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function moveCategory(categoryId,treeReference,options) {
+      const response = await myWixClient.categories.moveCategory(categoryId,treeReference,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript moveCategory (with elevated permissions)
+    import { categories } from '@wix/categories';
+    import { auth } from '@wix/essentials';
+
+    async function myMoveCategoryMethod(categoryId,treeReference,options) {
+      const elevatedMoveCategory = auth.elevate(categories.moveCategory);
+      const response = await elevatedMoveCategory(categoryId,treeReference,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

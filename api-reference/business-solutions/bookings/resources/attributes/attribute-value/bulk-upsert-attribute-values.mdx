@@ -1,0 +1,603 @@
+---
+title: "Bulk Upsert Attribute Values"
+description: "Upserts attribute values for an entity."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Upserts attribute values for an entity.
+
+    Each entry in `values` is upserted by its `attributeDefinitionId`: a matching value is updated, otherwise a new one is created. Existing attribute values for this entity that aren't in the list are left unchanged. The order of returned values isn't guaranteed; sort client-side if you need a stable order.
+
+    To retrieve the resulting values paired with their definitions, call List Entity Attributes.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.ATTRIBUTES.MANAGE">Manage_Wix_Attributes_Forms_submissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/attributes/v1/attribute-values/{entityId}/bulk-upsert
+    ```
+
+    ## Path Params
+
+    <ParamField path="entityId" type="string" required>
+
+      ID of the entity whose attribute values to update.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="values" type="BulkUpsertAttributeValue[]">
+
+      Attribute values to upsert for this entity. Each entry is matched by `attribute_definition_id`.
+      Values not listed aren't modified.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="values properties">
+
+        <ParamField body="attributeDefinitionId" type="string" required>
+
+          ID of the attribute definition this value applies to.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the upserted attribute values in the response.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkUpsertAttributeValueResult[]">
+
+      Upsert results, one per requested value, in request order.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="action" type="string">
+
+          Whether the value was inserted or updated.
+
+          **Supported values:**
+
+          - `INSERT`
+          - `UPDATE`
+          - `DELETE`
+
+        </ResponseField>
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Per-item metadata (id, original index, success).
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="AttributeValue">
+
+          The upserted value. Only returned when `return_entity` is `true` in the request.
+
+          See the [Attribute Value Object](/api-reference/business-solutions/bookings/resources/attributes/attribute-value/attribute-value-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata (success and failure counts).
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_REQUIRED` | An entry has no value set. |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_TYPE_MISMATCH` | An entry's value variant does not match the referenced attribute definition's `valueType`. |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_NOT_IN_ALLOWED_VALUES` | A string value is not one of the definition's configured `allowedValues`. |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_OUT_OF_RANGE` | A number value is outside the definition's configured `min`/`max` range. |
+    | `404` | `NOT_FOUND` | `ATTRIBUTE_DEFINITION_NOT_FOUND` | Couldn't find the attribute definition referenced by an entry. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/_api/attributes/v1/attribute-values/5a9b3e88-1f6c-4f3b-9c7e-08e2f3b5a1b2/bulk-upsert' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "values": [
+          {
+            "attributeDefinitionId": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+            "numberData": 4
+          }
+        ],
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "action": "INSERT",
+            "itemMetadata": {
+              "id": "b1e6f0a2-3c4d-4e5f-9a8b-1c2d3e4f5a6b",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "b1e6f0a2-3c4d-4e5f-9a8b-1c2d3e4f5a6b",
+              "revision": "1",
+              "createdDate": "2024-01-15T10:30:00.000Z",
+              "updatedDate": "2024-01-15T10:30:00.000Z",
+              "attributeDefinitionId": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+              "entityId": "5a9b3e88-1f6c-4f3b-9c7e-08e2f3b5a1b2",
+              "valueType": "NUMBER",
+              "numberData": 4
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Upserts attribute values for an entity.
+
+    Each entry in `values` is upserted by its `attributeDefinitionId`: a matching value is updated, otherwise a new one is created. Existing attribute values for this entity that aren't in the list are left unchanged. The order of returned values isn't guaranteed; sort client-side if you need a stable order.
+
+    To retrieve the resulting values paired with their definitions, call List Entity Attributes.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.ATTRIBUTES.MANAGE">Manage_Wix_Attributes_Forms_submissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { attributeValue } from '@wix/bookings';
+
+    attributeValue.bulkUpsertAttributeValues(entityId, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="entityId" type="string" required>
+
+      ID of the entity whose attribute values to update.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpsertAttributeValuesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="values" type="BulkUpsertAttributeValue[]">
+
+          Attribute values to upsert for this entity. Each entry is matched by `attribute_definition_id`.
+          Values not listed aren't modified.
+
+          Constraints: `minItems 1`, `maxItems 50`.
+
+          <Expandable title="values properties">
+
+            <ParamField body="attributeDefinitionId" type="string" required>
+
+              ID of the attribute definition this value applies to.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the upserted attribute values in the response.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkUpsertAttributeValueResult[]">
+
+      Upsert results, one per requested value, in request order.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="action" type="string">
+
+          Whether the value was inserted or updated.
+
+          **Supported values:**
+
+          - `INSERT`
+          - `UPDATE`
+          - `DELETE`
+
+        </ResponseField>
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Per-item metadata (id, original index, success).
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="AttributeValue">
+
+          The upserted value. Only returned when `return_entity` is `true` in the request.
+
+          See the [Attribute Value Object](/api-reference/business-solutions/bookings/resources/attributes/attribute-value/attribute-value-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata (success and failure counts).
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_REQUIRED` | An entry has no value set. |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_TYPE_MISMATCH` | An entry's value variant does not match the referenced attribute definition's `valueType`. |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_NOT_IN_ALLOWED_VALUES` | A string value is not one of the definition's configured `allowedValues`. |
+    | `400` | `INVALID_ARGUMENT` | `VALUE_OUT_OF_RANGE` | A number value is outside the definition's configured `min`/`max` range. |
+    | `404` | `NOT_FOUND` | `ATTRIBUTE_DEFINITION_NOT_FOUND` | Couldn't find the attribute definition referenced by an entry. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-upsert-attribute-values" id="ex-sdk-bulk-upsert-attribute-values-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-upsert-attribute-values" id="ex-sdk-bulk-upsert-attribute-values-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-upsert-attribute-values-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-upsert-attribute-values-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Upsert attribute values for an entity</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpsertAttributeValues (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-upsert-attribute-values-0"><span className="wix-picker-name">Upsert attribute values for an entity</span></label>
+    <label htmlFor="ex-sdk-bulk-upsert-attribute-values-1"><span className="wix-picker-name">bulkUpsertAttributeValues (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Upsert attribute values for an entity
+    import { attributeValue } from "@wix/bookings";
+
+    const entityId = "5a9b3e88-1f6c-4f3b-9c7e-08e2f3b5a1b2";
+    const options = {
+      values: [
+        { attributeDefinitionId: "d7a341c4-196b-46e7-813c-2b0fc1847ec6", numberData: 4 },
+      ],
+      returnEntity: true,
+    };
+
+    async function bulkUpsertAttributeValues() {
+      const response = await attributeValue.bulkUpsertAttributeValues(entityId, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "action": "INSERT",
+     *       "itemMetadata": { "id": "b1e6f0a2-3c4d-4e5f-9a8b-1c2d3e4f5a6b", "originalIndex": 0, "success": true },
+     *       "item": {
+     *         "_id": "b1e6f0a2-3c4d-4e5f-9a8b-1c2d3e4f5a6b",
+     *         "attributeDefinitionId": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *         "entityId": "5a9b3e88-1f6c-4f3b-9c7e-08e2f3b5a1b2",
+     *         "valueType": "NUMBER",
+     *         "numberData": 4
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": { "totalSuccesses": 1, "totalFailures": 0 }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpsertAttributeValues (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { attributeValue } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { attributeValue },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpsertAttributeValues(entityId,options) {
+      const response = await myWixClient.attributeValue.bulkUpsertAttributeValues(entityId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

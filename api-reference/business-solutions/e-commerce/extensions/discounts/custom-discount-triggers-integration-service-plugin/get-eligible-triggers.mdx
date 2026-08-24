@@ -1,0 +1,666 @@
+---
+title: "Get Eligible Triggers"
+description: "Retrieves eligible custom discount triggers based on the provided items."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves eligible custom discount triggers based on the provided items.
+
+    This method is automatically called by Wix eCommerce to retrieve the custom discount triggers provided by your extension.
+    This happens when actions are performed on the cart and checkout entities/pages. For example, when an item is added to the cart.
+
+    ## Endpoint
+
+    ```http
+    POST /v1/get-eligible-triggers
+    ```
+
+    ## Body Params
+
+    <ParamField body="lineItems" type="LineItem[]">
+
+      List of line items in the cart/checkout.
+
+      Constraints: `maxItems 1000`.
+
+      <Expandable title="lineItems properties">
+
+        <ParamField body="id" type="string">
+
+          Line item ID.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="quantity" type="integer">
+
+          Item quantity in this line item.
+
+        </ParamField>
+
+        <ParamField body="catalogReference" type="CatalogReference">
+
+          Catalog and item reference. Holds IDs for the item and the catalog it came from, as well as further optional info.
+          This field may be empty in the case of a custom line item.
+
+          <Expandable title="catalogReference properties">
+
+            <ParamField body="catalogItemId" type="string">
+
+              ID of the item within the catalog it belongs to.
+
+              Constraints: `minLength 1`, `maxLength 36`.
+
+            </ParamField>
+
+            <ParamField body="appId" type="string">
+
+              ID of the app providing the catalog.
+
+              You can get your app's ID from its page in the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+              For items from Wix catalogs, the following values always apply:
+              + Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"`
+              + Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              + Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`
+
+              Constraints: `minLength 1`.
+
+            </ParamField>
+
+            <ParamField body="options" type="object">
+
+              Additional item details in `key:value` pairs.
+
+              Use this optional field for more specificity with item selection. The values of the `options` field differ depending on which catalog is providing the items.
+
+              For Wix Stores products, learn more about integrating with [Catalog V3](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration)
+              or [Catalog V1](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/e-commerce-integration), depending on [the version the site uses](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-versioning/introduction).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="price" type="string">
+
+          Price of a single item.
+
+          Constraints: `>= 0`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="triggers" type="TriggerToFilterBy[]">
+
+      List of triggers to be checked for discount eligibility.
+
+      Constraints: `minItems 1`, `maxItems 1000`.
+
+      <Expandable title="triggers properties">
+
+        <ParamField body="customTrigger" type="CustomTrigger">
+
+          Custom trigger info.
+
+          <Expandable title="customTrigger properties">
+
+            <ParamField body="id" type="string">
+
+              Custom trigger ID.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="identifier" type="string">
+
+          Unique trigger identifier. The same value must be returned in `eligibleTriggers[i].identifier`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="purchaseFlowId" type="string">
+
+      Persistent ID that correlates between the various eCommerce elements: cart, checkout, and order.
+
+    </ParamField>
+
+    <ParamField body="shippingInfo" type="ShippingInfo">
+
+      Shipping information.
+
+      <Expandable title="shippingInfo properties">
+
+        <ParamField body="address" type="Address">
+
+          Address (if applicable).
+
+          <Expandable title="address properties">
+
+            <ParamField body="country" type="string">
+
+              Two-letter country code in [ISO-3166 alpha-2](https://www.iso.org/obp/ui/#search/code/) format.
+
+            </ParamField>
+
+            <ParamField body="subdivision" type="string">
+
+              Code for a subdivision (such as state, prefecture, or province) in [ISO 3166-2](https://www.iso.org/standard/72483.html) format.
+
+            </ParamField>
+
+            <ParamField body="city" type="string">
+
+              City name.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="preferredShippingOptionCode" type="string">
+
+          Preferred shipping option code. For example, "usps_std_overnight".
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="eligibleTriggers" type="EligibleTrigger[]">
+
+      List of eligible triggers. These are used by the Discount Rules API and Wix eCommerce to apply the relevant discount.
+
+      Constraints: `minItems 0`, `maxItems 1000`.
+
+      <Expandable title="eligibleTriggers properties">
+
+        <ResponseField name="customTriggerId" type="string">
+
+          Custom trigger ID. Must be passed with relevant `identifier`.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="identifier" type="string">
+
+          Unique trigger identifier. The value must be the same as its equivalent in `triggers[i].identifier` in the request payload.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://provider.example.com/v1/getEligibleTriggers \
+          -H 'user-agent: Wix' \
+          -H 'accept-encoding: gzip, deflate' \
+          -H 'content-type: text/plain; charset=utf-8' 
+          --data-binary '{
+           "triggers": [
+            {
+              "customTrigger": {
+                "id": "my-happy-hour-trigger"
+              },
+              "identifier": "123"
+            },
+            {
+              "customTrigger": {
+                "id": "my-digital-sale-trigger"
+              },
+              "identifier": "234"
+            }
+          ],
+          "lineItems": [
+           {
+            "catalogReference": {
+             "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+             "catalogItemId": "b8b60eb2-f0c0-2519-c884-4e45ba25f0f7"
+            },
+            "id": "00000000-0000-0000-0000-000000000001",
+            "price": "250.00",
+            "quantity": {
+             "value": 1
+            }
+           },
+           {
+            "catalogReference": {
+             "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+             "catalogItemId": "c11f4db2-50cd-f4ea-d278-18c0914215d9"
+            },
+            "id": "00000000-0000-0000-0000-000000000002",
+            "price": "215.00",
+            "quantity": {
+             "value": 1
+            }
+           }
+          ]
+        }
+      ```
+
+      ```json Response
+      {
+        "eligibleTriggers": [
+          {
+            "customTriggerId": "my-happy-hour-trigger",
+            "identifier": "123"
+          },
+          {
+            "customTriggerId": "my-digital-sale-trigger",
+            "identifier": "234"
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves eligible custom discount triggers based on the provided items.
+
+    This method is automatically called by Wix eCommerce to retrieve the custom discount triggers provided by your extension.
+    This happens when actions are performed on the cart and checkout entities/pages. For example, when an item is added to the cart.
+
+    ## Method Declaration
+
+    ```typescript
+    import { customTriggers } from '@wix/ecom';
+
+    customTriggers.getEligibleTriggers(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="GetEligibleTriggersRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="lineItems" type="LineItem[]">
+
+          List of line items in the cart/checkout.
+
+          Constraints: `maxItems 1000`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="_id" type="string">
+
+              Line item ID.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              Item quantity in this line item.
+
+            </ParamField>
+
+            <ParamField body="catalogReference" type="CatalogReference">
+
+              Catalog and item reference. Holds IDs for the item and the catalog it came from, as well as further optional info.
+              This field may be empty in the case of a custom line item.
+
+              _Nested structure omitted for brevity — see the `CatalogReference` object._
+
+            </ParamField>
+
+            <ParamField body="price" type="string">
+
+              Price of a single item.
+
+              Constraints: `>= 0`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="triggers" type="TriggerToFilterBy[]">
+
+          List of triggers to be checked for discount eligibility.
+
+          Constraints: `minItems 1`, `maxItems 1000`.
+
+          <Expandable title="triggers properties">
+
+            <ParamField body="customTrigger" type="CustomTrigger">
+
+              Custom trigger info.
+
+              _Nested structure omitted for brevity — see the `CustomTrigger` object._
+
+            </ParamField>
+
+            <ParamField body="identifier" type="string">
+
+              Unique trigger identifier. The same value must be returned in `eligibleTriggers[i].identifier`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="purchaseFlowId" type="string">
+
+          Persistent ID that correlates between the various eCommerce elements: cart, checkout, and order.
+
+        </ParamField>
+
+        <ParamField body="shippingInfo" type="ShippingInfo">
+
+          Shipping information.
+
+          <Expandable title="shippingInfo properties">
+
+            <ParamField body="address" type="Address">
+
+              Address (if applicable).
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ParamField>
+
+            <ParamField body="preferredShippingOptionCode" type="string">
+
+              Preferred shipping option code. For example, "usps_std_overnight".
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="eligibleTriggers" type="EligibleTrigger[]">
+
+      List of eligible triggers. These are used by the Discount Rules API and Wix eCommerce to apply the relevant discount.
+
+      Constraints: `minItems 0`, `maxItems 1000`.
+
+      <Expandable title="eligibleTriggers properties">
+
+        <ResponseField name="customTriggerId" type="string">
+
+          Custom trigger ID. Must be passed with relevant `identifier`.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="identifier" type="string">
+
+          Unique trigger identifier. The value must be the same as its equivalent in `triggers[i].identifier` in the request payload.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-eligible-triggers" id="ex-sdk-get-eligible-triggers-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-eligible-triggers" id="ex-sdk-get-eligible-triggers-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-eligible-triggers-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-eligible-triggers-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Example of an eligibleTriggers return value</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getEligibleTriggers (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-eligible-triggers-0"><span className="wix-picker-name">Example of an eligibleTriggers return value</span></label>
+    <label htmlFor="ex-sdk-get-eligible-triggers-1"><span className="wix-picker-name">getEligibleTriggers (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Example of an eligibleTriggers return value
+    import { customTriggers } from '@wix/ecom/service-plugins';
+
+    customTriggers.provideHandlers({
+
+      getEligibleTriggers: async ( payload ) => {
+        const {request, metadata} = payload;
+            // Use the `request` and `metadata` received from Wix and
+            // apply custom logic.
+          return {
+            // Return your response exactly as documented to integrate with Wix.
+            // Return value example:
+            eligibleTriggers: [
+              {
+                customTriggerId: "my-happy-hour-trigger",
+                identifier: "123"
+              },
+              {
+                customTriggerId: "my-digital-sale-trigger",
+                identifier: "234"
+              }
+            ]
+          }
+        }
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getEligibleTriggers (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { customTriggers } from '@wix/ecom/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { customTriggers },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getEligibleTriggers(request,metadata) {
+      const response = await myWixClient.customTriggers.getEligibleTriggers(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

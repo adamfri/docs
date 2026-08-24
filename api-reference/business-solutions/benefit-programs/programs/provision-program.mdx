@@ -1,0 +1,547 @@
+---
+title: "Provision Program"
+description: "Creates a program for the specified beneficiary."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a program for the specified beneficiary. Creating a program is also referred to as provisioning a program.
+
+    You can provision a program from a program definition or a pool definition:
+    - **Program definition**: The provisioned program has pools that are created from the pool definitions in the program definition.
+    - **Pool definition**: The provisioned program has 1 pool that is created from the pool definition.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.BENEFIT_PROGRAMS.MANAGE">Manage benefit programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/benefit-programs/v1/programs/provision
+    ```
+
+    ## Body Params
+
+    <ParamField body="poolDefinitionLookupId" type="PoolDefinitionLookupId" required>
+
+      The program definition or pool definition to use to provision the program.
+
+      <Expandable title="One of the following">
+
+        <ParamField body="id" type="id">
+
+          id
+
+          <Expandable title="id properties">
+
+            <ParamField body="poolDefinitionId" type="string">
+
+              Pool definition ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="programDefinitionId" type="string">
+
+              Program definition ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="beneficiary" type="IdentificationData" required>
+
+      Program beneficiary.
+
+      <Expandable title="One of the following">
+
+        <ParamField body="id" type="id">
+
+          id
+
+          <Expandable title="id properties">
+
+            <ParamField body="anonymousVisitorId" type="string">
+
+              ID of a site visitor that hasn't logged in to the site.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="memberId" type="string">
+
+              ID of a site member.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="wixUserId" type="string">
+
+              ID of a Wix user.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="programStatus" type="string">
+
+      Initial program status.
+
+      Default: `ACTIVE`
+
+      **Supported values:**
+
+      - `ACTIVE` — Program is active.
+      - `PAUSED` — Program is paused.
+
+    </ParamField>
+
+    <ParamField body="namespace" type="string" required>
+
+      Namespace for your app or site's benefit programs. Namespaces allow you to distinguish between entities that you created and entities that other apps created.
+
+      Constraints: `minLength 1`, `maxLength 20`.
+
+    </ParamField>
+
+    <ParamField body="displayName" type="string">
+
+      Program name.
+
+      If you're provisioning the program from a program definition, you may want to use the same name that was used for the program definition.
+
+    </ParamField>
+
+    <ParamField body="externalProgramId" type="string" required>
+
+      ID for the program defined by you. You can use `externalId` to filter queries.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="jobId" type="string">
+
+      Job ID of the provisioning of the program. Retrieve job details using the [Async Job API](https://dev.wix.com/docs/rest/business-management/async-job/introduction).
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="program" type="Program">
+
+      Provisioned program.
+
+      See the [Program Object](/api-reference/business-solutions/benefit-programs/programs/program-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `409` | `ALREADY_EXISTS` | `PROGRAM_ALREADY_EXISTS` | Program already exists with pools. |
+    | `409` | `ALREADY_EXISTS` | `IN_PROGRESS` | Program creation is in progress. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl --request POST https://www.wixapis.com/benefit-programs/v1/programs/provision \
+        -H "Authorization: <AUTH>" \
+        -H "Content-Type: application/json" \
+        --data '{
+          "pool_definition_reference": {
+            "program_definition_id": "e8c3366e-0c4f-3024-a034-1e0c79146d4c"
+          },
+          "beneficiary": {
+            "identity_type": "MEMBER",
+            "member_id": "00000000-0000-0000-0000-000000000000"
+          },
+          "namespace": "benefit_programs_app",
+          "display_name": "New Program",
+          "external_program_id": "myProgram17"
+        }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+        "job_id": "167b0cca-0c57-4cba-8c42-acf22c7f9654",
+        "program": {
+          "id": "e5c42e1e-cd10-4210-b483-bb59932b1fa7",
+          "revision": "2",
+          "created_date": "2024-11-18T10:45:37.244Z",
+          "updated_date": "2024-11-18T10:45:45.469Z",
+          "program_definition_id": "e8c3366e-0c4f-3024-a034-1e0c79146d4c",
+          "status": "ACTIVE",
+          "beneficiary": {
+            "member_id": "d8f4a6c2-0e6a-4b89-bc3a-15e2dfe3c7a1",
+            "identity_type": "MEMBER"
+          },
+          "display_name": null,
+          "namespace": "benefit_programs_app",
+          "extended_fields": null,
+          "external_id": "myProgram17",
+          "program_definition": {
+            "id": "e8c3366e-0c4f-3024-a034-1e0c79146d4c",
+            "external_id": "myProgramDefinition"
+          },
+        }
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a program for the specified beneficiary. Creating a program is also referred to as provisioning a program.
+
+    You can provision a program from a program definition or a pool definition:
+    - **Program definition**: The provisioned program has pools that are created from the pool definitions in the program definition.
+    - **Pool definition**: The provisioned program has 1 pool that is created from the pool definition.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.BENEFIT_PROGRAMS.MANAGE">Manage benefit programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { programs } from '@wix/benefit-programs';
+
+    programs.provisionProgram(poolDefinitionLookupId, options): Promise<ProvisionProgramResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="poolDefinitionLookupId" type="PoolDefinitionLookupId" required>
+
+      The program definition or pool definition to use to provision the program.
+
+      <Expandable title="One of the following">
+
+        <ParamField body="id" type="id">
+
+          id
+
+          <Expandable title="id properties">
+
+            <ParamField body="poolDefinitionId" type="string">
+
+              Pool definition ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="programDefinitionId" type="string">
+
+              Program definition ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="ProvisionProgramOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="beneficiary" type="IdentificationData" required>
+
+          Program beneficiary.
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="programStatus" type="string">
+
+          Initial program status.
+
+          Default: `ACTIVE`
+
+          **Supported values:**
+
+          - `ACTIVE` — Program is active.
+          - `PAUSED` — Program is paused.
+
+        </ParamField>
+
+        <ParamField body="namespace" type="string" required>
+
+          Namespace for your app or site's benefit programs. Namespaces allow you to distinguish between entities that you created and entities that other apps created.
+
+          Constraints: `minLength 1`, `maxLength 20`.
+
+        </ParamField>
+
+        <ParamField body="displayName" type="string">
+
+          Program name.
+
+          If you're provisioning the program from a program definition, you may want to use the same name that was used for the program definition.
+
+        </ParamField>
+
+        <ParamField body="externalProgramId" type="string" required>
+
+          ID for the program defined by you. You can use `externalId` to filter queries.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ProvisionProgramResponse>`.
+
+    <ResponseField name="jobId" type="string">
+
+      Job ID of the provisioning of the program. Retrieve job details using the [Async Job API](https://dev.wix.com/docs/rest/business-management/async-job/introduction).
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="program" type="Program">
+
+      Provisioned program.
+
+      See the [Program Object](/api-reference/business-solutions/benefit-programs/programs/program-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `409` | `ALREADY_EXISTS` | `PROGRAM_ALREADY_EXISTS` | Program already exists with pools. |
+    | `409` | `ALREADY_EXISTS` | `IN_PROGRESS` | Program creation is in progress. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Program Created | `wix.benefit_programs.v1.program_created` | Triggered when a program is created. |
+    | Program Provisioned | `wix.benefit_programs.v1.program_provisioned` | Triggered when a program is provisioned. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-provision-program" id="ex-sdk-provision-program-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-provision-program" id="ex-sdk-provision-program-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-provision-program-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-provision-program-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Provision a benefit program</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">provisionProgram (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-provision-program-0"><span className="wix-picker-name">Provision a benefit program</span></label>
+    <label htmlFor="ex-sdk-provision-program-1"><span className="wix-picker-name">provisionProgram (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Provision a benefit program
+    import { programs } from "@wix/benefit-programs";
+
+    const poolDefinitionLookupId = {
+      programDefinitionId: "e8c3366e-0c4f-3024-a034-1e0c79146d4c",
+    };
+
+    const beneficiary = {
+      identityType: "MEMBER" as const,
+      memberId: "00000000-0000-0000-0000-000000000000",
+    };
+
+    async function provisionProgram() {
+      const response = await programs.provisionProgram(poolDefinitionLookupId, {
+        beneficiary,
+        namespace: "benefit_programs_app",
+        displayName: "New Program",
+        externalProgramId: "myProgram17",
+      });
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript provisionProgram (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { programs } from '@wix/benefit-programs';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { programs },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function provisionProgram(poolDefinitionLookupId,options) {
+      const response = await myWixClient.programs.provisionProgram(poolDefinitionLookupId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

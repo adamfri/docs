@@ -1,0 +1,669 @@
+---
+title: "Bulk Create Products"
+description: "Creates multiple products in a single request."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates multiple products in a single request.
+
+    Supports partial success - some products may be created successfully while others fail.
+    Each result includes an `itemMetadata` object indicating success or failure with error details.
+
+    When handling failures, distinguish between validation errors which shouldn't be retried,
+    and transient errors which can be retried. Only retry failed items, not the entire batch.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.SUPPLIERS_HUB.WRITE_MARKETPLACE">Write Marketplace</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/suppliers-hub/v1/bulk/products/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="products" type="Product[]" required>
+
+      Products to create. Each must include all required fields for the specified product types.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Product Object](/api-reference/business-solutions/suppliers-hub/products/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the created products in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkProductResult[]">
+
+      Results of the bulk create operation, one per input product.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata regarding the specific single create operation
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible. For example, when failing to create an item.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Product">
+
+          Only exists if `returnEntity` was set to true in the request
+
+          See the [Product Object](/api-reference/business-solutions/suppliers-hub/products/product-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata about the bulk operation including success and failure counts.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Created | `wix.suppliershub.marketplace_product.v1.product_created` | Triggered when a product is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates multiple products in a single request for efficient catalog management
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/suppliers-hub/v1/bulk/products/create' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "products": [
+          {
+            "name": "T-shirt",
+            "description": "Experience ultimate comfort with our classic 100% cotton t-shirt. Soft, breathable, and built to last.",
+            "media": {
+              "items": [
+                {
+                  "url": "https://static.wixstatic.com/media/fbbb7b23c009475bb86dd6c40d98a93b.jpg"
+                }
+              ]
+            },
+            "types": [
+              "DROPSHIPPING"
+            ],
+            "options": [
+              {
+                "name": "size",
+                "values": [
+                  {
+                    "text": {
+                      "name": "XS",
+                      "sortIndex": 0
+                    }
+                  },
+                  {
+                    "text": {
+                      "name": "S",
+                      "sortIndex": 1
+                    }
+                  },
+                  {
+                    "text": {
+                      "name": "L",
+                      "sortIndex": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "color",
+                "values": [
+                  {
+                    "color": {
+                      "name": "Salmon",
+                      "hex": "#FA8072",
+                      "sortIndex": 0
+                    }
+                  },
+                  {
+                    "color": {
+                      "name": "Gold",
+                      "hex": "#FFD700",
+                      "sortIndex": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "brand": "Solara",
+            "visible": true,
+            "minimumPrice": "25",
+            "productOrigin": "DK",
+            "providerInfo": {
+              "productId": "18240c19-c249-4450-ab50-54f1e6627f72"
+            },
+            "dropshippingOptions": {
+              "salesVolume": 850
+            },
+            "supplierInfo": {
+              "id": "31c0cdc1-4a3b-4e2b-98a9-e1728cb09f01"
+            }
+          },
+          {
+            "name": "Other T-shirt",
+            "description": "Experience ultimate comfort with our classic 100% cotton t-shirt. Soft, breathable, and built to last.",
+            "media": {
+              "items": [
+                {
+                  "url": "https://static.wixstatic.com/media/fbbb7b23c009475bb86dd6c40d98a93b.jpg"
+                }
+              ]
+            },
+            "types": [
+              "WHOLESALE"
+            ],
+            "options": [
+              {
+                "name": "size",
+                "values": [
+                  {
+                    "text": {
+                      "name": "M",
+                      "sortIndex": 0
+                    }
+                  },
+                  {
+                    "text": {
+                      "name": "L",
+                      "sortIndex": 1
+                    }
+                  },
+                  {
+                    "text": {
+                      "name": "XL",
+                      "sortIndex": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "color",
+                "values": [
+                  {
+                    "color": {
+                      "name": "Lime",
+                      "hex": "#00FF00",
+                      "sortIndex": 0
+                    }
+                  },
+                  {
+                    "color": {
+                      "name": "Beige",
+                      "hex": "#F5F5DC",
+                      "sortIndex": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "brand": "Kairos",
+            "visible": false,
+            "minimumPrice": "20",
+            "productOrigin": "NO",
+            "providerInfo": {
+              "productId": "e46c2d28-c424-4c90-9cde-6fc070adad16"
+            },
+            "wholesaleOptions": {
+              "priceTiers": [
+                {
+                  "priceFrom": "20",
+                  "countFrom": 10
+                }
+              ],
+              "minimumOrderQuantity": 10
+            },
+            "supplierInfo": {
+              "id": "89e85933-13a8-4e2a-b922-81df12f42f8e"
+            }
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "740164a3-d5c9-496b-844a-0d6a7b5f20fe",
+              "originalIndex": 0,
+              "success": true,
+              "error": null
+            },
+            "item": null
+          },
+          {
+            "itemMetadata": {
+              "id": "d6278ac2-7ccc-4b21-a4ea-e9e5c75673e3",
+              "originalIndex": 1,
+              "success": true,
+              "error": null
+            },
+            "item": null
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates multiple products in a single request.
+
+    Supports partial success - some products may be created successfully while others fail.
+    Each result includes an `itemMetadata` object indicating success or failure with error details.
+
+    When handling failures, distinguish between validation errors which shouldn't be retried,
+    and transient errors which can be retried. Only retry failed items, not the entire batch.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.SUPPLIERS_HUB.WRITE_MARKETPLACE">Write Marketplace</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { products } from '@wix/suppliers-hub';
+
+    products.bulkCreateProducts(products, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="products" type="Product[]" required>
+
+      Products to create. Each must include all required fields for the specified product types.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Product Object](/api-reference/business-solutions/suppliers-hub/products/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateProductsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the created products in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkProductResult[]">
+
+      Results of the bulk create operation, one per input product.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata regarding the specific single create operation
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible. For example, when failing to create an item.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Product">
+
+          Only exists if `returnEntity` was set to true in the request
+
+          See the [Product Object](/api-reference/business-solutions/suppliers-hub/products/product-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata about the bulk operation including success and failure counts.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Created | `wix.suppliershub.marketplace_product.v1.product_created` | Triggered when a product is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-products" id="ex-sdk-bulk-create-products-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-products" id="ex-sdk-bulk-create-products-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-create-products" id="ex-sdk-bulk-create-products-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-products-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-products-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateProducts</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateProducts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateProducts (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-products-0"><span className="wix-picker-name">bulkCreateProducts</span></label>
+    <label htmlFor="ex-sdk-bulk-create-products-1"><span className="wix-picker-name">bulkCreateProducts (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-create-products-2"><span className="wix-picker-name">bulkCreateProducts (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateProducts
+    import { products } from '@wix/suppliers-hub';
+
+    async function bulkCreateProducts(products,options) {
+      const response = await products.bulkCreateProducts(products,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateProducts (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { products } from '@wix/suppliers-hub';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { products },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateProducts(products,options) {
+      const response = await myWixClient.products.bulkCreateProducts(products,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateProducts (with elevated permissions)
+    import { products } from '@wix/suppliers-hub';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkCreateProductsMethod(products,options) {
+      const elevatedBulkCreateProducts = auth.elevate(products.bulkCreateProducts);
+      const response = await elevatedBulkCreateProducts(products,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

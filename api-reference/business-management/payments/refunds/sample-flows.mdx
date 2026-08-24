@@ -1,0 +1,97 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Allow merchants to refund existing charges
+
+A company wants to add functionality to a payment tracking app that allows merchants to refund charges.
+
+### Prerequisites
+
+- You must have an existing app that tracks charges (formerly called transactions) and stores their IDs. For example, by listening for [Payment](https://dev.wix.com/docs/rest/business-management/payments/cashier/cashier-pay/payment-event/payment) events or calling [Transactions List](fallback::https://dev.wix.com/docs/rest/business-management/payments/cashier/payments/transaction/transactions-list).
+- The Wix user must have have onboarded to [accept payments through Wix](fallback::https://support.wix.com/en/article/accepting-payments-an-overview).
+
+### Flow
+
+1. When the merchant selects a charge to refund, call [Create Refund](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/create-refund) to start the refund process. Specify a refund object containing the ID of the charge to be refunded.
+
+    ```json
+    {
+      "refund": {
+        "chargeId": "<ID of the charge>"
+      }
+    }
+    ```
+2. If there is an error, handle it according to the response message, in case of "Refundability" error inform the merchant and end the flow.
+3. Retrieve updated status via [Refund Updated](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/refund-updated) event or via REST API. 
+4. If the value of `refund.status` in the response is `"SUCCEEDED"`, confirm to the merchant that refund was successful.
+5. If the value of `refund.status` in the response is `"PENDING"`, notify the merchant that the refund is being processed.
+
+## Allow merchants to issue partial refunds for charges, preventing unintended refunds
+
+A company wants to add functionality to a payment tracking app that allows merchants to partially refund charges while preventing unintended refunds. For example, if an order includes several items, the merchant may wish to refund only one of them.
+
+### Prerequisites
+
+- You must have an existing app that tracks charges (formerly called transactions) and stores their IDs. For example, by listening for [Payment](https://dev.wix.com/docs/rest/business-management/payments/cashier/cashier-pay/payment-event/payment) events or calling [Transactions List](fallback::https://dev.wix.com/docs/rest/business-management/payments/cashier/payments/transaction/transactions-list).
+- The Wix user must have onboarded to [accept payments through Wix](fallback::https://support.wix.com/en/article/accepting-payments-an-overview).
+
+### Flow
+
+1. When the merchant selects a charge to refund, call [Query Refunds](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/query-refunds) specifying the ID of the charge and `SUCCEEDED` status to get all successful refunds. For more information about queries see [API Query and Search Language](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language).
+
+2. Save `allSuccessfulRefunds[*][amount].sum`.
+
+3. Prompt the merchant to enter a desired refund amount.
+
+4. When the merchant decides to issue a refund, call [Create Refund](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/create-refund), specifying the `previouslyRefundedAmount` along with the refund object.
+
+    ```json
+    {
+      "refund": {
+        "currencyCode": "<currencyCode of the charge, for example, USD>",
+        "amount": "<amount entered by merchant, for example, 49.95>",
+        "chargeId": "<ID of the charge>"
+      },
+      "previouslyRefundedAmount": "<allSuccessfulRefunds[*][amount].sum>"
+    }
+    ```
+
+   If you encounter a network error, retry the request.
+
+   If the request is unsuccessful and an error code `PREVIOUSLY_REFUNDED_AMOUNT_MISMATCH` is returned, it means that another refund was issued for the same charge after the merchant saw the previously refunded amount in step 4 and elected to proceed. (This can occur if you accidentally send multiple requests for the same refund and the first request succeeds.)
+   Inform the merchant that the information they used is outdated to make the refund request. Show the merchant the up-to-date information and prompt for confirmation before retrying the refund request.
+
+5. If the request is successful and `refund.status` is `"SUCCEEDED"`, confirm to the merchant that refund was successful.
+
+## Import refunds to external accounting software
+
+A company wants to build an app that imports refunds from their Wix site to their external accounting software.
+
+### Prerequisites
+
+The Wix user must have onboarded to [accept payments through Wix](fallback::https://support.wix.com/en/article/accepting-payments-an-overview).
+
+You must [subscribe your app](https://dev.wix.com/docs/build-apps/develop-your-app/api-integrations/events-and-webhooks/handle-events-with-webhooks) to the [Refund Created](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/refund-created) and [Refund Updated](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/refund-updated) webhooks in the [app dashboard](fallback::https://dev.wix.com/app-selector?title=Select+an+App&primaryButtonText=Select+Site&actionUrl=https%3A%2F%2Fdev.wix.com%2Fapps%2F%7BappId%7D%2Fwebhooks-page).
+
+### Flow
+
+1. The first time the app loads after installation, call [Query Refunds](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/query-refunds) using cursor pagination to get an initial list of all previous refunds. For more information about queries see [API Query and Search Language](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language).
+
+2. Upload the returned refunds to the external accounting software.
+
+3. Whenever the Refund Created webhook is triggered, parse the `createdEvent.entityAsJson` object and upload it to the external accounting software.
+
+4. Whenever the Refund Updated webhook is triggered:
+
+    a. Parse the `updatedEvent.currentEntityAsJson` object to get the refund entity. 
+  
+    b. Compare the `id` from that entity with the ID's of refunds in the external accounting software to find the matching refund.
+
+    c. Overwrite that refund with the refund entity extracted from the event.

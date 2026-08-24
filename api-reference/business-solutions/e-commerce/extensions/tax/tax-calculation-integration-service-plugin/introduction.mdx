@@ -1,0 +1,142 @@
+---
+title: "Introduction"
+description: "<blockquote class=\"important\" Important: When developing websites or building apps with Blocks, use Velo service plugins."
+icon: "file-lines"
+---
+
+<Note>
+
+When developing websites or building apps with Blocks, use [Velo service plugins](fallback::https://dev.wix.com/docs/velo/events-service-plugins/about-events-service-plugins-and-the-sdk).
+
+</Note>
+
+As a tax calculation provider, you can integrate with Wix to allow merchants to request and use your services on their Wix sites. The tax calculated is then included on the site's cart and checkout pages. Use the Tax Calculation Provider service plugin together with the [Tax Groups API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-groups/introduction) and the [Tax Regions API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-regions/introduction) to customize your tax calculations.
+
+With the Tax Calculation Provider service plugin integrated into your app, Wix calls your app with [Calculate Tax](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-calculation-integration-service-plugin/calculate-tax) whenever tax needs to be recalculated on a site. For example, when line items are updated in a cart or checkout.
+
+The integration is done via an app created in your Wix Studio workspace and by implementing the Tax Calculation Provider [service plugin](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions).
+
+## Use cases
++ [Calculate tax for the United Kingdom](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-calculation-integration-service-plugin/sample-flow)
+
+<Tabs>
+
+<Tab title="REST">
+
+## Get started 
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+
+1. Click **+ Create Extension** in the top right.
+
+1. Find **Tax Calculation Provider** and click **+ Create**.
+
+1. Use the JSON editor to create the extension's configuration file. Configure the parameters by referencing the table below or the **Documentation** section to the right of the editor.
+   For each parameter, add the parameter name and value in the JSON editor.
+   | Name | Type | Description |
+   | --- | --- | --- |
+   | `deploymentUri` |string|**Required.**<br /> <p>Base URI where the endpoints are called. Wix appends the endpoint path to the base URI.</p><p>For example, to call the Calculate Tax endpoint at `https://my-tax-calc.com/v1/calculateTax`, the base URI you provide here is `https://my-tax-calc.com/`.</p>|
+   | `calculatorDisplayName` |string|Display name of the tax calculator.|
+   | `unsupportedCountries` |array|List of countries, in [ISO 3166-1 alpha-2](fallback::https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements) format, that the calculator does not support. |
+   | `componentName` |string| A unique name for this component. This is an internal name that will only appear in the app dashboard.|
+
+1. Click [**Test Your App**](https://dev.wix.com/docs/build-apps/launch-your-app/app-submission/test-your-app-on-a-premium-site).
+
+</Tab>
+
+<Tab title="SDK">
+
+## Get started
+
+Follow these steps to begin implementing your service plugin.
+
+### Step 1 | Choose a framework
+
+You can implement this service plugin with the following [frameworks](fallback::https://dev.wix.com/docs/build-apps/get-started/overview/wix-s-development-frameworks):
+
++ **Wix CLI:** Learn how to [implement a service plugin with the CLI and the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
++ **Self-hosted:** Learn how to [implement a self-hosted service plugin with the SDK and the Wix Dev Center](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk).
+
+### Step 2 | Configure your service plugin
+
+To configure and customize your plugin, you need to provide important information in the service plugin configuration file. You can [configure your plugin in the Wix Dev Center](##step-1--add-a-service-plugin-extension-to-your-app*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-1--add-a-service-plugin-extension-to-your-app). For details, see [Tax Calculation Provider Extension Configuration](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-calculation-integration-service-plugin/extension-config).
+
+### Step 3 | Define handler functions
+
+Use [`taxCalculationProvider.provideHandlers()`](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk) to define the following handler function that implements your custom business logic. 
+
+| Function                       | Required       |
+|--------------------------------|----------------|
+| [`calculateTax()`](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-calculation-integration-service-plugin/calculate-tax) | Yes            |
+
+## Code examples
+
+Below is an example for implementing the Tax Calculation Provider service plugin in your code.
+
+### CLI: Basic code structure
+
+This is the basic code structure for implementing the Tax Calculation Provider service plugin with the Wix CLI:
+
+```js
+import { taxCalculationProvider } from '@wix/ecom/service-plugins'
+
+taxCalculationProvider.provideHandlers({
+  calculateTax: async (payload) => {
+
+    const {request, metadata} = payload;
+
+    // Add your logic here
+
+  }
+});
+```
+
+### Self-hosted: Basic code structure
+
+This is the basic code structure for implementing a self-hosted Tax Calculation service plugin:
+
+```js
+import { createClient } from '@wix/sdk';
+import { taxCalculationProvider } from '@wix/ecom/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { taxCalculationProvider }
+});
+
+wixClient.taxCalculationProvider.provideHandlers({
+  calculateTax: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## Terminology
+- **Tax Region:** A location, defined by `country` and `subdivision` with a specific tax treatment. Tax is calculated based on the tax region and the tax group associated with a line item. See the [Tax Regions API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-regions/introduction).
+- **Tax Group:** A category of products that share the same tax treatment. Tax is calculated based on the tax group and the tax region associated with a line item. See the [Tax Groups API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-groups/introduction).
+- **Tax Calculator:** An app that is used under the hood to calculate tax for a Wix site. The app calculates tax based on the tax group of the product and the tax region of the sale. By integrating with the Tax Calculation service plugin, your app becomes a tax calculator.
+
+## See also
+
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)

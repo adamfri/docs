@@ -1,0 +1,426 @@
+---
+title: "The JSON Schema"
+description: "When creating or updating a data extension schema, you define the jsonSchema property using a subset of JSON Schema."
+icon: "file-lines"
+---
+
+When creating or updating a data extension schema, you define the `jsonSchema` property using a subset of [JSON Schema](fallback::https://json-schema.org/). This schema acts as a blueprint, describing the properties, data types, and constraints of the object that appears in the `extendedFields` property of an object.
+
+The JSON Schema has some restrictions and additions specific to Wix, but the general syntax, supported types, and keywords are mostly the same as standard JSON Schema. Wix supports JSON Schema version 2019-09 or higher.
+
+<Note>
+
+This schema is also used to define [Schema Plugins](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions). Certain properties, such as [permissions](fallback::#defining-field-permissions), include app development terminology.
+
+</Note>
+
+## Example JSON Schema
+
+The following example is a JSON Schema you can provide in the `jsonSchema` field and defines the following custom fields:
+*  `firstName`
+*  `lastName`
+*  `age`
+
+```json
+{
+  "type": "object",
+  "properties":{
+    "firstName": {
+      "type": "string",
+      "description": "The person's first name.",
+      "x-wix-permissions": {
+        "read": ["apps"],
+        "write": ["users"]
+      },
+      "title":"First Name",
+      "maxLength": 20
+    },
+    "lastName": {
+      "type": "string",
+      "description": "The person's last name.",
+      "x-wix-permissions": {
+        "read": ["apps"],
+        "write": ["users"]
+      },
+      "title":"Last Name",
+      "maxLength": 20
+    },
+    "age": {
+      "description": "Age in years which must be equal to or greater than zero.",
+      "type": "integer",
+      "minimum": 0,
+      "x-wix-permissions": {
+        "read": ["apps"],
+        "write": ["users"]
+      },
+      "title":"Age",
+      "maximum": 120,
+      "x-wix-filterable": true
+    }
+  }
+}
+```
+
+## General restrictions
+
+As with standard JSON Schema, to define your fields, you'll add them as property keys to the `properties` object. Keep in mind the following restrictions:
+
+* The JSON Schema can't contain more than 256 properties.
+* The maximum length of a property key is 64 characters.
+* Property keys must start with a letter and can contain only letters, numbers, and underscores.
+* The JSON Schema can store a maximum of 10 KB of data per object. This means that each site can store up to 10 KB of data for each extended object.
+
+  For example, if a site extends both the Booking and Checkout objects, it has a total of 20 KB of database storage. It can use up to 10 KB for the Booking object schema and up to 10 KB for the Checkout object schema.
+
+  A schema's maximum size is calculated based on the field types defined in the schema, including the maximum lengths of all strings and the maximum items of all arrays.
+
+## Schema properties
+
+### Root-level properties
+
+The following table lists the root-level properties.
+
+| Property | Data type | Description |
+| ------ |  ------ | ------ |
+| `type` | string| _Required_. Top-level key defining the type of `properties`. Must be `"object"`.|
+| `properties` | object | _Required_. Top-level object containing the fields defined as key-object pairs. The table below explains the structure of the `properties` object.|
+
+### The `properties` object
+
+The following table lists the keys allowed in each property object.
+
+| Property | Data type | Description |
+| ------ |  ------ | ------ |
+| `type` | string | _Required_. Second-level key defining a field's expected data type. Supported values: `"string"`, `"number"`, `"integer"`, `"boolean"`, `"array"`, `"object"`.<br /><br />Defined inside the object value of each property.|
+| `x-wix-permissions`| object | _Required_. Defines a field's read and write permissions. See [Defining field permissions](fallback::#defining-field-permissions) for more information.|
+| `x-wix-archived` | boolean | Archives properties. See [Archive schema fields](fallback::#archive-schema-fields) for more information.|
+| `x-wix-filterable` | boolean | Allows filtering for properties. See [Filtering schema fields](fallback::#filtering-schema-fields) for more information.|
+| `x-wix-pii` | boolean | Allows you to declare a property as [PII](fallback::https://support.wix.com/en/article/about-personally-identifiable-information-pii).|
+| `items` | object | Required if type is `"array"`. Omitted for other data types. <br /><br /> Specifies the type of data the array contains. See [array](fallback::#array) for more information.|
+| `maxItems`| number | Required if type is `"array"`.<br /><br />Defines the maximum number of items the array can hold. See [array](fallback::#array) for more information.|
+| `properties` | object | Required if type is `"object"`. Omitted for other data types. <br /><br />Object containing nested fields. It accepts the same data as the 1st-level `properties` object and may contain strings, numbers, integers, booleans, or nested objects.|
+| `format`| string | Applies only to string fields.<br /><br />Defines a specific format for a string field, for example a date or a time. See [string](fallback::#string) for more information.|
+| `maxLength` | number | Required if type is `"string"`.<br /><br />Defines the maximum number of characters the field accepts. See [string](fallback::#string) for more information. |
+| `minLength` | number | Applies only to string fields.<br /><br />Defines the minimum number of characters the field accepts. See [string](fallback::#string) for more information.|
+| `maximum`| number | Applies only to number or integer fields.<br /><br />Defines the maximum value the field accepts. See [number](fallback::#number) and [integer](fallback::#integer) for more information.|
+| `minimum`| number | Applies only to number or integer fields.<br /><br />Defines the minimum value the field accepts. See [number](fallback::#number) and [integer](fallback::#integer) for more information.|
+| `exclusiveMaximum`| number | Applies only to number or integer fields.<br /><br />Defines the maximum value the field accepts, excluding the defined value. See [number](fallback::#number) and [integer](fallback::#integer) for more information.|
+| `exclusiveMinimum`| number | Applies only to number or integer fields.<br /><br />Defines the minimum value the field accepts, excluding the defined value. See [number](fallback::#number) and [integer](fallback::#integer) for more information.|
+
+## Supported types
+
+The `jsonSchema` field supports all the basic [JSON Schema types](fallback::https://json-schema.org/understanding-json-schema/reference/type), with some restrictions. These restrictions (if any) are detailed below for each type.
+
+### `string`
+
+**Size:** Varies. Each character is 1 byte.
+
+**Restrictions:**
+
+* Length: Strings must be between 1 and 10,000 characters long.
+
+**Supported formats:**
+
+The JSON Schema field supports the following format values:
+
+| Format | Maximum length | Description |
+| ------ | -------------- | ----------- |
+| `color-hex` | 7 | `#` followed by a 6 character code that represents a color. For example, `#1A8CFF`. <br /> Learn more about [color hex](fallback::https://www.color-hex.com/). |
+| `currency` | 3 | Three-letter currency code in [ISO-4217 alphabetic](fallback::https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format. |
+| `date-time` | 25 | UTC datetime in `YYYY-MM-DDThh:mm[:ss][.sss]Z` format. |
+| `date` | 10 | Date in `YYYY-MM-DD` format. |
+| `guid` | 36 | Globally unique identifier. |
+| `hostname` | Defined using the `maxLength` keyword. | Host name. For example, `www.example.com`. |
+| `language` | 3 | 2-letter language code in [ISO 639-1 alpha-2](fallback::https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format. |
+| `time` | 14 | Time in `hh:mm[:ss][.sss]` format. |
+| `uri` | Defined using the `maxLength` keyword. | Uniform Resource Identifier. For example, `http://foo.bar/?baz=qux#quux`. |
+| `email` | 254 | A custom Wix value indicating a valid email address. |
+| `phone` | 40 | A custom Wix value indicating a valid phone number. |
+| `single-line` | Defined using the `maxLength` keyword. | Indicates a field that can only contain a single line of text. The string must end with a newline character (`\n`). <br /> By default, a string field is considered multi-line text. If it is defined as single-line, the format can be removed later. However, if a string is created as multi-line text, the format can't be changed later to single-line, because this is a breaking change.|
+
+### `number`
+
+**Size:** 8 bytes
+
+**Restrictions:**
+
+* Minimum value: -2&lt;sup>53&lt;/sup> + 1.
+* Maximum value: 2&lt;sup>53&lt;/sup> + 1.
+
+### `integer`
+
+**Size:** 4 bytes
+
+**Restrictions:**
+
+* Minimum value: -2&lt;sup>53&lt;/sup> + 1.
+* Maximum value: 2&lt;sup>53&lt;/sup> + 1.
+
+### `object`
+
+**Size:** Varies
+
+**Restrictions:**
+
+* An object must contain a `properties` field that defines its properties.
+* The object's properties must follow the restrictions of the other types listed here.
+* There is a maximum of 10 nesting levels for an object.
+
+### `array`
+
+**Size:** An array's size is determined by the type it contains and its max length. For example, given the following property:
+
+```json
+"tags": {
+  "items": {
+    "type": "integer"
+  },
+  "maxItems": 20,
+  "type": "array",
+  "x-wix-permissions": {
+    "read": ["users-of-users","users","apps"],
+    "write": ["users"]
+  }
+}
+```
+
+The array contains a maximum of 20 integers. Therefore its total size is:
+
+4 bytes/integer × 20 integers = 80 bytes.
+
+Now consider an array of strings:
+
+```json
+"hobbies": {
+  "items": {
+    "type": "string",
+    "maxLength": 10
+  },
+  "maxItems": 10,
+  "minItems": 1,
+  "type": "array",
+  "x-wix-permissions": {
+    "read": ["apps"],
+    "write": ["apps"]
+  }
+}
+```
+
+The array contains a maximum of 10 strings, each of which can have a maximum length of 10 characters. Since 1 character = 1 byte, we can calculate the array's total size like this:
+
+(10 characters × 1 byte/character) × 10 = 100 bytes.
+
+**Restrictions:**
+
+* An array must contain an `items` key that defines the type of items in the array.
+* The items in the array must follow all the restrictions of the other types listed here.
+* An array can contain a maximum of 100 items. The maximum number of items must be defined using the `maxItems` keyword.
+* All the items in an array must be the same type.
+* Arrays support items of type `string`, `number`, `integer`, `boolean`, and `object`.
+
+### `boolean`
+
+**Size:** 1 byte
+
+**Restrictions:** None
+
+## Supported keywords
+
+The following global JSON Schema keywords are supported:
+
+* [Annotations](fallback::https://json-schema.org/understanding-json-schema/reference/annotations)
+* [Enumerated values](fallback::https://json-schema.org/understanding-json-schema/reference/enum)
+
+The following global keywords are not supported:
+
+* `required`
+* `$defs`
+* `$ref`
+* `readOnly`
+* `writeOnly`
+
+### Wix-specific keywords
+
+Wix provides a number of keywords that aren't part of standard JSON Schema. You can use these keywords when defining the JSON Schema.
+
+#### `x-wix-pii`
+
+Add this keyword to mark a property as PII. A property marked as PII becomes available in [GDPR](fallback::https://support.wix.com/en/article/preparing-your-wix-site-for-the-gdpr#ensure-your-third-party-apps-are-gdpr-compliant) flows.
+
+Here's an example usage of `x-wix-pii`:
+
+```json
+"existingMedicalConditions": {
+  "items": {
+    "type": "string"
+  },
+  "maxItems": 50,
+  "type": "array",
+  "x-wix-pii": {
+    "enabled": true
+  },
+  "x-wix-permissions": {
+    "read": ["users"],
+    "write": ["users-of-users"]
+  }
+}
+```
+
+The following field types can be marked as PII:
+
+* strings
+* numbers/integers
+* arrays of strings
+* arrays of numbers
+
+The object you're working with must be PII-enabled in order to mark data extension fields as PII. If it's not, setting `x-wix-pii` to `true` will generate an error.
+
+You must mark a field as PII when you create your schema. By default, fields not initially marked as PII are non-PII. You can't change a non-PII field to PII because this is a breaking change. Likewise, you can't change a PII field to non-PII.
+
+If you archive a PII field, any PII data associated with it is deleted.
+
+## Defining field permissions
+
+For each property you add to the JSON Schema, you need to define permissions. These permissions define who can read and write to the field.
+
+The permissions you define in the schema assume that the extended entity allows apps to read and write it. If an entity does not allow apps read and write permission, then no group will be able to read and write to the entity, no matter what permissions are defined.
+
+Supported permission values:
+
+* `owning-app`: The app that defines the extended field.
+* `apps`: All apps installed on the same site.
+* `users`: Wix users that own the site.
+* `users-of-users`: Visitors of sites.
+
+<Note>
+
+If you enable `users-of-users` permissions for reading or writing an extended field, also enable the `users` permissions. Otherwise, Wix users won't be able to read or write the extended field data created by their site visitors.
+
+</Note>
+
+To add permissions to a field, include the Wix-specific `x-wix-permissions` keyword in the field object. In the value, include two arrays: one specifying the read permissions, and the second specifying the write permissions.
+
+For example:
+
+```json
+"equipmentType": {
+  "type": "string",
+  "maxLength": 128,
+  "x-wix-permissions": {
+    "read": ["apps", "users", "users-of-users"],
+    "write": ["users", "users-of-users"]
+  }
+}
+```
+
+## Editing the schema
+
+Once you've saved the schema, there are limits on how you can edit it. You can only make non-breaking changes to the schema. Examples of non-breaking changes include:
+
+* Adding a new field.
+* Adding or removing permissions in an existing field.
+* Increasing a field's max limit (for example, the `maxLength` value in a string field).
+* Decreasing a field's min limit (for example, the value of `minimum` in a number or integer field).
+* Removing a field's min or max limit entirely.
+* Changing settings like `title`, `description` and `placeholder`.
+
+Examples of breaking changes are:
+
+* Removing a field.
+* Decreasing a field's max limit.
+* Increasing a field's min limit.
+* Adding a max or min limit to a field that didn't have one before.
+
+### Archive schema fields
+
+You can't delete fields from your schema, but you can archive them using the `x-wix-archived` keyword. As with permissions, add `x-wix-archived` to the field that you want to archive, and set it to `true`.
+
+For example:
+
+```json
+"dateOfBirth": {
+  "x-wix-archived": true,
+  "type": "string",
+  "format": "date",
+  "maxLength": 100,
+  "x-wix-permissions": {
+    "read": ["apps"],
+    "write": ["users", "users-of-users"]
+  }
+}
+```
+
+The archived property remains in the database, so you can't reuse its key for another property. Wix filters the archived field during read operations and ignores it during write operations. A field that is archived still takes up the same amount of space in memory and therefore counts towards the 10 KB total your JSON Schema can take up.
+
+All the schema types support archiving. If the archived field has nested fields, the nested fields are also archived. To restore an archived extended field, change the value of `x-wix-archived` to `false` or remove it from the schema.
+
+## Filtering schema fields
+
+You can make a JSON Schema field filterable by adding the `x-wix-filterable` keyword to the field, and setting its value to `true`:
+
+```json
+"age": {
+  "description": "Age in years which must be equal to or greater than zero.",
+  "type": "integer",
+  "minimum": 0,
+  "x-wix-permissions": {
+    "read": ["apps"],
+    "write": ["users"]
+  },
+  "title":"Age",
+  "maximum": 120,
+  "x-wix-filterable": true
+}
+```
+
+You can then use the field as a filter in the object's standard API query method. For example, a query object might look like this:
+
+```js
+"query": {
+  "filter": {
+    "extended_fields.namespaces._user_fields.age": {
+      "$gt": 12
+    }
+  },
+  "paging": null,
+  "sort": []
+}
+```
+
+<Note>
+
+Not all entities with extended fields support filtering. Setting a field as filterable on a non-filterable entity causes an error. See which objects support filtering in the [Supported objects](fallback::https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/introduction#supported-objects) table.
+
+</Note>
+
+## Supported operations
+
+Extended fields created using the Data Extension Schema API support the following filter, sort, and [aggregation](##aggregations-search-object-only*fallback::https://dev.wix.com/docs/rest/articles/getting-started/api-query-language#aggregations-search-object-only) operations:
+
+| Data type | Format | Filters | Sortable | Aggregations |
+| ------ |  ------ | ------ | ----- | -------- |
+| string | ---- | `$eq`, `$ne`, `$in`, `$nin`, `$startsWith`, `$isEmpty` | YES | `VALUE`, `SCALAR` |
+| string | date | `$eq`, `$ne`, `$gt`, `$lt`, `$gte`, `$lte`, `$in`, `$nin`, `$isEmpty` | YES | `VALUE`, `SCALAR`, `RANGE` |
+| string | url | `$eq`, `$ne`, `$gt`, `$lt`, `$gte`, `$lte`, `$in`, `$nin`, `$gte`, `$isEmpty` | YES | `VALUE`, `SCALAR` |
+| string | email | `$eq`, `$ne`, `$in`, `$nin`, `$gte`, `$isEmpty` | YES | |
+| string | phone | `$eq`, `$ne`, `$in`, `$nin`, `$gte`, `$isEmpty` | YES | |
+| number | ---- | `$eq`, `$ne`, `$gt`, `$lt`, `$gte`, `$lte`, `$in`, `$nin` | YES | `VALUE`, `SCALAR`, `SCALAR` |
+| boolean | ---- | `$eq`, `$ne`, `$isEmpty` | YES | `VALUE`, `SCALAR` |
+
+<Note>
+
+Arrays of the above types are not sortable, except for arrays of booleans.
+
+</Note>
+
+You can make a maximum of 10 fields filterable. If you archive a filterable field, it can't be used as a filter and no longer counts towards the 10-field maximum. If you unarchive the field, it remains unfilterable by default. You'll need to manually set it as filterable again using the `x-wix-filterable` keyword.
+
+## JSON validation errors
+
+If your JSON Schema doesn't align with the restrictions detailed above, you receive a validation error. Here are a few common errors and what they mean:
+
+| Error | What it means | Example that can cause this error|
+| ----- | ------------- | --------------------------------- |
+| `MANDATORY_FIELD_MISSING` | A mandatory keyword is missing | A string field is missing the `maxLength` keyword.|
+| `UNKNOWN_KEYWORD_AT_THIS_LEVEL` | A keyword is in the wrong place. | For example, `x-wix-permissions` is used inside the `items` object of an array field.|
+| `EXCEEDED_STORED_DATA_SIZE` | Your schema exceeds the 10 KB limit. | You try to increase `maxLength` in your string fields, but there's not enough storage remaining to support longer strings.|

@@ -1,0 +1,471 @@
+---
+title: "Get Dynamic Schema"
+description: "This endpoint returns a JSON schema object that's used to dynamically update the fields available to a Wix user when they configure an automation."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    This endpoint returns a [JSON schema](https://json-schema.org/) object
+    that's used to dynamically update the fields available to a Wix user
+    when they configure an [automation](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Ftriggers/site-automations).
+
+    Wix calls this endpoint when a user selects an option from an
+    [item selection filter](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/filter-fields#item-selection)
+    configured for a trigger.
+    Wix appends the returned schema to the
+    [payload schema](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/payload-schema)
+    you defined for the trigger and makes the fields available to the Wix user's automation.
+
+    ## Endpoint
+
+    ```http
+    POST /dynamic-schema
+    ```
+
+    ## Body Params
+
+    <ParamField body="triggerKey" type="string" required>
+
+      Trigger key as defined in your app's trigger configuration in the app dashboard. For example, `form_submitted` or `invoice_due`.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="selectedFilterOptions" type="SelectedFilterOptions[]">
+
+      Current selection state of the trigger's filters.
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="selectedFilterOptions properties">
+
+        <ParamField body="fieldKey" type="string">
+
+          Key representing a field from the trigger's [payload schema](https://dev.wix.com/docs/rest/business-management/automations/triggers/the-trigger-payload-schema) that has been configured as an [item selection filter](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/filter-fields#item-selection). For example `formId`.
+
+          Constraints: `minLength 1`, `maxLength 110`.
+
+        </ParamField>
+
+        <ParamField body="values" type="string[]">
+
+          Values selected for the filter field.
+
+          Constraints: `maxItems 100`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="dynamicSchema" type="object">
+
+      A [JSON schema](https://json-schema.org/) corresponding to the filter selection sent in the request.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PROVIDER_NOT_FOUND` | Service provider not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Dynamic schema request with a sample response body
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.<your-deployment-uri>.com/dynamic-schema' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: application/json' \
+      -d '{
+        "triggerKey" : "form_submitted",
+        "selectedFilterOptions" : [
+          {
+            "fieldKey" : "form_id",
+            "values" : ["1dd34d-gg567"]
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "dynamicSchema": {
+          "$schema": "https://json-schema.org/draft/2019-09/schema",
+          "type": "object",
+          "title": "Forms dynamic schema example",
+          "default": {},
+          "examples": [
+            {
+              "email": "email@email.com",
+              "message": "I completed your form."
+            }
+          ],
+          "properties": {
+            "email": {
+              "$id": "#/properties/formId",
+              "type": "string",
+              "format": "email",
+              "title": "Email",
+              "default": "",
+              "examples": ["email@email.com"]
+            },
+            "message": {
+              "$id": "#/properties/formName",
+              "type": "string",
+              "title": "Message",
+              "default": "",
+              "examples": ["Hey, nice form!"]
+            }
+          },
+          "required": [ "email", "message" ],
+          "additionalProperties": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    This endpoint returns a [JSON schema](https://json-schema.org/) object
+    that's used to dynamically update the fields available to a Wix user
+    when they configure an [automation](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Ftriggers/site-automations).
+
+    Wix calls this endpoint when a user selects an option from an
+    [item selection filter](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/filter-fields#item-selection)
+    configured for a trigger.
+    Wix appends the returned schema to the
+    [payload schema](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/payload-schema)
+    you defined for the trigger and makes the fields available to the Wix user's automation.
+
+    ## Method Declaration
+
+    ```typescript
+    import { triggerProvider } from '@wix/automations';
+
+    triggerProvider.getDynamicSchema(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="GetDynamicSchemaRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="triggerKey" type="string">
+
+          Trigger key as defined in your app's trigger configuration in the app dashboard. For example, `form_submitted` or `invoice_due`.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="selectedFilterOptions" type="SelectedFilterOptions[]">
+
+          Current selection state of the trigger's filters.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="selectedFilterOptions properties">
+
+            <ParamField body="fieldKey" type="string">
+
+              Key representing a field from the trigger's [payload schema](https://dev.wix.com/docs/rest/business-management/automations/triggers/the-trigger-payload-schema) that has been configured as an [item selection filter](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/filter-fields#item-selection). For example `formId`.
+
+              Constraints: `minLength 1`, `maxLength 110`.
+
+            </ParamField>
+
+            <ParamField body="values" type="string[]">
+
+              Values selected for the filter field.
+
+              Constraints: `maxItems 100`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="dynamicSchema" type="object">
+
+      A [JSON schema](https://json-schema.org/) corresponding to the filter selection sent in the request.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PROVIDER_NOT_FOUND` | Service provider not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-dynamic-schema" id="ex-sdk-get-dynamic-schema-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-dynamic-schema" id="ex-sdk-get-dynamic-schema-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-dynamic-schema-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-dynamic-schema-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Self-hosted: Update form based on selected options @description:</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getDynamicSchema (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-dynamic-schema-0"><span className="wix-picker-name">Self-hosted: Update form based on selected options @description:</span></label>
+    <label htmlFor="ex-sdk-get-dynamic-schema-1"><span className="wix-picker-name">getDynamicSchema (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Self-hosted: Update form based on selected options @description:
+    import { createClient } from '@wix/sdk';
+    import { triggerProvider } from "@wix/automations/service-plugins";
+
+    const wixClient = createClient({
+      auth: {
+        appId: <YOUR_APP_ID>,
+        publicKey: <YOUR_APP_PUBLIC_KEY>
+      },
+      modules: { triggerProvider }
+    });
+
+    wixClient.triggerProvider.provideHandlers({
+      getDynamicSchema: async (payload) => {
+        const { request, metadata } = payload;
+        // Use the `request` and `metadata` received from Wix and
+        // apply custom logic.
+        return {
+          // Return your response exactly as documented to integrate with Wix.
+          // Return value example:
+          $schema: "https://json-schema.org/draft/2019-09/schema",
+          type: "object",
+          title: "Forms dynamic schema example",
+          default: {},
+          examples: [
+            {
+              email: "email@email.com",
+              message: "I completed your form."
+            }
+          ],
+          properties: {
+            email: {
+              $id: "#/properties/formId",
+              type: "string",
+              format: "email",
+              title: "Email",
+              default: "",
+              examples: [
+                "email@email.com"
+              ]
+            },
+            message: {
+              $id: "#/properties/formName",
+              type: "string",
+              title: "Message",
+              default: "",
+              examples: [
+                "Hey, nice form!"
+              ]
+            }
+          },
+          required: [
+            "email",
+            "message"
+          ],
+          additionalProperties: false
+        }
+      }    
+    });
+
+    // Implement a router to process all requests
+    express.post('/plugins-and-webhooks/*', (req, res) => {
+      wixClient.process(req);
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getDynamicSchema (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { triggerProvider } from '@wix/automations/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { triggerProvider },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getDynamicSchema(request,metadata) {
+      const response = await myWixClient.triggerProvider.getDynamicSchema(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

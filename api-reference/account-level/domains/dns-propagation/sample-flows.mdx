@@ -1,0 +1,57 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Monitor DNS propagation after domain connection
+
+When a Wix user connects a custom domain to their Wix site, you need to verify that the DNS records are properly configured and propagated. This flow helps you monitor the propagation status and provide feedback to Wix users about their domain setup.
+
+To monitor DNS propagation after domain connection:
+
+1. Call [Get DNS Propagation](fallback::https://dev.wix.com/docs/api-reference/account-level/domains/dns-propagation/get-dns-propagation) using the domain name as the `dnsPropagationId` parameter to retrieve the current propagation status.
+
+2. Check the `status` field in the response:
+   - If `IN_PROGRESS`: The DNS records are still being checked and propagated. Continue monitoring.
+   - If `SUCCEEDED`: All DNS records are properly configured and propagated. The domain is ready to use.
+   - If `FAILED`: 1 or more DNS records are misconfigured. Continue below for troubleshooting.
+
+3. If the status is `FAILED`, examine the `failureInfo` object to identify which DNS record types failed:
+   - Check `invalidRecords` array to see which record types need attention.
+   - Review the corresponding `invalidARecordInfo`, `invalidNsRecordInfo`, or `invalidCnameRecordInfo` objects for detailed comparisons.
+
+4. For each failed record type, compare the `expectedDnsRecords` and `actualDnsRecords` arrays to identify the specific DNS configuration changes needed.
+
+5. Provide the Wix user with clear instructions on which DNS records to update at their domain registrar, using the expected values from the API response.
+
+6. Continue calling [Get DNS Propagation](fallback::https://dev.wix.com/docs/api-reference/account-level/domains/dns-propagation/get-dns-propagation) periodically to monitor progress. Since DNS propagation can take up to 48 hours, check the status every few hours rather than continuously.
+
+## Troubleshoot domain connectivity issues
+
+When a domain isn't working properly with a Wix site, you can use the DNS Propagation API to diagnose DNS configuration problems and guide Wix users toward solutions.
+
+To troubleshoot domain connectivity issues:
+
+1. Call [Get DNS Propagation](fallback::https://dev.wix.com/docs/api-reference/account-level/domains/dns-propagation/get-dns-propagation) using the domain name as the `dnsPropagationId` to get the current DNS propagation status and configuration details.
+
+2. Analyze the overall propagation status:
+   - If `SUCCEEDED`: DNS records are properly configured. The connectivity issue may be elsewhere.
+   - If `IN_PROGRESS`: DNS changes may still be propagating. Wait for propagation to complete.
+   - If `FAILED`: DNS records are misconfigured. Continue with DNS troubleshooting.
+
+3. Check the `dnsResolverIncludesWixNs` field to verify name server configuration:
+   - If `true`: Wix name servers are detected, indicating proper NS record configuration.
+   - If `false` or `null`: Name servers may not be properly configured for Wix.
+
+4. Examine the `failureInfo.invalidRecords` array to identify which specific DNS record types are causing problems.
+
+5. For each invalid record type, review the detailed information:
+   - Compare `expectedDnsRecords` with `actualDnsRecords` to see exactly what's wrong.
+   - Provide specific instructions for correcting each misconfigured record type.
+
+6. Guide the Wix user to make the necessary DNS changes at their domain registrar using the expected DNS record values from the API response.
+
+7. After the Wix user makes changes, call [Get DNS Propagation](fallback::https://dev.wix.com/docs/api-reference/account-level/domains/dns-propagation/get-dns-propagation) again to verify the updates and monitor the new propagation status.

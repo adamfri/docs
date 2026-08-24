@@ -1,0 +1,552 @@
+---
+title: "List Activities"
+description: "Retrieves a contact's activities, ordered from most recent to oldest."
+icon: "download"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves a contact's activities, ordered from most recent to oldest.
+
+    `contactId` is required for the first call. When paginating with `cursorPaging` on subsequent calls, pass only `cursorPaging.cursor`. Don't pass `contactId`, `categoryId`, `fromDate`, or `toDate` together with a cursor, as the cursor already carries those values. To learn about cursor paging, see [Sorting and Paging](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-sorting-and-paging).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.READ-CONTACTS">Read Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/crm/contacts-activity-log/v1/activities
+    ```
+
+    ## Query Params
+
+    <ParamField query="cursorPaging" type="CursorPaging">
+
+      Cursor token for retrieving subsequent pages. Pass `metadata.cursors.next` from the previous response. When providing a cursor, don't pass `contactId`, `categoryId`, `fromDate`, or `toDate`.
+
+      <Expandable title="cursorPaging properties">
+
+        <ParamField query="limit" type="integer">
+
+          Number of items to load.
+
+        </ParamField>
+
+        <ParamField query="cursor" type="string">
+
+          Pointer to the next or previous page in the list of results.
+
+          You can get the relevant cursor token
+          from the `pagingMetadata` object in the previous call's response.
+          Not relevant for the first request.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField query="contactId" type="string">
+
+      ID of the contact whose activities to retrieve. Required if `cursorPaging` isn't provided.
+
+    </ParamField>
+
+    <ParamField query="categoryId" type="string">
+
+      ID of a category to filter activities by. Can't be used together with `cursorPaging`. To retrieve available category IDs, call [List Categories](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/activity-log/template-v1/list-categories).
+
+    </ParamField>
+
+    <ParamField query="fromDate" type="datetime">
+
+      Earliest activity date to include in results, inclusive. Can't be used together with `cursorPaging`.
+
+    </ParamField>
+
+    <ParamField query="toDate" type="datetime">
+
+      Latest activity date to include in results, inclusive. Can't be used together with `cursorPaging`.
+
+    </ParamField>
+
+    <ParamField query="language" type="string">
+
+      2-letter language code in ISO 639-1 alpha-2 format. Determines the language of the `message` field for activities created by Wix from a template. Custom activity messages are always returned as provided, regardless of this parameter.
+
+      Default: Language from the request context, or `en`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="activities" type="Activity[]">
+
+      Retrieved activities.
+
+      See the [Activity Object](/api-reference/crm/members-contacts/contacts/activity-log/activity-v1/activity-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="PagingMetadataV2">
+
+      Paging metadata, including a `next` cursor for retrieving the next page of results.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="offset" type="integer">
+
+          Offset that was requested.
+
+        </ResponseField>
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the request. Returned when offset paging is used and `tooManyToCount` is `false`.
+
+        </ResponseField>
+
+        <ResponseField name="tooManyToCount" type="boolean">
+
+          Whether the server failed to calculate `total`. If `true`, `total` is omitted.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors for navigating between result pages. Returned when cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor for the next page of results. Pass this value in `cursorPaging.cursor` to retrieve the next page.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor for the previous page of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_CONTACT_ID` | `contactId` is required when no cursor is provided. Pass a contact ID on the first call, or pass `cursorPaging.cursor` from the previous response to retrieve the next page. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Retrieve a contact's activities, ordered from most recent to oldest.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+      'https://www.wixapis.com/crm/contacts-activity-log/v1/activities?contactId=7867990e-45f0-47ee-bb7b-f01960bdda2f' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "activities": [
+          {
+            "id": "1718460000000/1e98a239-6d3c-4934-890f-36f2dcfd36a4",
+            "activityDate": "2024-06-15T14:00:00Z",
+            "contactId": "7867990e-45f0-47ee-bb7b-f01960bdda2f",
+            "message": "Spoke with John about his upcoming renewal. He confirmed he wants to stay on the premium plan.",
+            "templateId": "e1c5a6ad-c926-450b-99e0-49057d7e46f4",
+            "params": {
+              "MessageContent": "Spoke with John about his upcoming renewal. He confirmed he wants to stay on the premium plan."
+            }
+          }
+        ],
+        "metadata": {
+          "count": 1,
+          "cursors": {
+            "next": ""
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves a contact's activities, ordered from most recent to oldest.
+
+    `contactId` is required for the first call. When paginating with `cursorPaging` on subsequent calls, pass only `cursorPaging.cursor`. Don't pass `contactId`, `categoryId`, `fromDate`, or `toDate` together with a cursor, as the cursor already carries those values. To learn about cursor paging, see [Sorting and Paging](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-sorting-and-paging).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.READ-CONTACTS">Read Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsActivityLogActivities } from '@wix/contacts-activity-log-activities';
+
+    contactsActivityLogActivities.listActivities(options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="ListActivitiesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="cursorPaging" type="CursorPaging">
+
+          Cursor token for retrieving subsequent pages. Pass `metadata.cursors.next` from the previous response. When providing a cursor, don't pass `contactId`, `categoryId`, `fromDate`, or `toDate`.
+
+          <Expandable title="cursorPaging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Number of items to load.
+
+            </ParamField>
+
+            <ParamField body="cursor" type="string">
+
+              Pointer to the next or previous page in the list of results.
+
+              You can get the relevant cursor token
+              from the `pagingMetadata` object in the previous call's response.
+              Not relevant for the first request.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="contactId" type="string">
+
+          ID of the contact whose activities to retrieve. Required if `cursorPaging` isn't provided.
+
+        </ParamField>
+
+        <ParamField body="categoryId" type="string">
+
+          ID of a category to filter activities by. Can't be used together with `cursorPaging`. To retrieve available category IDs, call [List Categories](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/activity-log/template-v1/list-categories).
+
+        </ParamField>
+
+        <ParamField body="fromDate" type="datetime">
+
+          Earliest activity date to include in results, inclusive. Can't be used together with `cursorPaging`.
+
+        </ParamField>
+
+        <ParamField body="toDate" type="datetime">
+
+          Latest activity date to include in results, inclusive. Can't be used together with `cursorPaging`.
+
+        </ParamField>
+
+        <ParamField body="language" type="string">
+
+          2-letter language code in ISO 639-1 alpha-2 format. Determines the language of the `message` field for activities created by Wix from a template. Custom activity messages are always returned as provided, regardless of this parameter.
+
+          Default: Language from the request context, or `en`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="activities" type="Activity[]">
+
+      Retrieved activities.
+
+      See the [Activity Object](/api-reference/crm/members-contacts/contacts/activity-log/activity-v1/activity-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="metadata" type="PagingMetadataV2">
+
+      Paging metadata, including a `next` cursor for retrieving the next page of results.
+
+      <Expandable title="metadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="offset" type="integer">
+
+          Offset that was requested.
+
+        </ResponseField>
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the request. Returned when offset paging is used and `tooManyToCount` is `false`.
+
+        </ResponseField>
+
+        <ResponseField name="tooManyToCount" type="boolean">
+
+          Whether the server failed to calculate `total`. If `true`, `total` is omitted.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors for navigating between result pages. Returned when cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor for the next page of results. Pass this value in `cursorPaging.cursor` to retrieve the next page.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor for the previous page of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_CONTACT_ID` | `contactId` is required when no cursor is provided. Pass a contact ID on the first call, or pass `cursorPaging.cursor` from the previous response to retrieve the next page. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-activities" id="ex-sdk-list-activities-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-activities" id="ex-sdk-list-activities-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-activities-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-activities-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">List a contact's activities</span><span className="wix-picker-desc">Retrieve activities for a contact, most recent first. Pass metadata.cursors.next in cursorPaging.cursor to retrieve additional pages</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listActivities (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-activities-0"><span className="wix-picker-name">List a contact's activities</span><span className="wix-picker-desc">Retrieve activities for a contact, most recent first. Pass metadata.cursors.next in cursorPaging.cursor to retrieve additional pages</span></label>
+    <label htmlFor="ex-sdk-list-activities-1"><span className="wix-picker-name">listActivities (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript List a contact's activities
+    import { wixCrmContactsActivityLogV1Activity } from "@wix/dev";
+
+    async function listActivities() {
+      const response = await wixCrmContactsActivityLogV1Activity.listActivities(
+        {
+          contactId: "7867990e-45f0-47ee-bb7b-f01960bdda2f",
+        },
+      );
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "activities": [
+     *     {
+     *       "_id": "1718460000000/b8f3a2c5-7e1d-4a9b-bc35-8f7c4d2e1a6b",
+     *       "activityDate": "2024-06-15T14:00:00.000Z",
+     *       "contactId": "7867990e-45f0-47ee-bb7b-f01960bdda2f",
+     *       "message": "Submitted the form 'Contact Us'.",
+     *       "templateId": "25c2a6cc-40c2-4883-ab09-6e7fcd7d0342",
+     *       "params": {
+     *         "FormName": "Contact Us",
+     *         "FormURL": "https://example.com/contact"
+     *       }
+     *     },
+     *     {
+     *       "_id": "1718443800000/e5a7c3b1-2d4f-4890-a6c8-7f3e2b1d9a0c",
+     *       "activityDate": "2024-06-15T09:30:00.000Z",
+     *       "contactId": "7867990e-45f0-47ee-bb7b-f01960bdda2f",
+     *       "message": "Called to confirm the follow-up appointment for next week.",
+     *       "templateId": "e1c5a6ad-c926-450b-99e0-49057d7e46f4",
+     *       "params": {
+     *         "MessageContent": "Called to confirm the follow-up appointment for next week."
+     *       }
+     *     }
+     *   ],
+     *   "metadata": {
+     *     "count": 2,
+     *     "cursors": {}
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listActivities (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsActivityLogActivities } from '@wix/contacts-activity-log-activities';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsActivityLogActivities },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listActivities(options) {
+      const response = await myWixClient.contactsActivityLogActivities.listActivities(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

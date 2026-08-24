@@ -1,0 +1,1182 @@
+---
+title: "List Event Time Slots"
+description: "Retrieves a list of class session time slots that match the provided filters."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of class session time slots that match the provided filters.
+
+    ### Defaults
+
+    List Event Time Slots uses the following defaults:
+
+    - `providerId` set to the Bookings app ID.
+    - `timeZone` set to the business time zone.
+    - `cursorPaging.limit` set to `50`.
+    - Returns both bookable and non-bookable time slots.
+
+    Time slots are always sorted by their `localStartDate` in ascending order.
+
+    ### Service type limitations
+
+    To retrieve appointment availability, call [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots).
+
+    To retrieve course availability, follow the [End-to-End Booking Flow for courses](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+
+    ### Booking policy filtering
+
+    Use `bookingPolicyViolations` to filter slots based on booking restrictions defined in your [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+    *Default behavior**: When you don't specify any `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+    - Set `tooEarlyToBook` to `true` to retrieve slots that can't be booked yet due to minimum advance booking time restrictions.
+    Currently, you can't specify `earliestBookingDate` to further filter by when the slot becomes bookable.
+    - Set `tooLateToBook` to `true` to retrieve slots that can no longer be booked due to maximum advance booking time restrictions.
+    - Set `bookOnlineDisabled` to `true` or `false` to filter by online booking availability settings.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-CALENDAR">Read Bookings Calendar Availability</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/service-availability/v2/time-slots/event
+    ```
+
+    ## Body Params
+
+    <ParamField body="fromLocalDate" type="string">
+
+      Lower boundary for `localStartDate` to include in the response.
+      Each returned time slot has a `localStartDate` between `fromLocalDate` and `toLocalDate`.
+      Required unless you specify `cursorPaging.cursor`.
+
+      Local start date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+    </ParamField>
+
+    <ParamField body="toLocalDate" type="string">
+
+      Upper boundary for `localStartDate` to include in the response.
+      Each returned time slot has a `localStartDate` between `fromLocalDate` and `toLocalDate`.
+      Required unless you specify `cursorPaging.cursor`.
+
+      Local end date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+      For example, `2026-01-30T13:30:00`.
+
+    </ParamField>
+
+    <ParamField body="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate` values.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ParamField>
+
+    <ParamField body="serviceIds" type="string[]">
+
+      Optional service IDs to filter the response.
+      If not provided, time slots for all services are returned.
+
+      Constraints: `format GUID`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="includeNonBookable" type="boolean">
+
+      Whether to include time slots that aren't bookable according to the service's booking policy or that are fully booked.
+      - `true`: Both bookable and non-bookable time slots are returned.
+      - `false`: Only bookable time slots are returned.
+
+      Default: `true`
+
+    </ParamField>
+
+    <ParamField body="minBookableCapacity" type="integer">
+
+      Minimum bookable capacity.
+      Use to filter out sessions that can't accommodate the desired party size.
+
+    </ParamField>
+
+    <ParamField body="eventFilter" type="object">
+
+      Optional filter to apply to the events, for example resource or location.
+      See [Query Events](https://dev.wix.com/docs/rest/business-management/calendar/events-v3/query-events) for a list of supported filters.
+
+    </ParamField>
+
+    <ParamField body="maxSlotsPerDay" type="integer">
+
+      Maximum number of slots to return for each day in the specified time range.
+      If both bookable and non-bookable slots exist on the same day, bookable slots are returned first.
+
+      When you specify `maxSlotsPerDay`, you must also specify `toLocalDate`, and it must be no more than 1 month after `fromLocalDate`.
+
+    </ParamField>
+
+    <ParamField body="cursorPaging" type="CursorPaging">
+
+      Cursor-based paging configuration.
+      Enables fetching results in smaller chunks by setting a limit on the number of returned items.
+
+      <Expandable title="cursorPaging properties">
+
+        <ParamField body="limit" type="integer">
+
+          Number of results to load.
+
+          Default: `1000`.
+          Max: `1000`.
+
+        </ParamField>
+
+        <ParamField body="cursor" type="string">
+
+          Pointer to the next or previous page in the list of results.
+
+          You can get the relevant cursor token
+          from the `pagingMetadata` object in the previous call's response.
+          Not relevant for the first request.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="bookingPolicyViolations" type="BookingPolicyViolations">
+
+      Indicators for service's booking policy violations.
+      Allows filtering for time slots with specific violation types based on [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction). When you don't specify `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+      <Expandable title="bookingPolicyViolations properties">
+
+        <ParamField body="tooEarlyToBook" type="boolean">
+
+          Whether it's too early for customers to book the slot.
+
+          By default, all slots are returned. Specifying `{"tooEarlyToBook": false}` returns only those that customers can already book, while specifying `{"tooEarlyToBook": true}` returns only those that can't be booked yet.
+
+        </ParamField>
+
+        <ParamField body="earliestBookingDate" type="datetime">
+
+          Earliest time for booking the slot in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+          *In responses**: Contains a value when `tooEarlyToBook` is `true`, indicating the earliest time customers can book the slot.
+
+          *In requests**: Don't specify a value for this field. Use `tooEarlyToBook` to filter slots that can't be booked yet due to minimum advance booking time restrictions.
+
+        </ParamField>
+
+        <ParamField body="tooLateToBook" type="boolean">
+
+          Whether it's too late for customers to book the slot.
+
+          By default, all slots are returned. Specifying `{"tooLateToBook": false}` returns only those that customers can still book, while specifying `{"tooLateToBook": true}` returns only those that can no longer be booked.
+
+        </ParamField>
+
+        <ParamField body="bookOnlineDisabled" type="boolean">
+
+          Whether customers can book the service online.
+
+          By default, both services with online booking enabled and disabled are returned. Providing the boolean set to `true` or `false` returns only matching slots.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="timeSlots" type="TimeSlot[]">
+
+      Retrieved time slots matching the specified filters.
+
+      See the [Time Slot Object](/api-reference/business-solutions/bookings/time-slots/time-slots-v2/time-slot-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate` values.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata for the next page of results.
+      Contains a cursor if more data is available.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-list-event-time-slots" id="ex-rest-list-event-time-slots-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-list-event-time-slots" id="ex-rest-list-event-time-slots-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-list-event-time-slots" id="ex-rest-list-event-time-slots-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-list-event-time-slots-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-list-event-time-slots-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">List Event Time Slots - Weekly Schedule</span><span className="wix-picker-desc">Retrieves at most one event time slot per day for a weekly schedule (7 days) using maxSlotsPerDay filter for a specific service</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List Event Time Slots with Cursor Pagination</span><span className="wix-picker-desc">Retrieves the next page of event time slots using cursor pagination from a previous request</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Available class sessions with minimum capacity</span><span className="wix-picker-desc">Lists available yoga class sessions that have at least 2 open spots, suitable for group booking scenarios</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-list-event-time-slots-0"><span className="wix-picker-name">List Event Time Slots - Weekly Schedule</span><span className="wix-picker-desc">Retrieves at most one event time slot per day for a weekly schedule (7 days) using maxSlotsPerDay filter for a specific service</span></label>
+    <label htmlFor="ex-rest-list-event-time-slots-1"><span className="wix-picker-name">List Event Time Slots with Cursor Pagination</span><span className="wix-picker-desc">Retrieves the next page of event time slots using cursor pagination from a previous request</span></label>
+    <label htmlFor="ex-rest-list-event-time-slots-2"><span className="wix-picker-name">Available class sessions with minimum capacity</span><span className="wix-picker-desc">Lists available yoga class sessions that have at least 2 open spots, suitable for group booking scenarios</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots/event' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "fromLocalDate": "2025-09-04T00:00:00",
+          "toLocalDate": "2025-09-10T23:59:59",
+          "timeZone": "America/New_York",
+          "serviceIds": [
+              "ecbf8d5f-abef-40de-9831-96ef99882450"
+          ],
+          "includeNonBookable": false,
+          "maxSlotsPerDay": 1,
+          "cursorPaging": {
+              "limit": 10
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlots": [
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-04T09:00:00",
+            "localEndDate": "2025-09-04T10:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "ekSz5t9y5Jwqp3W4HyH27yPyzWw087bE48FFYNNIz23XiG2xhPt27M4I2jJZl8L6KVKr0dtrSZRJK8oLat6P7XXFP9v3rzsHnQL504PV8GUUpoIUaaZjMK"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 48,
+            "bookableCapacity": 48,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-05T10:00:00",
+            "localEndDate": "2025-09-05T11:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "flTa6u0z6Kxrq4X5IzI38zQz0Xx198cF59GGZOOJz34YjH3yiQu38N5J3kKam9M7LWLs1etsTabSL9pMbu7Q8YYGQ0w4sazIoRM615QW9HVVqpJVbbakNL"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 45,
+            "bookableCapacity": 45,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-06T10:00:00",
+            "localEndDate": "2025-09-06T11:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "gmUb7v1a7Lysr5Y6JaJ49aRa1Yy209dG60HHaPPKa45ZkI4zjRv49O6K4lLbo0N8MXMt2fuuUcbTM0qNcv8R9ZZHZ1x5tbaJpSN726RX0IWWrqKWcabmOM"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 35,
+            "bookableCapacity": 35,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-07T11:00:00",
+            "localEndDate": "2025-09-07T12:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "hnVc8w2b8Mzts6Z7KbK50bSb2Zz310eH71IIbQQLb56alJ5akSw50P7L5mMcp1O9NYNu3gvvVdbUN1rOdw9S0AZIZ2y6ucbKqTO837SY1JXXsrLXdcbnPN"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 42,
+            "bookableCapacity": 42,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-08T11:00:00",
+            "localEndDate": "2025-09-08T12:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "ioWd9x3c9Naur7a8LcL61cTc3aa421fI82JJcRRMc67bmK6blTx61Q8M6nNdq2P0OaNv4hxwWecVO2sPex0T1BaJa3z7vdcLrUP948TZ2KYYtsMyedcoQO"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 40,
+            "bookableCapacity": 40,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-09T13:00:00",
+            "localEndDate": "2025-09-09T14:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "jpXe0y4d0Obvs8b9MdM72dUd4bb532gJ93KKdSSNd78cnL7cmUy72R9N7oOer3Q1PbOw5iyxXfdWP3tQfy1U2CbKb4a8wedMsVQ059Ua3LZZutNzfedpRP"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 38,
+            "bookableCapacity": 38,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-10T15:00:00",
+            "localEndDate": "2025-09-10T16:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "kqYf1z5e1Pcwt9c0NeN83eVe5cc643hK04LLeSTO8890oM8dnVz83S0O8pPfs4R2QcPx6jzyYgeXQ4uRgz2V3DcLc5b9xfeMtWR160Vb4MaavrOagfeqSQ"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 30,
+            "bookableCapacity": 30,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          }
+        ],
+        "timeZone": "America/New_York",
+        "pagingMetadata": {
+          "cursors": {},
+          "hasNext": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots/event' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "cursorPaging": {
+              "cursor": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.kCW5RwNpPpNdpalS-nxAScn6FH-12OdjWiMqGhwJ7Ih0HLuiVHE_wA._J9j4MZvKvFWRCjMu1i_zg.o4-JRrCIRBujQax6xtQXksv2OjTDTS5X_dE0mUGq1809x1vbZ6hM20cvDjdkR43hw7p9LMnvSYbPE2c2LKtxP4C_bErpv3QxSfWOcXX8zRefWyWTfK0W87J2h-fHKXT1xp6B_SOOA2dsQ0Ho691qnBUhV-qhlwcCYy1ZXBsdUp2_qt8oDKuXGwuTgU35Jd9swc0ZjtkERCSDTPrtiXfjz_Kqwe-AGsJCkdtReYknlnZrV3KHwBRUMoCVN7mP9xWUbO0lSBOK_Pzzm0g1hqfae21jkfQZw9_S9JO7aoLt3lZzg-AjBQMdbzu_zQG5tItyZMd90pNLAYACtllWjs034PtSG4V0Y0KV9xjVXbxapcXGRcfjtGzTKAitaE8H9liReEG_58bVcGuWXXTlLRGncb0PU2qFDh8x4jarodc6l1p2ho6v6_PGb-gUrPmW4OLa3rcC9FfgLqCINJ8Lh1obzSCQ8if2xRcfQb5R25c58IGgaQgI-syYmVeKZ83JOF3TStASBGNif12ODo2xxZnN7eSmCa7jW6gzgERs2V7WNAljmAIUJfEd1AiCX1vVgQ6v1CrFrRfVTQxC6_P6-P6xLbmoqgqatq4T0M6-MYK2eHc.jGzu9sRG8ssk5wY_nf07rg",
+              "limit": 2
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlots": [
+          {
+            "serviceId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "localStartDate": "2025-09-01T15:00:00",
+            "localEndDate": "2025-09-01T16:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "chQx3r7w3Huno1U2FwF05wNwyUu865zC26DDWLLGzo0VgE0vfNr05K2G0hHXj6J4ITIp8brqQXPHI6mJYr4N5VVDN7t1pyrFlOJ392NT6ESSnlGTyyYhKI"
+            },
+            "totalCapacity": 30,
+            "remainingCapacity": 18,
+            "bookableCapacity": 18,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "abc12345-6789-4def-ghij-klmnopqrstuv",
+                    "name": "Sarah Johnson"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-02T09:00:00",
+            "localEndDate": "2025-09-02T10:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "diRy4s8x4Ivop2V3GxG16xOxzVv976aD37EEXMMHz12WhF1wgOs16L3H1iIYk7K5JUJq9csrRYQIJ7nKZs5O6WWEO8u2qzsGmPK493OU7FTTomHTzzZiLJ"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 42,
+            "bookableCapacity": 42,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          }
+        ],
+        "timeZone": "America/New_York",
+        "pagingMetadata": {
+          "cursors": {
+            "next": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.iHueUsIcttKGV_AZT_n6RvqNwjLZfHfHN37m7Fxmnf1f5duWTNNnnw.SBTe3yG9XLrDqNYuBY8xKQ.8vf_ardvkK5tFT9PVUhmLfjyEl9wrEfglqlUDPzYyLGq2RdIVjFKoXbpnC9hVM-YbwhJzvqfyYK8zBRpW91n_uhBI9_AIzXPMd5S2Q-uNC100O5omQL-i4XL3L6s9LbCwhoHJlthVyq4f_T5TL08TJbnniOFuaJ8uo4dHGVhx05pjPjv2Z9g2ldZZ36GW-haVzzE1isnWL9DO5rfZCxYaAXDSUVomPteFwIEn7OMCWxgyH9TrqtoxVF193q7gfL8zPvzETbGq71KZ_TTia7fB_uaVRSedplw1TCgxybEF7bmFaXZ8or8JjMxGkctoYEkf-tnoEV2xVPb4FMrkFB_vQsB-BjQmdbIny2wvUYZpCHwgXqD41jZialpEjsMRYAJ3sAJgbeGUpikBiHSgcJFKg.5alWSlygWwTW4y-n_vyKmA"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/_api/service-availability/v2/time-slots/event' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "fromLocalDate": "2025-09-01T00:00:00",
+          "toLocalDate": "2025-09-07T23:59:59",
+          "timeZone": "America/New_York",
+          "includeNonBookable": false,
+          "cursorPaging": {
+              "limit": 3
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+        "timeSlots": [
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-01T09:00:00",
+            "localEndDate": "2025-09-01T10:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "agOw1p5v1Fslm9S0DuDy3uLuwSs643xA04BBUJJEymzTeCztdLpz3I0E8dFVh4H2GRGn6ZpaOVNFG4kHWp2L3TTBL5r9nwsDmKH170LR4CQQljERwwWfIG"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 50,
+            "bookableCapacity": 50,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "ecbf8d5f-abef-40de-9831-96ef99882450",
+            "localStartDate": "2025-09-01T10:00:00",
+            "localEndDate": "2025-09-01T11:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "agOw1p5v1Fslm9S0DuDy3uLuwSs643xA04BBUJJEymz1UNhzqmAa2dS3hjNpzVytimGkjjFUJVzODarhFweQLHzJOxS0d7jPDxBOk26E20Xd0nqigTbMlE"
+            },
+            "totalCapacity": 50,
+            "remainingCapacity": 45,
+            "bookableCapacity": 45,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "fdb27a53-9750-4b3f-b8fe-589b5328779a",
+                    "name": "John Smith"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          },
+          {
+            "serviceId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "localStartDate": "2025-09-01T14:00:00",
+            "localEndDate": "2025-09-01T15:00:00",
+            "bookable": true,
+            "location": {
+              "locationType": "BUSINESS"
+            },
+            "eventInfo": {
+              "eventId": "bgPw2q6v2Gtmn0T1EvEz4vMvxTt754yB15CCVKKFznzUfDzueMqz4J1F9gGWi5I3HSHo7aqbPWOGH5lIXq3M4UUCM6s0oxuEkNI281MS5DRRmkFSxxXgJH"
+            },
+            "totalCapacity": 30,
+            "remainingCapacity": 25,
+            "bookableCapacity": 25,
+            "bookingPolicyViolations": {
+              "tooEarlyToBook": false,
+              "tooLateToBook": false,
+              "bookOnlineDisabled": false
+            },
+            "availableResources": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resources": [
+                  {
+                    "id": "abc12345-6789-4def-ghij-klmnopqrstuv",
+                    "name": "Sarah Johnson"
+                  }
+                ]
+              }
+            ],
+            "nestedTimeSlots": []
+          }
+        ],
+        "timeZone": "America/New_York",
+        "pagingMetadata": {
+          "cursors": {
+            "next": "JWE.eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiSGp3NWZDbWcifQ.kCW5RwNpPpNdpalS-nxAScn6FH-12OdjWiMqGhwJ7Ih0HLuiVHE_wA._J9j4MZvKvFWRCjMu1i_zg.o4-JRrCIRBujQax6xtQXksv2OjTDTS5X_dE0mUGq1809x1vbZ6hM20cvDjdkR43hw7p9LMnvSYbPE2c2LKtxP4C_bErpv3QxSfWOcXX8zRefWyWTfK0W87J2h-fHKXT1xp6B_SOOA2dsQ0Ho691qnBUhV-qhlwcCYy1ZXBsdUp2_qt8oDKuXGwuTgU35Jd9swc0ZjtkERCSDTPrtiXfjz_Kqwe-AGsJCkdtReYknlnZrV3KHwBRUMoCVN7mP9xWUbO0lSBOK_Pzzm0g1hqfae21jkfQZw9_S9JO7aoLt3lZzg-AjBQMdbzu_zQG5tItyZMd90pNLAYACtllWjs034PtSG4V0Y0KV9xjVXbxapcXGRcfjtGzTKAitaE8H9liReEG_58bVcGuWXXTlLRGncb0PU2qFDh8x4jarodc6l1p2ho6v6_PGb-gUrPmW4OLa3rcC9FfgLqCINJ8Lh1obzSCQ8if2xRcfQb5R25c58IGgaQgI-syYmVeKZ83JOF3TStASBGNif12ODo2xxZnN7eSmCa7jW6gzgERs2V7WNAljmAIUJfEd1AiCX1vVgQ6v1CrFrRfVTQxC6_P6-P6xLbmoqgqatq4T0M6-MYK2eHc.jGzu9sRG8ssk5wY_nf07rg"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves a list of class session time slots that match the provided filters.
+
+    ### Defaults
+
+    List Event Time Slots uses the following defaults:
+
+    - `providerId` set to the Bookings app ID.
+    - `timeZone` set to the business time zone.
+    - `cursorPaging.limit` set to `50`.
+    - Returns both bookable and non-bookable time slots.
+
+    Time slots are always sorted by their `localStartDate` in ascending order.
+
+    ### Service type limitations
+
+    To retrieve appointment availability, call [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots).
+
+    To retrieve course availability, follow the [End-to-End Booking Flow for courses](https://dev.wix.com/docs/api-reference/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+
+    ### Booking policy filtering
+
+    Use `bookingPolicyViolations` to filter slots based on booking restrictions defined in your [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+    *Default behavior**: When you don't specify any `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+    - Set `tooEarlyToBook` to `true` to retrieve slots that can't be booked yet due to minimum advance booking time restrictions.
+    Currently, you can't specify `earliestBookingDate` to further filter by when the slot becomes bookable.
+    - Set `tooLateToBook` to `true` to retrieve slots that can no longer be booked due to maximum advance booking time restrictions.
+    - Set `bookOnlineDisabled` to `true` or `false` to filter by online booking availability settings.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-CALENDAR">Read Bookings Calendar Availability</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { eventTimeSlots } from '@wix/bookings';
+
+    eventTimeSlots.listEventTimeSlots(options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="ListEventTimeSlotsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fromLocalDate" type="string">
+
+          Lower boundary for `localStartDate` to include in the response.
+          Each returned time slot has a `localStartDate` between `fromLocalDate` and `toLocalDate`.
+          Required unless you specify `cursorPaging.cursor`.
+
+          Local start date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+          For example, `2026-01-30T13:30:00`.
+
+        </ParamField>
+
+        <ParamField body="toLocalDate" type="string">
+
+          Upper boundary for `localStartDate` to include in the response.
+          Each returned time slot has a `localStartDate` between `fromLocalDate` and `toLocalDate`.
+          Required unless you specify `cursorPaging.cursor`.
+
+          Local end date in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+          For example, `2026-01-30T13:30:00`.
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate` values.
+          For example, `America/New_York` or `UTC`.
+
+          Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+        </ParamField>
+
+        <ParamField body="serviceIds" type="string[]">
+
+          Optional service IDs to filter the response.
+          If not provided, time slots for all services are returned.
+
+          Constraints: `format GUID`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="includeNonBookable" type="boolean">
+
+          Whether to include time slots that aren't bookable according to the service's booking policy or that are fully booked.
+          - `true`: Both bookable and non-bookable time slots are returned.
+          - `false`: Only bookable time slots are returned.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="minBookableCapacity" type="integer">
+
+          Minimum bookable capacity.
+          Use to filter out sessions that can't accommodate the desired party size.
+
+        </ParamField>
+
+        <ParamField body="eventFilter" type="object">
+
+          Optional filter to apply to the events, for example resource or location.
+          See [Query Events](https://dev.wix.com/docs/rest/business-management/calendar/events-v3/query-events) for a list of supported filters.
+
+        </ParamField>
+
+        <ParamField body="maxSlotsPerDay" type="integer">
+
+          Maximum number of slots to return for each day in the specified time range.
+          If both bookable and non-bookable slots exist on the same day, bookable slots are returned first.
+
+          When you specify `maxSlotsPerDay`, you must also specify `toLocalDate`, and it must be no more than 1 month after `fromLocalDate`.
+
+        </ParamField>
+
+        <ParamField body="cursorPaging" type="CursorPaging">
+
+          Cursor-based paging configuration.
+          Enables fetching results in smaller chunks by setting a limit on the number of returned items.
+
+          <Expandable title="cursorPaging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Number of results to load.
+
+              Default: `1000`.
+              Max: `1000`.
+
+            </ParamField>
+
+            <ParamField body="cursor" type="string">
+
+              Pointer to the next or previous page in the list of results.
+
+              You can get the relevant cursor token
+              from the `pagingMetadata` object in the previous call's response.
+              Not relevant for the first request.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="bookingPolicyViolations" type="BookingPolicyViolations">
+
+          Indicators for service's booking policy violations.
+          Allows filtering for time slots with specific violation types based on [booking policies](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction). When you don't specify `bookingPolicyViolations` filters, all slots are returned regardless of their booking policy status.
+
+          <Expandable title="bookingPolicyViolations properties">
+
+            <ParamField body="tooEarlyToBook" type="boolean">
+
+              Whether it's too early for customers to book the slot.
+
+              By default, all slots are returned. Specifying `{"tooEarlyToBook": false}` returns only those that customers can already book, while specifying `{"tooEarlyToBook": true}` returns only those that can't be booked yet.
+
+            </ParamField>
+
+            <ParamField body="earliestBookingDate" type="datetime">
+
+              Earliest time for booking the slot in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              *In responses**: Contains a value when `tooEarlyToBook` is `true`, indicating the earliest time customers can book the slot.
+
+              *In requests**: Don't specify a value for this field. Use `tooEarlyToBook` to filter slots that can't be booked yet due to minimum advance booking time restrictions.
+
+            </ParamField>
+
+            <ParamField body="tooLateToBook" type="boolean">
+
+              Whether it's too late for customers to book the slot.
+
+              By default, all slots are returned. Specifying `{"tooLateToBook": false}` returns only those that customers can still book, while specifying `{"tooLateToBook": true}` returns only those that can no longer be booked.
+
+            </ParamField>
+
+            <ParamField body="bookOnlineDisabled" type="boolean">
+
+              Whether customers can book the service online.
+
+              By default, both services with online booking enabled and disabled are returned. Providing the boolean set to `true` or `false` returns only matching slots.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="timeSlots" type="TimeSlot[]">
+
+      Retrieved time slots matching the specified filters.
+
+      See the [Time Slot Object](/api-reference/business-solutions/bookings/time-slots/time-slots-v2/time-slot-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database) for adjusting `fromLocalDate` and `toLocalDate` values.
+      For example, `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/api-reference/business-management/site-properties/properties/get-site-properties).
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata for the next page of results.
+      Contains a cursor if more data is available.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Offset that was requested.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Indicates if there are more results after the current page.
+          If `true`, another page of results can be retrieved.
+          If `false`, this is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-event-time-slots" id="ex-sdk-list-event-time-slots-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-event-time-slots" id="ex-sdk-list-event-time-slots-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-event-time-slots-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-event-time-slots-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">listEventTimeSlots</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listEventTimeSlots (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-event-time-slots-0"><span className="wix-picker-name">listEventTimeSlots</span></label>
+    <label htmlFor="ex-sdk-list-event-time-slots-1"><span className="wix-picker-name">listEventTimeSlots (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript listEventTimeSlots
+    import { eventTimeSlots } from '@wix/bookings';
+
+    async function listEventTimeSlots(options) {
+      const response = await eventTimeSlots.listEventTimeSlots(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listEventTimeSlots (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { eventTimeSlots } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { eventTimeSlots },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listEventTimeSlots(options) {
+      const response = await myWixClient.eventTimeSlots.listEventTimeSlots(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

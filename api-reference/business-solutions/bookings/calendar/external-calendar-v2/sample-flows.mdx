@@ -1,0 +1,108 @@
+---
+title: "Sample Flows"
+description: "This article shares possible use cases your implementation could support, as well as a sample flow for each one."
+icon: "file-lines"
+---
+
+This article shares possible use cases your implementation could support, as
+well as a sample flow for each one. You're not limited to these use cases, but
+they can be a helpful jumping off point for your planning.
+
+## Check which connection method to use for a provider
+
+External calendar providers utilize different methods for authenticating
+connections. Some use an OAuth flow, while others require user credentials
+(email address and password).
+
+To determine the appropriate connection method for a provider:
+
+1. Call *List Providers*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/list-providers) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/list-providers))
+   to retrieve details about all supported external calendar providers for the
+   site.
+1. The response contains an array with details about each external calendar
+   provider. Save the relevant provider's `id` and `features.connectMethods`.
+1. If the `features.connectMethods` array contains
+   `OAUTH`, you can follow the *connect by OAuth flow*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/sample-flows#connect-an-external-calendar-by-oauth) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/sample-flows#connect-an-external-calendar-by-oauth)).
+   If it includes `CREDENTIALS`, you can follow the
+   *connect by credentials flow*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/sample-flows#connect-an-external-calendar-by-credentials) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/sample-flows#connect-an-external-calendar-by-credentials)).
+
+## Connect an external calendar by credentials
+
+Before you can sync events between an external calendar account and a Wix site,
+you need to establish a connection. If the external provider supports connecting
+by credentials, create the connection as follows:
+
+1. Get the external calendar's email address and password from the account
+   owner.
+1. Optional: If you don’t already have the ID of the relevant external calendar
+   provider, call *List Providers*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/list-providers) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/list-providers)).
+1. Call *Query Schedules*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/calendar/schedules/query-schedules) | [REST](fallback::https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/query-schedules))
+   and identify the `schedule` to connect the external calendar with. Save its
+   `id`.
+1. Call *Connect By Credentials*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/connect-by-credentials) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/connect-by-credentials)).
+   Specify `scheduleId`, `providerId`, `email`, and `password`.
+1. If the connection is established successfully, the response includes a
+   `connection` object with `{"status": "CONNECTED"}`.
+1. Check the following fields to see whether events are imported to Wix,
+   exported to the external calendar, or synced both ways:
+   - If `connection.syncConfig.listEventFromCalendars.enabled`
+   is set to `true`, events are imported to Wix.
+   - If `connection.syncConfig.syncToCalendar.enabled` is set to `true`, events
+   are exported to the external calendar.
+1. Optional: If you need to update sync directions, call *Update Sync Config*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/update-sync-config) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/update-sync-config)).
+   Specify `connectionId` and the relevant `syncConfig` object.
+
+## Connect an external calendar by OAuth
+
+Before you can sync events between an external calendar account and a Wix site,
+you need to establish a connection. If the external provider supports connecting
+by OAuth, create the connection as follows:
+
+1. Optional: If you don’t already have the ID of the relevant external calendar
+   provider, call *List Providers*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/list-providers) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/list-providers)).
+1. Call *Query Schedules*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/calendar/schedules/query-schedules) | [REST](fallback::https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/query-schedules))
+   and identify the `schedule` to connect the external calendar with. Save its
+   `id`.
+1. Call *Connect By OAuth*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/connect-by-oauth) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/connect-by-o-auth)).
+   Specify the `redirectUrl` to which the account owner is redirected after
+   authorizing access to their external calendar. Save the returned `oAuthUrl`.
+1. Redirect the account owner to the `oAuthUrl`.
+1. After the account owner authorizes access to their external calendar, they
+   are redirected to the `redirectUrl` from step 3. Save the `connectionId`
+   query parameter that has been automatically added to the redirect URL.
+1. Call *Get Connection*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/get-connection) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/get-connection)).
+   Check the following fields to see whether events are imported to Wix,
+   exported to the external calendar, or synced both ways:
+   - If `connection.syncConfig.listEventFromCalendars.enabled`
+   is set to `true`, events are imported to Wix.
+   - If `connection.syncConfig.syncToCalendar.enabled` is set to `true`, events
+   are exported to the external calendar.
+1. Optional: If you need to update sync directions, call *Update Sync Config*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/update-sync-config) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/update-sync-config)).
+   Specify `connectionId` and the relevant `syncConfig` object.
+
+## Retrieve a list of events in connected external calendars
+
+After you've connected an external calendar account with a Wix site, you can
+use the External Calendar API to retrieve information the events from the
+relevant external calendar accounts for a time range of your choice.
+
+To retrieve external calendar events:
+
+1. Follow the relevant sample flow above to create a connection.
+1. Call *List Events*
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/external-calendars/list-events) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/calendar/external-calendar-v2/list-events)).
+   Specify relevant start and end times as `from` and `to`. Additionally, you
+   can specify `scheduleIds` or `userIds` to further limit which events are
+   returned.

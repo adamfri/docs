@@ -1,0 +1,59 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Create a gift card product with promotional pricing
+
+You can create a gift card product where the price a buyer pays is less than the balance loaded onto the gift card. This is useful for running promotions, such as selling a $50 gift card for $45.
+
+To create a gift card product with promotional pricing:
+
+1. Call [Create Gift Card Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/create-gift-card-product). In the `presetVariants` array, set each variant's `price` and `value` fields separately. For example:
+
+    ```json
+    {
+      "giftCardProduct": {
+        "name": "Holiday Special eGift Card",
+        "presetVariants": [
+          {
+            "price": { "amount": "45" },
+            "value": { "amount": "50" }
+          },
+          {
+            "price": { "amount": "90" },
+            "value": { "amount": "100" }
+          }
+        ]
+      }
+    }
+    ```
+
+2. Optionally, set the `expirationType` and the corresponding expiration details. For a gift card that expires 1 year after purchase, set `expirationType` to `RELATIVE` and `relativeExpirationDate` to `{ "value": 1, "period": "YEARS" }`.
+
+## Sync gift card products across multiple sites
+
+If you manage multiple Wix sites, you may want to keep gift card products consistent across all of them. For example, if you update a product's denominations on one site, you can replicate the change on other sites.
+
+Each site currently supports a maximum of 1 gift card product, so syncing means either updating the existing product on the target site or creating one if none exists.
+
+To sync a gift card product across sites:
+
+1. Call [Get Gift Card Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/get-gift-card-product) on the source site to retrieve the product you want to sync.
+2. Extract the `giftCardProduct` object from the response.
+3. For each target site, call [Query Gift Card Products](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/query-gift-card-products) to check whether the product already exists by filtering on `name`.
+4. If the product exists on the target site, call [Update Gift Card Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/update-gift-card-product) and pass the updated fields along with the target product's `id` and current `revision`.
+5. If the product doesn't exist on the target site, call [Create Gift Card Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/create-gift-card-product) and pass the product details from the source site.
+
+## Rename a gift card product
+
+You can change the name of a gift card product after it's created (for example, to refresh seasonal branding or to correct a typo). A gift card product is a standalone catalog entity, so you rename it through the Gift Card Products API.
+
+To rename a gift card product:
+
+1. Call [Query Gift Card Products](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/query-gift-card-products) to retrieve the product you want to rename. Each site currently supports a maximum of 1 gift card product, so an unfiltered query returns the site's product.
+2. Extract the product's `id` and current `revision` from the response.
+3. Call [Update Gift Card Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/gift-cards/gift-card-products/update-gift-card-product) and specify the new `name` along with the product's `id` and `revision`.

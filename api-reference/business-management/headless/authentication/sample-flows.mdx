@@ -1,0 +1,108 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows for your headless implementation."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows for your headless implementation. These flows provide helpful jumping-off points as you plan your headless project's authentication.
+
+## Authenticate an existing member with email and password
+
+This flow guides you through authenticating an existing member using their email and password credentials, and generating a session token for authenticated API calls.
+
+To log in an existing member and generate a session token:
+
+1. Collect the member's email and password from your login form.
+
+2. Call [Login V 2](https://dev.wix.com/docs/rest/business-management/headless-authentication/authentication/login-v-2) with the member's credentials.
+
+3. Upon successful authentication, use the returned `sessionToken` to [generate member tokens](##get-the-site-members-access-and-refresh-tokens*fallback::https://dev.wix.com/docs/go-headless/coding/rest-api/visitors-and-members/handle-members-with-custom-login#get-the-site-members-access-and-refresh-tokens) for subsequent authenticated API calls.
+
+4. Handle potential errors and edge cases:
+   - **Invalid credentials**: Display appropriate error message and allow retry with proper rate limiting.
+   - **Account locked**: Provide guidance on account recovery or contacting support.
+   - **CAPTCHA required**: Implement CAPTCHA tokens and retry the login request.
+
+## Authenticate a member with Sign On (server-to-server)
+
+The Sign On method provides a streamlined approach to authentication that doesn't require traditional password credentials. It automatically creates or updates member accounts as needed during the authentication process. This method is ideal for trusted integrations, and scenarios where you already have verified user information, or for social logins that aren't covered in the [Wix-managed login page](https://dev.wix.com/docs/go-headless/coding/rest-api/visitors-and-members/handle-members-with-wix-managed-login).
+
+### Use cases for Sign On
+- One-click account creation for trusted contexts like internal tools.
+- User migrations from external systems with pre-verified information.
+- External IDP no-redirect SSO
+
+To authenticate a member with Sign On:
+
+1. Collect the member's email address and profile information (name, phone, etc.) from your interface.
+
+2. Validate the data:
+   - **Email validation**: Ensure the email format is valid and from an allowed domain.
+   - **Profile data**: Validate required profile fields before sending the request.
+   - **Permissions**: Verify your implementation has proper authentication permissions configured.
+
+3. Call [Sign On](fallback::https://dev.wix.com/docs/api-reference/business-management/headless/authentication/sign-on) with the member data.
+
+4. Handle the response based on the operation result:
+   - **If successful**: The member is created or updated.
+   - **If member already exists**: Profile information is updated with any new data provided.
+   In either case, a `sessionToken` is returned.
+
+5. Use the returned `sessionToken` to [generate access and refresh tokens](##get-the-site-members-access-and-refresh-tokens*fallback::https://dev.wix.com/docs/go-headless/coding/rest-api/visitors-and-members/handle-members-with-custom-login#get-the-site-members-access-and-refresh-tokens) for subsequent authenticated API calls.
+
+## Change a member's password
+
+This flow demonstrates secure password updates for authenticated members. This is specifically for members who know their current password and want to change it.
+
+### Security considerations
+- Always validate password strength on the frontend before submitting.
+- Consider implementing password confirmation in your UI to prevent typos.
+- This flow requires an authenticated session - it's not for password reset scenarios.
+- The member's session remains valid after password change.
+
+To change a member's password:
+
+1. Ensure the member is authenticated with a valid session token or cookies.
+
+2. Collect the new password from a secure form with proper client-side validation.
+
+3. Call [Change Password](fallback::https://dev.wix.com/docs/api-reference/business-management/headless/authentication/change-password) with the new password.
+
+4. Handle the response:
+   - **Success**: Inform the member that their password has been updated successfully
+   - **Validation errors**: Display specific password requirement issues (length, complexity, etc.)
+
+5. Consider prompting the member to update their password on other devices where they may be logged in.
+
+6. Handle potential errors:
+   - **Password requirements not met**: Display specific requirements (minimum length, special characters, etc.).
+   - **Authentication required**: Redirect to login if the session has expired.
+   - **Rate limiting**: Implement delays between password change attempts for security.
+
+## Log out a member
+
+This flow demonstrates secure member logout with proper session cleanup and optional redirect handling.
+
+### Implementation considerations
+- For SPAs: Handle redirects programmatically after calling the endpoint.
+- For server-side implementations: Redirect users directly to the logout endpoint.
+- Always invalidate stored tokens for complete security.
+
+To log out a member:
+
+1. Call [Logout](fallback::https://dev.wix.com/docs/api-reference/business-management/headless/authentication/logout) with the logout parameters, including a redirect URL if relevant.
+
+2. The API response includes an HTML page that:
+   - Invalidates the member's current session
+   - Clears session cookies via set-cookie headers
+   - Redirects to the specified URL if provided
+
+3. Clean up your implementation state:
+   - Clear any stored session tokens, access tokens, or refresh tokens
+   - Reset user interface to unauthenticated state
+   - Clear any cached user data
+
+4. Handle logout scenarios:
+   - **Redirect handling**: For SPAs, extract and follow redirect URLs programmatically.
+   - **Network errors**: Implement fallback cleanup even if the logout call fails.
+   - **Multiple device cleanup**: Consider providing guidance to users about other logged-in devices.

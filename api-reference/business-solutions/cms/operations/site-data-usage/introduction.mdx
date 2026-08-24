@@ -1,0 +1,78 @@
+---
+title: "Introduction"
+description: "The Site Data Usage API reports current resource usage and quota limits for the data collections of a single Wix site."
+icon: "file-lines"
+---
+
+The Site Data Usage API reports current resource usage and quota limits for the data collections of a single Wix site.
+Use it to monitor consumption, drive plan-upgrade prompts, or feed cleanup logic before quota limits are reached.
+
+With the Site Data Usage API, you can:
+
+- Retrieve the site's current storage, item-count, and collection-count usage.
+- Retrieve the site's current quota limits for those resources.
+- Break usage down per data collection.
+- Compare LIVE and SANDBOX environment usage independently.
+
+Use this API with the [Wix Data APIs](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/introduction) to read, write, and manage the items and collections whose usage is reported here.
+
+<Note>
+
+The API only reports usage for native, Wix-managed data collections. External Database collections aren't counted in `collectionCount`, don't consume `storageLimitInBytes` or `itemCountLimit`, and don't appear in `dataCollectionUsages`.
+
+</Note>
+
+## `LIVE`&nbsp;and&nbsp;`SANDBOX`&nbsp;environments
+
+Every Wix site has 2 Wix Data environments:
+
+- **Live:** The data served to visitors of the published site.
+- **Sandbox:** A separate copy used by the site editor and preview, so that work-in-progress changes don't affect live visitors.
+
+The API reports usage for both environments. The quota limits, however, apply asymmetrically:
+
+| Limit | How it applies across `LIVE` and `SANDBOX` |
+| --- | --- |
+| `storageLimitInBytes` | **Pooled.** Bytes used in `LIVE` and `SANDBOX` are summed and counted together against a single shared limit. With a 1 GB limit, `LIVE` could hold 700 MB and `SANDBOX` 300 MB before the limit is reached. |
+| `itemCountLimit` | **Per environment.** Each environment may independently hold up to the limit. With a limit of 1,000 items, `LIVE` can hold 1,000 items, and `SANDBOX` can hold another 1,000 items. |
+| `collectionCountLimit` | **Per site.** Counts native collections defined for the site. |
+
+The site-wide totals, `totalUsedLive` and `totalUsedSandbox`, are what most monitoring and upgrade scenarios need. The per-collection breakdown in `dataCollectionUsages` is available for scenarios that need to attribute usage to individual collections.
+
+## Usage values are eventually consistent
+
+By default, [Get Site Data Usage](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/get-site-data-usage) returns values backed by an internal cache and is eventually consistent with recent writes. This is the right tradeoff for almost all scenarios, including monitoring dashboards and upgrade prompts.
+
+If a cached value looks unexpected and you want to cross-check the exact current numbers, set `consistentRead` to `true` to bypass the cache. Doing so is more expensive and slower, so use it sparingly.
+
+## When limits change
+
+Quota limits (`storageLimitInBytes`, `itemCountLimit`, `collectionCountLimit`) change only when the site's plan is upgraded or downgraded. They're otherwise stable, so callers can safely cache them and only refetch on plan change.
+
+## What happens when a quota is reached
+
+This API only reports usage and limits, the [Wix Data API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/introduction) write methods enforce the limits:
+
+- When `storageLimitInBytes` or `itemCountLimit` is reached, attempts to insert or update items in any native collection on the site fail with a quota error.
+- When `collectionCountLimit` is reached, attempts to create a new native collection fail with a quota error.
+
+For the exact error codes returned in each case, see [Wix Data Error Codes](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/wix-data-error-codes).
+
+## Use cases
+
+- [Monitor a site's data usage and alert before quota is reached.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/sample-flows)
+- [Drive a plan-upgrade prompt when a site approaches its quota.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/sample-flows)
+- [Implement data retention based on used resources.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/operations/site-data-usage/sample-flows)
+
+## Terminology
+
+- **Site:** A single Wix site. Each site has its own usage totals and limits.
+- **Data collection:** A schema-defined container of data items in a site's database. To learn more, see [Data Collections](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/data-collections/introduction).
+- **Native collection:** A data collection stored and managed by Wix. Only native collections count toward this API's limits.
+- **External database collection:** A data collection backed by an external database connected to the site. Not counted by this API.
+- **`LIVE` environment:** The Wix Data environment served to visitors of the published site.
+- **`SANDBOX` environment:** The Wix Data environment used by the site editor and preview, separate from `LIVE`.
+- **Storage:** Bytes consumed by data items across all native collections.
+- **Item count:** Number of data items across all native collections.
+
+@sdk_package_setup

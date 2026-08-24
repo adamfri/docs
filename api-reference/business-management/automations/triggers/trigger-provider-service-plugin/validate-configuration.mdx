@@ -1,0 +1,518 @@
+---
+title: "Validate Configuration"
+description: "This endpoint allows you to run your own logic to validate trigger fields."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    This endpoint allows you to run your own logic to validate trigger fields. Implement this endpoint if you need to perform extra validation on top of
+    the Wix validation process.
+
+    Wix calls Validate Configuration in the following cases:
+
+    - When a Wix user activates the automation.
+    - When a Wix user selects the automation from the **Your automations** list in the [**Automations**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Ftriggers/site-automations)
+    dashboard.
+    - When a Wix user opens the automation to edit it.
+
+    If the user configured filters when setting up their automation, these are included in the request.
+    Wix uses the returned response to display an error message to a user if the requested trigger is invalid.
+
+    ## Endpoint
+
+    ```http
+    POST /validate-configuration
+    ```
+
+    ## Body Params
+
+    <ParamField body="triggerKey" type="string" required>
+
+      Trigger key as defined in your app's trigger configuration in the app dashboard. For example, `form_submitted` or `invoice_due`.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ParamField>
+
+    <ParamField body="selectedFilterOptions" type="SelectedFilterOptions[]">
+
+      Current selection state of the trigger's filters.
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="selectedFilterOptions properties">
+
+        <ParamField body="fieldKey" type="string">
+
+          Key representing a field from the trigger's [payload schema](https://dev.wix.com/docs/rest/business-management/automations/triggers/the-trigger-payload-schema) that has been configured as an [item selection filter](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/filter-fields#item-selection). For example `formId`.
+
+          Constraints: `minLength 1`, `maxLength 110`.
+
+        </ParamField>
+
+        <ParamField body="values" type="string[]">
+
+          Values selected for the filter field.
+
+          Constraints: `maxItems 100`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="automationConfigMapping" type="object">
+
+      Trigger configuration mapping that's saved on the automation.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="valid" type="boolean">
+
+      Whether the trigger configuration is valid.
+
+    </ResponseField>
+
+    <ResponseField name="configurationErrors" type="ProviderConfigurationError[]">
+
+      Error details for an invalid trigger configuration.
+
+      <Expandable title="configurationErrors properties">
+
+        <ResponseField name="fieldKey" type="string">
+
+          Scheme field key.
+
+        </ResponseField>
+
+        <ResponseField name="message" type="string">
+
+          Error message.
+
+        </ResponseField>
+
+        <ResponseField name="ctaLabel" type="string">
+
+          Label for the call-to-action button displayed with the error.
+
+        </ResponseField>
+
+        <ResponseField name="ctaUrl" type="string">
+
+          When the call-to-action button is clicked, the redirect URL.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Error title.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PROVIDER_NOT_FOUND` | Service provider not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    A validate configuration request with a sample invalid response body
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.<your-deployment-uri>.com/validate-configuration' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "triggerKey": "product-purchased",
+        "selectedFilterOptions": [
+          { 
+            "fieldKey": "product_id",
+            "values": ["13453-w33e"] 
+          },
+          { 
+            "fieldKey": "variant_id",
+            "values": ["9376asd-s3bg"] 
+          }
+        ] 
+      }'
+      ```
+
+      ```json Response
+      {
+        "valid": false,
+        "configurationErrors": [{
+          "fieldKey": "variant_id",
+          "title": "Product variant not available",
+          "message": "The variant '{variant-name}' isn't available. Select another variant."
+        }]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    This endpoint allows you to run your own logic to validate trigger fields. Implement this endpoint if you need to perform extra validation on top of
+    the Wix validation process.
+
+    Wix calls Validate Configuration in the following cases:
+
+    - When a Wix user activates the automation.
+    - When a Wix user selects the automation from the **Your automations** list in the [**Automations**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Ftriggers/site-automations)
+    dashboard.
+    - When a Wix user opens the automation to edit it.
+
+    If the user configured filters when setting up their automation, these are included in the request.
+    Wix uses the returned response to display an error message to a user if the requested trigger is invalid.
+
+    ## Method Declaration
+
+    ```typescript
+    import { triggerProvider } from '@wix/automations';
+
+    triggerProvider.validateConfiguration(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="ValidateConfigurationRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="triggerKey" type="string">
+
+          Trigger key as defined in your app's trigger configuration in the app dashboard. For example, `form_submitted` or `invoice_due`.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="selectedFilterOptions" type="SelectedFilterOptions[]">
+
+          Current selection state of the trigger's filters.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="selectedFilterOptions properties">
+
+            <ParamField body="fieldKey" type="string">
+
+              Key representing a field from the trigger's [payload schema](https://dev.wix.com/docs/rest/business-management/automations/triggers/the-trigger-payload-schema) that has been configured as an [item selection filter](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/automations/triggers/filter-fields#item-selection). For example `formId`.
+
+              Constraints: `minLength 1`, `maxLength 110`.
+
+            </ParamField>
+
+            <ParamField body="values" type="string[]">
+
+              Values selected for the filter field.
+
+              Constraints: `maxItems 100`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="automationConfigMapping" type="object">
+
+          Trigger configuration mapping that's saved on the automation.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="valid" type="boolean">
+
+      Whether the trigger configuration is valid.
+
+    </ResponseField>
+
+    <ResponseField name="configurationErrors" type="ProviderConfigurationError[]">
+
+      Error details for an invalid trigger configuration.
+
+      <Expandable title="configurationErrors properties">
+
+        <ResponseField name="fieldKey" type="string">
+
+          Scheme field key.
+
+        </ResponseField>
+
+        <ResponseField name="message" type="string">
+
+          Error message.
+
+        </ResponseField>
+
+        <ResponseField name="ctaLabel" type="string">
+
+          Label for the call-to-action button displayed with the error.
+
+        </ResponseField>
+
+        <ResponseField name="ctaUrl" type="string">
+
+          When the call-to-action button is clicked, the redirect URL.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Error title.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PROVIDER_NOT_FOUND` | Service provider not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-validate-configuration" id="ex-sdk-validate-configuration-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-validate-configuration" id="ex-sdk-validate-configuration-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-validate-configuration-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-validate-configuration-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Self-hosted: Validate product still exists @description:</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">validateConfiguration (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-validate-configuration-0"><span className="wix-picker-name">Self-hosted: Validate product still exists @description:</span></label>
+    <label htmlFor="ex-sdk-validate-configuration-1"><span className="wix-picker-name">validateConfiguration (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Self-hosted: Validate product still exists @description:
+    import { createClient } from '@wix/sdk';
+    import { triggerProvider } from "@wix/automations/service-plugins";
+
+    const wixClient = createClient({
+      auth: {
+        appId: <YOUR_APP_ID>,
+        publicKey: <YOUR_APP_PUBLIC_KEY>
+      },
+      modules: { triggerProvider }
+    });
+
+    wixClient.triggerProvider.provideHandlers({
+      validateConfiguration: async (payload) => {
+        const { request, metadata } = payload;
+        // Use the `request` and `metadata` received from Wix and
+        // apply custom logic.
+        return {
+          // Return your response exactly as documented to integrate with Wix.
+          // Return value example:
+          valid: false,
+          configurationErrors: [
+            {
+              fieldKey: "variant_id",
+              title: "Product variant not available",
+              message: "The variant '{variant-name}' isn't available. Select another variant."
+            }
+          ]
+        }
+      }    
+    });
+
+    // Implement a router to process all requests
+    express.post('/plugins-and-webhooks/*', (req, res) => {
+      wixClient.process(req);
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript validateConfiguration (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { triggerProvider } from '@wix/automations/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { triggerProvider },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function validateConfiguration(request,metadata) {
+      const response = await myWixClient.triggerProvider.validateConfiguration(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

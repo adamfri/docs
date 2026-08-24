@@ -1,0 +1,71 @@
+---
+title: "Sample Flow"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Create fulfillments with a standard shipping provider
+
+Many e-commerce businesses use standard shipping carriers like FedEx or UPS for their deliveries. This flow shows how to create fulfillments that automatically generate tracking links when using these predefined providers.
+
+To create a fulfillment using a standard shipping provider:
+
+1. Listen for new orders using the [Order Approved](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/orders/order-approved) webhook.
+
+2. When a new order arrives, get the order ID from the webhook payload (`entityId` or `actionEvent.body.order.id`).
+
+3. Call [Create Fulfillment](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/create-fulfillment) with the order ID, line items to fulfill, and tracking information. For the tracking info, specify the shipping provider (e.g., "fedex") and tracking number.
+
+4. The API automatically generates the tracking link based on the provider and tracking number.
+
+5. Monitor the [Fulfillments Updated](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/order-with-fulfillments-updated) webhook to track status changes.
+
+## Implement custom fulfillment provider integration
+
+When using local carriers or specialized shipping services, you'll need to manage tracking information manually. This flow demonstrates how to create fulfillments with custom providers.
+
+To create a fulfillment using a custom shipping provider:
+
+1. Listen for new orders using the [Order Approved](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/orders/order-approved) webhook.
+
+2. When a new order arrives, get the order ID from the webhook payload.
+
+3. Generate or obtain the tracking URL from your custom shipping provider's system.
+
+4. Call [Create Fulfillment](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/create-fulfillment) with the order ID, line items, and your custom tracking information. Include your provider name, tracking number, and the complete tracking URL.
+
+5. Monitor the [Fulfillments Updated](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/order-with-fulfillments-updated) webhook to track status changes.
+
+## Process bulk fulfillments for multiple orders
+
+For high-volume operations, you can create fulfillments for multiple orders simultaneously. This is particularly useful for batch processing of orders going to the same shipping provider.
+
+To create bulk fulfillments:
+
+1. Collect the order IDs that need fulfillment processing.
+
+2. Group orders by shipping provider if necessary.
+
+3. Call [Bulk Create Fulfillments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/bulk-create-fulfillments) with your list of orders and their fulfillment details. For each order, specify the line items and tracking information.
+
+4. Check the response's bulk action metadata to verify all fulfillments were created successfully.
+
+5. For any failed fulfillments, check the individual error messages and handle retries as needed.
+
+## Track fulfillment status progression
+
+Monitoring the status of fulfillments helps keep customers informed about their orders. This flow shows how to track and update fulfillment statuses throughout the delivery process.
+
+To track fulfillment status changes:
+
+1. Call [List Fulfillments for Single Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/list-fulfillments-for-single-order) with the order ID to get current status.
+
+2. As the fulfillment progresses, use [Update Fulfillment](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/update-fulfillment) to update the status. Remember to only include the status field in your update.
+
+3. Listen to the [Fulfillments Updated](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-fulfillments/order-with-fulfillments-updated) webhook to monitor status changes.
+
+4. When the carrier confirms delivery, update the status to "Fulfilled".

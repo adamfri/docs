@@ -1,0 +1,75 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Populate a tutorials collection with content
+
+You can use the Data Items API to programmatically add content to an existing collection.
+
+This flow uses bulk operations to efficiently add multiple tutorials into [an existing tutorials collection](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/data-collections/sample-flows).
+
+To populate the tutorials collection:
+
+1. Call [Bulk Insert Data Items](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-insert-data-items) with `dataCollectionId` set to `tutorials`. For each `dataItem`, include `fields` as structured in the data collection to be inserted. For reference fields like `category` and `author`, provide the ID of the referenced item from their respective collections.
+1. Check the `results` array in the response to confirm each item inserted successfully. If any items fail, the `itemMetadata.error` property of the corresponding entry contains details about the error.
+
+## Query tutorials by category
+
+You can retrieve tutorials from [an existing tutorials collection](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/data-collections/sample-flows) filtered by category and sorted by publish date. This is useful for displaying a list of tutorials in a specific topic area.
+
+To query tutorials by category:
+
+1. Call [Query Data Items](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/query-data-items) with `dataCollectionId` set to `tutorials` and filter by `category` sorted by `publishDate`.
+
+## Get tutorial statistics by category
+
+You can calculate aggregate statistics across tutorials in [an existing tutorials collection](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/data-collections/sample-flows), such as the total number of tutorials and average reading time per category. This is useful for analytics dashboards or category overview pages.
+
+To aggregate tutorial data:
+
+1. Call [Aggregate Data Items](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/aggregate-data-items) with `dataCollectionId` set to `tutorials`.
+1. In the `aggregation` object, set `groupingFields` to `["category"]` to group results by category.
+1. In the `operations` array, add aggregation operations:
+    - Add an operation with `resultFieldName` set to `totalTutorials` and `itemCount` set to an empty object to count tutorials per category.
+    - Add an operation with `resultFieldName` set to `avgReadingTime`, `average.itemFieldName` set to `estimatedTime` to calculate the average reading time.
+1. The response contains 1 result per category with the calculated `totalTutorials` and `avgReadingTime` values.
+
+## Archive outdated tutorials asynchronously
+
+You can patch a large set of items in the background when the target items are defined by a filter instead of a fixed list of IDs.
+
+For example, you can mark all tutorials published before a cutoff date as archived without sending individual item IDs in the request.
+
+To archive outdated tutorials:
+
+1. Call [Async Patch Data Items By Filter](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/async-patch-data-items-by-filter) with `dataCollectionId` set to `tutorials`.
+1. In `filter`, target the items you want to archive, such as tutorials published before a given date.
+1. In `fieldModifications`, set `archived` to `true`.
+1. Store the `jobId` returned in the response.
+1. Poll [Get Async Job Status](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/get-async-job-status) until the job reaches `SUCCEEDED` or `FAILED`.
+
+## Publish content through the editorial draft lifecycle
+
+You can use the Data Items API to author content as drafts, publish drafts to the live collection, and retract published items back to draft when revisions are needed. This flow uses [an existing tutorials collection](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/data-collections/sample-flows) with the draft-items plugin enabled.
+
+To publish a new tutorial through the draft lifecycle:
+
+1. Call [Insert Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/insert-data-item) with `dataCollectionId` set to `tutorials__drafts` to create a draft. Include the tutorial fields in `dataItem.data`.
+1. Edit the draft as needed via [Update Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) or [Patch Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/patch-data-item), again with `dataCollectionId` set to `tutorials__drafts`.
+1. Call [Publish Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft) with `dataCollectionId` set to `tutorials` (the published collection ID) and `dataItemId` set to the draft's ID. The draft is deleted and the published collection now contains the live tutorial.
+
+To revise a published tutorial while keeping it live on the site:
+
+1. Call [Create Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/create-data-item-draft) with `dataCollectionId` set to `tutorials` and `dataItemId` set to the published tutorial's ID. A draft seeded with the current published data is created in `tutorials__drafts`. The published tutorial remains unchanged.
+1. Edit the draft via [Update Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) or [Patch Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/patch-data-item) with `dataCollectionId` set to `tutorials__drafts`.
+1. Call [Publish Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft) with `dataCollectionId` set to `tutorials` and `dataItemId` set to item to be published to put the revised tutorial live.
+
+To revise a published tutorial by taking it offline first:
+
+1. Call [Unpublish Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/unpublish-data-item) with `dataCollectionId` set to `tutorials` and `dataItemId` set to the published tutorial's ID. The published copy is removed and a draft is created in `tutorials__drafts`.
+1. Edit the draft via [Update Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) or [Patch Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/patch-data-item) with `dataCollectionId` set to `tutorials__drafts`.
+1. Call [Publish Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft) with `dataCollectionId` set to `tutorials` to put the revised tutorial back live.

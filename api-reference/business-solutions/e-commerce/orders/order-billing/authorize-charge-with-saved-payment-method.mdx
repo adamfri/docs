@@ -1,0 +1,1129 @@
+---
+title: "Authorize Charge With Saved Payment Method"
+description: "Authorizes a payment using an order's previously saved payment method."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Authorizes a payment using an order's previously saved payment method.
+
+    Creates an authorization hold on the customer's payment method for the specified amount.
+    The authorization reserves funds but does not charge the customer until captured.
+
+    Use `delayedCaptureSettings` to configure automatic behavior:
+    - `CAPTURE`: Automatically charge the customer after the specified delay
+    - `VOID`: Automatically release the hold after the specified delay
+
+    Alternatively, manually control the authorization using Capture Authorized Payments or Void Authorized Payments.
+
+    *Note**: The order must have a saved payment method. Check for `savedPaymentMethod: true` in the order's payment details.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/authorize-charge-with-saved-payment-method
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID.
+
+      The order must have a saved payment method associated with it.
+      Verify a saved payment method exists by calling List Transactions For Single Order and checking for `regularPaymentDetails.savedPaymentMethod: true`
+      in the order's payment details before calling this method.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="amount" type="Price" required>
+
+      Amount to authorize on the customer's saved payment method.
+      This creates a hold for this amount but doesn't charge the customer until captured.
+
+      <Expandable title="amount properties">
+
+        <ParamField body="amount" type="string" required>
+
+          Amount.
+
+          Constraints: `>= 0`, `<= 1000000000000000`.
+
+        </ParamField>
+
+        <ParamField body="formattedAmount" type="string">
+
+          Amount formatted with currency symbol.
+
+          **Read-only.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="currency" type="string" required>
+
+      Currency code, in [ISO-4217](https://en.wikipedia.org/wiki/ISO_4217#List_of_ISO_4217_currency_codes) format.
+
+      Constraints: `format CURRENCY`.
+
+    </ParamField>
+
+    <ParamField body="delayedCaptureSettings" type="DelayedCaptureSettings" required>
+
+      Automatic action settings for the authorization.
+      Configure whether to automatically capture or void the authorization after a delay.
+
+      <Expandable title="delayedCaptureSettings properties">
+
+        <ParamField body="scheduledAction" type="string" required>
+
+          Automatic action to perform on the authorization after the specified delay period.
+
+          **Supported values:**
+
+          - `VOID` — Automatically **void** the authorization after the delay period.
+
+          Use this when you want to automatically release the hold if payment isn't captured.
+          - `CAPTURE` — Automatically **capture** (charge) the authorization after the delay period.
+
+          Use this for delayed billing or when you want to ensure payment is collected after fulfillment.
+
+        </ParamField>
+
+        <ParamField body="delayDuration" type="Duration">
+
+          Time to wait before performing the scheduled action.
+
+          If not specified, the payment provider's default period will be used.
+
+          <Expandable title="delayDuration properties">
+
+            <ParamField body="count" type="integer">
+
+              Amount of units. For example, 30 MINUTES, 1 HOURS, 7 DAYS, etc
+
+              Constraints: `min 1`.
+
+            </ParamField>
+
+            <ParamField body="unit" type="string">
+
+              Duration unit: MINUTES, HOURS and DAYS
+
+              **Supported values:**
+
+              - `MINUTES`
+              - `HOURS`
+              - `DAYS`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="payment" type="Payment">
+
+      Created payment authorization with `AUTHORIZED` status.
+
+      <Expandable title="payment properties">
+
+        <ResponseField name="id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="paymentDetails" type="paymentDetails">
+
+          paymentDetails
+
+          <Expandable title="paymentDetails properties">
+
+            <ResponseField name="regularPaymentDetails" type="RegularPaymentDetails">
+
+              Regular payment details.
+
+              _Nested structure omitted for brevity — see the `RegularPaymentDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="giftcardPaymentDetails" type="GiftCardPaymentDetails">
+
+              Gift card payment details.
+
+              _Nested structure omitted for brevity — see the `GiftCardPaymentDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history including the new authorization.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANCELED` | Order was already canceled. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_PAID` | Order was already paid. |
+    | `428` | `FAILED_PRECONDITION` | `NO_SAVED_PAYMENT_METHOD` | Order doesn't have a saved payment method. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_HAS_CHARGEBACKS` | Order has chargebacks and can't be charged. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Authorization amount is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CURRENCY` | Currency doesn't match the saved payment method's currency. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Authorizes a charge on the buyer's saved payment method, and voids it automatically if not captured within 1 day.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/authorize-charge-with-saved-payment-method' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+      	  "orderId": "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+      	  "amount": {
+      	    "amount": "1"
+      	  },
+      	  "currency": "USD",
+      	  "delayedCaptureSettings": {
+      	    "scheduledAction": "VOID",
+      	    "delayDuration": {
+      	      "count": 1,
+      	      "unit": "DAYS"
+      	    }
+      	  }
+      	}'
+      ```
+
+      ```json Response
+      {
+        "payment": {
+          "id": "496aaea1-4e2f-4cb1-9522-6b85f49b91e2",
+          "regularPaymentDetails": {
+            "paymentOrderId": "dc6e6d53-51d6-48a4-8755-ca87a4e370bf",
+            "offlinePayment": false,
+            "status": "PENDING",
+            "savedPaymentMethod": false,
+            "authorizationDetails": {
+              "delayedCapture": true,
+              "captures": [],
+              "scheduledAction": {
+                "actionType": "VOID"
+              }
+            }
+          },
+          "createdDate": "2024-12-25T08:46:04.257Z",
+          "updatedDate": "2024-12-25T08:46:04.257Z",
+          "amount": {
+            "amount": "1",
+            "formattedAmount": "$1.00"
+          },
+          "refundDisabled": false
+        },
+        "orderTransactions": {
+          "orderId": "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+          "payments": [
+            {
+              "id": "23af2de7-b24d-41d5-8d27-cf925d378d32",
+              "regularPaymentDetails": {
+                "paymentOrderId": "eead5fa5-29c2-4f7e-957c-a5eb0286c235",
+                "gatewayTransactionId": "afba164b-a96c-4cb2-a22d-6eec692e1148",
+                "paymentMethod": "Credit/Debit Cards",
+                "providerTransactionId": "afba164b-a96c-4cb2-a22d-6eec692e1148",
+                "offlinePayment": false,
+                "status": "APPROVED",
+                "savedPaymentMethod": true,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                }
+              },
+              "createdDate": "2024-12-25T08:36:29.499Z",
+              "updatedDate": "2024-12-25T08:36:32.351Z",
+              "amount": {
+                "amount": "2.0",
+                "formattedAmount": "$2.00"
+              },
+              "refundDisabled": false
+            },
+            {
+              "id": "496aaea1-4e2f-4cb1-9522-6b85f49b91e2",
+              "regularPaymentDetails": {
+                "paymentOrderId": "dc6e6d53-51d6-48a4-8755-ca87a4e370bf",
+                "offlinePayment": false,
+                "status": "PENDING",
+                "savedPaymentMethod": false,
+                "authorizationDetails": {
+                  "delayedCapture": true,
+                  "captures": [],
+                  "scheduledAction": {
+                    "actionType": "VOID"
+                  }
+                }
+              },
+              "createdDate": "2024-12-25T08:46:04.257Z",
+              "updatedDate": "2024-12-25T08:46:04.257Z",
+              "amount": {
+                "amount": "1",
+                "formattedAmount": "$1.00"
+              },
+              "refundDisabled": false
+            }
+          ],
+          "refunds": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Authorizes a payment using an order's previously saved payment method.
+
+    Creates an authorization hold on the customer's payment method for the specified amount.
+    The authorization reserves funds but does not charge the customer until captured.
+
+    Use `delayedCaptureSettings` to configure automatic behavior:
+    - `CAPTURE`: Automatically charge the customer after the specified delay
+    - `VOID`: Automatically release the hold after the specified delay
+
+    Alternatively, manually control the authorization using Capture Authorized Payments or Void Authorized Payments.
+
+    *Note**: The order must have a saved payment method. Check for `savedPaymentMethod: true` in the order's payment details.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.authorizeChargeWithSavedPaymentMethod(orderId, options): Promise<AuthorizeChargeWithSavedPaymentMethodResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID.
+
+      The order must have a saved payment method associated with it.
+      Verify a saved payment method exists by calling List Transactions For Single Order and checking for `regularPaymentDetails.savedPaymentMethod: true`
+      in the order's payment details before calling this method.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="AuthorizeChargeWithSavedPaymentMethodOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="amount" type="Price" required>
+
+          Amount to authorize on the customer's saved payment method.
+          This creates a hold for this amount but doesn't charge the customer until captured.
+
+          <Expandable title="amount properties">
+
+            <ParamField body="amount" type="string" required>
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="currency" type="string" required>
+
+          Currency code, in [ISO-4217](https://en.wikipedia.org/wiki/ISO_4217#List_of_ISO_4217_currency_codes) format.
+
+          Constraints: `format CURRENCY`.
+
+        </ParamField>
+
+        <ParamField body="delayedCaptureSettings" type="DelayedCaptureSettings" required>
+
+          Automatic action settings for the authorization.
+          Configure whether to automatically capture or void the authorization after a delay.
+
+          <Expandable title="delayedCaptureSettings properties">
+
+            <ParamField body="scheduledAction" type="string" required>
+
+              Automatic action to perform on the authorization after the specified delay period.
+
+              **Supported values:**
+
+              - `VOID` — Automatically **void** the authorization after the delay period.
+
+              Use this when you want to automatically release the hold if payment isn't captured.
+              - `CAPTURE` — Automatically **capture** (charge) the authorization after the delay period.
+
+              Use this for delayed billing or when you want to ensure payment is collected after fulfillment.
+
+            </ParamField>
+
+            <ParamField body="delayDuration" type="Duration">
+
+              Time to wait before performing the scheduled action.
+
+              If not specified, the payment provider's default period will be used.
+
+              _Nested structure omitted for brevity — see the `Duration` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<AuthorizeChargeWithSavedPaymentMethodResponse>`.
+
+    <ResponseField name="payment" type="Payment">
+
+      Created payment authorization with `AUTHORIZED` status.
+
+      <Expandable title="payment properties">
+
+        <ResponseField name="_id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="_updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="paymentDetails" type="paymentDetails">
+
+          paymentDetails
+
+          <Expandable title="paymentDetails properties">
+
+            <ResponseField name="regularPaymentDetails" type="RegularPaymentDetails">
+
+              Regular payment details.
+
+              _Nested structure omitted for brevity — see the `RegularPaymentDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="giftcardPaymentDetails" type="GiftCardPaymentDetails">
+
+              Gift card payment details.
+
+              _Nested structure omitted for brevity — see the `GiftCardPaymentDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history including the new authorization.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="_id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="_id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANCELED` | Order was already canceled. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_PAID` | Order was already paid. |
+    | `428` | `FAILED_PRECONDITION` | `NO_SAVED_PAYMENT_METHOD` | Order doesn't have a saved payment method. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_HAS_CHARGEBACKS` | Order has chargebacks and can't be charged. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Authorization amount is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CURRENCY` | Currency doesn't match the saved payment method's currency. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-authorize-charge-with-saved-payment-method" id="ex-sdk-authorize-charge-with-saved-payment-method-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-authorize-charge-with-saved-payment-method" id="ex-sdk-authorize-charge-with-saved-payment-method-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-authorize-charge-with-saved-payment-method-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-authorize-charge-with-saved-payment-method-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Authorize Charge With Saved Payment Method</span><span className="wix-picker-desc">Authorize a delayed-capture charge that is automatically voided after one day</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">authorizeChargeWithSavedPaymentMethod (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-authorize-charge-with-saved-payment-method-0"><span className="wix-picker-name">Authorize Charge With Saved Payment Method</span><span className="wix-picker-desc">Authorize a delayed-capture charge that is automatically voided after one day</span></label>
+    <label htmlFor="ex-sdk-authorize-charge-with-saved-payment-method-1"><span className="wix-picker-name">authorizeChargeWithSavedPaymentMethod (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Authorize Charge With Saved Payment Method
+    import { orderBilling } from "@wix/ecom";
+
+    async function authorizeChargeWithSavedPaymentMethod() {
+      const response = await orderBilling.authorizeChargeWithSavedPaymentMethod(
+        "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9",
+        {
+          amount: { amount: "1" },
+          currency: "USD",
+          delayedCaptureSettings: {
+            scheduledAction: "VOID",
+            delayDuration: { count: 1, unit: "DAYS" },
+          },
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "payment": {
+     *     "regularPaymentDetails": {
+     *       "offlinePayment": false,
+     *       "status": "PENDING",
+     *       "savedPaymentMethod": false,
+     *       "authorizationDetails": {
+     *         "delayedCapture": true,
+     *         "captures": [],
+     *         "scheduledAction": { "actionType": "VOID" }
+     *       }
+     *     },
+     *     "refundDisabled": false
+     *   },
+     *   "orderTransactions": {
+     *     "orderId": "3545c2f2-7768-4e6e-b64b-dcc11dc7a7f9"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript authorizeChargeWithSavedPaymentMethod (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function authorizeChargeWithSavedPaymentMethod(orderId,options) {
+      const response = await myWixClient.orderBilling.authorizeChargeWithSavedPaymentMethod(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

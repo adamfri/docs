@@ -1,0 +1,967 @@
+---
+title: "Bulk Update Data Items"
+description: "Updates multiple items in a collection."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple items in a collection.
+
+    Call this method when you need to replace the full payload of multiple existing items in one call. For different behavior, you can call:
+
+    - [Bulk Patch Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-patch-data-items) to apply partial changes that keep unmentioned fields unchanged.
+    - [Bulk Patch Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-patch-data-items) with `action: INCREMENT_FIELD` for atomic numeric increments or decrements, such as stock-count deltas. Don't try to express deltas with Bulk Update — replacing the full payload forces a client-side read-then-write that isn't atomic and produces incorrect results under concurrent writers.
+    - [Save Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/save-data-item) per item for upsert behavior, when some IDs may not exist yet.
+
+    This method replaces each specified data item's existing data with the payload provided in the request.
+
+    Each item in the request must include an ID. If an item is found in the specified collection with
+    the same ID, that item is updated. If the collection doesn't contain an item with that ID, the update fails.
+
+    When an item is updated, its `data._updatedDate` field is changed to the current date and time.
+
+    <Note>
+
+    After each item is updated, it only contains the fields included in the request. If the existing item has fields with values and those fields
+    aren't included in the updated item, their values are lost.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/data/v2/bulk/items/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the collection in which to update items.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="dataItems" type="DataItem[]" required>
+
+      Data items to update.
+
+      Constraints: `maxItems 1000`.
+
+      See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the updated data items.
+      When `true`, the `results` objects contain a `dataItem` field.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="appOptions" type="object">
+
+      Additional parameters specific to the [Wix app collection](https://support.wix.com/en/article/cms-formerly-content-manager-working-with-wix-app-collections) you are querying.
+
+      When querying the Wix Stores [Products collection](https://dev.wix.com/docs/develop-websites/articles/wix-apps/wix-e-commerce-stores/wix-stores-products-collection-fields), pass the following optional parameters:
+      - `includeHiddenProducts`: Whether to include hidden products in the response. Default: `false`.
+      - `includeVariants`: Whether to include product variants in the query. Default: `false`.
+
+    </ParamField>
+
+    <ParamField body="publishPluginOptions" type="PublishPluginOptions">
+
+      Options for the Publish plugin.
+      This plugin allows items in a [data collection](https://dev.wix.com/docs/rest/business-solutions/cms/data-collections/data-collection-object) to be marked as draft or published. Published items are visible to site visitors, while draft items are not.
+
+      <Expandable title="publishPluginOptions properties">
+
+        <ParamField body="includeDraftItems" type="boolean">
+
+          Whether to include draft items.
+
+          When `true`, both published and draft items are affected. Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="condition" type="Condition">
+
+      Condition for updating the items.
+
+      When a condition is provided, the items are only updated if the condition is met.
+
+      <Expandable title="condition properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter, changes to item(s) will only apply if they satisfy this filter.
+          Learn more about filters in [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkDataItemResult[]">
+
+      Information about the updated items.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="action" type="string">
+
+          Action attempted for the data item.
+
+          **Supported values:**
+
+          - `UNKNOWN_ACTION_TYPE`
+          - `INSERT`
+          - `UPDATE`
+          - `DELETE`
+          - `PATCH`
+
+        </ResponseField>
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Does not appear if the item ID is missing. For example, when item creation fails.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Original index of the item in the array specified in the request. Use this to match items in the request with those in the response.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              In case of failure, the error details.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="dataItem" type="DataItem">
+
+          Updated data item.
+
+          Returned if `returnEntity` is set to `true` and the action is successful.
+
+          See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-bulk-update-data-items" id="ex-rest-bulk-update-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-bulk-update-data-items" id="ex-rest-bulk-update-data-items-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-bulk-update-data-items" id="ex-rest-bulk-update-data-items-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-bulk-update-data-items" id="ex-rest-bulk-update-data-items-3" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-bulk-update-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-bulk-update-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Update multiple items: Check item revision numbers to guarantee data integrity.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Update multiple items conditionally: Only update cities with at least 1M residents.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk update existing items and return updated items</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk update existing items</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-bulk-update-data-items-0"><span className="wix-picker-name">Update multiple items: Check item revision numbers to guarantee data integrity.</span></label>
+    <label htmlFor="ex-rest-bulk-update-data-items-1"><span className="wix-picker-name">Update multiple items conditionally: Only update cities with at least 1M residents.</span></label>
+    <label htmlFor="ex-rest-bulk-update-data-items-2"><span className="wix-picker-name">Bulk update existing items and return updated items</span></label>
+    <label htmlFor="ex-rest-bulk-update-data-items-3"><span className="wix-picker-name">Bulk update existing items</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/bulk/items/update' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "dataCollectionId": "cities",
+          "dataItems": [
+              {
+                  "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "Los Angeles",
+                      "population": 3800000,
+                      "revision": 12
+                  }
+              },
+              {
+                  "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "San Francisco",
+                      "population": 840000,
+                      "revision": 14
+                  }
+              }
+          ],
+          "condition": {
+              "filter": {
+                  "$or": [
+                      {
+                          "$and": [
+                              {
+                                  "_id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd"
+                              },
+                              {
+                                  "revision": 12
+                              }
+                          ]
+                      },
+                      {
+                          "$and": [
+                              {
+                                  "_id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17"
+                              },
+                              {
+                                  "revision": 14
+                              }
+                          ]
+                      }
+                  ]
+              }
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+          "results": [
+               {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                      "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                      "originalIndex": 0,
+                      "success": true
+                  }
+               },
+              {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                  "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                  "originalIndex": 1,
+                  "success": false,
+                  "error": {
+                    "code": "WDE0193",
+                    "description": "WDE0193: Update condition not met."
+                  }
+                }
+              }
+          ],
+          "bulkActionMetadata": {
+              "totalSuccesses": 1,
+              "totalFailures": 1
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/bulk/items/update' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "dataCollectionId": "cities",
+          "dataItems": [
+              {
+                  "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "Los Angeles",
+                      "population": 3800000
+                  }
+              },
+              {
+                  "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "San Francisco",
+                      "population": 840000
+                  }
+              }
+          ],
+          "condition": {
+              "filter": {
+                  "population": {
+                      "$gte": 1000000
+                  }
+              }
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+          "results": [
+               {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                      "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                      "originalIndex": 0,
+                      "success": true
+                  }
+               },
+              {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                  "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                  "originalIndex": 1,
+                  "success": false,
+                  "error": {
+                    "code": "WDE0193",
+                    "description": "WDE0193: Update condition not met."
+                  }
+                }
+              }
+          ],
+          "bulkActionMetadata": {
+              "totalSuccesses": 1,
+              "totalFailures": 1
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/bulk/items/update' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "dataCollectionId": "cities",
+          "dataItems": [
+              {
+                  "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "Los Angeles",
+                      "population": 3800000
+                  }
+              },
+              {
+                  "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "San Francisco",
+                      "population": 840000
+                  }
+              }
+          ],
+          "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+          "results": [
+              {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                      "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                      "originalIndex": 0,
+                      "success": true
+                  },
+                  "dataItem": {
+                      "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                      "dataCollectionId": "cities",
+                      "data": {
+                          "_id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                          "_createdDate": { "$date": "2023-03-28T12:20:43.745Z" },
+                          "_updatedDate": { "$date": "2023-03-28T13:24:45.845Z" },
+                          "_owner": "690264f5-29a0-4aa8-a9b5-0842fc5ab360",
+                          "city": "Los Angeles",
+                          "state": "California",
+                          "population": 3800000.0,
+                          "year": 2022.0
+                      }
+                  }
+              },
+              {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                      "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                      "originalIndex": 1,
+                      "success": true
+                  },
+                  "dataItem": {
+                      "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                      "dataCollectionId": "cities",
+                      "data": {
+                          "_id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                          "_createdDate": { "$date": "2023-03-28T12:20:43.745Z" },
+                          "_updatedDate": { "$date": "2023-03-28T13:24:45.845Z" },
+                          "_owner": "690264f5-29a0-4aa8-a9b5-0842fc5ab360",
+                          "city": "San Francisco",
+                          "state": "California",
+                          "population": 840000.0,
+                          "year": 2022.0
+                      }
+                  }
+              }
+          ],
+          "bulkActionMetadata": {
+              "totalSuccesses": 2,
+              "totalFailures": 0
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/bulk/items/update' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "dataCollectionId": "cities",
+          "dataItems": [
+              {
+                  "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "Los Angeles",
+                      "population": 3800000
+                  }
+              },
+              {
+                  "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                  "data": {
+                      "state": "California",
+                      "year": 2022,
+                      "city": "San Francisco",
+                      "population": 840000
+                  }
+              }
+          ]
+      }'
+      ```
+
+      ```json Response
+      {
+          "results": [
+              {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                      "id": "40877d18-c5fe-4ed5-b495-d84bb4c027bd",
+                      "originalIndex": 0,
+                      "success": true
+                  }
+              },
+              {
+                  "action": "UPDATE",
+                  "itemMetadata": {
+                      "id": "6c38b4f7-7b8d-4702-9283-66a5889f8e17",
+                      "originalIndex": 1,
+                      "success": true
+                  }
+              }
+          ],
+          "bulkActionMetadata": {
+              "totalSuccesses": 2,
+              "totalFailures": 0
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple items in a collection.
+
+    Call this method when you need to replace the full payload of multiple existing items in one call. For different behavior, you can call:
+
+    - [Bulk Patch Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-patch-data-items) to apply partial changes that keep unmentioned fields unchanged.
+    - [Bulk Patch Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-patch-data-items) with `action: INCREMENT_FIELD` for atomic numeric increments or decrements, such as stock-count deltas. Don't try to express deltas with Bulk Update — replacing the full payload forces a client-side read-then-write that isn't atomic and produces incorrect results under concurrent writers.
+    - [Save Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/save-data-item) per item for upsert behavior, when some IDs may not exist yet.
+
+    This method replaces each specified data item's existing data with the payload provided in the request.
+
+    Each item in the request must include an ID. If an item is found in the specified collection with
+    the same ID, that item is updated. If the collection doesn't contain an item with that ID, the update fails.
+
+    When an item is updated, its `data._updatedDate` field is changed to the current date and time.
+
+    <Note>
+
+    After each item is updated, it only contains the fields included in the request. If the existing item has fields with values and those fields
+    aren't included in the updated item, their values are lost.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { items } from '@wix/data';
+
+    items.bulkUpdate(dataCollectionId, items, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the collection in which to update items.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="items" type="WixDataItem[]" required>
+
+      Data items to update.
+
+      See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="WixDataBulkUpdateOptions">
+
+      Options to use when processing this operation.
+
+      <Expandable title="options properties">
+
+        <ParamField body="suppressHooks" type="boolean">
+
+          Whether to suppress data hooks.
+          When `true`, data hooks typically triggered by this endpoint don't run.
+
+          **Note:** This option can only be used in code that runs in [the Wix site backend](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/backend-code/about-the-site-backend).
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="appOptions" type="object">
+
+          Additional parameters specific to the [Wix app collection](https://support.wix.com/en/article/cms-formerly-content-manager-working-with-wix-app-collections) you are querying.
+
+          When querying the Wix Stores [Products collection](https://dev.wix.com/docs/develop-websites/articles/wix-apps/wix-e-commerce-stores/wix-stores-products-collection-fields), pass the following optional parameters:
+          - `includeHiddenProducts`: Whether to include hidden products in the response. Default: `false`.
+          - `includeVariants`: Whether to include product variants in the query. Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="condition" type="Condition">
+
+          Condition for updating the items.
+
+          When a condition is provided, the items are only updated if the condition is met.
+
+          <Expandable title="condition properties">
+
+            <ParamField body="filter" type="object">
+
+              Filter, changes to item(s) will only apply if they satisfy this filter.
+              Learn more about filters in [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="saveReferences" type="boolean">
+
+          Whether to save multi-reference fields.
+          When `true`, multi-reference fields in the data items will be updated to match the provided values,
+          replacing any existing references.
+          Multi-reference field values must be arrays of referenced item IDs (strings)
+          or referenced items containing an `_id` field.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="showDrafts" type="boolean">
+
+          When `true`, operations include draft items. Read operations include draft items in their response, and write operations modify draft items.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="inserted" type="integer">
+
+      Number of inserted items.
+
+    </ResponseField>
+
+    <ResponseField name="updated" type="integer">
+
+      Number of updated items.
+
+    </ResponseField>
+
+    <ResponseField name="removed" type="integer">
+
+      Number of removed items.
+
+    </ResponseField>
+
+    <ResponseField name="skipped" type="integer">
+
+      Number of skipped items.
+
+    </ResponseField>
+
+    <ResponseField name="errors" type="WixDataBulkError[]">
+
+      List of errors.
+
+      <Expandable title="errors properties">
+
+        <ResponseField name="message" type="string">
+
+          Description of the error.
+
+        </ResponseField>
+
+        <ResponseField name="code" type="string">
+
+          Error code.
+
+        </ResponseField>
+
+        <ResponseField name="originalIndex" type="integer">
+
+          Index of the item within the request array. Allows for correlation between request and response items.
+
+        </ResponseField>
+
+        <ResponseField name="item" type="string">
+
+          Failed item (or ID in case of `bulkRemove()`).
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="insertedItemIds" type="string[]">
+
+      List of IDs of inserted items.
+
+    </ResponseField>
+
+    <ResponseField name="updatedItemIds" type="string[]">
+
+      List of IDs of updated items.
+
+    </ResponseField>
+
+    <ResponseField name="removedItemIds" type="string[]">
+
+      List of IDs of removed items.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-data-items" id="ex-sdk-bulk-update-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-data-items" id="ex-sdk-bulk-update-data-items-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-data-items" id="ex-sdk-bulk-update-data-items-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdate</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdate (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdate (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-data-items-0"><span className="wix-picker-name">bulkUpdate</span></label>
+    <label htmlFor="ex-sdk-bulk-update-data-items-1"><span className="wix-picker-name">bulkUpdate (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-update-data-items-2"><span className="wix-picker-name">bulkUpdate (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdate
+    import { items } from '@wix/data';
+
+    async function bulkUpdate(dataCollectionId,items,options) {
+      const response = await items.bulkUpdate(dataCollectionId,items,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdate (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { items } from '@wix/data';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { items },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdate(dataCollectionId,items,options) {
+      const response = await myWixClient.items.bulkUpdate(dataCollectionId,items,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdate (with elevated permissions)
+    import { items } from '@wix/data';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkUpdateMethod(dataCollectionId,items,options) {
+      const elevatedBulkUpdate = auth.elevate(items.bulkUpdate);
+      const response = await elevatedBulkUpdate(dataCollectionId,items,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

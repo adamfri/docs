@@ -1,0 +1,147 @@
+---
+title: "Migration Guide"
+description: "This guide helps you migrate from Resources V1 to the current recommended APIs."
+icon: "file-lines"
+---
+
+This guide helps you migrate from **Resources V1** to the current recommended APIs. Resources V1 will be removed on **June 30, 2025**.
+
+## Overview
+
+Resources V1 provided a single API for managing both staff members and general resources (rooms, equipment) as well as accessing the business resource for schedule information. The functionality has been redesigned and split into specialized APIs:
+
+- [Resource Types V2 API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resource-types-v2/introduction): For managing resource classifications.
+- [Resources V2 API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/introduction): For managing individual resources.
+- [Staff Members API](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/introduction): For managing staff members.
+- [Schedules V3 API](fallback::https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/introduction): For accessing business schedules directly.
+- [Events V3 API](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/introduction): For accessing events within schedules.
+
+## Key changes
+
+- **API separation**: V1's single API is now split into specialized APIs for staff, resources, and resource types.
+- **Business resource elimination**: Access business schedules and their events directly using the [Calendar APIs](fallback::https://dev.wix.com/docs/rest/business-management/calendar/introduction) with the fixed external ID `4e0579a5-491e-4e70-a872-d097eed6e520`.
+- **Resource types**: New formal classification system replaces V1's tag-based approach.
+- **Improved limits**: Current APIs are much more generous than V1's 135 active + 135 deleted resource limit.
+
+### Accessing business schedule events
+
+Instead of the V1 2-step process (query business resource → fetch schedule), you now have 2 options:
+
+#### Option 1: Get schedule events
+
+For most use cases, you'll want the actual events within the business schedule. Use [Query Events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/query-events) with the `externalScheduleId` filter:
+
+<Tabs>
+
+<Tab title="REST">
+
+```json
+{
+  "fromLocalDate": "2024-01-01T00\:00\:00",
+  "toLocalDate": "2024-01-31T23\:59\:59",
+  "query": {
+    "filter": {
+      "externalScheduleId": "4e0579a5-491e-4e70-a872-d097eed6e520"
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab title="SDK">
+
+```js    
+import { events } from "@wix/calendar";
+
+// Get business schedule events for a date range
+const result = await events.queryEvents({
+  fromLocalDate: "2024-01-01T00\:00\:00",
+  toLocalDate: "2024-01-31T23\:59\:59"
+})
+.eq("externalScheduleId", "4e0579a5-491e-4e70-a872-d097eed6e520")
+.find();
+```
+
+</Tab>
+
+</Tabs>
+
+The business schedule includes only events of `{"type": "WORKING_HOURS"}`. The business is open during these hours and closed the rest of the time in the filtered range.
+
+#### Option 2: Get schedule metadata only
+
+Use [Query Schedules](fallback::https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/query-schedules) with the fixed external ID. This returns the schedule entity but **does not include events**.
+
+<Tabs>
+
+<Tab title="REST">
+
+```json
+{
+  "query": {
+    "filter": {
+      "externalId": "4e0579a5-491e-4e70-a872-d097eed6e520"
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab title="SDK">
+
+```js    
+import { schedules } from "@wix/calendar";
+
+const result = await schedules.querySchedules()
+  .eq("externalId", "4e0579a5-491e-4e70-a872-d097eed6e520")
+  .find();
+```
+
+</Tab>
+
+</Tabs>
+
+## API reference mapping
+
+| V1 functionality | New API | Method |
+|------------------|-------------|----------|
+| Query resources (staff members) | Staff Members API | [Query Staff Members](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/query-staff-members) |
+| Query resources (general resources) | Resources V2 API | [Query Resources](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/query-resources) |
+| Query resources (business schedule metadata) | Schedules V3 API | [Query Schedules](fallback::https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/query-schedules) with fixed external ID |
+| Query resources (business schedule events) | Events V3 API | [Query Events](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/query-events) with `externalScheduleId` filter |
+| Create resource (staff member) | Staff Members API | [Create Staff Member](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/create-staff-member) |
+| Create resource (general resource) | Resources V2 API | [Create Resource](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/create-resource) |
+| Update resource (staff member) | Staff Members API | [Update Staff Member](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/update-staff-member) |
+| Update resource (general resource) | Resources V2 API | [Update Resource](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/update-resource) |
+| Delete resource (staff member) | Staff Members API | [Delete Staff Member](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/delete-staff-member) |
+| Delete resource (general resource) | Resources V2 API | [Delete Resource](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/delete-resource) |
+| Resource classification (new) | Resource Types V2 API | [Resource Types methods](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resource-types-v2/introduction) |
+
+## Migration steps
+
+Tp migrate your code, follow these steps:
+
+1. **Create resource types**: Set up resource type templates using the Resource Types V2 API for consistent classification.
+2. **Migrate staff resources**: Replace V1 staff queries (filtered by `staff` tag) with Staff Members API calls.
+3. **Migrate general resources**: Replace V1 general resource queries (excluding `staff` and `business` tags) with Resources V2 API calls.
+4. **Update business schedule access**: Replace the V1 business resource queries with direct Calendar API calls:
+   - For schedule metadata: Use Schedules V3 Query Schedules with external ID `4e0579a5-491e-4e70-a872-d097eed6e520`.
+   - For schedule events: Use Events V3 Query Events with `externalScheduleId` filter and effective date filtering.
+5. **Test and validate**: Run both APIs in parallel to ensure feature parity before fully switching.
+
+## Support
+
+For migration assistance, follow these steps:
+
+1. Check the API documentation:
+   - [Staff Members](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/staff-members/introduction)
+   - [Resources V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resources-v2/introduction)
+   - [Resource Types V2](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/resources/resource-types-v2/introduction)
+   - [Schedules V3](fallback::https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/introduction)
+   - [Events V3](fallback::https://dev.wix.com/docs/rest/business-management/calendar/events-v3/introduction).
+
+2. Review the [Wix Bookings Calendar Integration Guide](fallback::https://dev.wix.com/docs/rest/business-management/calendar/wix-bookings-integration).
+
+3. Contact Wix Developer Support for additional assistance.

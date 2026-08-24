@@ -1,0 +1,1503 @@
+---
+title: "Calculate Price"
+description: "Calculates the current base price for an existing booking."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Calculates the current base price for an existing booking.
+
+    Use this method to display booking costs in external apps or dashboards, or to retrieve accurate pricing for bookings created through other channels.
+
+    The returned price represents the fundamental booking cost before additional charges during [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/introduction). For recently created unpaid bookings, this typically matches the original booking price. However, this method calculates prices based on the service's current pricing configuration, so the returned price may differ from the original booking price if service pricing has changed since the booking was created.
+
+    ### Price calculation methods
+
+    __Standard pricing__: Wix Bookings calculates prices based on the number of participants for each [service variant](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+    Specify `booking.bookedEntity.slot.serviceId` for appointment-based services and classes, or `booking.bookedEntity.schedule.serviceId` for courses.
+
+    __Custom pricing__: When a [Pricing Service Provider Plugin](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-integration-service-plugin/introduction) is installed, Calculate Price gets responses directly from the external provider instead of using standard Wix pricing logic.
+    In this case, specify `booking.bookedEntity`. Note that external apps can't currently check whether a plugin is installed on the site before calling Calculate Price.
+
+    To estimate the price for multiple booking line items before the booking exists, call [Preview Price](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/preview-price) instead.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-BOOKINGS-SENSITIVE">Read Bookings - Including Participants</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/pricing/calculate
+    ```
+
+    ## Body Params
+
+    <ParamField body="booking" type="Booking" required>
+
+      Existing [booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/introduction) to calculate the base price for.
+      Must include `bookedEntity` details and participant information.
+
+      <Expandable title="booking properties">
+
+        <ParamField body="id" type="string">
+
+          Booking ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="bookedEntity" type="BookedEntity">
+
+          An object describing the bookable entity - either a specific time slot or a recurring schedule.
+
+          The structure depends on the type of service being booked:
+
+          __For appointment services__: Use `slot` to book a specific time slot with a
+          service provider. Appointments are typically one-time sessions at a specific date and time.
+
+          __For class services__: Use `slot` to book a specific class session. Classes
+          are individual sessions that can have multiple participants.
+
+          __For course services__: Use `schedule` to book an entire course consisting of
+          multiple sessions over time. Courses are recurring, multi-session offerings.
+
+          Choose the appropriate field based on your service type and booking requirements.
+
+          <Expandable title="bookedEntity properties">
+
+            <ParamField body="title" type="string">
+
+              Session title at the time of booking. If there is no pre-existing session,
+              for example for appointment-based services, Wix Bookings sets `title` to the service name.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="tags" type="string[]">
+
+              List of tags for the booking.
+
+              - "INDIVIDUAL": For bookings of appointment-based services. Including when the appointment is for a group of participants.
+              - "GROUP": For bookings of individual class sessions.
+              - "COURSE": For course bookings.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="item" type="item">
+
+              item
+
+              _Nested structure omitted for brevity — see the `item` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="contactDetails" type="ContactDetails">
+
+          Contact details of the site visitor or [member](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/members/introduction)
+          making the booking.
+
+          <Expandable title="contactDetails properties">
+
+            <ParamField body="contactId" type="string">
+
+              Contact ID.
+
+            </ParamField>
+
+            <ParamField body="firstName" type="string">
+
+              Contact's first name. When populated from a standard booking form, this
+              property corresponds to the `name` field.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              Contact's last name.
+
+            </ParamField>
+
+            <ParamField body="email" type="string">
+
+              Contact's email. If no [contact](https://dev.wix.com/docs/rest/crm/members-contacts/contacts/contacts/contact-v4/contact-object)
+              with this email exist, a new contact is created.
+              Used to validate coupon usage limitations per contact. If not specified,
+              the coupon usage limitation will not be enforced. (Coupon usage limitation
+              validation is not supported yet).
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Contact's phone number.
+
+            </ParamField>
+
+            <ParamField body="fullAddress" type="Address">
+
+              Contact's full address.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ParamField>
+
+            <ParamField body="timeZone" type="string">
+
+              Contact's time zone.
+
+            </ParamField>
+
+            <ParamField body="countryCode" type="string">
+
+              Contact's country in [ISO 3166-1 alpha-2 code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+              format.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalFields" type="CustomFormField[]" deprecated>
+
+          Additional custom fields submitted with the booking form.
+          Deprecated due to Bookings integrating with Wix Forms.
+          You can call Wix Forms' [Get Submission](https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/get-submission) specifying `formSubmissionId` as the `id` to get the submitted booking form data.
+          Read more about the [Bookings Forms integration](https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration).
+
+          **Deprecated.** Additional custom fields submitted with the booking form.
+          Deprecated due to Bookings integrating with Wix Forms.
+          You can call Wix Forms' [Get Submission](https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/get-submission) specifying `formSubmissionId` as the `id` to get the submitted booking form data.
+          Read more about the [Bookings Forms integration](https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration). Use `form_submission_id` instead. Removal: 2026-03-31.
+
+          <Expandable title="additionalFields properties">
+
+            <ParamField body="id" type="string">
+
+              ID of the form field as defined in the form.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="value" type="string">
+
+              Value that was submitted for this field.
+
+            </ParamField>
+
+            <ParamField body="label" type="string">
+
+              Form field's label at the time of submission.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="valueType" type="string">
+
+              **Supported values:**
+
+              - `SHORT_TEXT` — Short text. This is the default value type.
+              - `LONG_TEXT` — Long text.
+              - `CHECK_BOX` — A text that represents the check box value. If selected the value is `true`, otherwise `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="status" type="string">
+
+          Booking status. A booking is automatically confirmed if the service allows it
+          and an eCommerce order is created. It is automatically declined if there is a
+          double booking and the customer hasn't paid or is eligible for an automatic
+          refund. Currently, only payments with pricing plans are automatically refundable.
+
+          **Supported values:**
+
+          - `CREATED` — The booking was created, but the customer hasn't completed the related eCommerce order yet.
+          - `CONFIRMED` — The merchant has confirmed the booking and it appears in the business calendar. Merchants can set up their [services](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction) to automatically confirm all `PENDING` bookings.
+          - `CANCELED` — The customer has canceled the booking. Depending on the relevant service's [policy snapshot](https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policy-snapshots/introduction)
+          they may have to pay a [cancellation fee](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/introduction).
+          - `PENDING` — The merchant must manually confirm the booking before it appears in the business calendar.
+          - `DECLINED` — The merchant has declined the booking before the customer was charged.
+          - `WAITING_LIST` — Currently, you can't call [Register to Waitlist](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/waitlist/register-to-waitlist) for course or appointment bookings, even though this is supported in live sites.
+
+        </ParamField>
+
+        <ParamField body="paymentStatus" type="string">
+
+          The payment status of the booking. This field automatically syncs with the
+          `paymentStatus` of the corresponding [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction)
+          when customers use Wix eCommerce checkout.
+
+          ### Integration patterns
+
+          __When using Wix eCommerce checkout__: Wix Bookings automatically syncs the payment status based on the eCommerce order's payment status.
+          Do not manually update this field.
+
+          __When using custom payment flows__: You can manually update the payment status with [Confirm Booking or Decline Booking](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking) to reflect the customer's payment state.
+
+          __For membership/pricing plan payments__: Wix Bookings automatically manages the payment status when customers pay with an active [pricing plan](https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans/pricing-plans/introduction) subscription.
+
+          All payment statuses are supported for every booking `status`.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+        <ParamField body="selectedPaymentOption" type="string">
+
+          Payment option selected by the customer. If the customer hasn't completed their checkout, they may still change the payment method. Must be one of the payment options offered by the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction), unless `skipSelectedPaymentOptionValidation` is `true`.
+
+          When the customer pays with a [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/checkout/introduction), this field is required.
+          Otherwise, the Create Booking call fails.
+          For custom checkouts, you don't have to specify this field.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment option.
+          - `OFFLINE` — Offline payment.
+          - `ONLINE` — Online payment.
+          - `MEMBERSHIP` — Payment using a Wix Pricing Plan.
+          - `MEMBERSHIP_OFFLINE` — Customers can pay only in person with a Wix Pricing Plan, while the Wix user
+          must manually redeem the pricing plan in the dashboard.
+
+        </ParamField>
+
+        <ParamField body="createdDate" type="datetime">
+
+          Date and time the booking was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="externalUserId" type="string">
+
+          External user ID that you can provide.
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer">
+
+          Revision number to be used when updating, rescheduling, or cancelling the booking.
+          Increments by 1 each time the booking is updated, rescheduled, or canceled. To prevent conflicting changes, the current revision must be specified when updating the booking.
+
+        </ParamField>
+
+        <ParamField body="createdBy" type="IdentificationData">
+
+          ID of the creator of the booking.
+          If `appId` and another ID are present, the other ID takes precedence.
+
+          **Read-only.**
+
+          <Expandable title="createdBy properties">
+
+            <ParamField body="contactId" type="string">
+
+              ID of of a contact in the site's [CRM by Ascend](https://www.wix.com/ascend/crm) system.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="startDate" type="datetime">
+
+          The start date of the booking in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+          For a slot, this is the start date of the slot. For a schedule, this is the start date of the first session.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="endDate" type="datetime">
+
+          The end date of the booking in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+          For a slot, this is the end date of the slot. For a schedule, this is the end date of the last session.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="updatedDate" type="datetime">
+
+          Date and time the booking was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Custom field data for this object.
+          Extended fields must be configured in the app dashboard before they can be accessed with API calls.
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="doubleBooked" type="boolean">
+
+          Whether this booking overlaps with another confirmed booking. Returned
+          only if set to `true`.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="formSubmissionId" type="string">
+
+          ID of the [form submission](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction)
+          associated with this booking.
+
+        </ParamField>
+
+        <ParamField body="formId" type="string">
+
+          ID of the [form](https://dev.wix.com/docs/rest/crm/forms/form-schemas/form-object)
+          associated with this booking. The value depends on how the
+          booking was created:
+          - For bookings created with Create Booking or Bulk Create Booking, `formId`
+          is identical to ID of the booking form that's associated with the relevant
+          service.
+          - For bookings created via Create Multi Service Booking, `formId` is set to
+          `00000000-0000-0000-0000-000000000000` (the default booking form ID).
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="bookedAddOns" type="BookedAddOn[]">
+
+          List of [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) associated with the booking.
+
+          Constraints: `maxItems 21`.
+
+          <Expandable title="bookedAddOns properties">
+
+            <ParamField body="id" type="string">
+
+              The ID of the add-on.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="groupId" type="string">
+
+              The ID of the add-on group.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="durationInMinutes" type="integer">
+
+              The add-on duration in minutes at the time of booking.
+              Populated for duration-based add-ons.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              The quantity of booked add-ons.
+              For duration-based add-ons, `quantity` is not applicable.
+              If `quantity` is provided as `1` for a duration-based add-on, it will be accepted but the value will be cleared.
+              If any other value is provided, an `INVALID_ARGUMENT` error will be returned with the message: "Invalid AddOn details: either duration or quantity must be set correctly".
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Add-on `name` at the time of booking.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="nameTranslated" type="string">
+
+              Add-on name translated to the language the customer used during booking.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="appId" type="string">
+
+          ID of the app that's associated with the booking.
+          Inherited from the `appId` of the service associated with the booking.
+          Bookings are displayed in Wix Bookings only if they are associated with the Wix Bookings app ID or have no associated app ID.
+          For bookings from Wix apps, the following values apply:
+          - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+          - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+          - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`
+          [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+          &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="createdByAppId" type="string">
+
+          ID of the app that created the booking. This field is used for analytics, auditing, and tracking creation sources.
+          This read-only field is automatically populated during booking creation by checking these sources in order:
+          1. The caller's App ID from the request identity context (external app or server identity).
+          2. The booking's `appId` field (inherited from the service's `appId`).
+          3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+          &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="depositSelected" type="boolean">
+
+          Whether the customer chooses to pay only the deposit amount upfront.
+
+          - `true`: The customer pays only the deposit amount upfront.
+          - `false`: The customer pays the full price upfront.
+
+          Used only when `selectedPaymentOption` is `ONLINE` and the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) has a deposit amount set.
+
+          When the service supports deposit payments and `fullUpfrontPaymentAllowed` is `false`, this field must be `true`.
+          When the service supports deposit payments and `fullUpfrontPaymentAllowed` is `true`, this field can be `true` or `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="participantsInfo" type="participantsInfo">
+
+          participantsInfo
+
+          <Expandable title="participantsInfo properties">
+
+            <ParamField body="totalParticipants" type="integer">
+
+              Total number of participants.
+              When creating a booking, use this field only if the relevant service has fixed pricing and doesn't offer [variants and options](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+
+              Constraints: `min 1`.
+
+            </ParamField>
+
+            <ParamField body="participantsChoices" type="ParticipantChoices">
+
+              Information about the booked service choices and participant count for each choice.
+              When creating a booking, use this field only if the booking includes multiple [service variants](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+
+              For example, use this for a spa package booking that includes different service levels:
+              - 2 participants chose "Standard Package".
+              - 1 participant chose "VIP Package".
+
+              _Nested structure omitted for brevity — see the `ParticipantChoices` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="priceInfo" type="PriceInfo">
+
+      Information about each line item's base price and the total base price.
+
+      See the [Price Info Object](/api-reference/business-solutions/bookings/pricing/pricing-api/price-info-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BOOKING` | The booking data is invalid or missing required fields. Ensure `bookedEntity` includes valid service and participant information. |
+    | `400` | `INVALID_ARGUMENT` | `NUMBER_OF_PARTICIPANTS_NOT_FOUND` | The `numberOfParticipants` is missing or set to `0`. Specify the number of participants for the booking. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_RESOLVING_SERVICE` | Couldn't retrieve service information. The service may not exist or is unavailable. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_CONTACTING_PRICING_PROVIDER` | Couldn't retrieve pricing from the external pricing provider. The provider may be unavailable or returned an error. |
+    | `428` | `FAILED_PRECONDITION` | `MULTIPLE_PRICING_PROVIDERS_FOUND` | Multiple pricing providers are installed. Only 1 pricing provider can be active at a time. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_DURATION_CHOICE` | The booking range doesn't match the duration of the selected variant. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-calculate-price" id="ex-rest-calculate-price-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-calculate-price" id="ex-rest-calculate-price-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-calculate-price" id="ex-rest-calculate-price-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-calculate-price-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-calculate-price-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate the price of a booking with custom pricing options</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate the price of a booking with staff-based pricing options.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate the price of a booking with custom choices</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-calculate-price-0"><span className="wix-picker-name">Calculate the price of a booking with custom pricing options</span></label>
+    <label htmlFor="ex-rest-calculate-price-1"><span className="wix-picker-name">Calculate the price of a booking with staff-based pricing options.</span></label>
+    <label htmlFor="ex-rest-calculate-price-2"><span className="wix-picker-name">Calculate the price of a booking with custom choices</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/pricing/calculate' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "booking": {
+          "bookedEntity": {
+            "slot": {
+              "serviceId": "b59d6285-098e-4ac4-8fd4-99e22231d0e9",
+              "resource": {
+                "id": "76570209-101f-409b-af97-b445bdb63125"
+              }
+            }
+          },
+          "totalParticipants": 1
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "priceInfo": {
+          "bookingLineItems": [
+            {
+              "serviceId": "b59d6285-098e-4ac4-8fd4-99e22231d0e9",
+              "resourceId": "76570209-101f-409b-af97-b445bdb63125",
+              "choices": [],
+              "numberOfParticipants": 1
+            }
+          ],
+          "priceDescriptionInfo": {
+            "original": "$200/hour + materials"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/pricing/calculate' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "booking": {
+          "bookedEntity": {
+            "slot": {
+              "serviceId": "b2f1c9aa-1743-4cac-ae2c-48cc7666365c",
+              "resource": {
+                "id": "76570209-101f-409b-af97-b445bdb63125"
+              }
+            }
+          },
+          "totalParticipants": 1
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "priceInfo": {
+          "bookingLineItems": [
+            {
+              "serviceId": "b2f1c9aa-1743-4cac-ae2c-48cc7666365c",
+              "resourceId": "76570209-101f-409b-af97-b445bdb63125",
+              "choices": [],
+              "numberOfParticipants": 1,
+              "pricePerParticipant": 10.0
+            }
+          ],
+          "calculatedPrice": 10.0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/pricing/calculate' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "booking": {
+          "bookedEntity": {
+            "slot": {
+              "serviceId": "dae13fbb-4314-4b1c-990d-1d82c280cb2f",
+              "resource": {
+                "id": "76570209-101f-409b-af97-b445bdb63125"
+              } 
+            } 
+          },
+          "participantsChoices": {
+            "serviceChoices": [ {
+              "numberOfParticipants": 1,
+              "choices": [ {
+                "optionId": "68ea3e36-4a40-461d-81ef-349499d51c74",
+                "custom": "Adults"
+              } ]
+            } ]
+          }
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "priceInfo": {
+          "bookingLineItems": [
+            {
+              "serviceId": "dae13fbb-4314-4b1c-990d-1d82c280cb2f",
+              "resourceId": "76570209-101f-409b-af97-b445bdb63125",
+              "choices": [
+                {
+                  "optionId": "68ea3e36-4a40-461d-81ef-349499d51c74",
+                  "custom": "Adults"
+                }
+              ],
+              "numberOfParticipants": 1,
+              "pricePerParticipant": 16.0
+            }
+          ],
+          "calculatedPrice": 16.0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Calculates the current base price for an existing booking.
+
+    Use this method to display booking costs in external apps or dashboards, or to retrieve accurate pricing for bookings created through other channels.
+
+    The returned price represents the fundamental booking cost before additional charges during [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/introduction). For recently created unpaid bookings, this typically matches the original booking price. However, this method calculates prices based on the service's current pricing configuration, so the returned price may differ from the original booking price if service pricing has changed since the booking was created.
+
+    ### Price calculation methods
+
+    __Standard pricing__: Wix Bookings calculates prices based on the number of participants for each [service variant](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+    Specify `booking.bookedEntity.slot.serviceId` for appointment-based services and classes, or `booking.bookedEntity.schedule.serviceId` for courses.
+
+    __Custom pricing__: When a [Pricing Service Provider Plugin](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-integration-service-plugin/introduction) is installed, Calculate Price gets responses directly from the external provider instead of using standard Wix pricing logic.
+    In this case, specify `booking.bookedEntity`. Note that external apps can't currently check whether a plugin is installed on the site before calling Calculate Price.
+
+    To estimate the price for multiple booking line items before the booking exists, call [Preview Price](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/preview-price) instead.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.READ-BOOKINGS-SENSITIVE">Read Bookings - Including Participants</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { pricing } from '@wix/bookings';
+
+    pricing.calculatePrice(booking): Promise<CalculatePriceResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="booking" type="Booking" required>
+
+      Existing [booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/introduction) to calculate the base price for.
+      Must include `bookedEntity` details and participant information.
+
+      <Expandable title="booking properties">
+
+        <ParamField body="_id" type="string">
+
+          Booking ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="bookedEntity" type="BookedEntity">
+
+          An object describing the bookable entity - either a specific time slot or a recurring schedule.
+
+          The structure depends on the type of service being booked:
+
+          __For appointment services__: Use `slot` to book a specific time slot with a
+          service provider. Appointments are typically one-time sessions at a specific date and time.
+
+          __For class services__: Use `slot` to book a specific class session. Classes
+          are individual sessions that can have multiple participants.
+
+          __For course services__: Use `schedule` to book an entire course consisting of
+          multiple sessions over time. Courses are recurring, multi-session offerings.
+
+          Choose the appropriate field based on your service type and booking requirements.
+
+          <Expandable title="bookedEntity properties">
+
+            <ParamField body="title" type="string">
+
+              Session title at the time of booking. If there is no pre-existing session,
+              for example for appointment-based services, Wix Bookings sets `title` to the service name.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="tags" type="string[]">
+
+              List of tags for the booking.
+
+              - "INDIVIDUAL": For bookings of appointment-based services. Including when the appointment is for a group of participants.
+              - "GROUP": For bookings of individual class sessions.
+              - "COURSE": For course bookings.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="item" type="item">
+
+              item
+
+              _Nested structure omitted for brevity — see the `item` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="contactDetails" type="ContactDetails">
+
+          Contact details of the site visitor or [member](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/members/introduction)
+          making the booking.
+
+          <Expandable title="contactDetails properties">
+
+            <ParamField body="contactId" type="string">
+
+              Contact ID.
+
+            </ParamField>
+
+            <ParamField body="firstName" type="string">
+
+              Contact's first name. When populated from a standard booking form, this
+              property corresponds to the `name` field.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              Contact's last name.
+
+            </ParamField>
+
+            <ParamField body="email" type="string">
+
+              Contact's email. If no [contact](https://dev.wix.com/docs/rest/crm/members-contacts/contacts/contacts/contact-v4/contact-object)
+              with this email exist, a new contact is created.
+              Used to validate coupon usage limitations per contact. If not specified,
+              the coupon usage limitation will not be enforced. (Coupon usage limitation
+              validation is not supported yet).
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Contact's phone number.
+
+            </ParamField>
+
+            <ParamField body="fullAddress" type="Address">
+
+              Contact's full address.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ParamField>
+
+            <ParamField body="timeZone" type="string">
+
+              Contact's time zone.
+
+            </ParamField>
+
+            <ParamField body="countryCode" type="string">
+
+              Contact's country in [ISO 3166-1 alpha-2 code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+              format.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalFields" type="CustomFormField[]" deprecated>
+
+          Additional custom fields submitted with the booking form.
+          Deprecated due to Bookings integrating with Wix Forms.
+          You can call Wix Forms' [Get Submission](https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/get-submission) specifying `formSubmissionId` as the `id` to get the submitted booking form data.
+          Read more about the [Bookings Forms integration](https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration).
+
+          **Deprecated.** Additional custom fields submitted with the booking form.
+          Deprecated due to Bookings integrating with Wix Forms.
+          You can call Wix Forms' [Get Submission](https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/get-submission) specifying `formSubmissionId` as the `id` to get the submitted booking form data.
+          Read more about the [Bookings Forms integration](https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration). Use `form_submission_id` instead. Removal: 2026-03-31.
+
+          <Expandable title="additionalFields properties">
+
+            <ParamField body="_id" type="string">
+
+              ID of the form field as defined in the form.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="value" type="string">
+
+              Value that was submitted for this field.
+
+            </ParamField>
+
+            <ParamField body="label" type="string">
+
+              Form field's label at the time of submission.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="valueType" type="string">
+
+              **Supported values:**
+
+              - `SHORT_TEXT` — Short text. This is the default value type.
+              - `LONG_TEXT` — Long text.
+              - `CHECK_BOX` — A text that represents the check box value. If selected the value is `true`, otherwise `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="status" type="string">
+
+          Booking status. A booking is automatically confirmed if the service allows it
+          and an eCommerce order is created. It is automatically declined if there is a
+          double booking and the customer hasn't paid or is eligible for an automatic
+          refund. Currently, only payments with pricing plans are automatically refundable.
+
+          **Supported values:**
+
+          - `CREATED` — The booking was created, but the customer hasn't completed the related eCommerce order yet.
+          - `CONFIRMED` — The merchant has confirmed the booking and it appears in the business calendar. Merchants can set up their [services](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction) to automatically confirm all `PENDING` bookings.
+          - `CANCELED` — The customer has canceled the booking. Depending on the relevant service's [policy snapshot](https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policy-snapshots/introduction)
+          they may have to pay a [cancellation fee](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/introduction).
+          - `PENDING` — The merchant must manually confirm the booking before it appears in the business calendar.
+          - `DECLINED` — The merchant has declined the booking before the customer was charged.
+          - `WAITING_LIST` — Currently, you can't call [Register to Waitlist](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/waitlist/register-to-waitlist) for course or appointment bookings, even though this is supported in live sites.
+
+        </ParamField>
+
+        <ParamField body="paymentStatus" type="string">
+
+          The payment status of the booking. This field automatically syncs with the
+          `paymentStatus` of the corresponding [eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction)
+          when customers use Wix eCommerce checkout.
+
+          ### Integration patterns
+
+          __When using Wix eCommerce checkout__: Wix Bookings automatically syncs the payment status based on the eCommerce order's payment status.
+          Do not manually update this field.
+
+          __When using custom payment flows__: You can manually update the payment status with [Confirm Booking or Decline Booking](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking) to reflect the customer's payment state.
+
+          __For membership/pricing plan payments__: Wix Bookings automatically manages the payment status when customers pay with an active [pricing plan](https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans/pricing-plans/introduction) subscription.
+
+          All payment statuses are supported for every booking `status`.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+        <ParamField body="selectedPaymentOption" type="string">
+
+          Payment option selected by the customer. If the customer hasn't completed their checkout, they may still change the payment method. Must be one of the payment options offered by the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction), unless `skipSelectedPaymentOptionValidation` is `true`.
+
+          When the customer pays with a [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/checkout/introduction), this field is required.
+          Otherwise, the Create Booking call fails.
+          For custom checkouts, you don't have to specify this field.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment option.
+          - `OFFLINE` — Offline payment.
+          - `ONLINE` — Online payment.
+          - `MEMBERSHIP` — Payment using a Wix Pricing Plan.
+          - `MEMBERSHIP_OFFLINE` — Customers can pay only in person with a Wix Pricing Plan, while the Wix user
+          must manually redeem the pricing plan in the dashboard.
+
+        </ParamField>
+
+        <ParamField body="_createdDate" type="datetime">
+
+          Date and time the booking was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="externalUserId" type="string">
+
+          External user ID that you can provide.
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer">
+
+          Revision number to be used when updating, rescheduling, or cancelling the booking.
+          Increments by 1 each time the booking is updated, rescheduled, or canceled. To prevent conflicting changes, the current revision must be specified when updating the booking.
+
+        </ParamField>
+
+        <ParamField body="createdBy" type="IdentificationData">
+
+          ID of the creator of the booking.
+          If `appId` and another ID are present, the other ID takes precedence.
+
+          **Read-only.**
+
+          <Expandable title="createdBy properties">
+
+            <ParamField body="contactId" type="string">
+
+              ID of of a contact in the site's [CRM by Ascend](https://www.wix.com/ascend/crm) system.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="startDate" type="datetime">
+
+          The start date of the booking in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+          For a slot, this is the start date of the slot. For a schedule, this is the start date of the first session.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="endDate" type="datetime">
+
+          The end date of the booking in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+          For a slot, this is the end date of the slot. For a schedule, this is the end date of the last session.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="_updatedDate" type="datetime">
+
+          Date and time the booking was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Custom field data for this object.
+          Extended fields must be configured in the app dashboard before they can be accessed with API calls.
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="doubleBooked" type="boolean">
+
+          Whether this booking overlaps with another confirmed booking. Returned
+          only if set to `true`.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="formSubmissionId" type="string">
+
+          ID of the [form submission](https://dev.wix.com/docs/rest/crm/forms/form-submissions/introduction)
+          associated with this booking.
+
+        </ParamField>
+
+        <ParamField body="formId" type="string">
+
+          ID of the [form](https://dev.wix.com/docs/rest/crm/forms/form-schemas/form-object)
+          associated with this booking. The value depends on how the
+          booking was created:
+          - For bookings created with Create Booking or Bulk Create Booking, `formId`
+          is identical to ID of the booking form that's associated with the relevant
+          service.
+          - For bookings created via Create Multi Service Booking, `formId` is set to
+          `00000000-0000-0000-0000-000000000000` (the default booking form ID).
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="bookedAddOns" type="BookedAddOn[]">
+
+          List of [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) associated with the booking.
+
+          Constraints: `maxItems 21`.
+
+          <Expandable title="bookedAddOns properties">
+
+            <ParamField body="_id" type="string">
+
+              The ID of the add-on.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="groupId" type="string">
+
+              The ID of the add-on group.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="durationInMinutes" type="integer">
+
+              The add-on duration in minutes at the time of booking.
+              Populated for duration-based add-ons.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              The quantity of booked add-ons.
+              For duration-based add-ons, `quantity` is not applicable.
+              If `quantity` is provided as `1` for a duration-based add-on, it will be accepted but the value will be cleared.
+              If any other value is provided, an `INVALID_ARGUMENT` error will be returned with the message: "Invalid AddOn details: either duration or quantity must be set correctly".
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Add-on `name` at the time of booking.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="nameTranslated" type="string">
+
+              Add-on name translated to the language the customer used during booking.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="appId" type="string">
+
+          ID of the app that's associated with the booking.
+          Inherited from the `appId` of the service associated with the booking.
+          Bookings are displayed in Wix Bookings only if they are associated with the Wix Bookings app ID or have no associated app ID.
+          For bookings from Wix apps, the following values apply:
+          - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+          - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+          - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`
+          [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+          &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="createdByAppId" type="string">
+
+          ID of the app that created the booking. This field is used for analytics, auditing, and tracking creation sources.
+          This read-only field is automatically populated during booking creation by checking these sources in order:
+          1. The caller's App ID from the request identity context (external app or server identity).
+          2. The booking's `appId` field (inherited from the service's `appId`).
+          3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+          &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="depositSelected" type="boolean">
+
+          Whether the customer chooses to pay only the deposit amount upfront.
+
+          - `true`: The customer pays only the deposit amount upfront.
+          - `false`: The customer pays the full price upfront.
+
+          Used only when `selectedPaymentOption` is `ONLINE` and the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) has a deposit amount set.
+
+          When the service supports deposit payments and `fullUpfrontPaymentAllowed` is `false`, this field must be `true`.
+          When the service supports deposit payments and `fullUpfrontPaymentAllowed` is `true`, this field can be `true` or `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="participantsInfo" type="participantsInfo">
+
+          participantsInfo
+
+          <Expandable title="participantsInfo properties">
+
+            <ParamField body="totalParticipants" type="integer">
+
+              Total number of participants.
+              When creating a booking, use this field only if the relevant service has fixed pricing and doesn't offer [variants and options](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+
+              Constraints: `min 1`.
+
+            </ParamField>
+
+            <ParamField body="participantsChoices" type="ParticipantChoices">
+
+              Information about the booked service choices and participant count for each choice.
+              When creating a booking, use this field only if the booking includes multiple [service variants](https://dev.wix.com/docs/rest/business-solutions/bookings/services/service-options-and-variants/introduction).
+
+              For example, use this for a spa package booking that includes different service levels:
+              - 2 participants chose "Standard Package".
+              - 1 participant chose "VIP Package".
+
+              _Nested structure omitted for brevity — see the `ParticipantChoices` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CalculatePriceResponse>`.
+
+    <ResponseField name="priceInfo" type="PriceInfo">
+
+      Information about each line item's base price and the total base price.
+
+      See the [Price Info Object](/api-reference/business-solutions/bookings/pricing/pricing-api/price-info-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BOOKING` | The booking data is invalid or missing required fields. Ensure `bookedEntity` includes valid service and participant information. |
+    | `400` | `INVALID_ARGUMENT` | `NUMBER_OF_PARTICIPANTS_NOT_FOUND` | The `numberOfParticipants` is missing or set to `0`. Specify the number of participants for the booking. |
+    | `428` | `FAILED_PRECONDITION` | `FAILED_RESOLVING_SERVICE` | Couldn't retrieve service information. The service may not exist or is unavailable. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_CONTACTING_PRICING_PROVIDER` | Couldn't retrieve pricing from the external pricing provider. The provider may be unavailable or returned an error. |
+    | `428` | `FAILED_PRECONDITION` | `MULTIPLE_PRICING_PROVIDERS_FOUND` | Multiple pricing providers are installed. Only 1 pricing provider can be active at a time. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_DURATION_CHOICE` | The booking range doesn't match the duration of the selected variant. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-calculate-price" id="ex-sdk-calculate-price-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-calculate-price" id="ex-sdk-calculate-price-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-calculate-price-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-calculate-price-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Calculate the price of an existing booking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">calculatePrice (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-calculate-price-0"><span className="wix-picker-name">Calculate the price of an existing booking</span></label>
+    <label htmlFor="ex-sdk-calculate-price-1"><span className="wix-picker-name">calculatePrice (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Calculate the price of an existing booking
+    import { pricing } from "@wix/bookings";
+
+    const booking = {
+      bookedEntity: {
+        slot: {
+          serviceId: "8e8839e1-5f16-4e82-a3bb-a1db594b29ba",
+          scheduleId: "8c18b72f-473a-4ee5-916c-0121f11f72d6",
+          startDate: "2025-06-01T10:00:00Z",
+          endDate: "2025-06-01T11:00:00Z",
+        },
+      },
+      participantsChoices: {
+        serviceChoices: [{ numberOfParticipants: 1 }],
+      },
+    };
+
+    async function calculatePrice() {
+      const response = await pricing.calculatePrice(booking);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculatePrice (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { pricing } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { pricing },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function calculatePrice(booking) {
+      const response = await myWixClient.pricing.calculatePrice(booking);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

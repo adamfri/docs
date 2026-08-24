@@ -1,0 +1,618 @@
+---
+title: "Confirm Or Decline Booking"
+description: "Updates the booking status to CONFIRMED, PENDING, or DECLINED based on the paymentStatus you provide, double booking conflicts, and whether the service require…"
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates the booking `status` to `CONFIRMED`, `PENDING`, or `DECLINED` based
+    on the `paymentStatus` you provide, double booking conflicts, and whether
+    the service requires business approval.
+
+    ### eCommerce checkout restriction
+
+    Call this method only when using a custom checkout page.
+    Don't call it when using a [Wix eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+    In such cases, Wix Bookings automatically updates the booking status based on the `paymentStatus` of the corresponding [Wix eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+    ### When to call Confirm Booking or Decline Booking instead
+
+    This method has specific limitations based on payment status and double booking conflicts.
+    Use the alternative methods in these scenarios:
+    + **To force confirm double-booked free bookings:** Call [Confirm Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-booking).
+    Confirm Or Decline Booking can't confirm double-booked free bookings.
+    + **To decline bookings without double booking conflicts:** Call [Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/decline-booking).
+    Confirm Or Decline Booking only declines bookings when both a double booking conflict exists and payment status is unpaid.
+
+    ### New booking status
+
+    The booking `status` is set to `DECLINED` if both of the following conditions
+    are met:
+    + You provide `UNDEFINED`, `NOT_PAID`, `REFUNDED`, or `EXEMPT` as payment status.
+    + There is a double booking conflict.
+
+    If only one or none of these conditions is met, `status` is set to `PENDING`
+    or `CONFIRMED` depending on whether the service requires business approval.
+
+    ### Double bookings
+
+    If there is a double booking conflict, but the booking has already been at least
+    partially paid, the method still marks the booking as `PENDING` or `CONFIRMED`.
+    Then, it also sets `doubleBooked` to `true`.
+
+    ### Admin overwrites
+
+    There are small but important differences in confirmation behavior if the
+    booking was created with special `flowControlSettings`:
+    + If the booking's `flowControlSettings.skipAvailabilityValidation` was set to
+    `true`, the booking is never declined regardless of double booking conflicts.
+    Instead, it's marked `CONFIRMED` or `PENDING`, depending on whether the
+    service requires business approval.
+    + If the booking's `flowControlSettings.skipBusinessConfirmation` was set to
+    `true`, the booking skips `PENDING` status and is marked `CONFIRMED`
+    immediately.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/confirmation/{bookingId}:confirmOrDecline
+    ```
+
+    ## Path Params
+
+    <ParamField path="bookingId" type="string" required>
+
+      ID of the booking to confirm or decline.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="paymentStatus" type="string">
+
+      Current payment status of the booking when using a custom checkout page and
+      not the [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+
+      The booking is declined if there is a double booking conflict and you provide
+      one of these payment statuses: `UNDEFINED`, `NOT_PAID`, `REFUNDED`, or `EXEMPT`.
+
+      **Supported values:**
+
+      - `UNDEFINED` — Undefined payment status.
+      - `NOT_PAID` — The booking isn't paid.
+      - `PAID` — The booking is fully paid.
+      - `PARTIALLY_PAID` — The booking is partially paid.
+      - `REFUNDED` — The booking is refunded.
+      - `EXEMPT` — The booking is free of charge.
+      - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="booking" type="Booking">
+
+      Updated booking.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_BOOKING_STATUS` | Only bookings with `CREATED`, `PENDING`, or `WAITING_LIST` status can be confirmed. |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` | Booking not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-confirm-or-decline-booking" id="ex-rest-confirm-or-decline-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-confirm-or-decline-booking" id="ex-rest-confirm-or-decline-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-confirm-or-decline-booking" id="ex-rest-confirm-or-decline-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-confirm-or-decline-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-confirm-or-decline-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Confirm an already-confirmed and paid booking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Decline an unpaid booking due to a double booking conflict</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Confirm a paid booking</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-confirm-or-decline-booking-0"><span className="wix-picker-name">Confirm an already-confirmed and paid booking</span></label>
+    <label htmlFor="ex-rest-confirm-or-decline-booking-1"><span className="wix-picker-name">Decline an unpaid booking due to a double booking conflict</span></label>
+    <label htmlFor="ex-rest-confirm-or-decline-booking-2"><span className="wix-picker-name">Confirm a paid booking</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -x POST \
+      'https://www.wixapis.com/bookings/v2/confirmation/27928b4c-58d1-48e3-b031-1d048583491c:confirmOrDecline' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "paymentStatus": "PAID"
+      }'
+      ```
+
+      ```json Response
+      {
+        "booking": {
+          "id": "27928b4c-58d1-48e3-b031-1d048583491c",
+          "status": "CONFIRMED",
+          "paymentStatus": "PAID",
+          "revision": "2",
+          "createdDate": "2024-01-15T10:00:00.000Z",
+          "updatedDate": "2024-01-15T11:00:00.000Z",
+          "bookedEntity": {
+            "slot": {
+              "serviceId": "e3f1a2b3-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+              "scheduleId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "startDate": "2024-02-01T09:00:00.000Z",
+              "endDate": "2024-02-01T10:00:00.000Z",
+              "timezone": "America/New_York"
+            }
+          },
+          "contactDetails": {
+            "contactId": "c1d2e3f4-a5b6-7890-cdef-123456789abc",
+            "firstName": "Jane",
+            "lastName": "Doe",
+            "email": "jane.doe@example.com",
+            "phone": "+12125551234"
+          },
+          "totalParticipants": 1,
+          "selectedPaymentOption": "ONLINE"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -x POST \
+      'https://www.wixapis.com/bookings/v2/confirmation/27928b4c-58d1-48e3-b031-1d048583491c:confirmOrDecline' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "paymentStatus": "NOT_PAID"
+      }'
+      ```
+
+      ```json Response
+      {
+        "booking": {
+            "id": "27928b4c-58d1-48e3-b031-1d048583491c",
+            "bookedEntity": {
+                "slot": {
+                    "sessionId": "2mmoW0vwKcSFyxtOfCdKfMlsSg82Qzh3JOZM35Rn6AVnOSYNDpd3bhXFsZvs6t8L9InqfJ9IXYMgrXoMCuklr91zl019eigftfwr",
+                    "eventId": "65a5776e-37f1-45f7-8e4c-f22d01b23254",
+                    "serviceId": "adecb61d-a25b-4274-86b5-427999176b23",
+                    "scheduleId": "4523c4c1-7c0a-412b-9aae-aeea56104516",
+                    "startDate": "2023-02-14T11:10:00.000Z",
+                    "endDate": "2023-02-14T11:45:00.000Z",
+                    "timezone": "Europe/Dublin",
+                    "resource": {
+                        "id": "442abbe0-8421-46d0-981b-2c5e4ff5ab89",
+                        "name": "Jane Doh",
+                        "email": "staff@example.com",
+                        "scheduleId": "c7b6a95d-7ce5-449c-9d3d-38ff61864392"
+                    },
+                    "location": {
+                        "id": "156a0a97-4193-4267-a2fd-43796cbe368a",
+                        "name": "Main Office",
+                        "formattedAddress": "4 Baker Drive Guaruja, NY 12175",
+                        "locationType": "OWNER_BUSINESS"
+                    }
+                },
+                "title": "Brow Thread",
+                "tags": [
+                    "INDIVIDUAL"
+                ]
+            },
+            "contactDetails": {
+                "firstName": "John",
+                "email": "John@example.com"
+            },
+            "status": "DECLINED",
+            "paymentStatus": "NOT_PAID",
+            "selectedPaymentOption": "OFFLINE",
+            "createdDate": "2023-02-14T06:55:00.110Z",
+            "revision": "10",
+            "createdBy": {
+                "anonymousVisitorId": "3f4a97c5-a499-42c7-bd15-b2d561fe4616"
+            },
+            "startDate": "2023-02-14T11:10:00Z",
+            "endDate": "2023-02-14T11:45:00Z",
+            "updatedDate": "2023-02-15T07:23:11.794Z",
+            "totalParticipants": 1
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/v2/confirmation/27928b4c-58d1-48e3-b031-1d048583491c:confirmOrDecline' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "paymentStatus": "PAID"
+      }'
+      ```
+
+      ```json Response
+      {
+          "booking": {
+              "id": "27928b4c-58d1-48e3-b031-1d048583491c",
+              "bookedEntity": {
+                  "slot": {
+                      "sessionId": "2mmoW0vwKcSFyxtOfCdKfMlsSg82Qzh3JOZM35Rn6AVnOSYNDpd3bhXFsZvs6t8L9InqfJ9IXYMgrXoMCuklr91zl019eigftfwr",
+                      "eventId": "65a5776e-37f1-45f7-8e4c-f22d01b23254",
+                      "serviceId": "adecb61d-a25b-4274-86b5-427999176b23",
+                      "scheduleId": "4523c4c1-7c0a-412b-9aae-aeea56104516",
+                      "startDate": "2023-02-14T11:10:00.000Z",
+                      "endDate": "2023-02-14T11:45:00.000Z",
+                      "timezone": "Europe/Dublin",
+                      "resource": {
+                          "id": "442abbe0-8421-46d0-981b-2c5e4ff5ab89",
+                          "name": "Jane Doh",
+                          "email": "staff@example.com",
+                          "scheduleId": "c7b6a95d-7ce5-449c-9d3d-38ff61864392"
+                      },
+                      "location": {
+                          "id": "156a0a97-4193-4267-a2fd-43796cbe368a",
+                          "name": "Main Office",
+                          "formattedAddress": "9 S. Steep River Palace, Paris, NY 12140 ",
+                          "locationType": "OWNER_BUSINESS"
+                      }
+                  },
+                  "title": "Brow Thread",
+                  "tags": [
+                      "INDIVIDUAL"
+                  ]
+              },
+              "contactDetails": {
+                  "firstName": "John",
+                  "email": "John@example.com"
+              },
+              "additionalFields": [],
+              "status": "CONFIRMED",
+              "paymentStatus": "PAID",
+              "selectedPaymentOption": "OFFLINE",
+              "createdDate": "2023-02-14T06:55:00.110Z",
+              "revision": "11",
+              "createdBy": {
+                  "anonymousVisitorId": "3f4a97c5-a499-42c7-bd15-b2d561fe4616"
+              },
+              "startDate": "2023-02-14T11:10:00Z",
+              "endDate": "2023-02-14T11:45:00Z",
+              "updatedDate": "2023-02-15T07:30:41.637Z",
+              "totalParticipants": 1
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates the booking `status` to `CONFIRMED`, `PENDING`, or `DECLINED` based
+    on the `paymentStatus` you provide, double booking conflicts, and whether
+    the service requires business approval.
+
+    ### eCommerce checkout restriction
+
+    Call this method only when using a custom checkout page.
+    Don't call it when using a [Wix eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+    In such cases, Wix Bookings automatically updates the booking status based on the `paymentStatus` of the corresponding [Wix eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+
+    ### When to call Confirm Booking or Decline Booking instead
+
+    This method has specific limitations based on payment status and double booking conflicts.
+    Use the alternative methods in these scenarios:
+    + **To force confirm double-booked free bookings:** Call [Confirm Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-booking).
+    Confirm Or Decline Booking can't confirm double-booked free bookings.
+    + **To decline bookings without double booking conflicts:** Call [Decline Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/decline-booking).
+    Confirm Or Decline Booking only declines bookings when both a double booking conflict exists and payment status is unpaid.
+
+    ### New booking status
+
+    The booking `status` is set to `DECLINED` if both of the following conditions
+    are met:
+    + You provide `UNDEFINED`, `NOT_PAID`, `REFUNDED`, or `EXEMPT` as payment status.
+    + There is a double booking conflict.
+
+    If only one or none of these conditions is met, `status` is set to `PENDING`
+    or `CONFIRMED` depending on whether the service requires business approval.
+
+    ### Double bookings
+
+    If there is a double booking conflict, but the booking has already been at least
+    partially paid, the method still marks the booking as `PENDING` or `CONFIRMED`.
+    Then, it also sets `doubleBooked` to `true`.
+
+    ### Admin overwrites
+
+    There are small but important differences in confirmation behavior if the
+    booking was created with special `flowControlSettings`:
+    + If the booking's `flowControlSettings.skipAvailabilityValidation` was set to
+    `true`, the booking is never declined regardless of double booking conflicts.
+    Instead, it's marked `CONFIRMED` or `PENDING`, depending on whether the
+    service requires business approval.
+    + If the booking's `flowControlSettings.skipBusinessConfirmation` was set to
+    `true`, the booking skips `PENDING` status and is marked `CONFIRMED`
+    immediately.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.confirmOrDeclineBooking(bookingId, options): Promise<ConfirmOrDeclineBookingResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="bookingId" type="string" required>
+
+      ID of the booking to confirm or decline.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="ConfirmOrDeclineBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="paymentStatus" type="string">
+
+          Current payment status of the booking when using a custom checkout page and
+          not the [eCommerce checkout](https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/introduction).
+
+          The booking is declined if there is a double booking conflict and you provide
+          one of these payment statuses: `UNDEFINED`, `NOT_PAID`, `REFUNDED`, or `EXEMPT`.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined payment status.
+          - `NOT_PAID` — The booking isn't paid.
+          - `PAID` — The booking is fully paid.
+          - `PARTIALLY_PAID` — The booking is partially paid.
+          - `REFUNDED` — The booking is refunded.
+          - `EXEMPT` — The booking is free of charge.
+          - `FAILED` — The most recent subscription payment for this booking failed. If the payment is later recovered, the status changes back to `PAID`. Returned only for course bookings with subscription pricing.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ConfirmOrDeclineBookingResponse>`.
+
+    <ResponseField name="booking" type="Booking">
+
+      Updated booking.
+
+      See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_BOOKING_STATUS` | Only bookings with `CREATED`, `PENDING`, or `WAITING_LIST` status can be confirmed. |
+    | `404` | `NOT_FOUND` | `BOOKING_NOT_FOUND` | Booking not found. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-confirm-or-decline-booking" id="ex-sdk-confirm-or-decline-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-confirm-or-decline-booking" id="ex-sdk-confirm-or-decline-booking-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-confirm-or-decline-booking" id="ex-sdk-confirm-or-decline-booking-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-confirm-or-decline-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-confirm-or-decline-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">confirmOrDeclineBooking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">confirmOrDeclineBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">confirmOrDeclineBooking (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-confirm-or-decline-booking-0"><span className="wix-picker-name">confirmOrDeclineBooking</span></label>
+    <label htmlFor="ex-sdk-confirm-or-decline-booking-1"><span className="wix-picker-name">confirmOrDeclineBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-confirm-or-decline-booking-2"><span className="wix-picker-name">confirmOrDeclineBooking (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript confirmOrDeclineBooking
+    import { bookings } from '@wix/bookings';
+
+    async function confirmOrDeclineBooking(bookingId,options) {
+      const response = await bookings.confirmOrDeclineBooking(bookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript confirmOrDeclineBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function confirmOrDeclineBooking(bookingId,options) {
+      const response = await myWixClient.bookings.confirmOrDeclineBooking(bookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript confirmOrDeclineBooking (with elevated permissions)
+    import { bookings } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myConfirmOrDeclineBookingMethod(bookingId,options) {
+      const elevatedConfirmOrDeclineBooking = auth.elevate(bookings.confirmOrDeclineBooking);
+      const response = await elevatedConfirmOrDeclineBooking(bookingId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

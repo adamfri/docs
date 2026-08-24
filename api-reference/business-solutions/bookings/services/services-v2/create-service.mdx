@@ -1,0 +1,1991 @@
+---
+title: "Create Service"
+description: "Creates a service."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a service.
+
+    ### Required fields
+
+    When creating a service you must specify the following fields:
+    - [`type`](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-types):
+    Whether it's an appointment-based service, class, or course.
+    - `name`: Service name that's displayed to customers.
+    - `onlineBooking`:
+    Settings determining whether customers can book online, whether the business
+    must manually confirm bookings, and whether customers can request to book an
+    appointment time slot that already has a booking request awaiting business
+    confirmation.
+    - [`payment`](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-payments):
+    How customers can pay when signing up for the service.
+    - `defaultCapacity`: The maximum number of customers that can book the service. Required for all service types.
+    - For appointment-based services, it must be `1`.
+    - For classes, set to the maximum number of participants per session.
+    - For courses, set to the maximum number of participants for the course.
+
+    ### Category
+
+    Set `category.id` to assign the service to a [category](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/categories/introduction).
+    Without an assigned category, the service isn't visible on the live site.
+
+    ### Online booking
+
+    Set `onlineBooking.enabled` to `true` so customers can book the service online.
+    When enabled, the service is included in the [single-service booking flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/flow-single-service-booking).
+
+    ### Approval
+
+    Set `onlineBooking.requireManualApproval` to control whether bookings need business approval before confirmation.
+    Services with manual approval enabled can't accept pricing plan payments.
+
+    ### Payment
+
+    Set `payment.rateType` to `FIXED`, `VARIED`, `CUSTOM`, or `NO_FEE` and specify the corresponding rate details:
+    - `FIXED`: Set `payment.fixed.price`.
+    - `VARIED`: Set `payment.varied.defaultPrice`.
+    - `CUSTOM`: Set `payment.custom.description`.
+    - `NO_FEE`: No additional rate details required.
+
+    Configure `payment.options` to control how customers can pay.
+    At least one of `inPerson` or `online` must be `true`, even for services with `rateType` of `NO_FEE`.
+
+    - `online`: Customers can pay online. Requires `rateType` of `FIXED` or `VARIED`.
+    - `inPerson`: Customers can pay in person.
+    - `deposit`: A deposit is required to book. Requires `rateType` of `FIXED` or `VARIED` and a `deposit` amount in the rate details.
+    - `pricingPlan`: Customers can pay using a [pricing plan](https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans/plans/introduction).
+    Can't be used in combination with manual approval.
+
+    Learn more about [service payments](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-payments).
+
+    ### Session durations
+
+    Depending on which type of service you're creating, you may also need to specify
+    supported session durations.
+
+    __Classes and courses__
+
+    Don't specify `schedule.availabilityConstraints.sessionDurations`.
+
+    __Appointment-based services without varied pricing based on session length__
+
+    Specify the single supported session duration in the
+    `schedule.availabilityConstraints.sessionDurations` array.
+
+    __Appointment-based services with varied pricing based on session length__
+
+    - Specify all supported session durations in `schedule.availabilityConstraints.sessionDurations`.
+    - Note that Wix Bookings doesn't display these values to customers and
+    ignores them in pricing and availability calculations. Instead session
+    durations are retrieved from the relevant [service variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    - It is mandatory to specify `schedule.availabilityConstraints.sessionDurations`,
+    even though these values are ignored.
+
+    ### Staff members
+
+    For appointment-based services, at least one entry in `staffMemberIds` is required.
+    Set it to the [resource](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) IDs of the staff members who can provide the service.
+    Note that despite the field name, `staffMemberIds` contains resource IDs from `staffMember.resourceId`,
+    not staff member IDs. Query staff members with the `RESOURCE_DETAILS` field set to retrieve `resourceId`.
+
+    ### Buffer time
+
+    For appointment-based services, you can set `schedule.availabilityConstraints.timeBetweenSessions` to add buffer time between booked sessions.
+
+    ### Locations
+
+    Set the service's location types and options. You can set 1, some, or all types simultaneously. See [About service locations](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-locations) for details.
+
+    ### Media
+
+    Specify `media` so customers see images when selecting the service.
+    Set `media.mainMedia` as the primary image and optionally `media.coverMedia` or `media.items`.
+    Each item is an image with `id`, `height`, and `width`, and optionally `url` and `altText`.
+    Refer to the [Media Manager API](https://dev.wix.com/docs/rest/assets/media/media-manager/introduction) for details about uploading images and retrieving their IDs.
+
+    ### Add-on groups
+
+    Don't specify existing add-on groups when calling Create Service.
+    Instead, use dedicated add-on group and add-on creation methods to ensure proper validation and maintain referential integrity between services and their optional extras.
+    You can follow this [sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/sample-flows#create-bookable-add-ons-for-a-new-group) to create bookable add-ons.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/services
+    ```
+
+    ## Body Params
+
+    <ParamField body="service" type="Service" required>
+
+      Service to create.
+
+      See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="service" type="Service">
+
+      Created service.
+
+      See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FORM` | Couldn't find the form. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CATEGORY` | Couldn't find the category. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BOOKING_POLICY` | Couldn't find the booking policy. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SERVICE_TYPE` | Service `type` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SERVICE_NAME` | Service `name` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ONLINE_BOOKING` | Service `onlineBooking` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_STAFF_MEMBER_IDS` | Appointment-based services require at least 1 resource ID associated with a staff member in `staffMemberIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PAYMENT_REQUIRED` | Service `payment` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PAYMENT_TYPE` | Service `payment.rateType` must be set to `FIXED`, `VARIED`, `CUSTOM`, or `NO_FEE`. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_RATE` | Service `payment.rate` is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PAYMENT_OPTIONS` | Service `payment.options` are invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BUSINESS_LOCATIONS` | Some of the specified business location IDs don't exist. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_LOCATIONS` | Service `locations` are invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BUSINESS_LOCATION` | Locations with `type` set to `BUSINESS` can only have business location options. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CUSTOM_LOCATION` | Locations with `type` set to `CUSTOM` can only have custom location options. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CUSTOMER_LOCATION` | Locations with `type` set to `CUSTOMER` can only be set on appointment-based services. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_UNKNOWN_LOCATION` | Location must have a valid `type` property. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_MANUAL_APPROVAL_WITH_PRICING_PLANS` | Services that require manual approval can't be paid using pricing plans. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_DEFAULT_CAPACITY` | Service `defaultCapacity` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_APPOINTMENT_CAPACITY` | Appointment-based services can only have a `defaultCapacity` of `1`. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SESSION_DURATION` | Appointment-based services require at least 1 session duration in `schedule.availabilityConstraints.sessionDurations`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Service Created | `wix.bookings.services.v2.service_created` | Triggered when a service is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-service" id="ex-rest-create-service-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-service" id="ex-rest-create-service-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-service-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-service-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a service with a required resource type</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a service</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-service-0"><span className="wix-picker-name">Create a service with a required resource type</span></label>
+    <label htmlFor="ex-rest-create-service-1"><span className="wix-picker-name">Create a service</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/bookings/v2/services' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "service": {
+          "type": "APPOINTMENT",
+          "name": "Personal Cat Hugging",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+          "tagLine": "Get some purr therapy with our cat hugging service!",
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            }
+          },
+          "onlineBooking": {
+            "enabled": true
+          },
+          "schedule": {
+            "availabilityConstraints": {
+              "sessionDurations": [ 30 ]
+            }
+          },
+          "staffMemberIds": [
+            "4c82698d-1826-41db-bb57-7164a7073cf1"
+          ],
+          "serviceResources": [
+            {
+              "resourceType": {
+                "id": "7db7e228-e475-4091-8182-e00fa73cf9a3"
+              }
+            }
+          ]
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "service": {
+          "id": "1808f968-3f43-453c-aaee-23a0990246b4",
+          "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+          "type": "APPOINTMENT",
+          "sortOrder": 0,
+          "name": "Personal Cat Hugging",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+          "tagLine": "Get some purr therapy with our cat hugging service!",
+          "defaultCapacity": 1,
+          "hidden": false,
+          "form": {
+            "id": "00000000-0000-0000-0000-000000000000"
+          },
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            },
+            "pricingPlanIds": []
+          },
+          "onlineBooking": {
+            "enabled": true
+          },
+          "locations": [
+            {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "BUSINESS"
+            }
+          ],
+          "bookingPolicy": {
+            "id": "7a0fdb27-9c4b-4911-9cbe-9f8cb07694d6",
+            "createdDate": "2025-03-14T14:40:55.946Z",
+            "updatedDate": "2025-03-14T14:40:55.946Z",
+            "name": "Default policy",
+            "customPolicyDescription": {
+              "enabled": true,
+              "description": ""
+            },
+            "default": true,
+            "limitEarlyBookingPolicy": {
+              "enabled": false,
+              "earliestBookingInMinutes": 10080
+            },
+            "limitLateBookingPolicy": {
+              "enabled": false,
+              "latestBookingInMinutes": 1440
+            },
+            "bookAfterStartPolicy": {
+              "enabled": false
+            },
+            "cancellationPolicy": {
+              "enabled": true,
+              "limitLatestCancellation": false,
+              "latestCancellationInMinutes": 1440
+            },
+            "reschedulePolicy": {
+              "enabled": true,
+              "limitLatestReschedule": false,
+              "latestRescheduleInMinutes": 1440
+            },
+            "waitlistPolicy": {
+              "enabled": false,
+              "capacity": 10,
+              "reservationTimeInMinutes": 10
+            },
+            "participantsPolicy": {
+              "maxParticipantsPerBooking": 1
+            },
+            "resourcesPolicy": {
+              "enabled": false,
+              "autoAssignAllowed": false
+            },
+            "cancellationFeePolicy": {
+              "enabled": false,
+              "cancellationWindows": [],
+              "autoCollectFeeEnabled": true
+            },
+            "saveCreditCardPolicy": {
+              "enabled": false
+            }
+          },
+          "schedule": {
+            "id": "38181a77-b7ca-4c56-9c9c-b51d7845585c",
+            "availabilityConstraints": {
+              "durations": [
+                {
+                  "minutes": 30
+                }
+              ],
+              "sessionDurations": [
+                30
+              ],
+              "timeBetweenSessions": 0
+            }
+          },
+          "staffMemberIds": [
+            "4c82698d-1826-41db-bb57-7164a7073cf1"
+          ],
+          "serviceResources": [
+            {
+              "resourceType": {
+                "id": "7db7e228-e475-4091-8182-e00fa73cf9a3"
+              }
+            }
+          ],
+          "supportedSlugs": [
+            {
+              "name": "personal-cat-hugging",
+              "custom": false,
+              "createdDate": "2025-03-18T14:54:44.304Z"
+            }
+          ],
+          "mainSlug": {
+            "name": "personal-cat-hugging",
+            "custom": false,
+            "createdDate": "2025-03-18T14:54:44.304Z"
+          },
+          "urls": {
+            "servicePage": {
+              "relativePath": "/service-page/personal-cat-hugging",
+              "url": "/service-page/personal-cat-hugging"
+            },
+            "calendarPage": {
+              "relativePath": "/booking-calendar/personal-cat-hugging",
+              "url": "/booking-calendar/personal-cat-hugging"
+            }
+          },
+          "createdDate": "2025-03-18T14:54:44.590Z",
+          "updatedDate": "2025-03-18T14:54:44.590Z",
+          "revision": "1"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/bookings/v2/services' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "service": {
+          "type": "APPOINTMENT",
+          "name": "Personal Cat Hugging",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+          "tagLine": "Get some purr therapy with our cat hugging service!",
+          "defaultCapacity": 1,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": {
+                "id": "fb5af50cdfee49a7b8d87f340c969e90.jpg",
+                "height": 4000,
+                "width": 6000
+              }
+            }
+          },
+          "hidden": false,
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "pricingPlanIds": [],
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            }
+          },
+          "onlineBooking": {
+            "enabled": true,
+            "requireManualApproval": false,
+            "allowMultipleRequests": false
+          },
+          "staffMemberIds": [
+            "76570209-101f-409b-af97-b445bdb63125"
+          ],
+          "locations": [
+            {
+              "type": "CUSTOMER"
+            }
+          ]
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "service": {
+          "id": "d779a301-398d-4552-aa8c-3bef0b65cedb",
+          "type": "APPOINTMENT",
+          "sortOrder": 0,
+          "name": "Personal Cat Hugging",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+          "tagLine": "Get some purr therapy with our cat hugging service!",
+          "defaultCapacity": 1,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": {
+                "id": "fb5af50cdfee49a7b8d87f340c969e90.jpg",
+                "height": 4000,
+                "width": 6000
+              }
+            }
+          },
+          "hidden": false,
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            },
+            "pricingPlanIds": []
+          },
+          "onlineBooking": {
+            "enabled": true,
+            "requireManualApproval": false,
+            "allowMultipleRequests": false
+          },
+          "locations": [
+            {
+              "type": "CUSTOMER"
+            }
+          ],
+          "bookingPolicy": {
+            "id": "2a8cbc1b-7968-44e7-899a-d1df1ecbeefe",
+            "createdDate": "2023-04-11T08:51:43.025Z",
+            "updatedDate": "2023-05-19T11:32:27.930Z",
+            "name": "Default policy",
+            "customPolicyDescription": {
+              "enabled": false,
+              "description": ""
+            },
+            "default": true,
+            "limitEarlyBookingPolicy": {
+              "enabled": false,
+              "earliestBookingInMinutes": 604800
+            },
+            "limitLateBookingPolicy": {
+              "enabled": false,
+              "latestBookingInMinutes": 1440
+            },
+            "bookAfterStartPolicy": {
+              "enabled": false
+            },
+            "cancellationPolicy": {
+              "enabled": true,
+              "limitLatestCancellation": false,
+              "latestCancellationInMinutes": 1440
+            },
+            "reschedulePolicy": {
+              "enabled": true,
+              "limitLatestReschedule": false,
+              "latestRescheduleInMinutes": 1440
+            },
+            "waitlistPolicy": {
+              "enabled": false,
+              "capacity": 10,
+              "reservationTimeInMinutes": 10
+            },
+            "participantsPolicy": {
+              "maxParticipantsPerBooking": 1
+            },
+            "resourcesPolicy": {
+              "enabled": false,
+              "autoAssignAllowed": false
+            }
+          },
+          "schedule": {
+            "id": "16e9e039-6437-4144-81a7-124ce6b369c4"
+          },
+          "supportedSlugs": [
+            {
+              "name": "personal-cat-hugging",
+              "custom": false,
+              "createdDate": "2023-07-20T07:48:06.900Z"
+            }
+          ],
+          "mainSlug": {
+            "name": "personal-cat-hugging",
+            "custom": false,
+            "createdDate": "2023-07-20T07:48:06.900Z"
+          },
+          "urls": {
+            "servicePage": {
+              "relativePath": "/service-page-statics/personal-cat-hugging",
+              "url": "https://example.com/services-2-test/service-page-statics/personal-cat-hugging"
+            },
+            "bookingPage": {
+              "relativePath": "/booking-form/personal-cat-hugging/book",
+              "url": "https://example.com/services-2-test/booking-form/personal-cat-hugging/book"
+            },
+            "calendarPage": {
+              "relativePath": "/booking-calendar-statics/personal-cat-hugging",
+              "url": "https://example.com/services-2-test/booking-calendar-statics/personal-cat-hugging"
+            }
+          },
+          "createdDate": "2023-07-20T07:48:07.319Z",
+          "updatedDate": "2023-07-20T07:48:07.319Z",
+          "revision": "1",
+          "staffMemberIds": [
+            "76570209-101f-409b-af97-b445bdb63125"
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a service.
+
+    ### Required fields
+
+    When creating a service you must specify the following fields:
+    - [`type`](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-types):
+    Whether it's an appointment-based service, class, or course.
+    - `name`: Service name that's displayed to customers.
+    - `onlineBooking`:
+    Settings determining whether customers can book online, whether the business
+    must manually confirm bookings, and whether customers can request to book an
+    appointment time slot that already has a booking request awaiting business
+    confirmation.
+    - [`payment`](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-payments):
+    How customers can pay when signing up for the service.
+    - `defaultCapacity`: The maximum number of customers that can book the service. Required for all service types.
+    - For appointment-based services, it must be `1`.
+    - For classes, set to the maximum number of participants per session.
+    - For courses, set to the maximum number of participants for the course.
+
+    ### Category
+
+    Set `category.id` to assign the service to a [category](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/categories/introduction).
+    Without an assigned category, the service isn't visible on the live site.
+
+    ### Online booking
+
+    Set `onlineBooking.enabled` to `true` so customers can book the service online.
+    When enabled, the service is included in the [single-service booking flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/flow-single-service-booking).
+
+    ### Approval
+
+    Set `onlineBooking.requireManualApproval` to control whether bookings need business approval before confirmation.
+    Services with manual approval enabled can't accept pricing plan payments.
+
+    ### Payment
+
+    Set `payment.rateType` to `FIXED`, `VARIED`, `CUSTOM`, or `NO_FEE` and specify the corresponding rate details:
+    - `FIXED`: Set `payment.fixed.price`.
+    - `VARIED`: Set `payment.varied.defaultPrice`.
+    - `CUSTOM`: Set `payment.custom.description`.
+    - `NO_FEE`: No additional rate details required.
+
+    Configure `payment.options` to control how customers can pay.
+    At least one of `inPerson` or `online` must be `true`, even for services with `rateType` of `NO_FEE`.
+
+    - `online`: Customers can pay online. Requires `rateType` of `FIXED` or `VARIED`.
+    - `inPerson`: Customers can pay in person.
+    - `deposit`: A deposit is required to book. Requires `rateType` of `FIXED` or `VARIED` and a `deposit` amount in the rate details.
+    - `pricingPlan`: Customers can pay using a [pricing plan](https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans/plans/introduction).
+    Can't be used in combination with manual approval.
+
+    Learn more about [service payments](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-payments).
+
+    ### Session durations
+
+    Depending on which type of service you're creating, you may also need to specify
+    supported session durations.
+
+    __Classes and courses__
+
+    Don't specify `schedule.availabilityConstraints.sessionDurations`.
+
+    __Appointment-based services without varied pricing based on session length__
+
+    Specify the single supported session duration in the
+    `schedule.availabilityConstraints.sessionDurations` array.
+
+    __Appointment-based services with varied pricing based on session length__
+
+    - Specify all supported session durations in `schedule.availabilityConstraints.sessionDurations`.
+    - Note that Wix Bookings doesn't display these values to customers and
+    ignores them in pricing and availability calculations. Instead session
+    durations are retrieved from the relevant [service variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    - It is mandatory to specify `schedule.availabilityConstraints.sessionDurations`,
+    even though these values are ignored.
+
+    ### Staff members
+
+    For appointment-based services, at least one entry in `staffMemberIds` is required.
+    Set it to the [resource](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) IDs of the staff members who can provide the service.
+    Note that despite the field name, `staffMemberIds` contains resource IDs from `staffMember.resourceId`,
+    not staff member IDs. Query staff members with the `RESOURCE_DETAILS` field set to retrieve `resourceId`.
+
+    ### Buffer time
+
+    For appointment-based services, you can set `schedule.availabilityConstraints.timeBetweenSessions` to add buffer time between booked sessions.
+
+    ### Locations
+
+    Set the service's location types and options. You can set 1, some, or all types simultaneously. See [About service locations](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-service-locations) for details.
+
+    ### Media
+
+    Specify `media` so customers see images when selecting the service.
+    Set `media.mainMedia` as the primary image and optionally `media.coverMedia` or `media.items`.
+    Each item is an image with `id`, `height`, and `width`, and optionally `url` and `altText`.
+    Refer to the [Media Manager API](https://dev.wix.com/docs/rest/assets/media/media-manager/introduction) for details about uploading images and retrieving their IDs.
+
+    ### Add-on groups
+
+    Don't specify existing add-on groups when calling Create Service.
+    Instead, use dedicated add-on group and add-on creation methods to ensure proper validation and maintain referential integrity between services and their optional extras.
+    You can follow this [sample flow](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/sample-flows#create-bookable-add-ons-for-a-new-group) to create bookable add-ons.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { services } from '@wix/bookings';
+
+    services.createService(service): Promise<Service>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="service" type="Service" required>
+
+      Service to create.
+
+      See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<Service>`.
+
+    See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FORM` | Couldn't find the form. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CATEGORY` | Couldn't find the category. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BOOKING_POLICY` | Couldn't find the booking policy. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SERVICE_TYPE` | Service `type` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SERVICE_NAME` | Service `name` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ONLINE_BOOKING` | Service `onlineBooking` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_STAFF_MEMBER_IDS` | Appointment-based services require at least 1 resource ID associated with a staff member in `staffMemberIds`. |
+    | `400` | `INVALID_ARGUMENT` | `PAYMENT_REQUIRED` | Service `payment` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PAYMENT_TYPE` | Service `payment.rateType` must be set to `FIXED`, `VARIED`, `CUSTOM`, or `NO_FEE`. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_RATE` | Service `payment.rate` is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PAYMENT_OPTIONS` | Service `payment.options` are invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BUSINESS_LOCATIONS` | Some of the specified business location IDs don't exist. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_LOCATIONS` | Service `locations` are invalid. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_BUSINESS_LOCATION` | Locations with `type` set to `BUSINESS` can only have business location options. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CUSTOM_LOCATION` | Locations with `type` set to `CUSTOM` can only have custom location options. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_CUSTOMER_LOCATION` | Locations with `type` set to `CUSTOMER` can only be set on appointment-based services. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_UNKNOWN_LOCATION` | Location must have a valid `type` property. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_MANUAL_APPROVAL_WITH_PRICING_PLANS` | Services that require manual approval can't be paid using pricing plans. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_DEFAULT_CAPACITY` | Service `defaultCapacity` is required. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_APPOINTMENT_CAPACITY` | Appointment-based services can only have a `defaultCapacity` of `1`. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SESSION_DURATION` | Appointment-based services require at least 1 session duration in `schedule.availabilityConstraints.sessionDurations`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Service Created | `wix.bookings.services.v2.service_created` | Triggered when a service is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-4" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-5" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-service" id="ex-sdk-create-service-6" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-service-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-service-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a class service</span><span className="wix-picker-desc">Create a class with a capacity of 30 people</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a class service (with elevated permissions)</span><span className="wix-picker-desc">Create a class with a capacity of 30 people</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an appointment service</span><span className="wix-picker-desc">Create an appointment provided by specific staff members</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an appointment service (with elevated permissions)</span><span className="wix-picker-desc">Create an appointment provided by specific staff members</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a course service</span><span className="wix-picker-desc">Create a course that can accommodate 30 people</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a course service (with elevated permissions)</span><span className="wix-picker-desc">Create a course that can accommodate 30 people</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createService (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-service-0"><span className="wix-picker-name">Create a class service</span><span className="wix-picker-desc">Create a class with a capacity of 30 people</span></label>
+    <label htmlFor="ex-sdk-create-service-1"><span className="wix-picker-name">Create a class service (with elevated permissions)</span><span className="wix-picker-desc">Create a class with a capacity of 30 people</span></label>
+    <label htmlFor="ex-sdk-create-service-2"><span className="wix-picker-name">Create an appointment service</span><span className="wix-picker-desc">Create an appointment provided by specific staff members</span></label>
+    <label htmlFor="ex-sdk-create-service-3"><span className="wix-picker-name">Create an appointment service (with elevated permissions)</span><span className="wix-picker-desc">Create an appointment provided by specific staff members</span></label>
+    <label htmlFor="ex-sdk-create-service-4"><span className="wix-picker-name">Create a course service</span><span className="wix-picker-desc">Create a course that can accommodate 30 people</span></label>
+    <label htmlFor="ex-sdk-create-service-5"><span className="wix-picker-name">Create a course service (with elevated permissions)</span><span className="wix-picker-desc">Create a course that can accommodate 30 people</span></label>
+    <label htmlFor="ex-sdk-create-service-6"><span className="wix-picker-name">createService (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a class service
+
+    import { services } from '@wix/bookings';
+    import { categories } from '@wix/bookings';
+
+    async function getFirstCategory() {
+      const response = await categories.listCategories();
+      return response.categories[0]
+    }
+
+    async function createClass() {
+      const category = await getFirstCategory();
+
+      const serviceToBeCreated = {
+        type: services.ServiceType.CLASS,
+        name: "Group Cat Hugging",
+        description: "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+        tagLine: "Get some purr therapy with our cat hugging service!",
+        defaultCapacity: 30,
+        category: category,
+        media: {
+          mainMedia: {
+            image: "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+          }
+        },
+        payment: {
+          rateType: services.RateType.FIXED,
+          fixed: {
+            price: {
+              value: "25",
+              currency: "USD"
+            }
+          },
+          options: {
+            online: true,
+            inPerson: false,
+            deposit: false,
+            pricingPlan: false
+          }
+        },
+        onlineBooking: {
+          enabled: true
+        },
+      }
+
+      const newService = await services.createService(serviceToBeCreated);
+
+      console.log('Success! Created a new service:', newService);
+
+      return newService;
+    }
+
+    /* Promise resolves to:
+     * {
+      "type": "CLASS",
+      "sortOrder": 3,
+      "name": "Group Cat Hugging",
+      "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+      "tagLine": "Get some purr therapy with our cat hugging service!",
+      "defaultCapacity": 30,
+      "media": {
+        "items": [],
+        "mainMedia": {
+          "image": "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+        }
+      },
+      "hidden": false,
+      "category": {
+        "name": "Our Services",
+        "sortOrder": 0,
+        "_id": "99b3c3af-3dd1-4fcd-8d97-2fcedcb2908c"
+      },
+      "payment": {
+        "rateType": "FIXED",
+        "fixed": {
+          "price": {
+            "value": "25",
+            "currency": "USD"
+          }
+        },
+        "options": {
+          "online": true,
+          "inPerson": false,
+          "deposit": false,
+          "pricingPlan": false
+        },
+        "pricingPlanIds": []
+      },
+      "onlineBooking": {
+        "enabled": true
+      },
+      "locations": [
+        {
+          "type": "BUSINESS"
+        }
+      ],
+      "bookingPolicy": {
+        "revision": "1",
+        "name": "Default policy",
+        "customPolicyDescription": {
+          "enabled": true,
+          "description": ""
+        },
+        "default": true,
+        "limitEarlyBookingPolicy": {
+          "enabled": false,
+          "earliestBookingInMinutes": 10080
+        },
+        "limitLateBookingPolicy": {
+          "enabled": false,
+          "latestBookingInMinutes": 1440
+        },
+        "bookAfterStartPolicy": {
+          "enabled": false
+        },
+        "cancellationPolicy": {
+          "enabled": true,
+          "limitLatestCancellation": false,
+          "latestCancellationInMinutes": 1440
+        },
+        "reschedulePolicy": {
+          "enabled": true,
+          "limitLatestReschedule": false,
+          "latestRescheduleInMinutes": 1440
+        },
+        "waitlistPolicy": {
+          "enabled": false,
+          "capacity": 10,
+          "reservationTimeInMinutes": 10
+        },
+        "participantsPolicy": {
+          "enabled": true,
+          "maxParticipantsPerBooking": 1
+        },
+        "resourcesPolicy": {
+          "enabled": false,
+          "autoAssignAllowed": false
+        },
+        "_id": "ede8ad9e-44e1-480e-833f-542aea019bd0",
+        "_createdDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)",
+        "_updatedDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)"
+      },
+      "schedule": {
+        "_id": "8d9560d3-72b9-45c0-a16d-1e73f7d38e11"
+      },
+      "staffMemberIds": [],
+      "staffMembers": [],
+      "resourceGroups": [],
+      "serviceResources": [],
+      "supportedSlugs": [
+        {
+          "name": "group-cat-hugging",
+          "custom": false,
+          "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+        }
+      ],
+      "mainSlug": {
+        "name": "group-cat-hugging",
+        "custom": false,
+        "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+      },
+      "urls": {
+        "servicePage": "https://www.example.com/services-v2-test/service-page/group-cat-hugging",
+        "bookingPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging",
+        "calendarPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging"
+      },
+      "revision": "1",
+      "_id": "1204a214-d1fb-41c8-886a-1ec461b990dd",
+      "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)",
+      "_updatedDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+    }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a class service (with elevated permissions)
+    import { services } from '@wix/bookings';
+    import { categories } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    const elevatedCreateService = auth.elevate(services.createService);
+
+    async function getFirstCategory() {
+      const response = await categories.listCategories();
+      return response.categories[0]
+    }
+
+    async function createClass() {
+      const category = await getFirstCategory();
+
+      const serviceToBeCreated = {
+        type: services.ServiceType.CLASS,
+        name: "Group Cat Hugging",
+        description: "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+        tagLine: "Get some purr therapy with our cat hugging service!",
+        defaultCapacity: 30,
+        category: category,
+        media: {
+          mainMedia: {
+            image: "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+          }
+        },
+        payment: {
+          rateType: services.RateType.FIXED,
+          fixed: {
+            price: {
+              value: "25",
+              currency: "USD"
+            }
+          },
+          options: {
+            online: true,
+            inPerson: false,
+            deposit: false,
+            pricingPlan: false
+          }
+        },
+        onlineBooking: {
+          enabled: true
+        },
+      }
+
+      const newService = await elevatedCreateService(serviceToBeCreated);
+
+      console.log('Success! Created a new service:', newService);
+
+      return newService;
+    }
+
+    /* Promise resolves to:
+     * {
+      "type": "CLASS",
+      "sortOrder": 3,
+      "name": "Group Cat Hugging",
+      "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+      "tagLine": "Get some purr therapy with our cat hugging service!",
+      "defaultCapacity": 30,
+      "media": {
+        "items": [],
+        "mainMedia": {
+          "image": "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+        }
+      },
+      "hidden": false,
+      "category": {
+        "name": "Our Services",
+        "sortOrder": 0,
+        "_id": "99b3c3af-3dd1-4fcd-8d97-2fcedcb2908c"
+      },
+      "payment": {
+        "rateType": "FIXED",
+        "fixed": {
+          "price": {
+            "value": "25",
+            "currency": "USD"
+          }
+        },
+        "options": {
+          "online": true,
+          "inPerson": false,
+          "deposit": false,
+          "pricingPlan": false
+        },
+        "pricingPlanIds": []
+      },
+      "onlineBooking": {
+        "enabled": true
+      },
+      "locations": [
+        {
+          "type": "BUSINESS"
+        }
+      ],
+      "bookingPolicy": {
+        "revision": "1",
+        "name": "Default policy",
+        "customPolicyDescription": {
+          "enabled": true,
+          "description": ""
+        },
+        "default": true,
+        "limitEarlyBookingPolicy": {
+          "enabled": false,
+          "earliestBookingInMinutes": 10080
+        },
+        "limitLateBookingPolicy": {
+          "enabled": false,
+          "latestBookingInMinutes": 1440
+        },
+        "bookAfterStartPolicy": {
+          "enabled": false
+        },
+        "cancellationPolicy": {
+          "enabled": true,
+          "limitLatestCancellation": false,
+          "latestCancellationInMinutes": 1440
+        },
+        "reschedulePolicy": {
+          "enabled": true,
+          "limitLatestReschedule": false,
+          "latestRescheduleInMinutes": 1440
+        },
+        "waitlistPolicy": {
+          "enabled": false,
+          "capacity": 10,
+          "reservationTimeInMinutes": 10
+        },
+        "participantsPolicy": {
+          "enabled": true,
+          "maxParticipantsPerBooking": 1
+        },
+        "resourcesPolicy": {
+          "enabled": false,
+          "autoAssignAllowed": false
+        },
+        "_id": "ede8ad9e-44e1-480e-833f-542aea019bd0",
+        "_createdDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)",
+        "_updatedDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)"
+      },
+      "schedule": {
+        "_id": "8d9560d3-72b9-45c0-a16d-1e73f7d38e11"
+      },
+      "staffMemberIds": [],
+      "staffMembers": [],
+      "resourceGroups": [],
+      "serviceResources": [],
+      "supportedSlugs": [
+        {
+          "name": "group-cat-hugging",
+          "custom": false,
+          "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+        }
+      ],
+      "mainSlug": {
+        "name": "group-cat-hugging",
+        "custom": false,
+        "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+      },
+      "urls": {
+        "servicePage": "https://www.example.com/services-v2-test/service-page/group-cat-hugging",
+        "bookingPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging",
+        "calendarPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging"
+      },
+      "revision": "1",
+      "_id": "1204a214-d1fb-41c8-886a-1ec461b990dd",
+      "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)",
+      "_updatedDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+    }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an appointment service
+    import { services } from '@wix/bookings';
+    import { categories } from '@wix/bookings';
+
+    async function getFirstCategory() {
+      const response = await categories.listCategories();
+      return response.categories[0]
+    }
+
+    async function createAppointment(staffMemberIds) {
+
+      const category = await getFirstCategory();
+
+      const serviceToBeCreated = {
+        type: services.ServiceType.APPOINTMENT,
+        name: "Personal Cat Hugging",
+        description: "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+        tagLine: "Get some purr therapy with our cat hugging service!",
+        category: category,
+        media: {
+          mainMedia: {
+            image: "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/#originWidth=800&originHeight=1000"
+          }
+        },
+        payment: {
+          rateType: services.RateType.FIXED,
+          fixed: {
+            price: {
+              value: "25",
+              currency: "USD"
+            }
+          },
+          options: {
+            online: true,
+            inPerson: false,
+            deposit: false,
+            pricingPlan: false
+          },
+        },
+        staffMemberIds: staffMemberIds
+      }
+
+      const newService = await services.createService(serviceToBeCreated);
+
+      console.log('Success! Created a new service:', newService);
+
+      return newService;
+    }
+
+    /* Promise resolves to:
+     * {
+          "type": "APPOINTMENT",
+          "sortOrder": 3,
+          "name": "Group Cat Hugging",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+          "tagLine": "Get some purr therapy with our cat hugging service!",
+          "defaultCapacity": 30,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+            }
+          },
+          "hidden": false,
+          "category": {
+            "name": "Our Services",
+            "sortOrder": 0,
+            "_id": "99b3c3af-3dd1-4fcd-8d97-2fcedcb2908c"
+          },
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            },
+            "pricingPlanIds": []
+          },
+          "onlineBooking": {
+            "enabled": true
+          },
+          "locations": [
+            {
+              "type": "BUSINESS"
+            }
+          ],
+          "bookingPolicy": {
+            "revision": "1",
+            "name": "Default policy",
+            "customPolicyDescription": {
+              "enabled": true,
+              "description": ""
+            },
+            "default": true,
+            "limitEarlyBookingPolicy": {
+              "enabled": false,
+              "earliestBookingInMinutes": 10080
+            },
+            "limitLateBookingPolicy": {
+              "enabled": false,
+              "latestBookingInMinutes": 1440
+            },
+            "bookAfterStartPolicy": {
+              "enabled": false
+            },
+            "cancellationPolicy": {
+              "enabled": true,
+              "limitLatestCancellation": false,
+              "latestCancellationInMinutes": 1440
+            },
+            "reschedulePolicy": {
+              "enabled": true,
+              "limitLatestReschedule": false,
+              "latestRescheduleInMinutes": 1440
+            },
+            "waitlistPolicy": {
+              "enabled": false,
+              "capacity": 10,
+              "reservationTimeInMinutes": 10
+            },
+            "participantsPolicy": {
+              "enabled": true,
+              "maxParticipantsPerBooking": 1
+            },
+            "resourcesPolicy": {
+              "enabled": false,
+              "autoAssignAllowed": false
+            },
+            "_id": "ede8ad9e-44e1-480e-833f-542aea019bd0",
+            "_createdDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)",
+            "_updatedDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)"
+          },
+          "schedule": {
+            "_id": "8d9560d3-72b9-45c0-a16d-1e73f7d38e11"
+          },
+          "staffMemberIds": [],
+          "staffMembers": [],
+          "resourceGroups": [],
+          "serviceResources": [],
+          "supportedSlugs": [
+            {
+              "name": "group-cat-hugging",
+              "custom": false,
+              "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+            }
+          ],
+          "mainSlug": {
+            "name": "group-cat-hugging",
+            "custom": false,
+            "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+          },
+          "urls": {
+            "servicePage": "https://www.example.com/services-v2-test/service-page/group-cat-hugging",
+            "bookingPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging",
+            "calendarPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging"
+          },
+          "revision": "1",
+          "_id": "1204a214-d1fb-41c8-886a-1ec461b990dd",
+          "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)",
+          "_updatedDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+        }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an appointment service (with elevated permissions)
+    import { services } from '@wix/bookings';
+    import { categories } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    const elevatedCreateService = auth.elevate(services.createService);
+
+    async function getFirstCategory() {
+      const response = await categories.listCategories();
+      return response.categories[0]
+    }
+
+    async function createAppointment(staffMemberIds) {
+
+      const category = await getFirstCategory();
+
+      const serviceToBeCreated = {
+        type: services.ServiceType.APPOINTMENT,
+        name: "Personal Cat Hugging",
+        description: "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+        tagLine: "Get some purr therapy with our cat hugging service!",
+        category: category,
+        media: {
+          mainMedia: {
+            image: "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/#originWidth=800&originHeight=1000"
+          }
+        },
+        payment: {
+          rateType: services.RateType.FIXED,
+          fixed: {
+            price: {
+              value: "25",
+              currency: "USD"
+            }
+          },
+          options: {
+            online: true,
+            inPerson: false,
+            deposit: false,
+            pricingPlan: false
+          },
+        },
+        staffMemberIds: staffMemberIds
+      }
+
+      const newService = await elevatedCreateService(serviceToBeCreated);
+
+      console.log('Success! Created a new service:', newService);
+
+      return newService;
+    }
+
+    /* Promise resolves to:
+     * {
+          "type": "APPOINTMENT",
+          "sortOrder": 3,
+          "name": "Group Cat Hugging",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will come to your home and provide your furry feline with the warmest and snuggliest hugs around.",
+          "tagLine": "Get some purr therapy with our cat hugging service!",
+          "defaultCapacity": 30,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+            }
+          },
+          "hidden": false,
+          "category": {
+            "name": "Our Services",
+            "sortOrder": 0,
+            "_id": "99b3c3af-3dd1-4fcd-8d97-2fcedcb2908c"
+          },
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            },
+            "pricingPlanIds": []
+          },
+          "onlineBooking": {
+            "enabled": true
+          },
+          "locations": [
+            {
+              "type": "BUSINESS"
+            }
+          ],
+          "bookingPolicy": {
+            "revision": "1",
+            "name": "Default policy",
+            "customPolicyDescription": {
+              "enabled": true,
+              "description": ""
+            },
+            "default": true,
+            "limitEarlyBookingPolicy": {
+              "enabled": false,
+              "earliestBookingInMinutes": 10080
+            },
+            "limitLateBookingPolicy": {
+              "enabled": false,
+              "latestBookingInMinutes": 1440
+            },
+            "bookAfterStartPolicy": {
+              "enabled": false
+            },
+            "cancellationPolicy": {
+              "enabled": true,
+              "limitLatestCancellation": false,
+              "latestCancellationInMinutes": 1440
+            },
+            "reschedulePolicy": {
+              "enabled": true,
+              "limitLatestReschedule": false,
+              "latestRescheduleInMinutes": 1440
+            },
+            "waitlistPolicy": {
+              "enabled": false,
+              "capacity": 10,
+              "reservationTimeInMinutes": 10
+            },
+            "participantsPolicy": {
+              "enabled": true,
+              "maxParticipantsPerBooking": 1
+            },
+            "resourcesPolicy": {
+              "enabled": false,
+              "autoAssignAllowed": false
+            },
+            "_id": "ede8ad9e-44e1-480e-833f-542aea019bd0",
+            "_createdDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)",
+            "_updatedDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)"
+          },
+          "schedule": {
+            "_id": "8d9560d3-72b9-45c0-a16d-1e73f7d38e11"
+          },
+          "staffMemberIds": [],
+          "staffMembers": [],
+          "resourceGroups": [],
+          "serviceResources": [],
+          "supportedSlugs": [
+            {
+              "name": "group-cat-hugging",
+              "custom": false,
+              "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+            }
+          ],
+          "mainSlug": {
+            "name": "group-cat-hugging",
+            "custom": false,
+            "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+          },
+          "urls": {
+            "servicePage": "https://www.example.com/services-v2-test/service-page/group-cat-hugging",
+            "bookingPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging",
+            "calendarPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging"
+          },
+          "revision": "1",
+          "_id": "1204a214-d1fb-41c8-886a-1ec461b990dd",
+          "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)",
+          "_updatedDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+        }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a course service
+    import { services } from '@wix/bookings';
+    import { categories } from '@wix/bookings';
+
+    async function getFirstCategory() {
+      const response = await categories.listCategories();
+      return response.categories[0]
+    }
+
+    async function createCourse() {
+
+      const category = await getFirstCategory();
+
+      const serviceToBeCreated = {
+        type: services.ServiceType.COURSE,
+        name: "Cat Hugging Training",
+        description: "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will train you to become the best cat hugger around.",
+        tagLine: "Get some purr therapy training with our cat hugging experts",
+        defaultCapacity: 30,
+        category: category,
+        media: {
+          mainMedia: {
+            image: "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/#originWidth=800&originHeight=1000"
+          }
+        },
+        payment: {
+          rateType: services.RateType.FIXED,
+          fixed: {
+            price: {
+              value: "150",
+              currency: "USD"
+            }
+          },
+          options: {
+            online: true,
+            inPerson: false,
+            deposit: false,
+            pricingPlan: false
+          },
+        },
+        onlineBooking: {
+          enabled: true
+        },
+      }
+
+      const newService = await services.createService(serviceToBeCreated);
+
+      console.log('Success! Created a new service:', newService);
+
+      return newService;
+    }
+
+    /* Promise resolves to:
+     * {
+          "type": "COURSE",
+          "sortOrder": 3,
+          "name": "Cat Hugging Training",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will train you to become the best cat hugger around.".
+          "tagLine": "Get some purr therapy training with our cat hugging experts",
+          "defaultCapacity": 30,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+            }
+          },
+          "hidden": false,
+          "category": {
+            "name": "Our Services",
+            "sortOrder": 0,
+            "_id": "99b3c3af-3dd1-4fcd-8d97-2fcedcb2908c"
+          },
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            },
+            "pricingPlanIds": []
+          },
+          "onlineBooking": {
+            "enabled": true
+          },
+          "locations": [
+            {
+              "type": "BUSINESS"
+            }
+          ],
+          "bookingPolicy": {
+            "revision": "1",
+            "name": "Default policy",
+            "customPolicyDescription": {
+              "enabled": true,
+              "description": ""
+            },
+            "default": true,
+            "limitEarlyBookingPolicy": {
+              "enabled": false,
+              "earliestBookingInMinutes": 10080
+            },
+            "limitLateBookingPolicy": {
+              "enabled": false,
+              "latestBookingInMinutes": 1440
+            },
+            "bookAfterStartPolicy": {
+              "enabled": false
+            },
+            "cancellationPolicy": {
+              "enabled": true,
+              "limitLatestCancellation": false,
+              "latestCancellationInMinutes": 1440
+            },
+            "reschedulePolicy": {
+              "enabled": true,
+              "limitLatestReschedule": false,
+              "latestRescheduleInMinutes": 1440
+            },
+            "waitlistPolicy": {
+              "enabled": false,
+              "capacity": 10,
+              "reservationTimeInMinutes": 10
+            },
+            "participantsPolicy": {
+              "enabled": true,
+              "maxParticipantsPerBooking": 1
+            },
+            "resourcesPolicy": {
+              "enabled": false,
+              "autoAssignAllowed": false
+            },
+            "_id": "ede8ad9e-44e1-480e-833f-542aea019bd0",
+            "_createdDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)",
+            "_updatedDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)"
+          },
+          "schedule": {
+            "_id": "8d9560d3-72b9-45c0-a16d-1e73f7d38e11"
+          },
+          "staffMemberIds": [],
+          "staffMembers": [],
+          "resourceGroups": [],
+          "serviceResources": [],
+          "supportedSlugs": [
+            {
+              "name": "group-cat-hugging",
+              "custom": false,
+              "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+            }
+          ],
+          "mainSlug": {
+            "name": "group-cat-hugging",
+            "custom": false,
+            "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+          },
+          "urls": {
+            "servicePage": "https://www.example.com/services-v2-test/service-page/group-cat-hugging",
+            "bookingPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging",
+            "calendarPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging"
+          },
+          "revision": "1",
+          "_id": "1204a214-d1fb-41c8-886a-1ec461b990dd",
+          "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)",
+          "_updatedDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+        }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a course service (with elevated permissions)
+    import { services } from '@wix/bookings';
+    import { categories } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    const elevatedCreateService = auth.elevate(services.createService);
+
+    async function getFirstCategory() {
+      const response = await categories.listCategories();
+      return response.categories[0]
+    }
+
+    async function createCourse() {
+
+      const category = await getFirstCategory();
+
+      const serviceToBeCreated = {
+        type: services.ServiceType.COURSE,
+        name: "Cat Hugging Training",
+        description: "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will train you to become the best cat hugger around.",
+        tagLine: "Get some purr therapy training with our cat hugging experts",
+        defaultCapacity: 30,
+        category: category,
+        media: {
+          mainMedia: {
+            image: "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/#originWidth=800&originHeight=1000"
+          }
+        },
+        payment: {
+          rateType: services.RateType.FIXED,
+          fixed: {
+            price: {
+              value: "150",
+              currency: "USD"
+            }
+          },
+          options: {
+            online: true,
+            inPerson: false,
+            deposit: false,
+            pricingPlan: false
+          },
+        },
+        onlineBooking: {
+          enabled: true
+        },
+      }
+
+      const newService = await elevatedCreateService(serviceToBeCreated);
+
+      console.log('Success! Created a new service:', newService);
+
+      return newService;
+    }
+
+    /* Promise resolves to:
+     * {
+          "type": "COURSE",
+          "sortOrder": 3,
+          "name": "Cat Hugging Training",
+          "description": "Introducing the Purrfect Hug - the ultimate cat cuddling experience! Our team of expert cuddlers will train you to become the best cat hugger around.".
+          "tagLine": "Get some purr therapy training with our cat hugging experts",
+          "defaultCapacity": 30,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": "wix:image://v1/4b3901ffcb8d7ad81a613779d92c9702.jpg/4b3901ffcb8d7ad81a613779d92c9702.jpg#originWidth=800&originHeight=1000"
+            }
+          },
+          "hidden": false,
+          "category": {
+            "name": "Our Services",
+            "sortOrder": 0,
+            "_id": "99b3c3af-3dd1-4fcd-8d97-2fcedcb2908c"
+          },
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+              "price": {
+                "value": "25",
+                "currency": "USD"
+              }
+            },
+            "options": {
+              "online": true,
+              "inPerson": false,
+              "deposit": false,
+              "pricingPlan": false
+            },
+            "pricingPlanIds": []
+          },
+          "onlineBooking": {
+            "enabled": true
+          },
+          "locations": [
+            {
+              "type": "BUSINESS"
+            }
+          ],
+          "bookingPolicy": {
+            "revision": "1",
+            "name": "Default policy",
+            "customPolicyDescription": {
+              "enabled": true,
+              "description": ""
+            },
+            "default": true,
+            "limitEarlyBookingPolicy": {
+              "enabled": false,
+              "earliestBookingInMinutes": 10080
+            },
+            "limitLateBookingPolicy": {
+              "enabled": false,
+              "latestBookingInMinutes": 1440
+            },
+            "bookAfterStartPolicy": {
+              "enabled": false
+            },
+            "cancellationPolicy": {
+              "enabled": true,
+              "limitLatestCancellation": false,
+              "latestCancellationInMinutes": 1440
+            },
+            "reschedulePolicy": {
+              "enabled": true,
+              "limitLatestReschedule": false,
+              "latestRescheduleInMinutes": 1440
+            },
+            "waitlistPolicy": {
+              "enabled": false,
+              "capacity": 10,
+              "reservationTimeInMinutes": 10
+            },
+            "participantsPolicy": {
+              "enabled": true,
+              "maxParticipantsPerBooking": 1
+            },
+            "resourcesPolicy": {
+              "enabled": false,
+              "autoAssignAllowed": false
+            },
+            "_id": "ede8ad9e-44e1-480e-833f-542aea019bd0",
+            "_createdDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)",
+            "_updatedDate": "Thu Dec 14 2023 16:14:33 GMT+0100 (Central European Standard Time)"
+          },
+          "schedule": {
+            "_id": "8d9560d3-72b9-45c0-a16d-1e73f7d38e11"
+          },
+          "staffMemberIds": [],
+          "staffMembers": [],
+          "resourceGroups": [],
+          "serviceResources": [],
+          "supportedSlugs": [
+            {
+              "name": "group-cat-hugging",
+              "custom": false,
+              "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+            }
+          ],
+          "mainSlug": {
+            "name": "group-cat-hugging",
+            "custom": false,
+            "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+          },
+          "urls": {
+            "servicePage": "https://www.example.com/services-v2-test/service-page/group-cat-hugging",
+            "bookingPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging",
+            "calendarPage": "https://www.example.com/services-v2-test/booking-calendar/group-cat-hugging"
+          },
+          "revision": "1",
+          "_id": "1204a214-d1fb-41c8-886a-1ec461b990dd",
+          "_createdDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)",
+          "_updatedDate": "Tue Jan 16 2024 17:15:30 GMT+0100 (Central European Standard Time)"
+        }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createService (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { services } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { services },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createService(service) {
+      const response = await myWixClient.services.createService(service);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

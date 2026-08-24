@@ -1,0 +1,970 @@
+---
+title: "Import Order"
+description: "Imports a single order together with its historical data, such as the original creation date, order number, and statuses."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Imports a single order together with its historical data, such as the original creation date, order number, and statuses.
+
+    Import Order is designed for migrating existing orders into a site from an external system, for example when a merchant moves from another eCommerce platform. Provide the complete order in the request. Wix stores the values you provide as-is and doesn't recalculate totals or statuses, so fields such as `priceSummary`, `balanceSummary`, and `fulfillmentStatus` reflect exactly what you send.
+
+    Unlike creating an order through the regular flow, importing an order doesn't trigger side effects: no notifications are sent to the buyer, inventory isn't adjusted, and no contact, invoice, receipt, or subscription is created. Standard order webhooks aren't fired either. Instead, a single `OrderImported` webhook is emitted.
+
+    To overwrite a previously imported order, pass its `id`. The existing order is fully replaced with the details in the request. Only orders that were originally created with Import Order can be overwritten this way. To import a new order, omit `id`, and Wix generates one.
+
+    To define the number assigned to orders created after your migration, call [Set Order Number Counter](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/set-order-number-counter). To remove imported orders, call [Bulk Delete Imported Orders](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/bulk-delete-imported-orders).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.ECOM.IMPORT-ORDERS">SCOPE.ECOM.IMPORT-ORDERS</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/orders/import
+    ```
+
+    ## Body Params
+
+    <ParamField body="order" type="Order" required>
+
+      Order to import, including its historical data. Provide the complete order. Wix stores the values as provided and doesn't recalculate totals or statuses.
+
+      To overwrite a previously imported order, set `id` to that order's ID.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="order" type="Order">
+
+      Imported order.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_OVERWRITE_NON_IMPORTED_ORDER` | The provided `order.id` matches an existing order that was not created via the Import Order API. Only previously imported orders can be overwritten. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order Imported | `wix.ecom.v1.order_imported` | Triggered when an order is imported. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Imports a paid and fulfilled order from an external platform, preserving its original number, purchase date, and statuses.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/orders/import' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization:  <AUTH>' \
+        -d '{
+          "order": {
+            "number": "1042",
+            "purchasedDate": "2023-11-18T09:12:00.000Z",
+            "channelInfo": {
+              "type": "OTHER_PLATFORM",
+              "externalOrderId": "SHOP-1042",
+              "externalOrderUrl": "https://external-store.example.com/orders/1042"
+            },
+            "status": "APPROVED",
+            "paymentStatus": "PAID",
+            "fulfillmentStatus": "FULFILLED",
+            "currency": "USD",
+            "weightUnit": "KG",
+            "taxIncludedInPrices": false,
+            "buyerLanguage": "en",
+            "siteLanguage": "en",
+            "buyerInfo": {
+              "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+              "email": "janedoe@example.com"
+            },
+            "billingInfo": {
+              "address": {
+                "country": "US",
+                "subdivision": "US-NY",
+                "city": "New York",
+                "postalCode": "10173",
+                "addressLine": "525 5th Avenue",
+                "countryFullname": "United States",
+                "subdivisionFullname": "New York"
+              },
+              "contactDetails": {
+                "firstName": "Jane",
+                "lastName": "Doe",
+                "phone": "+15555555555"
+              }
+            },
+            "lineItems": [
+              {
+                "id": "b3d1f6a2-4c8e-4a17-9f52-7e0d2c1a5b64",
+                "productName": {
+                  "original": "Vintage Leather Wallet"
+                },
+                "catalogReference": {
+                  "catalogItemId": "58620c7f-6bd5-ec74-c139-3bf17ff10151",
+                  "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+                },
+                "quantity": 2,
+                "itemType": {
+                  "preset": "PHYSICAL"
+                },
+                "physicalProperties": {
+                  "sku": "WAL-LEATHER-01",
+                  "shippable": true
+                },
+                "price": {
+                  "amount": "45.00",
+                  "formattedAmount": "$45.00"
+                },
+                "totalPriceBeforeTax": {
+                  "amount": "90.00",
+                  "formattedAmount": "$90.00"
+                },
+                "totalPriceAfterTax": {
+                  "amount": "97.20",
+                  "formattedAmount": "$97.20"
+                },
+                "totalDiscount": {
+                  "amount": "0.00",
+                  "formattedAmount": "$0.00"
+                },
+                "taxDetails": {
+                  "taxableAmount": {
+                    "amount": "90.00",
+                    "formattedAmount": "$90.00"
+                  },
+                  "taxRate": "0.08",
+                  "totalTax": {
+                    "amount": "7.20",
+                    "formattedAmount": "$7.20"
+                  }
+                },
+                "paymentOption": "FULL_PAYMENT_ONLINE"
+              },
+              {
+                "id": "c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18",
+                "productName": {
+                  "original": "Canvas Tote Bag"
+                },
+                "catalogReference": {
+                  "catalogItemId": "0f9b1a3c-6d24-4b8e-9c17-2a5d8e0f3b41",
+                  "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+                },
+                "quantity": 1,
+                "itemType": {
+                  "preset": "PHYSICAL"
+                },
+                "physicalProperties": {
+                  "sku": "BAG-CANVAS-02",
+                  "shippable": true
+                },
+                "price": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "totalPriceBeforeTax": {
+                  "amount": "25.00",
+                  "formattedAmount": "$25.00"
+                },
+                "totalPriceAfterTax": {
+                  "amount": "26.00",
+                  "formattedAmount": "$26.00"
+                },
+                "totalDiscount": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "taxDetails": {
+                  "taxableAmount": {
+                    "amount": "15.00",
+                    "formattedAmount": "$15.00"
+                  },
+                  "taxRate": "0.08",
+                  "totalTax": {
+                    "amount": "1.20",
+                    "formattedAmount": "$1.20"
+                  }
+                },
+                "paymentOption": "FULL_PAYMENT_ONLINE"
+              }
+            ],
+            "appliedDiscounts": [
+              {
+                "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b",
+                "discountType": "GLOBAL",
+                "coupon": {
+                  "code": "WELCOME10",
+                  "amount": {
+                    "amount": "10.00",
+                    "formattedAmount": "$10.00"
+                  },
+                  "name": "Welcome discount"
+                },
+                "lineItemIds": [
+                  "c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18"
+                ]
+              }
+            ],
+            "priceSummary": {
+              "subtotal": {
+                "amount": "115.00",
+                "formattedAmount": "$115.00"
+              },
+              "shipping": {
+                "amount": "8.00",
+                "formattedAmount": "$8.00"
+              },
+              "tax": {
+                "amount": "8.40",
+                "formattedAmount": "$8.40"
+              },
+              "discount": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "total": {
+                "amount": "121.40",
+                "formattedAmount": "$121.40"
+              }
+            },
+            "balanceSummary": {
+              "balance": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "paid": {
+                "amount": "121.40",
+                "formattedAmount": "$121.40"
+              },
+              "refunded": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "activities": [
+              {
+                "id": "9b530b37-c34c-4364-8fa7-c83410ebadbd",
+                "createdDate": "2023-11-18T09:12:00.000Z",
+                "type": "ORDER_PLACED"
+              }
+            ]
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "order": {
+          "id": "5f2b8c14-7d3a-4e91-b0c2-9a1e6f4d8b70",
+          "number": "1042",
+          "createdDate": "2024-03-12T09:15:42.118Z",
+          "updatedDate": "2024-03-12T09:15:42.118Z",
+          "purchasedDate": "2023-11-18T09:12:00.000Z",
+          "imported": true,
+          "status": "APPROVED",
+          "paymentStatus": "PAID",
+          "fulfillmentStatus": "FULFILLED",
+          "currency": "USD",
+          "weightUnit": "KG",
+          "taxIncludedInPrices": false,
+          "buyerLanguage": "en",
+          "siteLanguage": "en",
+          "archived": false,
+          "buyerInfo": {
+            "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+            "email": "janedoe@example.com"
+          },
+          "billingInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Avenue",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "Jane",
+              "lastName": "Doe",
+              "phone": "+15555555555"
+            }
+          },
+          "lineItems": [
+            {
+              "id": "b3d1f6a2-4c8e-4a17-9f52-7e0d2c1a5b64",
+              "productName": {
+                "original": "Vintage Leather Wallet"
+              },
+              "catalogReference": {
+                "catalogItemId": "58620c7f-6bd5-ec74-c139-3bf17ff10151",
+                "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+              },
+              "quantity": 2,
+              "itemType": {
+                "preset": "PHYSICAL"
+              },
+              "physicalProperties": {
+                "sku": "WAL-LEATHER-01",
+                "shippable": true
+              },
+              "price": {
+                "amount": "45.00",
+                "formattedAmount": "$45.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "90.00",
+                "formattedAmount": "$90.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "97.20",
+                "formattedAmount": "$97.20"
+              },
+              "totalDiscount": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "taxDetails": {
+                "taxableAmount": {
+                  "amount": "90.00",
+                  "formattedAmount": "$90.00"
+                },
+                "taxRate": "0.08",
+                "totalTax": {
+                  "amount": "7.20",
+                  "formattedAmount": "$7.20"
+                }
+              },
+              "paymentOption": "FULL_PAYMENT_ONLINE"
+            },
+            {
+              "id": "c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18",
+              "productName": {
+                "original": "Canvas Tote Bag"
+              },
+              "catalogReference": {
+                "catalogItemId": "0f9b1a3c-6d24-4b8e-9c17-2a5d8e0f3b41",
+                "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+              },
+              "quantity": 1,
+              "itemType": {
+                "preset": "PHYSICAL"
+              },
+              "physicalProperties": {
+                "sku": "BAG-CANVAS-02",
+                "shippable": true
+              },
+              "price": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "25.00",
+                "formattedAmount": "$25.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "26.00",
+                "formattedAmount": "$26.00"
+              },
+              "totalDiscount": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "taxDetails": {
+                "taxableAmount": {
+                  "amount": "15.00",
+                  "formattedAmount": "$15.00"
+                },
+                "taxRate": "0.08",
+                "totalTax": {
+                  "amount": "1.20",
+                  "formattedAmount": "$1.20"
+                }
+              },
+              "paymentOption": "FULL_PAYMENT_ONLINE"
+            }
+          ],
+          "appliedDiscounts": [
+            {
+              "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b",
+              "discountType": "GLOBAL",
+              "coupon": {
+                "code": "WELCOME10",
+                "amount": {
+                  "amount": "10.00",
+                  "formattedAmount": "$10.00"
+                },
+                "name": "Welcome discount"
+              },
+              "lineItemIds": [
+                "c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18"
+              ]
+            }
+          ],
+          "priceSummary": {
+            "subtotal": {
+              "amount": "115.00",
+              "formattedAmount": "$115.00"
+            },
+            "shipping": {
+              "amount": "8.00",
+              "formattedAmount": "$8.00"
+            },
+            "tax": {
+              "amount": "8.40",
+              "formattedAmount": "$8.40"
+            },
+            "discount": {
+              "amount": "10.00",
+              "formattedAmount": "$10.00"
+            },
+            "total": {
+              "amount": "121.40",
+              "formattedAmount": "$121.40"
+            }
+          },
+          "balanceSummary": {
+            "balance": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "paid": {
+              "amount": "121.40",
+              "formattedAmount": "$121.40"
+            },
+            "refunded": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "channelInfo": {
+            "type": "OTHER_PLATFORM",
+            "externalOrderId": "SHOP-1042",
+            "externalOrderUrl": "https://external-store.example.com/orders/1042"
+          },
+          "activities": [
+            {
+              "id": "9b530b37-c34c-4364-8fa7-c83410ebadbd",
+              "createdDate": "2023-11-18T09:12:00.000Z",
+              "type": "ORDER_PLACED"
+            }
+          ],
+          "attributionSource": "UNSPECIFIED",
+          "customFields": [],
+          "additionalFees": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Imports a single order together with its historical data, such as the original creation date, order number, and statuses.
+
+    Import Order is designed for migrating existing orders into a site from an external system, for example when a merchant moves from another eCommerce platform. Provide the complete order in the request. Wix stores the values you provide as-is and doesn't recalculate totals or statuses, so fields such as `priceSummary`, `balanceSummary`, and `fulfillmentStatus` reflect exactly what you send.
+
+    Unlike creating an order through the regular flow, importing an order doesn't trigger side effects: no notifications are sent to the buyer, inventory isn't adjusted, and no contact, invoice, receipt, or subscription is created. Standard order webhooks aren't fired either. Instead, a single `OrderImported` webhook is emitted.
+
+    To overwrite a previously imported order, pass its `id`. The existing order is fully replaced with the details in the request. Only orders that were originally created with Import Order can be overwritten this way. To import a new order, omit `id`, and Wix generates one.
+
+    To define the number assigned to orders created after your migration, call [Set Order Number Counter](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/set-order-number-counter). To remove imported orders, call [Bulk Delete Imported Orders](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders/bulk-delete-imported-orders).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.ECOM.IMPORT-ORDERS">SCOPE.ECOM.IMPORT-ORDERS</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orders } from '@wix/ecom';
+
+    orders.importOrder(order): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="order" type="Order" required>
+
+      Order to import, including its historical data. Provide the complete order. Wix stores the values as provided and doesn't recalculate totals or statuses.
+
+      To overwrite a previously imported order, set `id` to that order's ID.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="order" type="Order">
+
+      Imported order.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_OVERWRITE_NON_IMPORTED_ORDER` | The provided `order.id` matches an existing order that was not created via the Import Order API. Only previously imported orders can be overwritten. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order Imported | `wix.ecom.v1.order_imported` | Triggered when an order is imported. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-import-order" id="ex-sdk-import-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-import-order" id="ex-sdk-import-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-import-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-import-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Import an order</span><span className="wix-picker-desc">Imports a paid and fulfilled order from an external platform, preserving its original number, purchase date, and statuses</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">importOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-import-order-0"><span className="wix-picker-name">Import an order</span><span className="wix-picker-desc">Imports a paid and fulfilled order from an external platform, preserving its original number, purchase date, and statuses</span></label>
+    <label htmlFor="ex-sdk-import-order-1"><span className="wix-picker-name">importOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Import an order
+    import { orders } from "@wix/ecom";
+
+    const order = {
+      number: "1042",
+      purchasedDate: "2023-11-18T09:12:00.000Z",
+      channelInfo: {
+        type: "OTHER_PLATFORM",
+        externalOrderId: "SHOP-1042",
+        externalOrderUrl: "https://external-store.example.com/orders/1042"
+      },
+      status: "APPROVED",
+      paymentStatus: "PAID",
+      fulfillmentStatus: "FULFILLED",
+      currency: "USD",
+      weightUnit: "KG",
+      taxIncludedInPrices: false,
+      buyerLanguage: "en",
+      siteLanguage: "en",
+      buyerInfo: {
+        contactId: "24de6f0b-60ce-4faa-9138-2e39f1415615",
+        email: "janedoe@example.com"
+      },
+      billingInfo: {
+        address: {
+          country: "US",
+          subdivision: "US-NY",
+          city: "New York",
+          postalCode: "10173",
+          addressLine: "525 5th Avenue",
+          countryFullname: "United States",
+          subdivisionFullname: "New York"
+        },
+        contactDetails: {
+          firstName: "Jane",
+          lastName: "Doe",
+          phone: "+15555555555"
+        }
+      },
+      lineItems: [
+        {
+          id: "b3d1f6a2-4c8e-4a17-9f52-7e0d2c1a5b64",
+          productName: {
+            original: "Vintage Leather Wallet"
+          },
+          catalogReference: {
+            catalogItemId: "58620c7f-6bd5-ec74-c139-3bf17ff10151",
+            appId: "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+          },
+          quantity: 2,
+          itemType: {
+            preset: "PHYSICAL"
+          },
+          physicalProperties: {
+            sku: "WAL-LEATHER-01",
+            shippable: true
+          },
+          price: {
+            amount: "45.00",
+            formattedAmount: "$45.00"
+          },
+          totalPriceBeforeTax: {
+            amount: "90.00",
+            formattedAmount: "$90.00"
+          },
+          totalPriceAfterTax: {
+            amount: "97.20",
+            formattedAmount: "$97.20"
+          },
+          totalDiscount: {
+            amount: "0.00",
+            formattedAmount: "$0.00"
+          },
+          taxDetails: {
+            taxableAmount: {
+              amount: "90.00",
+              formattedAmount: "$90.00"
+            },
+            taxRate: "0.08",
+            totalTax: {
+              amount: "7.20",
+              formattedAmount: "$7.20"
+            }
+          },
+          paymentOption: "FULL_PAYMENT_ONLINE"
+        },
+        {
+          id: "c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18",
+          productName: {
+            original: "Canvas Tote Bag"
+          },
+          catalogReference: {
+            catalogItemId: "0f9b1a3c-6d24-4b8e-9c17-2a5d8e0f3b41",
+            appId: "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+          },
+          quantity: 1,
+          itemType: {
+            preset: "PHYSICAL"
+          },
+          physicalProperties: {
+            sku: "BAG-CANVAS-02",
+            shippable: true
+          },
+          price: {
+            amount: "25.00",
+            formattedAmount: "$25.00"
+          },
+          totalPriceBeforeTax: {
+            amount: "25.00",
+            formattedAmount: "$25.00"
+          },
+          totalPriceAfterTax: {
+            amount: "26.00",
+            formattedAmount: "$26.00"
+          },
+          totalDiscount: {
+            amount: "10.00",
+            formattedAmount: "$10.00"
+          },
+          taxDetails: {
+            taxableAmount: {
+              amount: "15.00",
+              formattedAmount: "$15.00"
+            },
+            taxRate: "0.08",
+            totalTax: {
+              amount: "1.20",
+              formattedAmount: "$1.20"
+            }
+          },
+          paymentOption: "FULL_PAYMENT_ONLINE"
+        }
+      ],
+      appliedDiscounts: [
+        {
+          id: "7dcf2c6d-7fda-4733-b997-fe83b087083b",
+          discountType: "GLOBAL",
+          coupon: {
+            code: "WELCOME10",
+            amount: {
+              amount: "10.00",
+              formattedAmount: "$10.00"
+            },
+            name: "Welcome discount"
+          },
+          lineItemIds: ["c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18"]
+        }
+      ],
+      priceSummary: {
+        subtotal: {
+          amount: "115.00",
+          formattedAmount: "$115.00"
+        },
+        shipping: {
+          amount: "8.00",
+          formattedAmount: "$8.00"
+        },
+        tax: {
+          amount: "8.40",
+          formattedAmount: "$8.40"
+        },
+        discount: {
+          amount: "10.00",
+          formattedAmount: "$10.00"
+        },
+        total: {
+          amount: "121.40",
+          formattedAmount: "$121.40"
+        }
+      },
+      balanceSummary: {
+        balance: {
+          amount: "0.00",
+          formattedAmount: "$0.00"
+        },
+        paid: {
+          amount: "121.40",
+          formattedAmount: "$121.40"
+        },
+        refunded: {
+          amount: "0.00",
+          formattedAmount: "$0.00"
+        }
+      },
+      activities: [
+        {
+          id: "9b530b37-c34c-4364-8fa7-c83410ebadbd",
+          _createdDate: "2023-11-18T09:12:00.000Z",
+          type: "ORDER_PLACED"
+        }
+      ]
+    };
+
+    async function importOrder() {
+      const response = await orders.importOrder(order);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "_id": "5f2b8c14-7d3a-4e91-b0c2-9a1e6f4d8b70",
+     *   "number": "1042",
+     *   "_createdDate": "2024-03-12T09:15:42.118Z",
+     *   "_updatedDate": "2024-03-12T09:15:42.118Z",
+     *   "purchasedDate": "2023-11-18T09:12:00.000Z",
+     *   "imported": true,
+     *   "status": "APPROVED",
+     *   "paymentStatus": "PAID",
+     *   "fulfillmentStatus": "FULFILLED",
+     *   "currency": "USD",
+     *   "weightUnit": "KG",
+     *   "taxIncludedInPrices": false,
+     *   "buyerLanguage": "en",
+     *   "siteLanguage": "en",
+     *   "archived": false,
+     *   "buyerInfo": {
+     *     "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+     *     "email": "janedoe@example.com"
+     *   },
+     *   "lineItems": [
+     *     {
+     *       "id": "b3d1f6a2-4c8e-4a17-9f52-7e0d2c1a5b64",
+     *       "productName": { "original": "Vintage Leather Wallet" },
+     *       "catalogReference": {
+     *         "catalogItemId": "58620c7f-6bd5-ec74-c139-3bf17ff10151",
+     *         "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+     *       },
+     *       "quantity": 2,
+     *       "itemType": { "preset": "PHYSICAL" },
+     *       "price": { "amount": "45.00", "formattedAmount": "$45.00" },
+     *       "totalPriceAfterTax": { "amount": "97.20", "formattedAmount": "$97.20" },
+     *       "paymentOption": "FULL_PAYMENT_ONLINE"
+     *     },
+     *     {
+     *       "id": "c7e2a9b4-1d5f-4830-8a6c-3b9e0f2d4a18",
+     *       "productName": { "original": "Canvas Tote Bag" },
+     *       "catalogReference": {
+     *         "catalogItemId": "0f9b1a3c-6d24-4b8e-9c17-2a5d8e0f3b41",
+     *         "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+     *       },
+     *       "quantity": 1,
+     *       "itemType": { "preset": "PHYSICAL" },
+     *       "price": { "amount": "25.00", "formattedAmount": "$25.00" },
+     *       "totalPriceAfterTax": { "amount": "26.00", "formattedAmount": "$26.00" },
+     *       "paymentOption": "FULL_PAYMENT_ONLINE"
+     *     }
+     *   ],
+     *   "priceSummary": {
+     *     "subtotal": { "amount": "115.00", "formattedAmount": "$115.00" },
+     *     "shipping": { "amount": "8.00", "formattedAmount": "$8.00" },
+     *     "tax": { "amount": "8.40", "formattedAmount": "$8.40" },
+     *     "discount": { "amount": "10.00", "formattedAmount": "$10.00" },
+     *     "total": { "amount": "121.40", "formattedAmount": "$121.40" }
+     *   },
+     *   "balanceSummary": {
+     *     "balance": { "amount": "0.00", "formattedAmount": "$0.00" },
+     *     "paid": { "amount": "121.40", "formattedAmount": "$121.40" },
+     *     "refunded": { "amount": "0.00", "formattedAmount": "$0.00" }
+     *   },
+     *   "channelInfo": {
+     *     "type": "OTHER_PLATFORM",
+     *     "externalOrderId": "SHOP-1042",
+     *     "externalOrderUrl": "https://external-store.example.com/orders/1042"
+     *   },
+     *   "activities": [
+     *     {
+     *       "id": "9b530b37-c34c-4364-8fa7-c83410ebadbd",
+     *       "_createdDate": "2023-11-18T09:12:00.000Z",
+     *       "type": "ORDER_PLACED"
+     *     }
+     *   ],
+     *   "attributionSource": "UNSPECIFIED",
+     *   "customFields": [],
+     *   "additionalFees": []
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript importOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orders } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orders },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function importOrder(order) {
+      const response = await myWixClient.orders.importOrder(order);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,109 @@
+---
+title: "Authenticate Visitors (REST)"
+description: "Note: This article is relevant for self-managed headless projects, and for Wix-managed headless projects built with a framework other than Astro."
+---
+
+<Note>
+
+This article is relevant for [self-managed headless projects](https://dev.wix.com/docs/go-headless/self-managed-headless/about-self-managed-headless), and for [Wix-managed headless projects](https://dev.wix.com/docs/go-headless/wix-managed-headless/about-wix-managed-headless) built with a framework other than Astro. If you build with [Wix's Astro integration](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/about-the-astro-integration), the CLI generates and manages visitor tokens for you automatically.
+
+</Note>
+
+To handle [anonymous visitor sessions](/kb/authentication/about-authentication#identities), you need to generate, manage, and use visitor tokens. Use these tokens when making requests to Wix APIs on behalf of a visitor to maintain the visitor's session.
+
+## Step 1 — Generate new visitor tokens
+
+<Note>
+
+Visitor and member authentication requires only a client ID, not a client secret. You need a client secret only to perform [admin operations](/kb/authentication/about-admin-operations) using the OAuth `client_credentials` flow.
+
+</Note>
+
+Generate new visitor tokens using the `Token` endpoint.
+
+When calling the `Token` endpoint, send the following parameters:
+
+- **`clientId`**: The **Client ID** of your OAuth app, which can be found in your project's [**Headless Settings**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings).
+- **`grantType`**: Set as `"anonymous"` to get visitor tokens.
+
+```shell
+curl --location 'https://www.wixapis.com/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+  "clientId": "<CLIENT_ID>",
+  "grantType": "anonymous"
+}'
+```
+
+<Note>
+
+You can also get tokens using URL-encoded data instead of JSON data.
+
+```shell
+curl --location 'https://www.wixapis.com/oauth2/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'client_id=<CLIENT_ID>' \
+--data-urlencode 'grant_type=anonymous'
+```
+
+</Note>
+
+The `Token` endpoint responds with:
+
+- **`access_token`**: An access token used to authorize API calls.
+- **`expires_in`**: The number of seconds before the access token expires. Access tokens expire after 4 hours (14,400 seconds).
+- **`refresh_token`**: A refresh token used to get a new access token.
+
+```json
+{
+  "access_token": "OauthNG.JWS.eyJraWQiOiJZSEJzdUpwSCIsImFsZyI6IkhTMjU2In0...",
+  "token_type": "Bearer",
+  "expires_in": 14400,
+  "refresh_token": "JWS.eyJraWQiOiJZSEJzdUpwSCIsImFsZyI6IkhTMjU2In0..."
+}
+```
+
+Once you have tokens, you can use them to make [authenticated calls to APIs](/kb/authentication/make-rest-api-calls-with-oauth) on behalf of the current visitor.
+
+## Step 2 — Store tokens for later
+
+If you want to be able to restore the current session at some point later, store your visitor tokens locally, for example in [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage), a [cookie](https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie), or a local file.
+
+For example, after generating a visitor token, you can store it in a cookie with a max age of 4 hours. Then, before making API calls, try reading the token from the cookie.
+
+- If the cookie still exists, you can use the access token you stored in the cookie to make the API call.
+- If the cookie no longer exists, you can use your refresh token to [renew your visitor tokens](#renew-visitor-tokens), and then make the API call with the new access token.
+
+## Renew visitor tokens
+
+To renew visitor tokens, call the `Token` endpoint again, this time with the following parameters:
+
+- **`refresh_token`**: The refresh token returned from the previous call to the `Token` endpoint.
+- **`grantType`**: Set as `"refresh_token"` to get renewed visitor tokens based off your current refresh token.
+
+```shell
+curl --location 'https://www.wixapis.com/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+    "refresh_token": "<REFRESH_TOKEN>",
+    "grantType": "refresh_token"
+}'
+```
+
+The `Token` endpoint responds with:
+
+- **`access_token`**: An access token used to authorize API calls.
+- **`expires_in`**: The number of seconds before the access token expires. Access tokens expire after 4 hours (14,400 seconds).
+- **`refresh_token`**: A refresh token used to get a new access token.
+
+```json
+{
+  "access_token": "OauthNG.JWS.eyJraWQiOiJZSEJzdUpwSCIsImFsZyI6IkhTMjU2In0...",
+  "token_type": "Bearer",
+  "expires_in": 14400,
+  "refresh_token": "JWS.eyJraWQiOiJZSEJzdUpwSCIsImFsZyI6IkhTMjU2In0..."
+}
+```
+
+## See also
+- [About Visitor Authentication](https://dev.wix.com/docs/go-headless/authentication/visitors/about-visitor-authentication)

@@ -1,0 +1,51 @@
+---
+title: "Sample Flows"
+description: "This article provides sample flows for retrieving booking pricing information using Preview Price and Calculate Price."
+icon: "file-lines"
+---
+
+This article provides sample flows for retrieving booking pricing information using [Preview Price](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/preview-price) and [Calculate Price](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/calculate-price). Use these flows as a starting point to implement tailored booking experiences.
+
+## Build a custom checkout flow
+
+You can display services and available slots to customers, let them choose their preferred options, then show accurate pricing in your custom checkout before creating the booking.
+
+1. Display a service list to the customer, let them select a service and an available slot. For example, as described in the [appointment end-to-end booking flow](##book-an-appointment*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-an-appointment).
+1. Call [Preview Price](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/preview-price) specifying `bookingLineItems` with `serviceId`, `numberOfParticipants`, and `choices` for each variant.
+1. Display the pricing breakdown in your custom checkout interface using `priceInfo.calculatedPrice` for the total cost and `priceInfo.bookingLineItems[].pricePerParticipant` for individual line item pricing.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) to complete the booking with the selected slot and pricing information.
+1. Once the customer completes the checkout, call [Confirm Or Decline Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking).
+   Set `options.paymentStatus` to `PAID` to update the booking status to `CONFIRMED`.
+1. Call [Create Order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/orders/create-order) with your custom payment details.
+
+## Display booking costs in an external app
+
+To show booking pricing in external apps or 3rd-party systems:
+
+1. Call [Query Extended Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings) to retrieve the relevant booking object.
+1. Call [Calculate Price](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/calculate-price) specifying the complete `booking` object.
+1. Use the returned `priceInfo.calculatedPrice` to display accurate booking costs in your external interface. Make sure to handle deposits and non-numerical prices properly:
+   - If `priceInfo.deposit` is present, show deposit requirements separately.
+   - Handle responses where `priceInfo.priceDescriptionInfo` contains custom pricing text instead of `calculatedPrice` for services with `CUSTOM` rate types.
+
+## Preview duration-based pricing for a duration-range service
+
+For services with a duration range configured, you can preview the price based on the customer's selected time range. This is useful for duration-range services where the customer chooses how long to book.
+
+1. Call [Get Service](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/get-service) to retrieve the service and confirm it has a duration range configured in `schedule.availabilityConstraints.durationRange`.
+1. Let the customer select their desired start and end times within the allowed duration range.
+1. Call [Preview Price](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/pricing-api/preview-price) specifying `bookingLineItems` with `serviceId`, `numberOfParticipants`, `localStartDate`, `localEndDate`, and `timeZone`. For example:
+
+    ```json
+    {
+      "bookingLineItems": [{
+        "serviceId": "8e8839e1-5f16-4e82-a3bb-a1db594b29ba",
+        "serviceChoices": [{ "numberOfParticipants": 1 }],
+        "localStartDate": "2026-03-23T10:00:00",
+        "localEndDate": "2026-03-23T13:00:00",
+        "timeZone": "America/New_York"
+      }]
+    }
+    ```
+
+1. Display the returned `priceInfo.calculatedPrice` to the customer. The price is calculated based on the duration: per minute for hourly services and per day for daily services.

@@ -1,0 +1,574 @@
+---
+title: "Bulk Update Products By Filter"
+description: "Updates multiple products, given the provided filter."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple products, given the provided filter.
+
+    To update `infoSections`, `brand` or `ribbon` fields, you must also pass their existing `id`.
+
+    <Note>
+
+    The following fields can't be updated with this endpoint:
+    + `slug`
+    + `options`
+    + `modifiers`
+    + `variantsInfo`
+
+    To update these fields, use [Bulk Update Products](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/bulk-update-products).
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_WRITE">Product write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/products/update-by-filter
+    ```
+
+    ## Body Params
+
+    <ParamField body="filter" type="object">
+
+      Filter object.
+
+    </ParamField>
+
+    <ParamField body="product" type="Product" required>
+
+      Product to update.
+
+      See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="search" type="SearchDetails">
+
+      Free text to match in searchable fields.
+
+      <Expandable title="search properties">
+
+        <ParamField body="mode" type="string">
+
+          Defines how separate search terms in `expression` are combined
+
+          **Supported values:**
+
+          - `OR` — Any of the search terms must be present
+          - `AND` — All search terms must be present
+
+        </ParamField>
+
+        <ParamField body="expression" type="string">
+
+          Search term or expression
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to search in. If the array is empty, all searchable fields are searched. Use dot notation to specify a JSON path. For example, `order.address.streetName`.
+
+          Constraints: `maxLength 200`, `maxItems 20`.
+
+        </ParamField>
+
+        <ParamField body="fuzzy" type="boolean">
+
+          Whether to enable the search function to use an algorithm to automatically find results that are close to the search expression, such as typos and declensions.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="jobId" type="string">
+
+      Job ID.
+
+      Pass this ID to [Get Async Job](https://dev.wix.com/docs/api-reference/business-management/async-job/introduction) to retrieve job details and metadata..
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `FIELD_MASK_VALUE_NOT_SUPPORTED` | Field mask includes unsupported fields. Read-only fields and `slug` can't be updated in this operation. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PRODUCT_TYPE_FOR_SUBSCRIPTION` | Subscription added to a digital product. Digital products can't have subscriptions. |
+    | `409` | `ALREADY_EXISTS` | `VARIANT_ID_ALREADY_EXISTS` | Multiple variants have identical `id`. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_ALL_SUBSCRIPTIONS_HIDDEN_FOR_SUBSCRIPTION_ONLY_PRODUCT` | All subscriptions are hidden for a subscription-only product. At least 1 subscription must be visible when `allowOneTimePurchases` is false. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SUBSCRIPTION_DISCOUNT_AMOUNT` | Subscription discount `amountOff` exceeds the minimum variant price. |
+    | `409` | `ALREADY_EXISTS` | `SUBSCRIPTION_ID_ALREADY_EXISTS` | Multiple subscriptions have identical IDs. |
+    | `500` | `INTERNAL` | `BRAND_CREATION_FAILED` | Brand creation failed. |
+    | `404` | `NOT_FOUND` | `RIBBON_NOT_FOUND` | Couldn't find the ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTION_ERROR_OCCURRED` | Info section update failed. |
+    | `404` | `NOT_FOUND` | `CUSTOMIZATION_NOT_EXIST` | Couldn't find the customization. |
+    | `500` | `INTERNAL` | `ADD_CUSTOMIZATION_CHOICES_FAILED` | Failed to add customization choices. |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_EXIST` | Couldn't find the choice. |
+    | `400` | `INVALID_ARGUMENT` | `FIELD_MASK_WITH_FIELD_NOT_PASSED_ERROR` | Field mask includes fields not provided in the request. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_ADDITIONAL` | Same ribbon appears more than once in `additionalRibbons`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_PRIMARY_AND_ADDITIONAL` | Same ribbon used as both primary ribbon and additional ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_PER_UNIT_NOT_ALIGNED` | If product physicalProperties.pricePerUnit is defined then it must be defined for all variant and vice versa. physicalProperties.pricePerUnit.measurementUnit must be aligned between product and all variants: you cannot have KG (weight) in products and ML (volume) in variants. measurementUnit of product and every variant must be aligned with site locale (metric or imperial). |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_OPTIONS_ON_UPDATE_VARIANTS` | Update request includes `variants` but is missing `options`. Both must be provided together. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_INVALID_AUTO_RENEWAL` | The `autoRenewal` field is set to false. Set the number of billing cycles in `billingCycles` to prevent automatic renewal instead. |
+    | `400` | `INVALID_ARGUMENT` | `DESCRIPTION_SIZE_TOO_BIG` | Product `description` field exceeds the maximum size of 32000 bytes. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION_CHOICE` | Variant choice doesn't exist in the product's option choices. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION` | Variant option doesn't exist in the product's options. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Updated | `wix.stores.catalog.v3.product_updated` | Triggered when a product is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/bulk/products/update-by-filter' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+              "filter": {
+                  "createdDate": {
+                      "$gt": "2024-07-22T13:22:45"
+                  }
+              },
+              "product": {
+                  "name": "Coffee",
+                  "description": {
+                      "nodes": [
+                          {
+                              "type": "PARAGRAPH",
+                              "id": "foo",
+                              "nodes": [
+                                  {
+                                      "type": "TEXT",
+                                      "textData": {
+                                          "text": "Tasty and eco friendly, in a beautiful gift box."
+                                      }
+                                  }
+                              ],
+                              "paragraphData": {
+                                  "textStyle": {
+                                      "textAlignment": "AUTO"
+                                  }
+                              }
+                          }
+                      ],
+                      "metadata": {
+                          "version": 1,
+                          "id": "fb97b2c1-a3ff-4319-be5f-bbb7fdf0776c"
+                      }
+                  },
+                  "visible": true,
+                  "visibleInPos": true,
+                  "media": {
+                      "itemsInfo": {
+                          "items": [
+                              {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg"
+                              }
+                          ]
+                      }
+                  },
+                  "brand": {
+                      "id": "4a16d28d-1736-41f0-87d8-995f6d9a5bdd"
+                  },
+                  "infoSections": [
+                      {
+                          "id": "59954f23-fbcd-42e5-ba61-7c8cf9d8b409"
+                      }
+                  ],
+                  "ribbon": {
+                      "id": "826aec2a-771b-45a6-9f72-392da18fd3bf"
+                  }
+              }
+          }
+      '
+      ```
+
+      ```json Response
+      {
+          "jobId": "d825385c-785e-4c2a-9c54-4ab2a2b0d860"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple products, given the provided filter.
+
+    To update `infoSections`, `brand` or `ribbon` fields, you must also pass their existing `id`.
+
+    <Note>
+
+    The following fields can't be updated with this endpoint:
+    + `slug`
+    + `options`
+    + `modifiers`
+    + `variantsInfo`
+
+    To update these fields, use [Bulk Update Products](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/bulk-update-products).
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_WRITE">Product write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { productsV3 } from '@wix/stores';
+
+    productsV3.bulkUpdateProductsByFilter(options): Promise<V3BulkUpdateProductsByFilterResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="BulkUpdateProductsByFilterOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object.
+
+        </ParamField>
+
+        <ParamField body="product" type="Product" required>
+
+          Product to update.
+
+          See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="search" type="SearchDetails">
+
+          Free text to match in searchable fields.
+
+          <Expandable title="search properties">
+
+            <ParamField body="mode" type="string">
+
+              Defines how separate search terms in `expression` are combined
+
+              **Supported values:**
+
+              - `OR` — Any of the search terms must be present
+              - `AND` — All search terms must be present
+
+            </ParamField>
+
+            <ParamField body="expression" type="string">
+
+              Search term or expression
+
+            </ParamField>
+
+            <ParamField body="fields" type="string[]">
+
+              Fields to search in. If the array is empty, all searchable fields are searched. Use dot notation to specify a JSON path. For example, `order.address.streetName`.
+
+              Constraints: `maxLength 200`, `maxItems 20`.
+
+            </ParamField>
+
+            <ParamField body="fuzzy" type="boolean">
+
+              Whether to enable the search function to use an algorithm to automatically find results that are close to the search expression, such as typos and declensions.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<V3BulkUpdateProductsByFilterResponse>`.
+
+    <ResponseField name="jobId" type="string">
+
+      Job ID.
+
+      Pass this ID to [Get Async Job](https://dev.wix.com/docs/api-reference/business-management/async-job/introduction) to retrieve job details and metadata..
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `FIELD_MASK_VALUE_NOT_SUPPORTED` | Field mask includes unsupported fields. Read-only fields and `slug` can't be updated in this operation. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PRODUCT_TYPE_FOR_SUBSCRIPTION` | Subscription added to a digital product. Digital products can't have subscriptions. |
+    | `409` | `ALREADY_EXISTS` | `VARIANT_ID_ALREADY_EXISTS` | Multiple variants have identical `id`. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_ALL_SUBSCRIPTIONS_HIDDEN_FOR_SUBSCRIPTION_ONLY_PRODUCT` | All subscriptions are hidden for a subscription-only product. At least 1 subscription must be visible when `allowOneTimePurchases` is false. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SUBSCRIPTION_DISCOUNT_AMOUNT` | Subscription discount `amountOff` exceeds the minimum variant price. |
+    | `409` | `ALREADY_EXISTS` | `SUBSCRIPTION_ID_ALREADY_EXISTS` | Multiple subscriptions have identical IDs. |
+    | `500` | `INTERNAL` | `BRAND_CREATION_FAILED` | Brand creation failed. |
+    | `404` | `NOT_FOUND` | `RIBBON_NOT_FOUND` | Couldn't find the ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTION_ERROR_OCCURRED` | Info section update failed. |
+    | `404` | `NOT_FOUND` | `CUSTOMIZATION_NOT_EXIST` | Couldn't find the customization. |
+    | `500` | `INTERNAL` | `ADD_CUSTOMIZATION_CHOICES_FAILED` | Failed to add customization choices. |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_EXIST` | Couldn't find the choice. |
+    | `400` | `INVALID_ARGUMENT` | `FIELD_MASK_WITH_FIELD_NOT_PASSED_ERROR` | Field mask includes fields not provided in the request. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_ADDITIONAL` | Same ribbon appears more than once in `additionalRibbons`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_PRIMARY_AND_ADDITIONAL` | Same ribbon used as both primary ribbon and additional ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_PER_UNIT_NOT_ALIGNED` | If product physicalProperties.pricePerUnit is defined then it must be defined for all variant and vice versa. physicalProperties.pricePerUnit.measurementUnit must be aligned between product and all variants: you cannot have KG (weight) in products and ML (volume) in variants. measurementUnit of product and every variant must be aligned with site locale (metric or imperial). |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_OPTIONS_ON_UPDATE_VARIANTS` | Update request includes `variants` but is missing `options`. Both must be provided together. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_INVALID_AUTO_RENEWAL` | The `autoRenewal` field is set to false. Set the number of billing cycles in `billingCycles` to prevent automatic renewal instead. |
+    | `400` | `INVALID_ARGUMENT` | `DESCRIPTION_SIZE_TOO_BIG` | Product `description` field exceeds the maximum size of 32000 bytes. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION_CHOICE` | Variant choice doesn't exist in the product's option choices. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION` | Variant option doesn't exist in the product's options. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Updated | `wix.stores.catalog.v3.product_updated` | Triggered when a product is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-products-by-filter" id="ex-sdk-bulk-update-products-by-filter-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-products-by-filter" id="ex-sdk-bulk-update-products-by-filter-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-products-by-filter-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-products-by-filter-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk update products by filter</span><span className="wix-picker-desc">Update all products matching a filter with new values for name, description, visibility, and more</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateProductsByFilter (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-products-by-filter-0"><span className="wix-picker-name">Bulk update products by filter</span><span className="wix-picker-desc">Update all products matching a filter with new values for name, description, visibility, and more</span></label>
+    <label htmlFor="ex-sdk-bulk-update-products-by-filter-1"><span className="wix-picker-name">bulkUpdateProductsByFilter (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk update products by filter
+    import { productsV3 } from "@wix/stores";
+
+    const options = {
+      filter: {
+        createdDate: {
+          $gt: "2024-07-22T13:22:45"
+        }
+      },
+      product: {
+        name: "Coffee",
+        description: {
+          nodes: [
+            {
+              type: productsV3.NodeType.PARAGRAPH,
+              id: "foo",
+              nodes: [
+                {
+                  type: productsV3.NodeType.TEXT,
+                  textData: {
+                    text: "Tasty and eco friendly, in a beautiful gift box."
+                  }
+                }
+              ],
+              paragraphData: {
+                textStyle: {
+                  textAlignment: productsV3.TextAlignment.AUTO
+                }
+              }
+            }
+          ],
+          metadata: {
+            version: 1,
+            _id: "fb97b2c1-a3ff-4319-be5f-bbb7fdf0776c"
+          }
+        },
+        visible: true,
+        visibleInPos: true,
+        media: {
+          itemsInfo: {
+            items: [
+              {
+                _id: "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg"
+              }
+            ]
+          }
+        },
+        brand: {
+          _id: "4a16d28d-1736-41f0-87d8-995f6d9a5bdd"
+        },
+        infoSections: [
+          {
+            _id: "59954f23-fbcd-42e5-ba61-7c8cf9d8b409"
+          }
+        ],
+        ribbon: {
+          _id: "826aec2a-771b-45a6-9f72-392da18fd3bf"
+        }
+      }
+    };
+
+    async function bulkUpdateProductsByFilter() {
+      const response = await productsV3.bulkUpdateProductsByFilter(options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "jobId": "d825385c-785e-4c2a-9c54-4ab2a2b0d860"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateProductsByFilter (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { productsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { productsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateProductsByFilter(options) {
+      const response = await myWixClient.productsV3.bulkUpdateProductsByFilter(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,226 @@
+---
+title: "Authenticate Visitors (JS SDK)"
+description: "Note: This article is relevant for self-managed headless projects, and for Wix-managed headless projects built with a framework other than Astro."
+---
+
+<Note>
+
+This article is relevant for [self-managed headless projects](https://dev.wix.com/docs/go-headless/self-managed-headless/about-self-managed-headless), and for [Wix-managed headless projects](https://dev.wix.com/docs/go-headless/wix-managed-headless/about-wix-managed-headless) built with a framework other than Astro. If you build with [Wix's Astro integration](https://dev.wix.com/docs/go-headless/wix-managed-headless/full-integration-astro/about-the-astro-integration), the CLI generates and manages visitor tokens for you automatically.
+
+</Note>
+
+Use visitor tokens to maintain anonymous visitor sessions in your headless project. The SDK uses these tokens when making requests to Wix APIs on behalf of a visitor, preserving their data such as cart items or event reservations. 
+
+<div style={{ textAlign: "center" }}>
+<iframe width="560" height="315" src="https://youtube.com/embed/v--v5vJzpyc" title="Wix Headless Series - Part 2 - Intro to Session Management" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+</div>
+
+## Step 1 — Create a client
+
+1. Get your client ID from the [**Headless Settings**](https://www.wix.com/my-account/site-selector/?buttonText=Select%20Site&title=Select%20a%20Site&autoSelectOnSingleSite=true&actionUrl=https:%2F%2Fwww.wix.com%2Fdashboard%2F%7B%7BmetaSiteId%7D%7D%2Foauth-apps-settings) of your project dashboard.
+
+<Tip>
+
+For [Wix-managed headless](https://dev.wix.com/docs/go-headless/wix-managed-headless/about-wix-managed-headless) projects, you can also find your client ID locally as the `appId` in your project's `wix.config.json` file.
+
+</Tip>
+
+2. Create a Wix client with the [OAuth strategy](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy) using the client ID. Before creating the client, check your storage for tokens from a previous session:
+
+- **Returning visitor:** Tokens exist in storage. Pass them to the client to resume the previous session.
+- **New visitor:** No tokens found. Omit tokens when creating the client and generate new tokens as described in [Step 2](#step-2--generate-visitor-tokens).
+
+```javascript
+import { createClient, OAuthStrategy } from "@wix/sdk";
+
+// Retrieve tokens from storage (see Step 3 for storage options)
+const storedTokens = yourGetStoredTokensMethod();
+
+const wixClient = createClient({
+    auth: OAuthStrategy({
+        clientId: "<YOUR_CLIENT_ID>",
+      
+        // Pass tokens if they exist, otherwise omit to start a new session.
+        tokens: storedTokens ?? undefined,
+    }),
+});
+```
+
+<Note>
+
+Visitor and member authentication requires only a client ID, not a client secret. You need a client secret only to perform [admin operations](/kb/authentication/about-admin-operations) using the OAuth `client_credentials` flow.
+
+</Note>
+
+## Step 2 — Generate visitor tokens
+
+Call [generateVisitorTokens()](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#generatevisitortokens) and store tokens to persist the session. 
+
+- **Returning visitor:** Visitor tokens expire after 4 hours, so you must check that the stored tokens are still valid. The method returns the same tokens if they're still valid, or renewed tokens if they've expired.
+- **New visitor:** The method creates tokens for a new session. Alternatively, the client creates them automatically on your first [API call](#step-4--make-api-calls). Calling `generateVisitorTokens()` initially lets you persist tokens if the app reloads before making your first API call.
+
+```javascript
+//storedTokens are undefined for new visitors
+const tokens = await wixClient.auth.generateVisitorTokens(storedTokens);
+yourStoreTokensMethod(tokens); // See Step 3 for implementation options
+```
+
+## Step 3 — Save tokens to persist the session
+
+To persist a visitor's session across page reloads or app restarts, save the tokens to local storage, a cookie, or a file.
+
+Retrieve the active tokens with [getTokens()](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#gettokens). 
+
+```javascript
+const tokens = wixClient.auth.getTokens();
+```
+
+The method returns an object in this format:
+
+```javascript
+{
+  accessToken: {
+    value: "OauthNG.JWS.eyJraWQiOi...3NbrhrauQ",
+    expiresAt: 1677581109
+  },
+  refreshToken: {
+    value: "JWS.eyJraWQiOiJZSEJzdUpwSCIsImFsZyI6IkhTMjU2In0.eyJkYXRhIjoiXCJkMDY4OTM4OS1kNTExLTRlYWMtYThjZC03MWQwMzA1NGIxM2NcIiIsImlhdCI6MTY3NzU2NjcwOSwiZXhwIjoxNzA5MTAyNzA5fQ.w2D7wECX_T-XfRzP4pXSoH8XSdHFBPnKx50FYzftRdc",
+    role: "visitor"
+  }
+}
+```
+
+Save the tokens to your preferred storage:
+
+```javascript
+// Browser: Save to localStorage
+localStorage.setItem("wixSession", JSON.stringify(tokens));
+
+// Browser: Save to a cookie
+document.cookie = `wixSession=${encodeURIComponent(JSON.stringify(tokens))}; path=/; max-age=31536000`;
+
+// Server-side: Save to your session store or database
+// The implementation depends on your stack (for example, Redis, a database, or your framework's session layer).
+await saveTokensToSession(userId, tokens);
+```
+
+## Step 4 — Make API calls
+
+Call Wix API methods using your client. 
+
+<Note>
+
+If you create the client without tokens or skip [Step 2](#step-2--generate-visitor-tokens), the client generates tokens automatically on your first API call. Make sure to retrieve and save the tokens as described in [Step 3](#step-3--save-tokens-to-persist-the-session).
+
+</Note>
+
+```javascript
+// Make API calls
+const { products } = await wixClient.productsV3.searchProducts({
+  filter: { name: { $startsWith: "shoes" } },
+  cursorPaging: { limit: 4 },
+});
+
+// The visitor's cart is preserved across sessions
+const cart = await wixClient.currentCart.getCurrentCart();
+
+```
+
+## Example
+
+The following example shows the complete visitor session flow, from creating a client to making API calls:
+
+```javascript
+import { createClient, OAuthStrategy } from "@wix/sdk";
+import { currentCart } from "@wix/ecom";
+import { productsV3 } from "@wix/stores";
+
+// Retrieve tokens from a previous session, if they exist
+const storedTokens = localStorage.getItem("wixSession")
+  ? JSON.parse(localStorage.getItem("wixSession"))
+  : undefined;
+
+// Create a client - resume the previous session if tokens exist, or start a new one
+const wixClient = createClient({
+  modules: { currentCart, productsV3 },
+  auth: OAuthStrategy({
+    clientId: "<YOUR_CLIENT_ID>",
+    tokens: storedTokens ?? undefined,
+  }),
+});
+
+// Generate, validate, or renew visitor tokens
+const tokens = await wixClient.auth.generateVisitorTokens(storedTokens);
+
+//Store tokens to persist the current session
+localStorage.setItem("wixSession", JSON.stringify(tokens));
+
+// Make API calls
+const { products } = await wixClient.productsV3.searchProducts({
+  filter: { name: { $startsWith: "shoes" } },
+  cursorPaging: { limit: 4 },
+});
+
+// The visitor's cart is preserved across sessions
+const cart = await wixClient.currentCart.getCurrentCart();
+```
+
+## Manage tokens manually
+
+In most cases, the client manages tokens automatically. Use these methods when you need manual control.
+
+### Set tokens on an existing client
+
+If you already have a client instance and need to set tokens on it later, use [setTokens()](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#settokens):
+
+```javascript
+const savedTokens = JSON.parse(localStorage.getItem("wixSession"));
+wixClient.auth.setTokens(savedTokens);
+```
+
+Once tokens are set, the visitor's data is preserved. For example, items added to a cart or tickets reserved are reflected in future API calls.
+
+### Generate tokens explicitly
+
+Call [generateVisitorTokens()](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#generatevisitortokens) to create tokens before making any API calls:
+
+```javascript
+const tokens = await wixClient.auth.generateVisitorTokens();
+```
+
+### Validate or renew existing tokens
+
+Pass existing tokens to `generateVisitorTokens()` to confirm they're valid or renew them if expired:
+
+```javascript
+const refreshedTokens = await wixClient.auth.generateVisitorTokens(existingTokens);
+```
+
+The method returns:
+- The same tokens if the access token is still valid.
+- A new access token if the access token expired but the refresh token is valid.
+- New access and refresh tokens if the refresh token is invalid.
+
+### Force token renewal
+
+Use [renewToken()](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#renewtoken) to generate a new access token without checking if the current one is valid:
+
+```javascript
+const tokens = wixClient.auth.getTokens();
+const newTokens = await wixClient.auth.renewToken(tokens.refreshToken);
+```
+
+### Check login status
+
+Use [loggedIn()](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy#loggedin) to check if the current visitor is a logged-in member:
+
+```javascript
+const isLoggedIn = wixClient.auth.loggedIn();
+// Returns false for anonymous visitors, true for logged-in members
+```
+
+## See also
+
+- [About Visitor Authentication](https://dev.wix.com/docs/go-headless/authentication/visitors/about-visitor-authentication)
+- [OAuthStrategy API Reference](https://dev.wix.com/docs/sdk/core-modules/sdk/oauth-strategy)
+- [Build a Custom Login Page (JS SDK)](/kb/authentication/build-a-custom-login-page-js-sdk)

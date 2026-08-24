@@ -1,0 +1,187 @@
+---
+title: "Introduction"
+description: "The Marketplace Provider service plugin allows third-party supplier and fulfillment platforms to integrate their product catalogs with Wix Stores."
+icon: "file-lines"
+---
+
+The Marketplace Provider service plugin allows third-party supplier and fulfillment platforms to integrate their product catalogs with Wix Stores. When a Wix site owner imports products from a marketplace provider, Wix calls your service plugin to retrieve product details, generate product mockup images, check real-time inventory levels, and optionally surface a pricing breakdown.
+
+## Terminology
+
+| Term | Description |
+|------|-------------|
+| Marketplace provider | A third-party supplier or fulfillment platform (such as Printful or Modalyst) that provides products to Wix site owners. |
+| Product reference | A link between a product in the provider's system and a product in a Wix site's store. Contains the provider's product ID and optional provider-specific data. |
+| Mockup | A composite product preview image that shows the site owner's logo or custom image on a provider's product. For example, a t-shirt with the site's logo printed on it. |
+| Choice | A product variant option such as size, color, or material. Each choice has a name (for example, "Size") and a value (for example, "M"). |
+
+## How This Service Plugin Works
+
+Wix calls your service plugin implementation when a site owner interacts with marketplace provider products in the Suppliers Hub or their store. Wix calls [Bulk Add Products To Store](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-add-products-to-store) when the site owner selects products to import, [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) when they request mockup previews, [Get Inventory](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-inventory) when they open a product's details page, and [Get Pricing Breakdown](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-pricing-breakdown) when they view pricing details in the Suppliers Hub Marketplace.
+
+Wix calls [Bulk Add Products To Store](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-add-products-to-store) to create products in the site's Wix Stores catalog. For [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups), the call is asynchronous — your implementation acknowledges the request, then delivers the generated mockup images by calling [Submit Generated Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/submit-generated-mockups) on the [Marketplace Provider Submissions API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/introduction). For [Get Inventory](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-inventory), Wix displays the returned stock levels on the product details page. For [Get Pricing Breakdown](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-pricing-breakdown), Wix displays the returned base cost, suggested retail price, potential profit, and markup rate to help the site owner decide whether to import the product.
+
+[Get Pricing Breakdown](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-pricing-breakdown) is opt-in. Wix only calls it when your provider config sets `toggleGetPricingBreakdownEnabled` to `true`. Otherwise, Wix skips the call and the Suppliers Hub UI omits the pricing breakdown.
+
+Wix also calls [Get Product Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-product-mockups) when a site owner views product mockups in the Suppliers Hub Marketplace. This method returns your existing, ready-made mockup images for the requested products — it doesn't generate new images. Unlike [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups), there's no asynchronous generation or callback. Get Product Mockups is also opt-in: Wix only calls it when your provider config sets `toggleGetProductMockupsEnabled` to `true`.
+
+### Notifying Wix
+
+Your service plugin can notify Wix when mockup generation is complete by calling these methods:
+
+- [Submit Generated Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/submit-generated-mockups) - Call when your service has finished generating mockup images for a previous [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) request.
+
+::::TABS
+
+:::REST_TAB
+
+## Get started
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **Suppliers Hub** in the left menu, then find **Marketplace Provider** and click **Create**.
+1. Provide the following configuration in the JSON editor and then click **Save**.
+
+    | Name | Type | Description |
+    | --- | --- | --- |
+    | `deploymentUri`|string|**Required.** Base URI where your service plugin endpoints are deployed. Wix appends the endpoint path to this base URI. For example, to reach the Bulk Add Products To Store endpoint at `https://my-provider.com/v2/bulk/add-products-to-store`, provide `https://my-provider.com/` as the base URI. |
+    | `toggleGetPricingBreakdownEnabled`|boolean|Whether your implementation supports the Get Pricing Breakdown method. When `false`, Wix doesn't call your implementation for pricing breakdowns and the Suppliers Hub UI omits that section. Default: `false`. |
+    | `toggleGetProductMockupsEnabled`|boolean|Whether your implementation supports the Get Product Mockups method. When `false`, Wix doesn't call your implementation for product mockups. Default: `false`. |
+
+:::
+:::SDK_TAB
+
+## Get started
+
+**Self-hosted implementations:**
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **Suppliers Hub** in the left menu, then find **Marketplace Provider** and click **Create**.
+1. Provide the following configuration in the JSON editor and then click **Save**.
+
+    | Name | Type | Description |
+    | --- | --- | --- |
+    | `deploymentUri`|string|**Required.** Base URI where your service plugin endpoints are deployed. Wix appends the endpoint path to this base URI. For example, to reach the Bulk Add Products To Store endpoint at `https://my-provider.com/v2/bulk/add-products-to-store`, provide `https://my-provider.com/` as the base URI. |
+    | `toggleGetPricingBreakdownEnabled`|boolean|Whether your implementation supports the Get Pricing Breakdown method. When `false`, Wix doesn't call your implementation for pricing breakdowns and the Suppliers Hub UI omits that section. Default: `false`. |
+    | `toggleGetProductMockupsEnabled`|boolean|Whether your implementation supports the Get Product Mockups method. When `false`, Wix doesn't call your implementation for product mockups. Default: `false`. |
+
+Define handler functions using [`marketplaceProvider.provideHandlers()`](##step-4--define-handler-functions*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions):
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`bulkAddProductsToStore()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-add-products-to-store)    | Yes     |
+| [`bulkGenerateMockups()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups)    | Yes     |
+| [`getInventory()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-inventory)    | Yes     |
+| [`getPricingBreakdown()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-pricing-breakdown)    | No (only if `toggleGetPricingBreakdownEnabled` is `true`)     |
+| [`getProductMockups()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-product-mockups)    | No (only if `toggleGetProductMockupsEnabled` is `true`)     |
+
+### Self-hosted: Basic code structure
+
+```js
+import { createClient } from '@wix/sdk';
+import { marketplaceProvider } from '@wix/suppliers-hub/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { marketplaceProvider }
+});
+
+wixClient.marketplaceProvider.provideHandlers({
+  bulkAddProductsToStore: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  bulkGenerateMockups: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  getInventory: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  // Optional: implement only if you set toggleGetPricingBreakdownEnabled to true
+  getPricingBreakdown: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  // Optional: implement only if you set toggleGetProductMockupsEnabled to true
+  getProductMockups: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  }
+});
+
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+```
+
+**CLI implementations:**
+
+Learn how to [implement a service plugin with the CLI and the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
+
+Define handler functions using [`marketplaceProvider.provideHandlers()`](##step-4--define-handler-functions*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions):
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`bulkAddProductsToStore()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-add-products-to-store)    | Yes     |
+| [`bulkGenerateMockups()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups)    | Yes     |
+| [`getInventory()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-inventory)    | Yes     |
+| [`getPricingBreakdown()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-pricing-breakdown)    | No (only if `toggleGetPricingBreakdownEnabled` is `true`)     |
+| [`getProductMockups()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/get-product-mockups)    | No (only if `toggleGetProductMockupsEnabled` is `true`)     |
+
+### CLI: Basic code structure
+
+```js
+import { marketplaceProvider } from '@wix/suppliers-hub/service-plugins'
+
+marketplaceProvider.provideHandlers({
+  bulkAddProductsToStore: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  bulkGenerateMockups: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  getInventory: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  // Optional: implement only if you set toggleGetPricingBreakdownEnabled to true
+  getPricingBreakdown: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  },
+  // Optional: implement only if you set toggleGetProductMockupsEnabled to true
+  getProductMockups: async (payload) => {
+    const { request, metadata } = payload;
+    // Add your logic here
+  }
+});
+```
+
+:::
+::::
+
+## Requirements and constraints
+
+Your service plugin implementation must meet the following requirements:
+
+- Respond within 10 seconds for all methods. Longer response times result in timeout errors.
+- Maintain high availability (99.9% uptime recommended). Downtime affects all Wix sites using your implementation.
+- Handle timeouts gracefully. If your implementation doesn't respond within the timeout window, Wix falls back to default behavior and logs the timeout event.
+
+### Error handling
+
+Your service plugin implementation must support returning defined errors when appropriate conditions occur. Implement proper error handling to ensure Wix can respond appropriately to different failure scenarios.
+
+The [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) method defines specific error codes for cases where a product doesn't support mockup generation or the provided image isn't supported. Return these errors with the appropriate error code so Wix can display a helpful message to the site owner.

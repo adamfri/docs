@@ -1,0 +1,1265 @@
+---
+title: "Booking Policy Object"
+description: "A booking policy is a set of rules that determine how customers can book a service, including timeframes for booking, canceling, or rescheduling."
+icon: "cube"
+---
+
+A booking policy is a set of rules that determine how customers can book a
+service, including timeframes for booking, canceling, or rescheduling.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      ID of the booking policy.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the booking policy is updated.
+      To prevent conflicting changes, the current `revision` must be passed when
+      updating the booking policy.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the booking policy was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the booking policy was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="appId" type="string">
+
+      ID of the app associated with the booking policy. You can't update `appId`.
+      Booking policies are displayed in Wix Bookings only if they are associated with the Wix Bookings app ID or have no associated app ID.
+      Default: `13d21c63-b5ec-5912-8397-c3a5ddb27a97` (Wix Bookings app ID)
+      For booking policies from Wix apps, the following values apply:
+      - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+      - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+      - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`.&lt;!-- [Scheduling Form Fields](https://dev.wix.com/docs/api-reference/business-solutions/bookings/about-scheduling-form-fields) booking policies also use this app ID. Use `createdByAppId` to distinguish between Wix Meetings and Scheduling Form Fields booking policies.-->
+      [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+      &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+    </ResponseField>
+
+    <ResponseField name="createdByAppId" type="string">
+
+      ID of the app that created the booking policy. This field is used for analytics, auditing, and tracking creation sources.
+      This read-only field is automatically populated during policy creation by checking these sources in order:
+      1. The caller's App ID from the request identity context.
+      2. The policy's `appId` field.
+      3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+      &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+
+      Name of the booking policy.
+
+    </ResponseField>
+
+    <ResponseField name="customPolicyDescription" type="PolicyDescription">
+
+      Custom description for the booking policy and whether it's displayed to the
+      participant.
+
+      <Expandable title="customPolicyDescription properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether the description is displayed to the participant. `true` means the
+          description is displayed.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Description of the booking policy.
+
+          Default: Empty
+          Max length: 2500 characters
+
+          Constraints: `maxLength 2500`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="default" type="boolean">
+
+      Whether the booking policy is the default.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="limitEarlyBookingPolicy" type="LimitEarlyBookingPolicy">
+
+      Rule for limiting early bookings.
+
+      <Expandable title="limitEarlyBookingPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether there's a limit about how early a customer can book. `false` means there's
+          no limit to the earliest supported booking time.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="earliestBookingInMinutes" type="integer">
+
+          Maximum number of minutes before the start of a session or course customers can book.
+          Must be greater than `limitLateBookingPolicy.latestBookingInMinutes`.
+
+          Default: `10080` minutes (7 days)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="limitLateBookingPolicy" type="LimitLateBookingPolicy">
+
+      Rule for limiting late bookings. This rule and `bookAfterStartPolicy` can't
+      be both enabled at the same time.
+
+      <Expandable title="limitLateBookingPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether there's a limit about how late customers can book. `false` means
+          customers can book up to the last minute. If specified as `true`,
+          `bookAfterStartPolicy.enabled` must be `false`.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="latestBookingInMinutes" type="integer">
+
+          Minimum number of minutes before the start of the session customers can book.
+          For courses, this is relative to the start time of the next session and doesn't
+          consider course sessions in the past. This value must be less than
+          `limitEarlyBookingPolicy.earliestBookingInMinutes`.
+
+          Default: `1440` minutes (1 day)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bookAfterStartPolicy" type="BookAfterStartPolicy">
+
+      Rule for booking after the start of a session or course. This rule and
+      `limitLateBookingPolicy` can't be both enabled at the same time.
+
+      <Expandable title="bookAfterStartPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers can book after the session has started. `true` means
+          customers can book after the session has started. For courses, this refers to
+          the start of the last course session. If specified as `true`,
+          `limitLateBookingPolicy.enabled` must be `false`.
+
+          Default: `false`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="cancellationPolicy" type="CancellationPolicy">
+
+      Rule for canceling a booking.
+
+      <Expandable title="cancellationPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers can cancel the booking. `true` means customers can cancel
+          the booking.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="limitLatestCancellation" type="boolean">
+
+          Whether there's a limit on the latest cancellation time. `false` means customers
+          can cancel the booking until the last minute before the course or session starts.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="latestCancellationInMinutes" type="integer">
+
+          Minimum number of minutes before the start of the session customers can cancel.
+          For courses, this refers to the start of the first course session.
+
+          Default: `1440` minutes (1 day)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+        <ResponseField name="allowAnonymous" type="boolean">
+
+          Whether customers can cancel bookings anonymously using the
+          [anonymous booking actions](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/introduction#anonymous-booking-actions).
+
+          This field is ignored if `cancellationPolicy.enabled` is `false`.
+
+          Default: `null` (treated as `true`). When not explicitly set, anonymous cancellations
+          are allowed so that customers aren't required to be site members to cancel their bookings.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="reschedulePolicy" type="ReschedulePolicy">
+
+      Rule for rescheduling a booking.
+
+      <Expandable title="reschedulePolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers can reschedule a booking for an appointment-based service.
+          `true` means customers can reschedule.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="limitLatestReschedule" type="boolean">
+
+          Whether there's a limit on the latest supported rescheduling time. `false`
+          means customers can reschedule until the last minute before the session start.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="latestRescheduleInMinutes" type="integer">
+
+          Minimum number of minutes before the session start session customers can
+          reschedule their booking.
+
+          Default: `1440` minutes (1 day)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+        <ResponseField name="allowAnonymous" type="boolean">
+
+          Whether customers can reschedule bookings anonymously using the
+          [anonymous booking actions](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/introduction#anonymous-booking-actions).
+
+          This field is ignored if `reschedulePolicy.enabled` is `false`.
+
+          Default: `null` (treated as `true`). When not explicitly set, anonymous rescheduling
+          is allowed so that customers aren't required to be site members to reschedule their bookings.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="waitlistPolicy" type="WaitlistPolicy">
+
+      Waitlist rule for the service.
+
+      <Expandable title="waitlistPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether the service has a waitlist. `true` means there's a waitlist.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="capacity" type="integer">
+
+          Number of spots in the waitlist.
+
+          Default: `10` spots
+          Min: `1` spot
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+        <ResponseField name="reservationTimeInMinutes" type="integer">
+
+          Time in minutes the potential customer is given to book after they've been
+          notified that a spot has opened up for them. If they don't respond in time,
+          the open spot is offered to the next potential customer on the waitlist.
+
+          Default: `10` minutes
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="participantsPolicy" type="ParticipantsPolicy">
+
+      Rule for participants per booking.
+
+      <Expandable title="participantsPolicy properties">
+
+        <ResponseField name="maxParticipantsPerBooking" type="integer">
+
+          Maximum number of participants per booking.
+
+          Default: `1` participant
+          Min: `1` participant
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="cancellationFeePolicy" type="CancellationFeePolicy">
+
+      Rules for cancellation fees.
+
+      <Expandable title="cancellationFeePolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers must pay a cancellation fee when canceling a booking.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="cancellationWindows" type="CancellationWindow[]">
+
+          Time windows relative to the session start during which customers can cancel
+          their booking. Each window includes details about the fee for canceling within it.
+
+          Constraints: `maxItems 2`.
+
+          <Expandable title="cancellationWindows properties">
+
+            <ResponseField name="startInMinutes" type="integer">
+
+              Start of the cancellation window in minutes before the session start. For
+              courses, this refers to the start of the first course session.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="autoCollectFeeEnabled" type="boolean">
+
+          Whether Wix automatically charges the cancellation fee from the customer once
+          they cancel their booking.
+
+          Default: `true`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="saveCreditCardPolicy" type="SaveCreditCardPolicy">
+
+      Rule for saving credit card details.
+
+      <Expandable title="saveCreditCardPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether Wix stores credit card details of the customer. Storing the details
+          allows Wix to prefill the [eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/checkout/introduction)
+          and thus increases the likelihood that the customer completes the booking
+          process.
+
+          Default: `false`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="staffSortingPolicy" type="StaffSortingPolicy">
+
+      Information about the order in which staff members are returned in the [Time Slots V2 API](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/introduction).
+      When creating a booking, Wix Bookings assigns the first available staff member from the sorted list.
+
+      <Expandable title="staffSortingPolicy properties">
+
+        <ResponseField name="sortingMethodType" type="string">
+
+          Sorting method for staff members.
+
+          Default: `RANDOM`
+
+          **Supported values:**
+
+          - `RANDOM` — Staff members are returned in random order.
+          - `RANKING` — Staff members are returned in order of their priority ranking.
+          - `CUSTOM` — Staff members are returned in the order determined by a
+          [Staff Sorting service plugin](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-sorting-service-plugin/introduction) implementation. Business owners can choose a different implementation for each policy in their dashboard.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="options" type="options">
+
+          options
+
+          <Expandable title="options properties">
+
+            <ResponseField name="rankingOptions" type="RankingOptions">
+
+              Options for ranking-based staff selection. Only relevant when `sortingMethodType` is `RANKING`.
+
+              <Expandable title="rankingOptions properties">
+
+                <ResponseField name="order" type="string">
+
+                  Order in which staff members are sorted by priority ranking.
+
+                  Default: `LOWEST_TO_HIGHEST`
+
+                  **Supported values:**
+
+                  - `LOWEST_TO_HIGHEST` — Staff members with lower priority values are selected first.
+                  - `HIGHEST_TO_LOWEST` — Staff members with higher priority values are selected first.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="customOptions" type="CustomOptions">
+
+              Options for custom staff selection. Only relevant when `sortingMethodType` is `CUSTOM`.
+
+              <Expandable title="customOptions properties">
+
+                <ResponseField name="implementationId" type="string">
+
+                  ID of the custom sorting implementation registered in the
+                  [Staff Sorting service plugin](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-sorting-service-plugin/introduction).
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="appId" type="string">
+
+                  ID of the app that provides the custom sorting implementation.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="intakeFormPolicy" type="IntakeFormPolicy">
+
+      Rule for requiring customers to complete an [intake form](https://dev.wix.com/docs/api-reference/crm/forms/other-services/intake-forms/introduction) during or after booking.
+
+      <Expandable title="intakeFormPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether an intake form is enabled for the service.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="formId" type="string">
+
+          ID of the intake form to present to customers.
+
+        </ResponseField>
+
+        <ResponseField name="timing" type="string">
+
+          When the intake form is presented to the customer.
+
+          **Supported values:**
+
+          - `AFTER_BOOKING` — Form is sent to the customer after the booking is created.
+          - `BEFORE_BOOKING` — Form is shown to the customer during the booking flow, before the booking is created.
+
+        </ResponseField>
+
+        <ResponseField name="completionRequirement" type="string">
+
+          Whether completing the intake form is required.
+
+          **Supported values:**
+
+          - `OPTIONAL` — Form completion is optional. Customers can skip the form.
+          - `REQUIRED_BEFORE_BOOKING` — Customers must complete the form before the booking is finalized.
+          Only supported when `timing` is `BEFORE_BOOKING`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Extensions enabling users to save custom data related to the booking policies.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "id": "1a426c47-0c86-46c7-8573-c7bce734f660",
+        "revision": "2",
+        "createdDate": "2023-02-16T10:46:17.420Z",
+        "updatedDate": "2023-02-16T11:12:51.014Z",
+        "name": "Appointment Policy",
+        "customPolicyDescription": {
+          "enabled": true,
+          "description": "To cancel, please contact us at least 48 hours in advance"
+        },
+        "default": false,
+        "limitEarlyBookingPolicy": {
+          "enabled": true,
+          "earliestBookingInMinutes": 43200
+        },
+        "limitLateBookingPolicy": {
+          "enabled": true,
+          "latestBookingInMinutes": 180
+        },
+        "bookAfterStartPolicy": {
+          "enabled": false
+        },
+        "cancellationPolicy": {
+          "enabled": true,
+          "limitLatestCancellation": true,
+          "latestCancellationInMinutes": 2880
+        },
+        "reschedulePolicy": {
+          "enabled": false,
+          "limitLatestReschedule": false,
+          "latestRescheduleInMinutes": 1440
+        },
+        "waitlistPolicy": {
+          "enabled": true,
+          "capacity": 5,
+          "reservationTimeInMinutes": 30
+        },
+        "participantsPolicy": {
+          "enabled": false,
+          "maxParticipantsPerBooking": 1
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      ID of the booking policy.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the booking policy is updated.
+      To prevent conflicting changes, the current `revision` must be passed when
+      updating the booking policy.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the booking policy was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the booking policy was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="appId" type="string">
+
+      ID of the app associated with the booking policy. You can't update `appId`.
+      Booking policies are displayed in Wix Bookings only if they are associated with the Wix Bookings app ID or have no associated app ID.
+      Default: `13d21c63-b5ec-5912-8397-c3a5ddb27a97` (Wix Bookings app ID)
+      For booking policies from Wix apps, the following values apply:
+      - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+      - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+      - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`.&lt;!-- [Scheduling Form Fields](https://dev.wix.com/docs/api-reference/business-solutions/bookings/about-scheduling-form-fields) booking policies also use this app ID. Use `createdByAppId` to distinguish between Wix Meetings and Scheduling Form Fields booking policies.-->
+      [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+      &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+    </ResponseField>
+
+    <ResponseField name="createdByAppId" type="string">
+
+      ID of the app that created the booking policy. This field is used for analytics, auditing, and tracking creation sources.
+      This read-only field is automatically populated during policy creation by checking these sources in order:
+      1. The caller's App ID from the request identity context.
+      2. The policy's `appId` field.
+      3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+      &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+
+      Name of the booking policy.
+
+    </ResponseField>
+
+    <ResponseField name="customPolicyDescription" type="PolicyDescription">
+
+      Custom description for the booking policy and whether it's displayed to the
+      participant.
+
+      <Expandable title="customPolicyDescription properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether the description is displayed to the participant. `true` means the
+          description is displayed.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Description of the booking policy.
+
+          Default: Empty
+          Max length: 2500 characters
+
+          Constraints: `maxLength 2500`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="default" type="boolean">
+
+      Whether the booking policy is the default.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="limitEarlyBookingPolicy" type="LimitEarlyBookingPolicy">
+
+      Rule for limiting early bookings.
+
+      <Expandable title="limitEarlyBookingPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether there's a limit about how early a customer can book. `false` means there's
+          no limit to the earliest supported booking time.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="earliestBookingInMinutes" type="integer">
+
+          Maximum number of minutes before the start of a session or course customers can book.
+          Must be greater than `limitLateBookingPolicy.latestBookingInMinutes`.
+
+          Default: `10080` minutes (7 days)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="limitLateBookingPolicy" type="LimitLateBookingPolicy">
+
+      Rule for limiting late bookings. This rule and `bookAfterStartPolicy` can't
+      be both enabled at the same time.
+
+      <Expandable title="limitLateBookingPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether there's a limit about how late customers can book. `false` means
+          customers can book up to the last minute. If specified as `true`,
+          `bookAfterStartPolicy.enabled` must be `false`.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="latestBookingInMinutes" type="integer">
+
+          Minimum number of minutes before the start of the session customers can book.
+          For courses, this is relative to the start time of the next session and doesn't
+          consider course sessions in the past. This value must be less than
+          `limitEarlyBookingPolicy.earliestBookingInMinutes`.
+
+          Default: `1440` minutes (1 day)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bookAfterStartPolicy" type="BookAfterStartPolicy">
+
+      Rule for booking after the start of a session or course. This rule and
+      `limitLateBookingPolicy` can't be both enabled at the same time.
+
+      <Expandable title="bookAfterStartPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers can book after the session has started. `true` means
+          customers can book after the session has started. For courses, this refers to
+          the start of the last course session. If specified as `true`,
+          `limitLateBookingPolicy.enabled` must be `false`.
+
+          Default: `false`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="cancellationPolicy" type="CancellationPolicy">
+
+      Rule for canceling a booking.
+
+      <Expandable title="cancellationPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers can cancel the booking. `true` means customers can cancel
+          the booking.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="limitLatestCancellation" type="boolean">
+
+          Whether there's a limit on the latest cancellation time. `false` means customers
+          can cancel the booking until the last minute before the course or session starts.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="latestCancellationInMinutes" type="integer">
+
+          Minimum number of minutes before the start of the session customers can cancel.
+          For courses, this refers to the start of the first course session.
+
+          Default: `1440` minutes (1 day)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+        <ResponseField name="allowAnonymous" type="boolean">
+
+          Whether customers can cancel bookings anonymously using the
+          [anonymous booking actions](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/introduction#anonymous-booking-actions).
+
+          This field is ignored if `cancellationPolicy.enabled` is `false`.
+
+          Default: `null` (treated as `true`). When not explicitly set, anonymous cancellations
+          are allowed so that customers aren't required to be site members to cancel their bookings.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="reschedulePolicy" type="ReschedulePolicy">
+
+      Rule for rescheduling a booking.
+
+      <Expandable title="reschedulePolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers can reschedule a booking for an appointment-based service.
+          `true` means customers can reschedule.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="limitLatestReschedule" type="boolean">
+
+          Whether there's a limit on the latest supported rescheduling time. `false`
+          means customers can reschedule until the last minute before the session start.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="latestRescheduleInMinutes" type="integer">
+
+          Minimum number of minutes before the session start session customers can
+          reschedule their booking.
+
+          Default: `1440` minutes (1 day)
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+        <ResponseField name="allowAnonymous" type="boolean">
+
+          Whether customers can reschedule bookings anonymously using the
+          [anonymous booking actions](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/introduction#anonymous-booking-actions).
+
+          This field is ignored if `reschedulePolicy.enabled` is `false`.
+
+          Default: `null` (treated as `true`). When not explicitly set, anonymous rescheduling
+          is allowed so that customers aren't required to be site members to reschedule their bookings.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="waitlistPolicy" type="WaitlistPolicy">
+
+      Waitlist rule for the service.
+
+      <Expandable title="waitlistPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether the service has a waitlist. `true` means there's a waitlist.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="capacity" type="integer">
+
+          Number of spots in the waitlist.
+
+          Default: `10` spots
+          Min: `1` spot
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+        <ResponseField name="reservationTimeInMinutes" type="integer">
+
+          Time in minutes the potential customer is given to book after they've been
+          notified that a spot has opened up for them. If they don't respond in time,
+          the open spot is offered to the next potential customer on the waitlist.
+
+          Default: `10` minutes
+          Min: `1` minute
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="participantsPolicy" type="ParticipantsPolicy">
+
+      Rule for participants per booking.
+
+      <Expandable title="participantsPolicy properties">
+
+        <ResponseField name="maxParticipantsPerBooking" type="integer">
+
+          Maximum number of participants per booking.
+
+          Default: `1` participant
+          Min: `1` participant
+
+          Constraints: `min 1`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="cancellationFeePolicy" type="CancellationFeePolicy">
+
+      Rules for cancellation fees.
+
+      <Expandable title="cancellationFeePolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether customers must pay a cancellation fee when canceling a booking.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="cancellationWindows" type="CancellationWindow[]">
+
+          Time windows relative to the session start during which customers can cancel
+          their booking. Each window includes details about the fee for canceling within it.
+
+          Constraints: `maxItems 2`.
+
+          <Expandable title="cancellationWindows properties">
+
+            <ResponseField name="startInMinutes" type="integer">
+
+              Start of the cancellation window in minutes before the session start. For
+              courses, this refers to the start of the first course session.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="autoCollectFeeEnabled" type="boolean">
+
+          Whether Wix automatically charges the cancellation fee from the customer once
+          they cancel their booking.
+
+          Default: `true`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="saveCreditCardPolicy" type="SaveCreditCardPolicy">
+
+      Rule for saving credit card details.
+
+      <Expandable title="saveCreditCardPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether Wix stores credit card details of the customer. Storing the details
+          allows Wix to prefill the [eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/checkout/introduction)
+          and thus increases the likelihood that the customer completes the booking
+          process.
+
+          Default: `false`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="staffSortingPolicy" type="StaffSortingPolicy">
+
+      Information about the order in which staff members are returned in the [Time Slots V2 API](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/introduction).
+      When creating a booking, Wix Bookings assigns the first available staff member from the sorted list.
+
+      <Expandable title="staffSortingPolicy properties">
+
+        <ResponseField name="sortingMethodType" type="string">
+
+          Sorting method for staff members.
+
+          Default: `RANDOM`
+
+          **Supported values:**
+
+          - `RANDOM` — Staff members are returned in random order.
+          - `RANKING` — Staff members are returned in order of their priority ranking.
+          - `CUSTOM` — Staff members are returned in the order determined by a
+          [Staff Sorting service plugin](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-sorting-service-plugin/introduction) implementation. Business owners can choose a different implementation for each policy in their dashboard.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="options" type="options">
+
+          options
+
+          <Expandable title="options properties">
+
+            <ResponseField name="rankingOptions" type="RankingOptions">
+
+              Options for ranking-based staff selection. Only relevant when `sortingMethodType` is `RANKING`.
+
+              <Expandable title="rankingOptions properties">
+
+                <ResponseField name="order" type="string">
+
+                  Order in which staff members are sorted by priority ranking.
+
+                  Default: `LOWEST_TO_HIGHEST`
+
+                  **Supported values:**
+
+                  - `LOWEST_TO_HIGHEST` — Staff members with lower priority values are selected first.
+                  - `HIGHEST_TO_LOWEST` — Staff members with higher priority values are selected first.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="customOptions" type="CustomOptions">
+
+              Options for custom staff selection. Only relevant when `sortingMethodType` is `CUSTOM`.
+
+              <Expandable title="customOptions properties">
+
+                <ResponseField name="implementationId" type="string">
+
+                  ID of the custom sorting implementation registered in the
+                  [Staff Sorting service plugin](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-sorting-service-plugin/introduction).
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="appId" type="string">
+
+                  ID of the app that provides the custom sorting implementation.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="intakeFormPolicy" type="IntakeFormPolicy">
+
+      Rule for requiring customers to complete an [intake form](https://dev.wix.com/docs/api-reference/crm/forms/other-services/intake-forms/introduction) during or after booking.
+
+      <Expandable title="intakeFormPolicy properties">
+
+        <ResponseField name="enabled" type="boolean">
+
+          Whether an intake form is enabled for the service.
+
+          Default: `false`
+
+        </ResponseField>
+
+        <ResponseField name="formId" type="string">
+
+          ID of the intake form to present to customers.
+
+        </ResponseField>
+
+        <ResponseField name="timing" type="string">
+
+          When the intake form is presented to the customer.
+
+          **Supported values:**
+
+          - `AFTER_BOOKING` — Form is sent to the customer after the booking is created.
+          - `BEFORE_BOOKING` — Form is shown to the customer during the booking flow, before the booking is created.
+
+        </ResponseField>
+
+        <ResponseField name="completionRequirement" type="string">
+
+          Whether completing the intake form is required.
+
+          **Supported values:**
+
+          - `OPTIONAL` — Form completion is optional. Customers can skip the form.
+          - `REQUIRED_BEFORE_BOOKING` — Customers must complete the form before the booking is finalized.
+          Only supported when `timing` is `BEFORE_BOOKING`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="extendedFields" type="ExtendedFields">
+
+      Extensions enabling users to save custom data related to the booking policies.
+
+      <Expandable title="extendedFields properties">
+
+        <ResponseField name="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="object" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

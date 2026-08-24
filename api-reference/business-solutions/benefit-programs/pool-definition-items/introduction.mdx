@@ -1,0 +1,51 @@
+---
+title: "Introduction"
+description: "The Pool Definition Items API allows you to manage which catalog items are assigned to the benefits of a pool definition, a template that defines what subscrib…"
+icon: "file-lines"
+---
+
+The Pool Definition Items API allows you to manage which catalog [items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/items) are assigned to the benefits of a [pool definition](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definitions), a template that defines what subscribers get under a Pricing Plan. Benefits are the specific things subscribers can access within a pool definition, each identified by a `benefitKey`. Use this API together with other [Wix Benefit Programs APIs](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/introduction). Learn more about benefit programs [components](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/benefit-program-components) and [lifecycle](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/benefit-programs-lifecycle).
+
+With the Pool Definition Items API, you can:
+
+- Register catalog items with a specific benefit in a pool definition.
+- Remove items from a benefit.
+- Query which items are assigned to which benefits.
+
+## Pool definition items in benefit programs
+
+A pool definition item is the assignment of a catalog item to a benefit in a [pool definition](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definitions), identified by a `poolDefinitionId` and `benefitKey` pair. [Pool items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-items/introduction) are the subscriber-specific copies of pool definition items, created for each subscriber when a program is provisioned and reflecting the configuration at the time of enrollment.
+
+## Managing items in a benefit
+
+Use [Add Items to Benefit](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definition-items/add-items-to-benefit) to register catalog items with a benefit, and [Remove Items from Benefit](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definition-items/remove-items-from-benefit) to deregister them. Both methods require the `poolDefinitionId` and `benefitKey` that identify the target benefit. You can retrieve these values by calling [Get Pool Definition](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definitions/get-pool-definition) or [Query Pool Definitions](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definitions/query-pool-definitions).
+
+These methods act as a proxy that encapsulates the integration between the [Items API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/items) and the [Pool Definitions API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definitions). Internally, they create or delete the underlying item records and associate them with the correct benefit. The corresponding pool definition items are then created or removed automatically.
+
+When items are added to or removed from a benefit, the changes are reflected in active subscribers' pool items. This process is eventually consistent. In normal conditions, changes are reflected quickly with no noticeable delay.
+
+There's no limit on the total number of items that can be registered with a single benefit. Each method call supports up to 100 items.
+
+Add Items to Benefit uses a partial success model: items already registered with the benefit return per-item errors, while new items are added successfully. Check `bulkActionMetadata` for aggregate counts and per-item `itemMetadata` for individual outcomes.
+
+When you call Add Items to Benefit, only the `externalId` and `category` fields of each item reference are taken from your request. The `providerAppId`, `namespace`, and `itemSetId` on the resulting pool definition item are always inherited from the benefit's configuration in the pool definition. These aren't controlled per item reference.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Sites using this API must install the Pricing Plans app.
+- To call Add Items to Benefit or Remove Items from Benefit, you need the `poolDefinitionId` and `benefitKey` of the target benefit. Retrieve these from the [Pool Definitions API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definitions).
+- To look up all pool definition items assigned to a specific catalog item, for example to check which benefits a specified product has been added to, filter [Query Pool Definition Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/benefit-programs/pool-definition-items/query-pool-definition-items) by `itemSearchKey`. This is a pre-computed field with the format `providerAppId/category/externalId`. You can construct the key manually using a `/` separator. Filtering by `itemSearchKey` is more efficient than composing 3 separate filter conditions on `providerAppId`, `category`, and `externalId`.
+
+## Terminology
+
+- **Pool definition item**: An assignment of a catalog item to a benefit in a pool definition.
+- **Item**: A reference to a product, service, or content object provided by a 3rd-party app. Identified by a combination of `providerAppId`, `category`, and `externalId`.
+- **Benefit**: A specific thing subscribers can access within a pool definition. Each benefit is identified by a `benefitKey`.
+- **Benefit key**: A string defined by the provider when configuring a pool definition's benefits. Use it together with `poolDefinitionId` to identify the target benefit when calling Add Items to Benefit or Remove Items from Benefit.
+- **Pool item**: The subscriber-specific copy of a pool definition item, created for each beneficiary when a program is provisioned.
+- **Category**: A label used to group items by type in a provider app, for example `class` or `booking`. Defaults to an empty string if not specified.
+- **Item search key**: A pre-computed field that uniquely identifies a catalog item in a provider app. Formed by joining `providerAppId`, `category`, and `externalId` with `/`. Use it as a single filter field when querying pool definition items by item search key.
+
+@sdk_package_setup

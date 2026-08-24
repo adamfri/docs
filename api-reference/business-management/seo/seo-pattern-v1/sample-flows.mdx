@@ -1,0 +1,56 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Apply a title convention to a whole page type
+
+A Wix user may want every product page to carry the site name after the product name, without setting a title on each product.
+
+Because a page type may have a pattern already, and because Create and Set aren't interchangeable, this flow reads the pattern before deciding which one to call.
+
+To apply a title convention to a page type:
+
+1. Call [List SEO Pattern Variables](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables) for the page type, and confirm that the variables you plan to use are offered. A pattern referencing anything else is rejected.
+1. Call [Get SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/get-seo-pattern) for the page type and read `source`:
+    - `PATTERN_SOURCE_DEFAULT` means the site has no pattern of its own. Build your tag list from `defaultPattern` and call [Create SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/create-seo-pattern).
+    - `PATTERN_SOURCE_USER` means the site already has one. Build your tag list from `pattern` and call [Set SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/set-seo-pattern) with `pattern` in the `fieldMask`.
+1. Add or replace the title template in that list. For example:
+
+    ```json
+    {
+      "type": "title",
+      "children": "{{product.name}} | {{site.name}}"
+    }
+    ```
+
+1. Check the response: `source` is now `PATTERN_SOURCE_USER`, and the pattern you sent is returned in `pattern`.
+
+The change reaches the live site without a site publish. It applies to every page of that type that doesn't have SEO tags set for the item itself, so a product with its own title keeps it. To find those products, read `hasOverride` with the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction).
+
+## Audit which page types a site has customized
+
+Before changing anything, it's useful to know which page types a Wix user has already customized, so an import doesn't overwrite deliberate choices.
+
+To audit a site's patterns:
+
+1. Call [List SEO Patterns](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-patterns). The response isn't paged, so one call returns everything the site has stored.
+1. For each entry, read `source`. `PATTERN_SOURCE_USER` means the page type is customized; `PATTERN_SOURCE_DEFAULT` means it was reset back to the Wix default and its `pattern` is empty.
+1. Write only to the page types where `source` is `PATTERN_SOURCE_DEFAULT`, leaving customized page types untouched.
+
+Note that this list isn't an inventory of the site's page types. A page type that has never had a pattern stored isn't returned at all, even though it does have a pattern in effect. To check one of those, call [Get SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/get-seo-pattern) for the page type.
+
+## Return a page type to the Wix default
+
+A convention that no longer suits a site can be removed, so the page type generates tags the way it did before.
+
+To reset a page type:
+
+1. Call [Get SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/get-seo-pattern) for the page type and keep `defaultPattern`, so you know what the pages will generate afterwards.
+1. Call [Reset SEO Pattern To Default](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/reset-seo-pattern-to-default) for the page type.
+1. Check the response: `pattern` is empty and `source` is `PATTERN_SOURCE_DEFAULT`.
+
+The page type remains in the response of [List SEO Patterns](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-patterns) after a reset, with the same empty pattern. To customize it again later, call [Create SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/create-seo-pattern) rather than Set SEO Pattern, because the site no longer has a pattern of its own for it.

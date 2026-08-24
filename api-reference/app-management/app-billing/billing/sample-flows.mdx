@@ -1,0 +1,45 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. This article can be a helpful jumping-off point as you plan your implementation.
+
+These flows apply to apps that use an external pricing page with Wix-processed payments. If you process payments yourself, you must report all billing events to Wix using the [External Billing Events API](fallback::https://dev.wix.com/docs/rest/app-management/app-billing/external-billing-events/introduction) and submit quarterly reports. For complete requirements, see [Reporting For Partner Billed Apps](fallback::https://dev.wix.com/docs/build-apps/launch-your-app/pricing-and-billing/partner-billed-apps-reporting).
+
+<Note>
+
+The Billing API supports subscription-based plans by default. For 1-time payments or usage-based billing, use the [Custom Charges service plugin](fallback::https://dev.wix.com/docs/rest/app-management/app-billing/custom-charges-service-plugin/introduction).
+
+</Note>
+
+## Set up an external pricing page
+
+When a visitor browses an app you build on the App Market, you can offer an external pricing page to show plans and pricing. This option lets you customize the pricing experience and guide potential customers through purchase or upgrade flows. 
+
+Your pricing page needs to handle different scenarios for both existing app users and new visitors:
+- **Installed app site visitors:** When site visitors click **Upgrade App** on the **Manage Apps** page, Wix attaches an `instance` query parameter to the pricing page URL. Use the instance query parameter to recognize visitors and display their current billing information.
+- **App Market visitors:** Visitors who click the pricing link from an **App Market** listing usually want to see pricing but probably haven't installed the app yet. Your pricing page should detect when there's no `instance` query parameter and display public pricing information.
+
+To set up an external pricing page and handle the complete purchase journey:
+
+1. In the code of your external pricing page, use each Wix user's unique app instance ID to recognize them and display the right information. Call [Get App Instance](fallback::https://dev.wix.com/docs/rest/app-management/app-instance/get-app-instance) with the instance token to retrieve their current billing information.
+
+2. In the code of your external pricing page, after a Wix user chooses their preferred plan, redirect them to the Wix checkout. Call [Get URL](fallback::https://dev.wix.com/docs/api-reference/app-management/app-billing/billing/get-url) to retrieve the checkout URL. The URL is valid for 48 hours, so generate it on demand when the Wix user clicks to purchase.
+
+3. Once the Wix user completes their purchase, Wix redirects them to the `successUrl` that you specify when you call `Get URL`. If you don't specify a `successUrl`, Wix redirects them to the default Wix success page. For apps with an internal dashboard, set the `successUrl` to `"https://www.wix.com/account/app/<appID>/<appInstanceID>"` to redirect Wix users directly to their app dashboard.
+
+4. The purchase triggers the [Paid Plan Purchased](fallback::https://dev.wix.com/docs/api-reference/app-management/app-instance/paid-plan-purchased) event. Handle this event in your backend. The event response includes the Plan ID. To validate that the Wix user has signed up for a premium plan, call [Get App Instance](fallback::https://dev.wix.com/docs/api-reference/app-management/app-instance/get-app-instance) to confirm the Wix user's plan.
+
+5. In the app's **Pricing & Plans** settings on the **app dashboard**, select **External pricing page** and enter the pricing page URL.
+
+6. Test your pricing page flow. During development, Wix automatically sets all plans to a price of $0.00, so you can test the flow. Once Wix approves the app, Wix activates the plans' real prices. You can then [generate coupons for testing](fallback::https://dev.wix.com/docs/build-apps/launch-your-app/app-promotion/create-a-coupon).
+
+<Note>
+
+Prevent Wix users from downgrading using the external pricing page. This restriction includes switching from annual to monthly pricing. To downgrade or switch to monthly pricing, Wix users must cancel their subscription first, then purchase a new plan.
+
+</Note>

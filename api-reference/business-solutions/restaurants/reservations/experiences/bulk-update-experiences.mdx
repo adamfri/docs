@@ -1,0 +1,601 @@
+---
+title: "Bulk Update Experiences"
+description: "Updates up to 100 experiences in a single request."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates up to 100 experiences in a single request.
+
+    Each experience is updated independently. If an update fails for one experience, the failure is reported in that experience's `itemMetadata.error` and the remaining experiences are still processed. The call returns successfully even when some updates fail.
+
+    Set `returnEntity` to `true` to receive the updated experiences in the response.
+
+    Archived experiences can't be updated.
+
+    To update a single experience, call [Update Experience](https://dev.wix.com/docs/api-reference/business-solutions/restaurants/reservations/experiences/update-experience).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.RESTAURANTS.MEGA-SCOPES">Manage Restaurants - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/table-reservations/experiences/v1/bulk/experiences/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="experiences" type="MaskedExperience[]" required>
+
+      List of experiences to update, with the fields to update for each experience.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="experiences properties">
+
+        <ParamField body="experience" type="Experience">
+
+          Experience to update. May be partial.
+
+          See the [Experience Object](/api-reference/business-solutions/restaurants/reservations/experiences/experience-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to include the updated experiences in the response. When `true`, each successfully updated experience is returned in the corresponding result's `item` field.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkUpdateExperiencesResult[]">
+
+      List of results, one per experience in the request. Each result contains the update status for the corresponding experience, in the same order as the request.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Update status for an individual experience, including success or failure information and error details when the update failed.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Experience">
+
+          Updated experience.
+
+          Returned only when `returnEntity` is `true` in the request and the update succeeded.
+
+          See the [Experience Object](/api-reference/business-solutions/restaurants/reservations/experiences/experience-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk update, including the total number of successful and failed updates.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_BE_UPDATED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Experience Updated | `wix.table_reservations.v1.experience_updated` | Triggered when an experience is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl -X POST "https://www.wixapis.com/table-reservations/experiences/v1/bulk/experiences/update" \
+        -H "Authorization: <AUTH>" \
+        -H "Content-Type: application/json" \
+        --data '
+      {
+        "experiences": [
+          {
+            "experience": {
+              "id": "58a0a2a4-31e6-4909-a738-011c94e43f6e",
+              "revision": "3",
+              "configuration": {
+                "onlineReservations": {
+                  "partySize": { "min": 2, "max": 8 }
+                }
+              }
+            }
+          },
+          {
+            "experience": {
+              "id": "bd3a57af-2c85-4dbf-a141-51eda8c2f57c",
+              "revision": "1",
+              "configuration": {
+                "displayInfo": { "name": "Sunday Brunch" }
+              }
+            }
+          }
+        ],
+        "returnEntity": true
+      }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "58a0a2a4-31e6-4909-a738-011c94e43f6e",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "58a0a2a4-31e6-4909-a738-011c94e43f6e",
+              "reservationLocationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "revision": "4",
+              "createdDate": "2024-01-10T08:00:00.000Z",
+              "updatedDate": "2024-06-15T12:30:00.000Z",
+              "configuration": {
+                "onlineReservations": {
+                  "partySize": { "min": 2, "max": 8 }
+                }
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "bd3a57af-2c85-4dbf-a141-51eda8c2f57c",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "bd3a57af-2c85-4dbf-a141-51eda8c2f57c",
+              "reservationLocationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "revision": "2",
+              "createdDate": "2024-03-05T09:00:00.000Z",
+              "updatedDate": "2024-06-15T12:30:00.000Z",
+              "configuration": {
+                "displayInfo": { "name": "Sunday Brunch" }
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates up to 100 experiences in a single request.
+
+    Each experience is updated independently. If an update fails for one experience, the failure is reported in that experience's `itemMetadata.error` and the remaining experiences are still processed. The call returns successfully even when some updates fail.
+
+    Set `returnEntity` to `true` to receive the updated experiences in the response.
+
+    Archived experiences can't be updated.
+
+    To update a single experience, call [Update Experience](https://dev.wix.com/docs/api-reference/business-solutions/restaurants/reservations/experiences/update-experience).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.RESTAURANTS.MEGA-SCOPES">Manage Restaurants - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { experiences } from '@wix/table-reservations';
+
+    experiences.bulkUpdateExperiences(experiences, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="experiences" type="MaskedExperience[]" required>
+
+      List of experiences to update, with the fields to update for each experience.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="experiences properties">
+
+        <ParamField body="experience" type="Experience">
+
+          Experience to update. May be partial.
+
+          See the [Experience Object](/api-reference/business-solutions/restaurants/reservations/experiences/experience-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdateExperiencesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to include the updated experiences in the response. When `true`, each successfully updated experience is returned in the corresponding result's `item` field.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkUpdateExperiencesResult[]">
+
+      List of results, one per experience in the request. Each result contains the update status for the corresponding experience, in the same order as the request.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Update status for an individual experience, including success or failure information and error details when the update failed.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Experience">
+
+          Updated experience.
+
+          Returned only when `returnEntity` is `true` in the request and the update succeeded.
+
+          See the [Experience Object](/api-reference/business-solutions/restaurants/reservations/experiences/experience-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk update, including the total number of successful and failed updates.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `CAN_NOT_BE_UPDATED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Experience Updated | `wix.table_reservations.v1.experience_updated` | Triggered when an experience is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-experiences" id="ex-sdk-bulk-update-experiences-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-experiences" id="ex-sdk-bulk-update-experiences-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-experiences" id="ex-sdk-bulk-update-experiences-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-experiences-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-experiences-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateExperiences</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateExperiences (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateExperiences (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-experiences-0"><span className="wix-picker-name">bulkUpdateExperiences</span></label>
+    <label htmlFor="ex-sdk-bulk-update-experiences-1"><span className="wix-picker-name">bulkUpdateExperiences (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-update-experiences-2"><span className="wix-picker-name">bulkUpdateExperiences (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateExperiences
+    import { experiences } from '@wix/table-reservations';
+
+    async function bulkUpdateExperiences(experiences,options) {
+      const response = await experiences.bulkUpdateExperiences(experiences,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateExperiences (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { experiences } from '@wix/table-reservations';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { experiences },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateExperiences(experiences,options) {
+      const response = await myWixClient.experiences.bulkUpdateExperiences(experiences,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateExperiences (with elevated permissions)
+    import { experiences } from '@wix/table-reservations';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkUpdateExperiencesMethod(experiences,options) {
+      const elevatedBulkUpdateExperiences = auth.elevate(experiences.bulkUpdateExperiences);
+      const response = await elevatedBulkUpdateExperiences(experiences,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

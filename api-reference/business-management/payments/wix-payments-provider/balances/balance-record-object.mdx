@@ -1,0 +1,1016 @@
+---
+title: "Balance Record Object"
+description: "A balance record is 1 entry on a Wix Payments account ledger, representing 1 financial operation on the account: a payment, a refund, a chargeback, a refund or…"
+icon: "cube"
+---
+
+A balance record is 1 entry on a Wix Payments account ledger, representing 1 financial
+operation on the account: a payment, a refund, a chargeback, a refund or chargeback
+reversal, a reserve hold or release, a top-up, a Wix Capital cash advance, a Wix Capital
+remittance, or an adjustment.
+
+Each record belongs to an account and to one of the account's profiles. Reserve, payment,
+payout, and book transfer details are populated based on the record's type. On every
+record, `net` equals `amount - fee`. Records are immutable: `amount`, `fee`, and `net`
+never change after creation.
+
+In certain cases a balance record can be virtual: a record that hasn't been persisted but
+is projected to occur in the future. Virtual records are returned only for the
+`ESTIMATED_RESERVE_HOLD` and `ESTIMATED_RESERVE_RELEASE` tags and have no `id` and no
+`appliedDate`.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Balance record ID.
+
+      Not returned for virtual records produced by `ESTIMATED_RESERVE_HOLD` or
+      `ESTIMATED_RESERVE_RELEASE` tags.
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      ID of the Wix Payments account this balance record belongs to.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="accountProfileId" type="string">
+
+      ID of the Wix Payments account profile this balance record belongs to.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="Money">
+
+      Gross amount of the balance record, including fees.
+
+      Positive for credits to the account, negative for deductions.
+
+      <Expandable title="amount properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="fee" type="Money">
+
+      Fee that Wix Payments collected on this balance record.
+
+      <Expandable title="fee properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="net" type="Money">
+
+      Net amount of the balance record after subtracting `fee`.
+
+      <Expandable title="net properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="recordType" type="string">
+
+      Type of the balance record. Describes what kind of money movement this record represents.
+
+      **Supported values:**
+
+      - `CREDIT` — Payment from a buyer for a sale, credited to the merchant's Wix Payments account.
+      - `REFUND` — Refund issued back to a buyer.
+      - `CHARGEBACK` — Chargeback initiated by a buyer against a previous payment.
+      - `REFUND_REVERSAL` — Reversal of a previously issued refund.
+      - `CHARGEBACK_REVERSAL` — Reversal of a previously issued chargeback.
+      - `RESERVE_HOLD` — Funds withheld from the available balance as part of a reserve.
+      - `RESERVE_RELEASE` — Funds returned to the available balance from a previously held reserve.
+      - `TOPUP` — Transfer of funds from the merchant's external account into their Wix Payments account.
+      - `CREDIT_FAILED` — Failure on a previously credited payment, resulting in a deduction from the balance.
+      - `CHARGEBACK_FEE` — Fee charged for processing a chargeback.
+      - `CHARGEBACK_FEE_REVERSAL` — Reversal of a previously charged chargeback fee.
+      - `CAPITAL_CASH_ADVANCE` — Cash advance disbursed to the merchant from Wix Capital.
+      - `CAPITAL_AUTOMATIC_REMITTANCE` — Automatic remittance taken from sales to repay a Wix Capital cash advance.
+      - `CAPITAL_ADJUSTMENT` — Adjustment applied to a Wix Capital cash advance balance.
+
+    </ResponseField>
+
+    <ResponseField name="recordStatus" type="string">
+
+      Current effect of this record on the account balance.
+
+      The value depends on the record's `recordType`, whether it has a `payoutInfo` or
+      `bookTransferInfo`, and its `payoutAvailabilityDate`. This field is returned on
+      responses only and can't be passed as a filter on list or query requests. To filter by
+      effect on the balance, use `tags` instead.
+
+      **Supported values:**
+
+      - `PENDING_CREDIT` — Funds from this record are added to the available balance once they settle. They aren't yet part of the available balance.
+      - `CREDITED` — Funds from this record are part of the available balance.
+      - `RESERVED` — Funds from this record are held in reserve and aren't part of the available balance.
+
+      Applied to `RESERVE_HOLD` records, and to `RESERVE_RELEASE` records whose `payoutAvailabilityDate` hasn't yet passed.
+      - `PENDING_DEBIT` — Funds from this record have already been deducted from the available balance. The status moves to `DEBITED` once the operation that produced the debit finalizes.
+      - `DEBITED` — Funds from this record have been deducted from the available balance.
+      - `PAID_OUT` — The record has been included in a payout (regular payout) or made instantly
+      available via a Wix Checking book transfer (Instant Access). Applies to both credits
+      and debits. The only record type bundled into a payout that ends at a different
+      status is `RESERVE_HOLD` (see `DEDUCTED_FROM_PAYOUT`). Check `payoutInfo` versus
+      `bookTransferInfo` to tell them apart.
+      - `DEDUCTED_FROM_PAYOUT` — A `RESERVE_HOLD` record that has been included in a payout. The held amount was
+      subtracted from the payout total instead of being sent to the merchant. Only reserve
+      hold records end at this status; refunds, chargebacks, and other debits in a payout
+      end at `PAID_OUT`.
+      - `PAYOUT_REVERSED` — Funds from this record were in a payout that has since failed and been reversed. The reversal returns the funds to the available balance.
+
+    </ResponseField>
+
+    <ResponseField name="appliedDate" type="datetime">
+
+      Date and time the balance record was applied to the account balance.
+
+      Not returned for virtual records.
+
+    </ResponseField>
+
+    <ResponseField name="payoutAvailabilityDate" type="string">
+
+      Date the balance record becomes available for payout, in `YYYY-MM-DD` format.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the balance record was created.
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the balance record was last updated.
+
+    </ResponseField>
+
+    <ResponseField name="paymentInfo" type="PaymentInfo">
+
+      Information about the payment that produced this balance record.
+
+      Returned for records related to a payment, refund, or chargeback.
+
+      <Expandable title="paymentInfo properties">
+
+        <ResponseField name="transactionId" type="string">
+
+          ID of the Wix Payments transaction that produced this balance record.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the underlying payment was created.
+
+        </ResponseField>
+
+        <ResponseField name="externalTransactionId" type="string">
+
+          External transaction ID supplied by the merchant's order system, if any.
+
+        </ResponseField>
+
+        <ResponseField name="externalOrderId" type="string">
+
+          External order ID supplied by the merchant's order system, if any.
+
+        </ResponseField>
+
+        <ResponseField name="externalDisplayOrderId" type="string">
+
+          Display-friendly external order ID, suitable for showing in a UI.
+
+        </ResponseField>
+
+        <ResponseField name="externalOrderLink" type="string">
+
+          Link to the order in the merchant's external order management system.
+
+        </ResponseField>
+
+        <ResponseField name="customerName" type="string">
+
+          Customer's name as captured by the payment flow.
+
+        </ResponseField>
+
+        <ResponseField name="cardHolderName" type="string">
+
+          Cardholder's name as captured at payment time.
+
+        </ResponseField>
+
+        <ResponseField name="paymentMethodType" type="string" deprecated>
+
+          Payment method used for the underlying transaction.
+
+          Deprecated. Use `paymentMethodTypeId` instead.
+
+          **Deprecated.** Payment method used for the underlying transaction.
+
+          Deprecated. Use `paymentMethodTypeId` instead. Use `payment_method_type_id` instead. Removal: 2027-05-31.
+
+          **Supported values:**
+
+          - `CARD`
+          - `CARD_READER`
+          - `ACH`
+          - `APPLE_PAY`
+          - `BOLETO`
+          - `GIROPAY`
+          - `IDEAL`
+          - `PIX`
+          - `SEPA`
+          - `SOFORT`
+          - `PAY_PAL`
+          - `TAP_TO_PAY`
+          - `GOOGLE_PAY`
+          - `AFFIRM`
+          - `AFTERPAY`
+          - `KLARNA`
+          - `RAZORPAY`
+          - `ALIPAY`
+          - `BANCONTACT`
+          - `US_BANK_ACCOUNT`
+          - `BANKFUL_CRYPTO`
+          - `BANKFUL`
+          - `TWINT`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="payoutInfo" type="PayoutInfo">
+
+      Information about the payout that includes this balance record.
+
+      Returned only after the record has been included in a payout. The presence of
+      `payoutInfo` (versus `bookTransferInfo`) distinguishes a regular payout from an Instant
+      Access book transfer.
+
+      <Expandable title="payoutInfo properties">
+
+        <ResponseField name="payoutId" type="string">
+
+          ID of the payout that this balance record belongs to.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the payout was created.
+
+          Returned only for payouts that have already occurred, not those that are scheduled.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="reserveInfo" type="ReserveInfo">
+
+      Reserve details for this balance record.
+
+      Returned for records with `recordType` `RESERVE_HOLD` or `RESERVE_RELEASE`.
+
+      <Expandable title="reserveInfo properties">
+
+        <ResponseField name="hold" type="PayoutInfo">
+
+          Payout details for the hold portion of the reserve, where funds are removed from the available balance.
+
+          <Expandable title="hold properties">
+
+            <ResponseField name="payoutId" type="string">
+
+              ID of the payout that this balance record belongs to.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payout was created.
+
+              Returned only for payouts that have already occurred, not those that are scheduled.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="release" type="PayoutInfo">
+
+          Payout details for the release portion of the reserve, where funds are returned to the available balance.
+
+          <Expandable title="release properties">
+
+            <ResponseField name="payoutId" type="string">
+
+              ID of the payout that this balance record belongs to.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payout was created.
+
+              Returned only for payouts that have already occurred, not those that are scheduled.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="reserveHistoryItems" type="ReserveHistoryItem[]">
+
+          History of changes applied to this reserve, ordered by event time.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="reserveHistoryItems properties">
+
+            <ResponseField name="releaseDate" type="string">
+
+              Date the reserve was scheduled to be released, in `YYYY-MM-DD` format.
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the reserve was created.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="reserveType" type="string">
+
+          Reserve type that determines how the reserve was created.
+
+          **Supported values:**
+
+          - `ONE_TIME` — Reserve that was created manually for a 1-time event.
+          - `ROLLING` — Reserve that was created automatically by an active reserve policy on the account.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bookTransferInfo" type="BookTransferInfo">
+
+      Book transfer details for this balance record.
+
+      Returned for records funded through a Wix Checking book transfer (Instant Access) rather
+      than a payout. Funds backed by a book transfer are immediately available in the
+      merchant's Wix Checking account.
+
+      <Expandable title="bookTransferInfo properties">
+
+        <ResponseField name="bookTransferId" type="string">
+
+          ID of the book transfer that funded this balance record.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="transactionReference" type="string">
+
+          External reference for the book transfer transaction.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the funds became instantly available through the book transfer.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "balanceRecord": {
+          "id": "c3e48d2b-078b-4541-999c-27312b218a01",
+          "accountId": "50359182-20a7-463a-b069-af9d8b60be5f",
+          "accountProfileId": "e61abb81-9047-45fe-b9f8-303fd0d51dd9",
+          "amount": {
+            "value": "60.00",
+            "currency": "USD"
+          },
+          "fee": {
+            "value": "3.50",
+            "currency": "USD"
+          },
+          "net": {
+            "value": "56.50",
+            "currency": "USD"
+          },
+          "recordType": "CREDIT",
+          "recordStatus": "PAID_OUT",
+          "appliedDate": "2024-04-26T19:16:26.000Z",
+          "payoutAvailabilityDate": "2024-04-27",
+          "createdDate": "2024-04-26T03:35:40.578Z",
+          "updatedDate": "2024-04-26T21:06:18.984Z",
+          "paymentInfo": {
+            "transactionId": "9c6bafce-1e6f-4758-9542-41b5f3e0c184",
+            "createdDate": "2024-04-26T03:35:37.559Z",
+            "externalTransactionId": "9c6bafce-1e6f-4758-9542-41b5f3e0c184",
+            "externalOrderId": "FVIE-DQCG-O0",
+            "externalDisplayOrderId": "10001",
+            "externalOrderLink": "https://www.example.com/orders/10001",
+            "customerName": "Jane Doe",
+            "cardHolderName": "Jane Doe"
+          },
+          "payoutInfo": {
+            "payoutId": "9f7e957d-0def-48c1-8283-5ac0dfe7d986",
+            "createdDate": "2024-05-06T12:39:34.639Z"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Balance record ID.
+
+      Not returned for virtual records produced by `ESTIMATED_RESERVE_HOLD` or
+      `ESTIMATED_RESERVE_RELEASE` tags.
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      ID of the Wix Payments account this balance record belongs to.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="accountProfileId" type="string">
+
+      ID of the Wix Payments account profile this balance record belongs to.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="Money">
+
+      Gross amount of the balance record, including fees.
+
+      Positive for credits to the account, negative for deductions.
+
+      <Expandable title="amount properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="fee" type="Money">
+
+      Fee that Wix Payments collected on this balance record.
+
+      <Expandable title="fee properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="net" type="Money">
+
+      Net amount of the balance record after subtracting `fee`.
+
+      <Expandable title="net properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="recordType" type="string">
+
+      Type of the balance record. Describes what kind of money movement this record represents.
+
+      **Supported values:**
+
+      - `CREDIT` — Payment from a buyer for a sale, credited to the merchant's Wix Payments account.
+      - `REFUND` — Refund issued back to a buyer.
+      - `CHARGEBACK` — Chargeback initiated by a buyer against a previous payment.
+      - `REFUND_REVERSAL` — Reversal of a previously issued refund.
+      - `CHARGEBACK_REVERSAL` — Reversal of a previously issued chargeback.
+      - `RESERVE_HOLD` — Funds withheld from the available balance as part of a reserve.
+      - `RESERVE_RELEASE` — Funds returned to the available balance from a previously held reserve.
+      - `TOPUP` — Transfer of funds from the merchant's external account into their Wix Payments account.
+      - `CREDIT_FAILED` — Failure on a previously credited payment, resulting in a deduction from the balance.
+      - `CHARGEBACK_FEE` — Fee charged for processing a chargeback.
+      - `CHARGEBACK_FEE_REVERSAL` — Reversal of a previously charged chargeback fee.
+      - `CAPITAL_CASH_ADVANCE` — Cash advance disbursed to the merchant from Wix Capital.
+      - `CAPITAL_AUTOMATIC_REMITTANCE` — Automatic remittance taken from sales to repay a Wix Capital cash advance.
+      - `CAPITAL_ADJUSTMENT` — Adjustment applied to a Wix Capital cash advance balance.
+
+    </ResponseField>
+
+    <ResponseField name="recordStatus" type="string">
+
+      Current effect of this record on the account balance.
+
+      The value depends on the record's `recordType`, whether it has a `payoutInfo` or
+      `bookTransferInfo`, and its `payoutAvailabilityDate`. This field is returned on
+      responses only and can't be passed as a filter on list or query requests. To filter by
+      effect on the balance, use `tags` instead.
+
+      **Supported values:**
+
+      - `PENDING_CREDIT` — Funds from this record are added to the available balance once they settle. They aren't yet part of the available balance.
+      - `CREDITED` — Funds from this record are part of the available balance.
+      - `RESERVED` — Funds from this record are held in reserve and aren't part of the available balance.
+
+      Applied to `RESERVE_HOLD` records, and to `RESERVE_RELEASE` records whose `payoutAvailabilityDate` hasn't yet passed.
+      - `PENDING_DEBIT` — Funds from this record have already been deducted from the available balance. The status moves to `DEBITED` once the operation that produced the debit finalizes.
+      - `DEBITED` — Funds from this record have been deducted from the available balance.
+      - `PAID_OUT` — The record has been included in a payout (regular payout) or made instantly
+      available via a Wix Checking book transfer (Instant Access). Applies to both credits
+      and debits. The only record type bundled into a payout that ends at a different
+      status is `RESERVE_HOLD` (see `DEDUCTED_FROM_PAYOUT`). Check `payoutInfo` versus
+      `bookTransferInfo` to tell them apart.
+      - `DEDUCTED_FROM_PAYOUT` — A `RESERVE_HOLD` record that has been included in a payout. The held amount was
+      subtracted from the payout total instead of being sent to the merchant. Only reserve
+      hold records end at this status; refunds, chargebacks, and other debits in a payout
+      end at `PAID_OUT`.
+      - `PAYOUT_REVERSED` — Funds from this record were in a payout that has since failed and been reversed. The reversal returns the funds to the available balance.
+
+    </ResponseField>
+
+    <ResponseField name="appliedDate" type="datetime">
+
+      Date and time the balance record was applied to the account balance.
+
+      Not returned for virtual records.
+
+    </ResponseField>
+
+    <ResponseField name="payoutAvailabilityDate" type="string">
+
+      Date the balance record becomes available for payout, in `YYYY-MM-DD` format.
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the balance record was created.
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the balance record was last updated.
+
+    </ResponseField>
+
+    <ResponseField name="paymentInfo" type="PaymentInfo">
+
+      Information about the payment that produced this balance record.
+
+      Returned for records related to a payment, refund, or chargeback.
+
+      <Expandable title="paymentInfo properties">
+
+        <ResponseField name="transactionId" type="string">
+
+          ID of the Wix Payments transaction that produced this balance record.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the underlying payment was created.
+
+        </ResponseField>
+
+        <ResponseField name="externalTransactionId" type="string">
+
+          External transaction ID supplied by the merchant's order system, if any.
+
+        </ResponseField>
+
+        <ResponseField name="externalOrderId" type="string">
+
+          External order ID supplied by the merchant's order system, if any.
+
+        </ResponseField>
+
+        <ResponseField name="externalDisplayOrderId" type="string">
+
+          Display-friendly external order ID, suitable for showing in a UI.
+
+        </ResponseField>
+
+        <ResponseField name="externalOrderLink" type="string">
+
+          Link to the order in the merchant's external order management system.
+
+        </ResponseField>
+
+        <ResponseField name="customerName" type="string">
+
+          Customer's name as captured by the payment flow.
+
+        </ResponseField>
+
+        <ResponseField name="cardHolderName" type="string">
+
+          Cardholder's name as captured at payment time.
+
+        </ResponseField>
+
+        <ResponseField name="paymentMethodType" type="string" deprecated>
+
+          Payment method used for the underlying transaction.
+
+          Deprecated. Use `paymentMethodTypeId` instead.
+
+          **Deprecated.** Payment method used for the underlying transaction.
+
+          Deprecated. Use `paymentMethodTypeId` instead. Use `payment_method_type_id` instead. Removal: 2027-05-31.
+
+          **Supported values:**
+
+          - `CARD`
+          - `CARD_READER`
+          - `ACH`
+          - `APPLE_PAY`
+          - `BOLETO`
+          - `GIROPAY`
+          - `IDEAL`
+          - `PIX`
+          - `SEPA`
+          - `SOFORT`
+          - `PAY_PAL`
+          - `TAP_TO_PAY`
+          - `GOOGLE_PAY`
+          - `AFFIRM`
+          - `AFTERPAY`
+          - `KLARNA`
+          - `RAZORPAY`
+          - `ALIPAY`
+          - `BANCONTACT`
+          - `US_BANK_ACCOUNT`
+          - `BANKFUL_CRYPTO`
+          - `BANKFUL`
+          - `TWINT`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="payoutInfo" type="PayoutInfo">
+
+      Information about the payout that includes this balance record.
+
+      Returned only after the record has been included in a payout. The presence of
+      `payoutInfo` (versus `bookTransferInfo`) distinguishes a regular payout from an Instant
+      Access book transfer.
+
+      <Expandable title="payoutInfo properties">
+
+        <ResponseField name="payoutId" type="string">
+
+          ID of the payout that this balance record belongs to.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the payout was created.
+
+          Returned only for payouts that have already occurred, not those that are scheduled.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="reserveInfo" type="ReserveInfo">
+
+      Reserve details for this balance record.
+
+      Returned for records with `recordType` `RESERVE_HOLD` or `RESERVE_RELEASE`.
+
+      <Expandable title="reserveInfo properties">
+
+        <ResponseField name="hold" type="PayoutInfo">
+
+          Payout details for the hold portion of the reserve, where funds are removed from the available balance.
+
+          <Expandable title="hold properties">
+
+            <ResponseField name="payoutId" type="string">
+
+              ID of the payout that this balance record belongs to.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payout was created.
+
+              Returned only for payouts that have already occurred, not those that are scheduled.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="release" type="PayoutInfo">
+
+          Payout details for the release portion of the reserve, where funds are returned to the available balance.
+
+          <Expandable title="release properties">
+
+            <ResponseField name="payoutId" type="string">
+
+              ID of the payout that this balance record belongs to.
+
+              Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payout was created.
+
+              Returned only for payouts that have already occurred, not those that are scheduled.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="reserveHistoryItems" type="ReserveHistoryItem[]">
+
+          History of changes applied to this reserve, ordered by event time.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="reserveHistoryItems properties">
+
+            <ResponseField name="releaseDate" type="string">
+
+              Date the reserve was scheduled to be released, in `YYYY-MM-DD` format.
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the reserve was created.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="reserveType" type="string">
+
+          Reserve type that determines how the reserve was created.
+
+          **Supported values:**
+
+          - `ONE_TIME` — Reserve that was created manually for a 1-time event.
+          - `ROLLING` — Reserve that was created automatically by an active reserve policy on the account.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bookTransferInfo" type="BookTransferInfo">
+
+      Book transfer details for this balance record.
+
+      Returned for records funded through a Wix Checking book transfer (Instant Access) rather
+      than a payout. Funds backed by a book transfer are immediately available in the
+      merchant's Wix Checking account.
+
+      <Expandable title="bookTransferInfo properties">
+
+        <ResponseField name="bookTransferId" type="string">
+
+          ID of the book transfer that funded this balance record.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="transactionReference" type="string">
+
+          External reference for the book transfer transaction.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the funds became instantly available through the book transfer.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

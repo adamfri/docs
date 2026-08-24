@@ -1,0 +1,541 @@
+---
+title: "Send Payment Link"
+description: "Sends a payment link to up to 50 specified recipients."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Sends a payment link to up to 50 specified recipients.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PAYLINKS.MANAGE">Manage Paylinks</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/paymentlinks/v1/payment-links/{paymentLinkId}/send
+    ```
+
+    ## Path Params
+
+    <ParamField path="paymentLinkId" type="string" required>
+
+      Payment link ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="recipients" type="Recipient[]">
+
+      Recipients who will receive the payment link.
+
+      Constraints: `maxItems 50`.
+
+      <Expandable title="recipients properties">
+
+        <ParamField body="contactId" type="string">
+
+          Recipient contact ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="lastSendDate" type="datetime">
+
+          Date of last attempt to send payment link to the recipient.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="sendSuccessful" type="boolean">
+
+          Status of the last attempt to send payment link to the recipient.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="sendMethods" type="string[]">
+
+          Methods that should be used to send the payment link to the recipient.
+
+          Constraints: `maxItems 1`.
+
+          **Supported values:**
+
+          - `EMAIL_METHOD` — Email method.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="statuses" type="RecipientSendStatus[]">
+
+      Statuses of payment links sent.
+
+      <Expandable title="statuses properties">
+
+        <ResponseField name="contactId" type="string">
+
+          Recipient contact ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="successSendMethods" type="string[]">
+
+          Methods through which the payment link was sent successfully.
+
+          **Supported values:**
+
+          - `EMAIL_METHOD` — Email method.
+
+        </ResponseField>
+
+        <ResponseField name="failedSendMethods" type="string[]">
+
+          Methods in which errors occurred.
+
+          **Supported values:**
+
+          - `EMAIL_METHOD` — Email method.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="sendMetadata" type="SendMetadata">
+
+      Send metadata.
+
+      <Expandable title="sendMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of recipients where send was successful.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of recipients in which sending failed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `NO_EMAIL_FOR_RECIPIENT` | Recipient's contact has no associated email. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_ACCEPT_PAYMENTS` | Site isn't set up to accept payments. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_RECIPIENT_SEND_METHOD` | Missing recipient's send method. |
+    | `400` | `INVALID_ARGUMENT` | `RECIPIENT_NOT_FOUND` | Recipient's contact not found. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_RECIPIENT_SEND_METHOD` | Invalid send method specified. |
+    | `400` | `INVALID_ARGUMENT` | `TOO_MANY_RECIPIENTS` | Too many recipients specified. Limit: 50. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Payment Link Updated | `wix.paymentlinks.v1.payment_link_updated` | Triggered when a payment link is updated. |
+    | Payment Link Sent | `wix.paymentlinks.v1.payment_link_payment_link_sent` | Triggered when a payment link is sent. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Sends a payment link to the specified recipients
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/payment-links/v1/payment-links/763736a8-b40b-4c1a-a8ea-f6dfa75e6197/send' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        --data-binary '{
+          "paymentLinkId": "763736a8-b40b-4c1a-a8ea-f6dfa75e6197",
+          "recipients": [
+            {
+              "contactId": "6541f103-b777-44d6-bccc-3baf8deaea53",
+              "sendMethods": [
+                "EMAIL_METHOD"
+              ]
+            }
+          ]
+       }'
+      ```
+
+      ```json Response
+      {
+        "statuses": [
+          {
+            "contactId": "ef0a5cda-8b90-427d-8189-db40c1f33473",
+            "successSendMethod": [
+              "EMAIL_METHOD"
+            ],
+            "failedSendMethod": []
+          }
+        ],
+        "sendMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Sends a payment link to up to 50 specified recipients.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PAYLINKS.MANAGE">Manage Paylinks</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { paymentLinks } from '@wix/get-paid';
+
+    paymentLinks.sendPaymentLink(paymentLinkId, options): Promise<SendPaymentLinkResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="paymentLinkId" type="string" required>
+
+      Payment link ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="SendPaymentLinkOptions">
+
+      Field options.
+
+      <Expandable title="options properties">
+
+        <ParamField body="recipients" type="Recipient[]">
+
+          Recipients who will receive the payment link.
+
+          Constraints: `maxItems 50`.
+
+          <Expandable title="recipients properties">
+
+            <ParamField body="contactId" type="string">
+
+              Recipient contact ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="lastSendDate" type="datetime">
+
+              Date of last attempt to send payment link to the recipient.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="sendSuccessful" type="boolean">
+
+              Status of the last attempt to send payment link to the recipient.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="sendMethods" type="string[]">
+
+              Methods that should be used to send the payment link to the recipient.
+
+              Constraints: `maxItems 1`.
+
+              **Supported values:**
+
+              - `EMAIL_METHOD` — Email method.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<SendPaymentLinkResponse>`.
+
+    <ResponseField name="statuses" type="RecipientSendStatus[]">
+
+      Statuses of payment links sent.
+
+      <Expandable title="statuses properties">
+
+        <ResponseField name="contactId" type="string">
+
+          Recipient contact ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="successSendMethods" type="string[]">
+
+          Methods through which the payment link was sent successfully.
+
+          **Supported values:**
+
+          - `EMAIL_METHOD` — Email method.
+
+        </ResponseField>
+
+        <ResponseField name="failedSendMethods" type="string[]">
+
+          Methods in which errors occurred.
+
+          **Supported values:**
+
+          - `EMAIL_METHOD` — Email method.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="sendMetadata" type="SendMetadata">
+
+      Send metadata.
+
+      <Expandable title="sendMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of recipients where send was successful.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of recipients in which sending failed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `NO_EMAIL_FOR_RECIPIENT` | Recipient's contact has no associated email. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_ACCEPT_PAYMENTS` | Site isn't set up to accept payments. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_RECIPIENT_SEND_METHOD` | Missing recipient's send method. |
+    | `400` | `INVALID_ARGUMENT` | `RECIPIENT_NOT_FOUND` | Recipient's contact not found. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_RECIPIENT_SEND_METHOD` | Invalid send method specified. |
+    | `400` | `INVALID_ARGUMENT` | `TOO_MANY_RECIPIENTS` | Too many recipients specified. Limit: 50. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Payment Link Updated | `wix.paymentlinks.v1.payment_link_updated` | Triggered when a payment link is updated. |
+    | Payment Link Payment Link Sent | `wix.paymentlinks.v1.payment_link_payment_link_sent` | Triggered when a payment link is sent. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-send-payment-link" id="ex-sdk-send-payment-link-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-send-payment-link" id="ex-sdk-send-payment-link-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-send-payment-link" id="ex-sdk-send-payment-link-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-send-payment-link-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-send-payment-link-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">sendPaymentLink</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">sendPaymentLink (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">sendPaymentLink (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-send-payment-link-0"><span className="wix-picker-name">sendPaymentLink</span></label>
+    <label htmlFor="ex-sdk-send-payment-link-1"><span className="wix-picker-name">sendPaymentLink (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-send-payment-link-2"><span className="wix-picker-name">sendPaymentLink (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript sendPaymentLink
+    import { paymentLinks } from '@wix/get-paid';
+
+    async function sendPaymentLink(paymentLinkId,options) {
+      const response = await paymentLinks.sendPaymentLink(paymentLinkId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript sendPaymentLink (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { paymentLinks } from '@wix/get-paid';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { paymentLinks },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function sendPaymentLink(paymentLinkId,options) {
+      const response = await myWixClient.paymentLinks.sendPaymentLink(paymentLinkId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript sendPaymentLink (with elevated permissions)
+    import { paymentLinks } from '@wix/get-paid';
+    import { auth } from '@wix/essentials';
+
+    async function mySendPaymentLinkMethod(paymentLinkId,options) {
+      const elevatedSendPaymentLink = auth.elevate(paymentLinks.sendPaymentLink);
+      const response = await elevatedSendPaymentLink(paymentLinkId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

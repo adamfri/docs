@@ -1,0 +1,1284 @@
+---
+title: "Calculate Additional Fees"
+description: "Requests calculation of additional fees from the service plugin implementer for a given cart or checkout."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Requests calculation of additional fees from the service plugin implementer for a given cart or checkout.
+
+    Wix calls this method when a site visitor views their cart, begins checkout, or when cart contents change during the checkout process.
+
+    Wix uses the returned additional fees to display line items on the cart and checkout pages and to calculate the final order total.
+
+    Your implementation must respond within 3 seconds. Longer response times result in timeout errors.
+
+    **Restrictions:** Do not call the Estimate Cart Totals, Estimate Current Cart Totals, or Get Checkout methods from your implementation. Doing so results in a runtime error.
+
+    **Error handling:** If your implementation returns an error or times out, Wix proceeds without additional fees. The site visitor won't see additional fees on their cart or checkout.
+
+    ## Endpoint
+
+    ```http
+    POST /v1/calculate-additional-fees
+    ```
+
+    ## Body Params
+
+    <ParamField body="lineItems" type="LineItem[]">
+
+      Line items in the cart or checkout. Each line item represents a product with quantity and pricing information.
+
+      Constraints: `maxItems 300`.
+
+      <Expandable title="lineItems properties">
+
+        <ParamField body="id" type="string">
+
+          Line item ID.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ParamField>
+
+        <ParamField body="quantity" type="integer">
+
+          Number of this item in the cart or checkout.
+
+        </ParamField>
+
+        <ParamField body="catalogReference" type="CatalogReference">
+
+          Reference to the product in the catalog. Contains the catalog app ID and product information.
+
+          <Expandable title="catalogReference properties">
+
+            <ParamField body="catalogItemId" type="string">
+
+              ID of the item within the catalog it belongs to.
+
+              Constraints: `minLength 1`, `maxLength 36`.
+
+            </ParamField>
+
+            <ParamField body="appId" type="string">
+
+              ID of the app providing the catalog.
+
+              You can get your app's ID from its page in the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+              For items from Wix catalogs, the following values always apply:
+              + Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"`
+              + Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              + Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`
+
+              Constraints: `minLength 1`.
+
+            </ParamField>
+
+            <ParamField body="options" type="object">
+
+              Additional item details in `key:value` pairs.
+
+              Use this optional field for more specificity with item selection. The values of the `options` field differ depending on which catalog is providing the items.
+
+              For Wix Stores products, learn more about integrating with [Catalog V3](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration)
+              or [Catalog V1](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/e-commerce-integration), depending on [the version the site uses](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-versioning/introduction).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="productName" type="string">
+
+          Name of the product. Displayed to the site visitor on cart and checkout pages.
+
+        </ParamField>
+
+        <ParamField body="price" type="string">
+
+          Price per unit of the product.
+
+          Constraints: `>= 0`.
+
+        </ParamField>
+
+        <ParamField body="physicalProperties" type="PhysicalProperties">
+
+          Physical properties of the product, such as weight and dimensions. Used for calculating shipping costs and fees that depend on product characteristics.
+
+          <Expandable title="physicalProperties properties">
+
+            <ParamField body="weight" type="number">
+
+              Line item weight. Measurement unit matches the weight unit specified in `weightUnit` in the request.
+
+            </ParamField>
+
+            <ParamField body="sku" type="string">
+
+              Stock-keeping unit. Learn more about [SKUs](https://www.wix.com/encyclopedia/definition/stock-keeping-unit-sku).
+
+            </ParamField>
+
+            <ParamField body="shippable" type="boolean">
+
+              Whether this line item is shippable.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="depositAmount" type="string">
+
+          Deposit amount required for this line item. For example, a bottle deposit for beverages.
+
+        </ParamField>
+
+        <ParamField body="modifierGroups" type="ModifierGroup[]">
+
+          Product options selected for this line item. For example, size, color, or custom engraving. Each modifier group represents a type of option, such as "Size" with values like "Small", "Medium", "Large".
+
+          Constraints: `maxItems 25`.
+
+          <Expandable title="modifierGroups properties">
+
+            <ParamField body="id" type="string">
+
+              Modifier group ID.
+
+              Constraints: `minLength 1`, `maxLength 36`.
+
+            </ParamField>
+
+            <ParamField body="name" type="TranslatableString">
+
+              Modifier group name.
+
+              _Nested structure omitted for brevity — see the `TranslatableString` object._
+
+            </ParamField>
+
+            <ParamField body="modifiers" type="ItemModifier[]">
+
+              List of modifiers in this group.
+
+              Constraints: `minItems 1`, `maxItems 25`.
+
+              _Nested structure omitted for brevity — see the `ItemModifier[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="shippingAddress" type="Address">
+
+      Address where the order will be shipped. Used to calculate location-based fees or determine applicable regulations.
+
+      <Expandable title="shippingAddress properties">
+
+        <ParamField body="country" type="string">
+
+          Two-letter country code in [ISO-3166 alpha-2](https://www.iso.org/obp/ui/#search/code/) format.
+
+        </ParamField>
+
+        <ParamField body="subdivision" type="string">
+
+          Code for a subdivision (such as state, prefecture, or province) in [ISO 3166-2](https://www.iso.org/standard/72483.html) format.
+
+        </ParamField>
+
+        <ParamField body="city" type="string">
+
+          City name.
+
+        </ParamField>
+
+        <ParamField body="postalCode" type="string">
+
+          Postal or zip code.
+
+        </ParamField>
+
+        <ParamField body="streetAddress" type="StreetAddress">
+
+          Street address.
+
+          <Expandable title="streetAddress properties">
+
+            <ParamField body="number" type="string">
+
+              Street number.
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Street name.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="addressLine" type="string">
+
+          Main address line (usually street name and number).
+
+        </ParamField>
+
+        <ParamField body="addressLine2" type="string">
+
+          Free text providing more detailed address info. Usually contains apt, suite, floor.
+
+        </ParamField>
+
+        <ParamField body="geocode" type="AddressLocation">
+
+          Geocode object containing latitude and longitude coordinates.
+
+          <Expandable title="geocode properties">
+
+            <ParamField body="latitude" type="number">
+
+              Address latitude.
+
+            </ParamField>
+
+            <ParamField body="longitude" type="number">
+
+              Address longitude.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="countryFullname" type="string">
+
+          Country's full name.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="subdivisionFullname" type="string">
+
+          Subdivision full-name.
+
+          **Read-only.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="buyerDetails" type="BuyerDetails">
+
+      Information about the buyer making the purchase.
+
+      <Expandable title="buyerDetails properties">
+
+        <ParamField body="contactDetails" type="FullAddressContactDetails">
+
+          Contact information for the buyer, including name, email, phone number, and address.
+
+          <Expandable title="contactDetails properties">
+
+            <ParamField body="firstName" type="string">
+
+              Contact's first name.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              Contact's last name.
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Contact's phone number.
+
+            </ParamField>
+
+            <ParamField body="company" type="string">
+
+              Contact's company name.
+
+            </ParamField>
+
+            <ParamField body="email" type="string">
+
+              Email associated with the address.
+
+            </ParamField>
+
+            <ParamField body="vatId" type="VatId">
+
+              Tax info. Currently usable only in Brazil.
+
+              _Nested structure omitted for brevity — see the `VatId` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="appliedDiscounts" type="AppliedDiscount[]">
+
+      Discounts applied to the cart or checkout. Includes coupons, merchant discounts, and discount rules.
+
+      Constraints: `maxItems 320`.
+
+      <Expandable title="appliedDiscounts properties">
+
+        <ParamField body="discountType" type="string">
+
+          Type of this discount.
+
+          **Supported values:**
+
+          - `GLOBAL` — Discount applies to the entire order.
+          - `SPECIFIC_ITEMS` — Discount applies only to specific items in the cart.
+          - `SHIPPING` — Discount applies to shipping costs.
+
+        </ParamField>
+
+        <ParamField body="lineItemIds" type="string[]">
+
+          IDs of line items this discount applies to.
+
+          Available only when `discountType` is `SPECIFIC_ITEMS`.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="shippingInfo" type="ShippingInformation">
+
+      Information about the selected shipping method and its associated costs.
+
+      <Expandable title="shippingInfo properties">
+
+        <ParamField body="selectedCarrierServiceOption" type="SelectedCarrierServiceOption">
+
+          Shipping method and carrier selected by the site visitor.
+
+          <Expandable title="selectedCarrierServiceOption properties">
+
+            <ParamField body="code" type="string">
+
+              Unique code identifying the carrier service. For example, "usps-priority" or "fedex-ground".
+
+              Constraints: `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="title" type="string">
+
+              Display name of the shipping method shown to the site visitor. For example, "USPS Priority Mail" or "FedEx Ground".
+
+              **Read-only.** Constraints: `maxLength 250`.
+
+            </ParamField>
+
+            <ParamField body="logistics" type="DeliveryLogistics">
+
+              Delivery details including estimated delivery time and pickup information.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `DeliveryLogistics` object._
+
+            </ParamField>
+
+            <ParamField body="cost" type="SelectedCarrierServiceOptionPrices">
+
+              Cost of the shipping method.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `SelectedCarrierServiceOptionPrices` object._
+
+            </ParamField>
+
+            <ParamField body="otherCharges" type="SelectedCarrierServiceOptionOtherCharge[]">
+
+              Additional charges associated with the shipping method, such as handling fees or insurance.
+
+              Constraints: `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `SelectedCarrierServiceOptionOtherCharge[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="purchaseFlowId" type="string">
+
+      Persistent ID that correlates between the various eCommerce elements: cart, checkout, and order. Use this to tie additional-fee calculations to a specific purchase flow across the cart, checkout, and resulting order.
+
+    </ParamField>
+
+    <ParamField body="businessLocationId" type="string">
+
+      ID of the business location fulfilling the order. Learn more about the [Locations API](https://dev.wix.com/docs/rest/business-management/locations/introduction).
+
+    </ParamField>
+
+    <ParamField body="subtotal" type="string">
+
+      Subtotal of all line items before additional fees, shipping, and tax. Calculated as the sum of `lineItems[i].price * lineItems[i].quantity` across all line items. Whether already-applied discounts are reflected in this value depends on `itemDiscountsAppliedToPrices` and the cart's discount-application mode.
+
+    </ParamField>
+
+    <ParamField body="extendedFields" type="ExtendedFields">
+
+      Custom field data for the cart or checkout.
+
+      [Extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions) must be configured in the app dashboard before they can be accessed with API calls.
+
+      **Developer Preview.**
+
+      <Expandable title="extendedFields properties">
+
+        <ParamField body="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="object" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="additionalFees" type="AdditionalFee[]">
+
+      Additional fees calculated for the cart or checkout. Each fee represents a separate line item that will be added to the order total.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="additionalFees properties">
+
+        <ResponseField name="code" type="string">
+
+          Unique code identifying the type of fee. For example, `fragile-packaging` or `gift-wrap`. Used for internal tracking and reporting.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Display name of the fee shown to the site visitor on the cart and checkout pages. For example, "Fragile Packaging Fee" or "Gift Wrapping".
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="price" type="string">
+
+          Price of the fee, excluding any tax. This amount is added to the order total.
+
+          If `taxDetails.taxable` is `true`, Wix calculates tax on top of this price — do not include tax in this value.
+
+          Constraints: `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="taxDetails" type="TaxDetails">
+
+          Tax information for the fee. Determines whether the fee is taxable and which tax rules apply.
+
+          <Expandable title="taxDetails properties">
+
+            <ResponseField name="taxable" type="boolean">
+
+              Whether the fee is subject to tax. When `true`, Wix applies the site's tax rules to calculate tax on the fee amount.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="taxGroupId" type="string">
+
+              ID of the tax group that defines tax rates and rules for this fee. If provided, Wix uses the specified tax group's configuration instead of the default tax settings.
+
+              Available only when `taxable` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Address type to calculate tax against for this fee.
+
+              Available only when `taxable` is `true`.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="lineItemIds" type="string[]">
+
+          IDs of line items this fee applies to. Use this to associate the fee with specific items in the cart. For example, a fragile packaging fee might only apply to breakable items.
+
+          If empty, the fee applies to the entire order.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="translatedName" type="string">
+
+          Translated display name of the fee. When provided, this value is shown to the site visitor instead of `name`.
+
+          Use this field to provide localized fee names based on the site visitor's language preferences.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="currency" type="string">
+
+      Three-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217) format. Must match the currency of the Wix site where the fees are being calculated — if it doesn't match, the fees in this response are silently filtered out and not applied to the order.
+
+      Constraints: `maxLength 3`.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://provider.example.com/v1/calculate-additional-fees \
+        -H 'user-agent: Wix' \
+        -H 'accept-encoding: gzip, deflate' \
+        -H 'content-type: text/plain; charset=utf-8' \
+        -d '{
+            "data": {
+              "request": {
+                "appliedDiscounts": [
+                  {
+                    "coupon": {
+                      "amount": "10",
+                      "code": "summersale",
+                      "id": "b8773880-5969-4771-a11f-d3808eccfb69",
+                      "name": ""
+                    },
+                    "discountType": "SPECIFIC_ITEMS",
+                    "lineItemIds": [
+                      "00000000-0000-0000-0000-000000000001"
+                    ]
+                  }
+                ],
+                "lineItems": [
+                  {
+                    "catalogReference": {
+                      "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+                      "catalogItemId": "05412fb8-e344-f4c1-3b00-903a2573e377"
+                    },
+                    "id": "00000000-0000-0000-0000-000000000001",
+                    "physicalProperties": {
+                      "shippable": true
+                    },
+                    "price": "2.00",
+                    "productName": "Clamping Tool",
+                    "quantity": 100
+                  }
+                ],
+                "buyerDetails": {
+                  "contactDetails": {
+                    "phone": "6175551905",
+                    "email": "bowlbuyer@example.com"
+                  }
+                },
+                "purchaseFlowId": "12b907dd-4a6c-47e7-9397-23e4afcba792",
+                "shippingInfo": {
+                  "selectedCarrierServiceOption": {
+                    "code": "pickup-00000000-0000-0000-0000-000000000001",
+                    "cost": {
+                      "price": "0"
+                    },
+                    "logistics": {
+                      "deliveryTime": "Next Sunday at 13:00",
+                      "instructions": "Go to my house",
+                      "pickupDetails": {
+                        "businessLocation": true,
+                        "pickupMethod": "STORE_PICKUP"
+                      }
+                    },
+                    "title": "Pickup Name"
+                  }
+                },
+                "subtotal": "200.00"
+              }
+            }
+          }
+      ```
+
+      ```json Response
+      {
+        "additionalFees": [
+          {
+            "code": "Fragile Fee",
+            "name": "Fragile Fee",
+            "price": "5",
+            "taxDetails": {
+              "taxable": true
+            }
+          },
+          {
+            "code": "Subtotal Fee",
+            "name": "10% Subtotal Fee",
+            "price": "20",
+            "taxDetails": {
+              "taxable": true
+            }
+          }
+        ],
+        "currency": "USD"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Requests calculation of additional fees from the service plugin implementer for a given cart or checkout.
+
+    Wix calls this method when a site visitor views their cart, begins checkout, or when cart contents change during the checkout process.
+
+    Wix uses the returned additional fees to display line items on the cart and checkout pages and to calculate the final order total.
+
+    Your implementation must respond within 3 seconds. Longer response times result in timeout errors.
+
+    **Restrictions:** Do not call the Estimate Cart Totals, Estimate Current Cart Totals, or Get Checkout methods from your implementation. Doing so results in a runtime error.
+
+    **Error handling:** If your implementation returns an error or times out, Wix proceeds without additional fees. The site visitor won't see additional fees on their cart or checkout.
+
+    ## Method Declaration
+
+    ```typescript
+    import { additionalFees } from '@wix/ecom';
+
+    additionalFees.calculateAdditionalFees(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="CalculateAdditionalFeesRequest">
+
+      Request to calculate additional fees.
+
+      <Expandable title="request properties">
+
+        <ParamField body="lineItems" type="LineItem[]">
+
+          Line items in the cart or checkout. Each line item represents a product with quantity and pricing information.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="_id" type="string">
+
+              Line item ID.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer">
+
+              Number of this item in the cart or checkout.
+
+            </ParamField>
+
+            <ParamField body="catalogReference" type="CatalogReference">
+
+              Reference to the product in the catalog. Contains the catalog app ID and product information.
+
+              _Nested structure omitted for brevity — see the `CatalogReference` object._
+
+            </ParamField>
+
+            <ParamField body="productName" type="string">
+
+              Name of the product. Displayed to the site visitor on cart and checkout pages.
+
+            </ParamField>
+
+            <ParamField body="price" type="string">
+
+              Price per unit of the product.
+
+              Constraints: `>= 0`.
+
+            </ParamField>
+
+            <ParamField body="physicalProperties" type="PhysicalProperties">
+
+              Physical properties of the product, such as weight and dimensions. Used for calculating shipping costs and fees that depend on product characteristics.
+
+              _Nested structure omitted for brevity — see the `PhysicalProperties` object._
+
+            </ParamField>
+
+            <ParamField body="depositAmount" type="string">
+
+              Deposit amount required for this line item. For example, a bottle deposit for beverages.
+
+            </ParamField>
+
+            <ParamField body="modifierGroups" type="ModifierGroup[]">
+
+              Product options selected for this line item. For example, size, color, or custom engraving. Each modifier group represents a type of option, such as "Size" with values like "Small", "Medium", "Large".
+
+              Constraints: `maxItems 25`.
+
+              _Nested structure omitted for brevity — see the `ModifierGroup[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="shippingAddress" type="Address">
+
+          Address where the order will be shipped. Used to calculate location-based fees or determine applicable regulations.
+
+          <Expandable title="shippingAddress properties">
+
+            <ParamField body="streetAddress" type="StreetAddress">
+
+              streetAddress
+
+              _Nested structure omitted for brevity — see the `StreetAddress` object._
+
+            </ParamField>
+
+            <ParamField body="city" type="string" />
+
+            <ParamField body="subdivision" type="string" />
+
+            <ParamField body="country" type="string" />
+
+            <ParamField body="postalCode" type="string" />
+
+            <ParamField body="addressLine2" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="buyerDetails" type="BuyerDetails">
+
+          Information about the buyer making the purchase.
+
+          <Expandable title="buyerDetails properties">
+
+            <ParamField body="contactDetails" type="FullAddressContactDetails">
+
+              Contact information for the buyer, including name, email, phone number, and address.
+
+              _Nested structure omitted for brevity — see the `FullAddressContactDetails` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="appliedDiscounts" type="AppliedDiscount[]">
+
+          Discounts applied to the cart or checkout. Includes coupons, merchant discounts, and discount rules.
+
+          Constraints: `maxItems 320`.
+
+          <Expandable title="appliedDiscounts properties">
+
+            <ParamField body="discountType" type="string">
+
+              Type of this discount.
+
+              **Supported values:**
+
+              - `GLOBAL` — Discount applies to the entire order.
+              - `SPECIFIC_ITEMS` — Discount applies only to specific items in the cart.
+              - `SHIPPING` — Discount applies to shipping costs.
+
+            </ParamField>
+
+            <ParamField body="lineItemIds" type="string[]">
+
+              IDs of line items this discount applies to.
+
+              Available only when `discountType` is `SPECIFIC_ITEMS`.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="shippingInfo" type="ShippingInformation">
+
+          Information about the selected shipping method and its associated costs.
+
+          <Expandable title="shippingInfo properties">
+
+            <ParamField body="selectedCarrierServiceOption" type="SelectedCarrierServiceOption">
+
+              Shipping method and carrier selected by the site visitor.
+
+              _Nested structure omitted for brevity — see the `SelectedCarrierServiceOption` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="purchaseFlowId" type="string">
+
+          Persistent ID that correlates between the various eCommerce elements: cart, checkout, and order. Use this to tie additional-fee calculations to a specific purchase flow across the cart, checkout, and resulting order.
+
+        </ParamField>
+
+        <ParamField body="businessLocationId" type="string">
+
+          ID of the business location fulfilling the order. Learn more about the [Locations API](https://dev.wix.com/docs/rest/business-management/locations/introduction).
+
+        </ParamField>
+
+        <ParamField body="subtotal" type="string">
+
+          Subtotal of all line items before additional fees, shipping, and tax. Calculated as the sum of `lineItems[i].price * lineItems[i].quantity` across all line items. Whether already-applied discounts are reflected in this value depends on `itemDiscountsAppliedToPrices` and the cart's discount-application mode.
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Custom field data for the cart or checkout.
+
+          [Extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions) must be configured in the app dashboard before they can be accessed with API calls.
+
+          **Developer Preview.**
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="additionalFees" type="AdditionalFee[]">
+
+      Additional fees calculated for the cart or checkout. Each fee represents a separate line item that will be added to the order total.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="additionalFees properties">
+
+        <ResponseField name="code" type="string">
+
+          Unique code identifying the type of fee. For example, `fragile-packaging` or `gift-wrap`. Used for internal tracking and reporting.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Display name of the fee shown to the site visitor on the cart and checkout pages. For example, "Fragile Packaging Fee" or "Gift Wrapping".
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="price" type="string">
+
+          Price of the fee, excluding any tax. This amount is added to the order total.
+
+          If `taxDetails.taxable` is `true`, Wix calculates tax on top of this price — do not include tax in this value.
+
+          Constraints: `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="taxDetails" type="TaxDetails">
+
+          Tax information for the fee. Determines whether the fee is taxable and which tax rules apply.
+
+          <Expandable title="taxDetails properties">
+
+            <ResponseField name="taxable" type="boolean">
+
+              Whether the fee is subject to tax. When `true`, Wix applies the site's tax rules to calculate tax on the fee amount.
+
+              Default: `false`
+
+            </ResponseField>
+
+            <ResponseField name="taxGroupId" type="string">
+
+              ID of the tax group that defines tax rates and rules for this fee. If provided, Wix uses the specified tax group's configuration instead of the default tax settings.
+
+              Available only when `taxable` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Address type to calculate tax against for this fee.
+
+              Available only when `taxable` is `true`.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="lineItemIds" type="string[]">
+
+          IDs of line items this fee applies to. Use this to associate the fee with specific items in the cart. For example, a fragile packaging fee might only apply to breakable items.
+
+          If empty, the fee applies to the entire order.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="translatedName" type="string">
+
+          Translated display name of the fee. When provided, this value is shown to the site visitor instead of `name`.
+
+          Use this field to provide localized fee names based on the site visitor's language preferences.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="currency" type="string">
+
+      Three-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217) format. Must match the currency of the Wix site where the fees are being calculated — if it doesn't match, the fees in this response are silently filtered out and not applied to the order.
+
+      Constraints: `maxLength 3`.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-calculate-additional-fees" id="ex-sdk-calculate-additional-fees-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-calculate-additional-fees" id="ex-sdk-calculate-additional-fees-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-calculate-additional-fees-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-calculate-additional-fees-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Example of an additionalFees return value</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">calculateAdditionalFees (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-calculate-additional-fees-0"><span className="wix-picker-name">Example of an additionalFees return value</span></label>
+    <label htmlFor="ex-sdk-calculate-additional-fees-1"><span className="wix-picker-name">calculateAdditionalFees (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Example of an additionalFees return value
+    import { additionalFees } from '@wix/ecom/service-plugins';
+
+    additionalFees.provideHandlers({
+
+      calculateAdditionalFees: async ( payload ) => {
+        const {request, metadata} = payload;
+            // Use the `request` and `metadata` received from Wix and
+            // apply custom logic.
+          return {
+            // Return your response exactly as documented to integrate with Wix.
+            // Return value example:
+            additionalFees: [
+              {
+                code: "subscription-fee",
+                name: "Subscription Fee",
+                price: "5",
+                taxDetails: {
+                  taxable: true
+                }
+              }
+            ],
+            currency: "USD"
+          }
+        }
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript calculateAdditionalFees (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { additionalFees } from '@wix/ecom/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { additionalFees },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function calculateAdditionalFees(request,metadata) {
+      const response = await myWixClient.additionalFees.calculateAdditionalFees(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

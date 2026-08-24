@@ -1,0 +1,104 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Create a partner profile
+
+When a Wix Partner creates their profile for the first time, your app can handle that flow.
+
+To create a partner profile:
+
+1. Call [Create Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/create-partner-profile) with the partner's initial details. The caller must be authenticated as the partner:
+
+    ```json
+    {
+      "partnerProfile": {
+        "professionalInformation": {
+          "businessName": "Acme Studio",
+          "tagline": "Award-winning Wix design studio",
+          "about": "We build high-performing Wix sites for global brands.",
+          "businessWebsite": "https://acme.studio",
+          "email": "hello@acme.studio"
+        },
+        "platforms": {
+          "wix": true,
+          "studio": true
+        },
+        "languages": ["en"]
+      }
+    }
+    ```
+
+2. The response includes the created `PartnerProfile` with its generated `id` and `revision`. Save the `id` for future updates.
+
+3. The new profile enters the verification queue. Once it passes verification (typically within seconds), a `PublicPartnerProfile` is published and the partner appears in the public directory.
+
+## Keep a partner's profile up to date
+
+If a partner wants to update their own listing — for example, to add a new service, update their portfolio, or change their tagline — your app can manage that flow.
+
+To keep a partner's profile up to date:
+
+1. Call [Get Current Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/get-current-partner-profile) to retrieve the partner's current `PartnerProfile`. This requires the partner to be authenticated.
+
+2. Present the returned data in an editing UI so the partner can make changes.
+
+3. Call [Update Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/update-partner-profile) with the modified fields and the latest `revision` value:
+
+    ```json
+    {
+      "partnerProfile": {
+        "id": "<PARTNER_PROFILE_ID>",
+        "revision": "<LATEST_REVISION>",
+        "professionalInformation": {
+          "tagline": "Award-winning Wix design studio"
+        }
+      }
+    }
+    ```
+
+4. After a successful update, the changes enter the verification queue. Once verified, a new `PublicPartnerProfile` is published reflecting the updated data.
+
+## Remove a partner from the directory
+
+When a partner wants to permanently remove their listing, your app can delete the profile.
+
+To remove a partner from the directory:
+
+1. Ensure the caller is authenticated as the partner who owns the profile.
+
+2. Call [Delete Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/delete-partner-profile). No body or profile ID is needed, as the profile to delete is determined by the caller's authenticated identity:
+
+    ```json
+    {}
+    ```
+
+3. Deletion triggers a `PartnerProfile` deleted domain event. The corresponding `PublicPartnerProfile` is removed from the public directory automatically.
+
+## Display partners from the public directory
+
+If you want to display an individual partner on a page that anyone can view, your app can retrieve the public profile directly.
+
+To display a partner from the public directory:
+
+1. Call [Get Public Partner Profile](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/get-public-partner-profile) with the partner's ID to retrieve their full public profile:
+
+    ```json
+    {
+      "publicPartnerProfileId": "<PARTNER_ID>"
+    }
+    ```
+
+2. Render the partner detail page using the returned `PublicPartnerProfile` data, including their professional information, services, portfolio, and platforms.
+
+3. Optionally, if you know the partner's URL slug, call [Find Public Partner Profile By Slug](https://dev.wix.com/docs/api-reference/account-level/partners/partner-profile-v1/find-public-partner-profile-by-slug) instead:
+
+    ```json
+    {
+      "slug": "acme-studio"
+    }
+    ```

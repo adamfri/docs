@@ -1,0 +1,619 @@
+---
+title: "Bulk Show Categories"
+description: "Sets visibility to true for multiple categories, making them visible to site visitors."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Sets visibility to `true` for multiple categories, making them visible to site visitors.
+
+    Categories with a hidden parent category aren't updated.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CATEGORIES.CATEGORY_WRITE">Category write</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/categories/v1/bulk/categories/show
+    ```
+
+    ## Body Params
+
+    <ParamField body="categoryIds" type="string[]" required>
+
+      IDs of the categories to update.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="treeReference" type="TreeReference" required>
+
+      Category tree reference details.
+
+      <Expandable title="treeReference properties">
+
+        <ParamField body="appNamespace" type="string" required>
+
+          Namespace of the app whose catalog this category tree belongs to.
+
+          Currently, only `"@wix/stores"` is supported.
+
+          Constraints: `minLength 4`, `maxLength 150`.
+
+        </ParamField>
+
+        <ParamField body="treeKey" type="string">
+
+          Key to differentiate between multiple trees managed by the same app.
+
+          For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the category entity in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `BREADCRUMBS_INFO`
+      - `DESCRIPTION`
+      - `RICH_CONTENT_DESCRIPTION`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkCategoriesResult[]">
+
+      Categories updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for category.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="category" type="Category">
+
+          Full category entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Category Object](/api-reference/business-solutions/stores/catalog-v3/categories/category-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Category Updated | `wix.categories.v1.category_updated` | Triggered when a category is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Updates the visibility of multiple categories to true
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/categories/v1/bulk/categories/show' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+            "categoryIds": [
+                "7b414c1f-a60d-417f-bcbd-904753334678",
+                "c88e5ad4-302b-4ea6-9775-d0125cd84dd9"
+            ],
+            "treeReference": {
+              "appNamespace": "@wix/stores",
+              "treeKey": null
+            },
+            "returnEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+          "results": [{
+              "itemMetadata": {
+                  "id": "7b414c1f-a60d-417f-bcbd-904753334678",
+                  "originalIndex": 0,
+                  "success": true
+              },
+              "category": {
+                  "id": "7b414c1f-a60d-417f-bcbd-904753334678",
+                  "revision": "6",
+                  "createdDate": "2024-11-11T14:58:12.557Z",
+                  "updatedDate": "2024-11-17T09:16:55.152Z",
+                  "name": "new category 2",
+                  "itemCounter": 0,
+                  "visible": true,
+                  "parentCategory": {
+                      "index": 5
+                  },
+                  "slug": "new-category-2",
+                  "treeReference": {
+                      "appNamespace": "@wix/stores"
+                  }
+              }
+          }, {
+              "itemMetadata": {
+                  "id": "c88e5ad4-302b-4ea6-9775-d0125cd84dd9",
+                  "originalIndex": 1,
+                  "success": true
+              },
+              "category": {
+                  "id": "c88e5ad4-302b-4ea6-9775-d0125cd84dd9",
+                  "revision": "8",
+                  "createdDate": "2024-09-24T09:17:44.419Z",
+                  "updatedDate": "2024-11-17T09:16:55.152Z",
+                  "name": "All products",
+                  "itemCounter": 1,
+                  "visible": true,
+                  "parentCategory": {
+                      "index": 1
+                  },
+                  "slug": "all-products",
+                  "treeReference": {
+                      "appNamespace": "@wix/stores"
+                  },
+                  "managingAppId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+              }
+          }],
+          "bulkActionMetadata": {
+              "totalSuccesses": 2,
+              "totalFailures": 0,
+              "undetailedFailures": 0
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Sets visibility to `true` for multiple categories, making them visible to site visitors.
+
+    Categories with a hidden parent category aren't updated.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CATEGORIES.CATEGORY_WRITE">Category write</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { categories } from '@wix/categories';
+
+    categories.bulkShowCategories(categoryIds, options): Promise<NonNullablePaths>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="categoryIds" type="string[]" required>
+
+      IDs of the categories to update.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkShowCategoriesOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="treeReference" type="TreeReference" required>
+
+          Category tree reference details.
+
+          <Expandable title="treeReference properties">
+
+            <ParamField body="appNamespace" type="string" required>
+
+              Namespace of the app whose catalog this category tree belongs to.
+
+              Currently, only `"@wix/stores"` is supported.
+
+              Constraints: `minLength 4`, `maxLength 150`.
+
+            </ParamField>
+
+            <ParamField body="treeKey" type="string">
+
+              Key to differentiate between multiple trees managed by the same app.
+
+              For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the category entity in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `BREADCRUMBS_INFO`
+          - `DESCRIPTION`
+          - `RICH_CONTENT_DESCRIPTION`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<NonNullablePaths>`.
+
+    <ResponseField name="results" type="BulkCategoriesResult[]">
+
+      Categories updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for category.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="category" type="Category">
+
+          Full category entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Category Object](/api-reference/business-solutions/stores/catalog-v3/categories/category-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Category Updated | `wix.categories.v1.category_updated` | Triggered when a category is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-show-categories" id="ex-sdk-bulk-show-categories-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-show-categories" id="ex-sdk-bulk-show-categories-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-show-categories" id="ex-sdk-bulk-show-categories-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-show-categories-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-show-categories-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkShowCategories</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkShowCategories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkShowCategories (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-show-categories-0"><span className="wix-picker-name">bulkShowCategories</span></label>
+    <label htmlFor="ex-sdk-bulk-show-categories-1"><span className="wix-picker-name">bulkShowCategories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-show-categories-2"><span className="wix-picker-name">bulkShowCategories (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkShowCategories
+    import { categories } from '@wix/categories';
+
+    async function bulkShowCategories(categoryIds,options) {
+      const response = await categories.bulkShowCategories(categoryIds,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkShowCategories (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { categories } from '@wix/categories';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { categories },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkShowCategories(categoryIds,options) {
+      const response = await myWixClient.categories.bulkShowCategories(categoryIds,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkShowCategories (with elevated permissions)
+    import { categories } from '@wix/categories';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkShowCategoriesMethod(categoryIds,options) {
+      const elevatedBulkShowCategories = auth.elevate(categories.bulkShowCategories);
+      const response = await elevatedBulkShowCategories(categoryIds,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

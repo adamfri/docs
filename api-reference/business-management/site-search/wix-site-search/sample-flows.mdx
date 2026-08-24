@@ -1,0 +1,127 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that your app can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that your app can support. It provides a useful starting point as you plan your app's implementation.
+
+## Search for jazz events in San Francisco
+
+If you're developing a tickets app, and you want to search for jazz events in San Francisco, do the following: 
+
+1. [Search](fallback::https://dev.wix.com/docs/api-reference/business-management/site-search/wix-site-search/search) the [EVENTS document type](fallback::https://dev.wix.com/docs/api-reference/business-management/site-search/wix-site-search/schemas-for-wix-search) for 'jazz' in the `expression` field, and filter by `location` for San Francisco.
+
+    ```js
+    {
+      "search": {
+        "filter": {
+          "location": "san francisco"
+        }
+        "aggregations": [],
+        "sort": [],
+        "search": {
+          "fields": [],
+          "expression": "jazz"
+        },
+        "paging": {}
+      },
+      "documentType": "EVENTS"
+    }
+    ```
+2. Retrieve all the jazz events in San Francisco.
+
+## Find the lowest price for products in stock and out of stock
+
+If you're developing a wholesale app, you can perform an aggregation on a site with store products to count how many products are in stock vs out of stock, and what is the lowest price for the in-stock products vs. the out of stock products. 
+
+To do this, you need to perform a nested aggregation: 
+
+1. First perform a `value` aggregation with `"fieldPath": "inStock"` to get the products that are in stock and out of stock (since this field is a boolean). 
+
+2. Then add a `scalar` aggregation with `"fieldPath": "discountedPriceNumeric", "type": "MIN"` to get the minimum price for the in-stock and out-of-stock products returned in the first aggregation.  
+
+    **Sample request:** 
+
+    ```json
+    {
+      "search": {
+        "aggregations": [
+          {
+            "name": "Lowest price for products in stock and out of stock.",
+            "type": "NESTED",
+            "nested": {
+              "nestedAggregations": [
+                {
+                  "name": "in-stock",
+                  "type": "VALUE",
+                  "fieldPath": "inStock",
+                  "value": {}
+                },
+                {
+                  "name": "min-price",
+                  "type": "SCALAR",
+                  "fieldPath": "discountedPriceNumeric",
+                  "scalar": {
+                    "type": "MIN"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+      },
+      "documentType": "STORES_PRODUCTS"
+    }
+    ```
+
+    **Sample response:** 
+
+    ```json
+    "aggregationData": {
+        "results": [
+          {
+            "name": "Lowest price for products in stock and out of stock.",
+            "type": "NESTED",
+            "nested": {
+              "results": [
+                {
+                  "results": {
+                    "in-stock": {
+                      "value": {
+                        "value": "true",
+                        "count": 3
+                      }
+                    },
+                    "min-price": {
+                      "scalar": {
+                        "value": 899
+                      }
+                    }
+                  }
+                },
+                {
+                  "results": {
+                    "in-stock": {
+                      "value": {
+                        "value": "false",
+                        "count": 2
+                      }
+                    },
+                    "min-price": {
+                      "scalar": {
+                        "value": 500
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+    ```
+
+In our example, the lowest price among the 3 in-stock products is $899, and the lowest price among the 2 out-of-stock products is $500.

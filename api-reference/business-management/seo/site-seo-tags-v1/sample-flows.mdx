@@ -1,0 +1,74 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Verify site ownership with a search engine
+
+A search engine confirms that someone controls a site before it will report that site's search data. One way to confirm it is a verification meta tag that the search engine provides, which must appear on the site.
+
+Because setting `tags` replaces the site's tags in full, add the verification tag to the tags the site already has rather than sending it on its own.
+
+To add a verification tag to a site:
+
+1. Get the verification tag value from the search engine's console.
+1. Call [Get Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/get-site-seo-tags) and keep the `tags` array from the response.
+1. Append the verification tag to that array. For example:
+
+    ```json
+    {
+      "type": "meta",
+      "props": {
+        "name": "google-site-verification",
+        "content": "the-value-from-the-search-console"
+      }
+    }
+    ```
+
+1. Call [Set Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/set-site-seo-tags) with the combined array and `tags` in the `fieldMask`.
+1. Ask the search engine to check the site.
+
+A site supports a single verification tag per provider. Sending a second tag for the same provider replaces the first, so read the current tags before writing to see whether the site is already verified.
+
+## Take a site out of search results, then put it back
+
+While a site is being built or reorganized, a Wix user may not want it appearing in search results. Site indexability is controlled by a `robots` tag with a `noindex` directive.
+
+To stop a site being indexed, then allow it again later:
+
+1. Call [Get Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/get-site-seo-tags) and keep the `tags` array from the response.
+1. Append a `robots` tag with a `noindex` directive to that array. For example:
+
+    ```json
+    {
+      "type": "meta",
+      "props": {
+        "name": "robots",
+        "content": "noindex"
+      }
+    }
+    ```
+
+1. Call [Set Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/set-site-seo-tags) with the combined array and `tags` in the `fieldMask`. The change takes effect on the live site without a site publish.
+1. When the site is ready to be found, call [Get Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/get-site-seo-tags) again.
+1. Remove the `robots` tag from the `tags` array, keeping every other tag.
+1. Call [Set Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/set-site-seo-tags) with the remaining tags and `tags` in the `fieldMask`. With no `noindex` directive left, the site can be indexed again.
+
+Removing the tag is what makes the site indexable, so send the full set of tags you want to keep. A request that omits tags the site still needs removes them too.
+
+## Move a site's SEO configuration from another platform
+
+When a site is rebuilt on Wix, its SEO configuration is spread across two levels: settings that apply to the whole site, and the title and description of each individual page.
+
+To move a site's SEO configuration to Wix:
+
+1. Collect the SEO configuration from the source site, separating site-wide values, such as the social share image and any verification tags, from per-page values.
+1. Call [Get Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/get-site-seo-tags) to see the tags the Wix site already has.
+1. Build the site-wide tag array by combining the tags to keep with the values from the source site.
+1. Call [Set Site SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/site-seo-tags-v1/set-site-seo-tags) with that array and `tags` in the `fieldMask`.
+1. Move the per-page titles and descriptions with the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction), which writes the tags of an individual page or item.
+
+Verification tags a Wix user added through the site's SEO settings in the dashboard are returned in `embedTags` and can't be set through this API. Check `embedTags` before adding a verification tag, so you don't duplicate one the site already carries.

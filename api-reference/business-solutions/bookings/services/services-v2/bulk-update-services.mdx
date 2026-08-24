@@ -1,0 +1,551 @@
+---
+title: "Bulk Update Services"
+description: "Updates up to 100 services."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates up to 100 services.
+
+    See [Update Service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/update-service)
+    for more details.
+
+    The call succeeds even if one or more individual services can't be updated.
+    Information about failures is returned in `bulkActionMetadata`.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/bulk/services/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="services" type="MaskedService[]">
+
+      Services to update.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="services properties">
+
+        <ParamField body="service" type="Service" required>
+
+          Service to update.
+
+          See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+        </ParamField>
+
+        <ParamField body="mask" type="FieldMask">
+
+          Explicit list of fields to update.
+
+          <Expandable title="mask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to include the updated services in the response. Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkServiceResult[]">
+
+      The result of each service update.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Update metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Service">
+
+          Updated service.
+
+          See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Update statistics.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Service Updated | `wix.bookings.services.v2.service_updated` | Triggered when a service is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/bookings/v2/bulk/services/update' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "services": [
+          {
+            "service": {
+              "id": "b135b4f4-d0de-40cb-8447-f963689df81b",
+              "revision": "11",
+              "onlineBooking": {
+                "enabled": true
+              }
+            },
+            "mask": "onlineBooking.enabled"
+          },
+          {
+            "service": {
+              "id": "f07ca3ab-672d-4281-936b-88e8e071d155",
+              "revision": "10",
+              "hidden": true
+            },
+            "mask": "hidden"
+          }
+        ]
+        "returnEntity": false
+      }'
+      ```
+
+      ```json Response
+      {
+         "results": [
+           {
+             "itemMetadata": {
+               "id": "b135b4f4-d0de-40cb-8447-f963689df81b",
+               "originalIndex": 0,
+               "success": true
+             }
+           },
+           {
+             "itemMetadata": {
+               "id": "f07ca3ab-672d-4281-936b-88e8e071d155",
+               "originalIndex": 1,
+               "success": true
+             }
+           }
+         ],
+         "bulkActionMetadata": {
+           "totalSuccesses": 2,
+           "totalFailures": 0,
+           "undetailedFailures": 0
+         }
+       }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates up to 100 services.
+
+    See [Update Service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/update-service)
+    for more details.
+
+    The call succeeds even if one or more individual services can't be updated.
+    Information about failures is returned in `bulkActionMetadata`.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { services } from '@wix/bookings';
+
+    services.bulkUpdateServices(options): Promise<BulkUpdateServicesResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="BulkUpdateServicesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="services" type="MaskedService[]">
+
+          Services to update.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="services properties">
+
+            <ParamField body="service" type="Service" required>
+
+              Service to update.
+
+              See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+            </ParamField>
+
+            <ParamField body="mask" type="string[]">
+
+              Explicit list of fields to update.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to include the updated services in the response. Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkUpdateServicesResponse>`.
+
+    <ResponseField name="results" type="BulkServiceResult[]">
+
+      The result of each service update.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Update metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Service">
+
+          Updated service.
+
+          See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Update statistics.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Service Updated | `wix.bookings.services.v2.service_updated` | Triggered when a service is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-services" id="ex-sdk-bulk-update-services-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-services" id="ex-sdk-bulk-update-services-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-services" id="ex-sdk-bulk-update-services-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-services-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-services-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateServices</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateServices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdateServices (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-services-0"><span className="wix-picker-name">bulkUpdateServices</span></label>
+    <label htmlFor="ex-sdk-bulk-update-services-1"><span className="wix-picker-name">bulkUpdateServices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-update-services-2"><span className="wix-picker-name">bulkUpdateServices (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateServices
+    import { services } from '@wix/bookings';
+
+    async function bulkUpdateServices(options) {
+      const response = await services.bulkUpdateServices(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateServices (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { services } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { services },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdateServices(options) {
+      const response = await myWixClient.services.bulkUpdateServices(options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdateServices (with elevated permissions)
+    import { services } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkUpdateServicesMethod(options) {
+      const elevatedBulkUpdateServices = auth.elevate(services.bulkUpdateServices);
+      const response = await elevatedBulkUpdateServices(options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

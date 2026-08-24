@@ -1,0 +1,436 @@
+---
+title: "Reorder Customization Choices"
+description: "Sets the display order of a customization's choices."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sets the display order of a customization's choices.
+
+    Each time the customization is updated, `revision` increments by 1. The current `revision` must be passed when updating the customization. This ensures you're working with the latest customization and prevents unintended overwrites.
+
+    The new order is persisted in the customization's `choices` list. Calling this method also sets `choicesSettings.sortOrder` to `MANUAL`.
+
+    To change how choices are sorted in storefront filter panels without specifying an explicit order, call [Update Customization](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/update-customization) and set the `choicesSettings.sortOrder` field.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/customizations/{customizationId}/reorder-choices
+    ```
+
+    ## Path Params
+
+    <ParamField path="customizationId" type="string" required>
+
+      Customization ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="revision" type="string" required>
+
+      Revision number, which increments by 1 each time the customization is updated. To prevent conflicting changes, the current revision must be passed when updating the customization.
+
+    </ParamField>
+
+    <ParamField body="choiceIds" type="string[]" required>
+
+      Choice IDs in the desired display order. Must contain exactly the same IDs as the customization's current choices, with no additions, removals, or duplicates.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 1000`.
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Supported values: `ASSIGNED_PRODUCTS_COUNT`.
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `ASSIGNED_PRODUCTS_COUNT` — Assigned products count.
+      - `CHOICE_DISPLAY_IMAGE` — Returns display images for choices.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="customization" type="Customization">
+
+      Updated customization, with `choices` in the new order and `choicesSettings.sortOrder` set to `MANUAL`.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `DOESNT_SUPPORT_CHOICES` | Customization's `renderType` is `FREE_TEXT`, which doesn't support choices. Use a customization with the `SWATCH_CHOICES` or `TEXT_CHOICES` render type instead. |
+    | `400` | `INVALID_ARGUMENT` | `CHOICE_IDS_MISMATCH` | `choiceIds` doesn't match the customization's current choices. See `ChoiceIdsMismatchData` in the error details for the specific IDs that are missing or extra. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Updated | `wix.stores.catalog.v3.customization_updated` | Triggered when a customization is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Reorders the choices of an existing customization.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+       'https://www.wixapis.com/stores/v3/customizations/190facb7-1106-4ded-8ef9-cccad5c747bd/reorder-choices' \
+       -H 'Content-Type: application/json' \
+       -H 'Authorization: <AUTH>' \
+       -d '{
+        "revision": "1",
+        "choiceIds": [
+          "cb4a9c2d-506d-4f28-b905-5445d526da32",
+          "04ed47f1-32fa-4347-8f03-412b88a62fc1",
+          "8a1f3c47-9d62-4b80-a3c5-7e2d2b9f8a14",
+          "63423d24-ef4c-4d33-b924-574b525d07e5"
+        ],
+        "fields": ["ASSIGNED_PRODUCTS_COUNT"]
+       }'
+      ```
+
+      ```json Response
+      {
+          "customization": {
+              "id": "190facb7-1106-4ded-8ef9-cccad5c747bd",
+              "revision": "2",
+              "createdDate": "2026-05-05T11:56:52.577Z",
+              "updatedDate": "2026-05-05T11:57:14.129Z",
+              "key": "Color (demo)",
+              "name": "Color (demo)",
+              "customizationType": "PRODUCT_OPTION",
+              "customizationRenderType": "SWATCH_CHOICES",
+              "choicesSettings": {
+                  "choices": [{
+                      "id": "cb4a9c2d-506d-4f28-b905-5445d526da32",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Green",
+                      "name": "Green",
+                      "colorCode": "#008000"
+                  }, {
+                      "id": "04ed47f1-32fa-4347-8f03-412b88a62fc1",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Blue",
+                      "name": "Blue",
+                      "colorCode": "#0000FF"
+                  }, {
+                      "id": "8a1f3c47-9d62-4b80-a3c5-7e2d2b9f8a14",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Light Blue",
+                      "name": "Light Blue",
+                      "colorCode": "#ADD8E6"
+                  }, {
+                      "id": "63423d24-ef4c-4d33-b924-574b525d07e5",
+                      "choiceType": "ONE_COLOR",
+                      "key": "Yellow",
+                      "name": "Yellow",
+                      "colorCode": "#FFFF00"
+                  }]
+              },
+              "assignedProductsCount": 0
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sets the display order of a customization's choices.
+
+    Each time the customization is updated, `revision` increments by 1. The current `revision` must be passed when updating the customization. This ensures you're working with the latest customization and prevents unintended overwrites.
+
+    The new order is persisted in the customization's `choices` list. Calling this method also sets `choicesSettings.sortOrder` to `MANUAL`.
+
+    To change how choices are sorted in storefront filter panels without specifying an explicit order, call [Update Customization](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/update-customization) and set the `choicesSettings.sortOrder` field.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CUSTOMIZATION_WRITE">Customization write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { customizationsV3 } from '@wix/stores';
+
+    customizationsV3.reorderCustomizationChoices(customizationId, revision, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="customizationId" type="string" required>
+
+      Customization ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="revision" type="string" required>
+
+      Revision number, which increments by 1 each time the customization is updated. To prevent conflicting changes, the current revision must be passed when updating the customization.
+
+    </ParamField>
+
+    <ParamField body="options" type="ReorderCustomizationChoicesOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="choiceIds" type="string[]" required>
+
+          Choice IDs in the desired display order. Must contain exactly the same IDs as the customization's current choices, with no additions, removals, or duplicates.
+
+          Constraints: `format GUID`, `minItems 1`, `maxItems 1000`.
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Supported values: `ASSIGNED_PRODUCTS_COUNT`.
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `ASSIGNED_PRODUCTS_COUNT` — Assigned products count.
+          - `CHOICE_DISPLAY_IMAGE` — Returns display images for choices.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="customization" type="Customization">
+
+      Updated customization, with `choices` in the new order and `choicesSettings.sortOrder` set to `MANUAL`.
+
+      See the [Customization Object](/api-reference/business-solutions/stores/catalog-v3/customizations-v3/customization-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `DOESNT_SUPPORT_CHOICES` | Customization's `renderType` is `FREE_TEXT`, which doesn't support choices. Use a customization with the `SWATCH_CHOICES` or `TEXT_CHOICES` render type instead. |
+    | `400` | `INVALID_ARGUMENT` | `CHOICE_IDS_MISMATCH` | `choiceIds` doesn't match the customization's current choices. See `ChoiceIdsMismatchData` in the error details for the specific IDs that are missing or extra. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Customization Updated | `wix.stores.catalog.v3.customization_updated` | Triggered when a customization is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-reorder-customization-choices" id="ex-sdk-reorder-customization-choices-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-reorder-customization-choices" id="ex-sdk-reorder-customization-choices-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-reorder-customization-choices" id="ex-sdk-reorder-customization-choices-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-reorder-customization-choices-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-reorder-customization-choices-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">reorderCustomizationChoices</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">reorderCustomizationChoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">reorderCustomizationChoices (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-reorder-customization-choices-0"><span className="wix-picker-name">reorderCustomizationChoices</span></label>
+    <label htmlFor="ex-sdk-reorder-customization-choices-1"><span className="wix-picker-name">reorderCustomizationChoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-reorder-customization-choices-2"><span className="wix-picker-name">reorderCustomizationChoices (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript reorderCustomizationChoices
+    import { customizationsV3 } from '@wix/stores';
+
+    async function reorderCustomizationChoices(customizationId,revision,options) {
+      const response = await customizationsV3.reorderCustomizationChoices(customizationId,revision,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript reorderCustomizationChoices (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { customizationsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { customizationsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function reorderCustomizationChoices(customizationId,revision,options) {
+      const response = await myWixClient.customizationsV3.reorderCustomizationChoices(customizationId,revision,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript reorderCustomizationChoices (with elevated permissions)
+    import { customizationsV3 } from '@wix/stores';
+    import { auth } from '@wix/essentials';
+
+    async function myReorderCustomizationChoicesMethod(customizationId,revision,options) {
+      const elevatedReorderCustomizationChoices = auth.elevate(customizationsV3.reorderCustomizationChoices);
+      const response = await elevatedReorderCustomizationChoices(customizationId,revision,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

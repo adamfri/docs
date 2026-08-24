@@ -1,0 +1,305 @@
+---
+title: "Sample Flows"
+description: "This article presents some sample use cases your service might support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents some sample use cases your service might support. You are not limited to these exact flows, but they can serve as good starting points to help you plan your external database integration.
+
+## Query real-estate properties in an external database
+
+<Note>
+
+This sample flow requires the implementation of at least [the basic functionality methods](##provide-basic-functionality*fallback::https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/introduction#provide-basic-functionality) of this service plugin.
+
+</Note>
+
+A real-estate agency stores information about the properties it manages in an external database. The agency has a Wix site and wants to make its properties available to its visitors. The agency implements the relevant methods of the External Database Service Plugin and hosts them at the `https://www.<example-domain>.com` base URL. It then [creates a Wix app](##integrating-your-app*fallback::https://dev.wix.com/docs/build-apps/develop-your-app/dev-center-setup/about-the-wix-dev-center#integrating-your-app), configures it with the [details of the service](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions), and installs the app on its site. The site can then interact with the external database like this:
+
+1. On a dedicated search page, a site visitor searches for relevant properties with the following search and sorting criteria:
+
+    - Locality: Springfield
+    - Max number of rooms: 3
+    - Price range: $550-$700
+    - Sort: Low-to-high
+    - Page limit: 3
+
+2. Based on the visitor's criteria, Wix Data automatically sends a [Query Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/query-distinct-values) request to the service method hosted at `https://www.<example-domain>.com/v3/items/query`. The request object looks like this:
+
+    ```json
+    {
+      "collectionId": "SpringfieldProperties",
+      "query": {
+        "filter": {
+          "price": {
+            "$gte": 550,
+            "$lte": 700
+          }
+        },
+        "sort": [
+        {
+          "fieldName": "price"
+        }
+      ],
+        "fields": [],
+        "paging": {
+          "limit": 3,
+          "offset": 0
+        }
+      },
+      "includeReferencedItems": [],
+      "consistentRead": false,
+      "returnTotalCount": false
+    }
+    ```
+
+3. The method responds with the relevant items, filtered and sorted as specified in the query. For example:
+
+    ```json
+    {
+      "items": [
+        {
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "address": "742 Evergreen Terrace", 
+          "floor": 4,
+          "aptNum": 2,
+          "numBedrooms": 2,
+          "numBaths": 1,
+          "price": 600,
+          "pets": true,
+          "airConditioning": false
+        },
+        {
+          "_id": "e831385d-d067-4905-a98a-456f5a526ca2",
+          "address": "247 Foreverblue Blvd", 
+          "floor": 2,
+          "aptNum": 2,
+          "numBedrooms": 1,
+          "numBaths": 1,
+          "price": 680,
+          "pets": false,
+          "airConditioning": true
+        }
+      ],
+      "pagingMetadata": {
+        "cursors": {
+          "next": "0O52kwmAcT",
+          "prev": "omZq6gTpR9"
+        }
+      }
+    }
+    ```
+
+    The site receives the data as if it were stored in a native Wix Data collection. It then parses the response and displays the results to the visitor.
+
+## Manage local job positions with an app
+
+<Note>
+
+This sample flow requires the implementation of the following service plugin methods:
+
+- The [basic functionality methods](##provide-basic-functionality*fallback::https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/introduction#provide-basic-functionality)
+- [Query Referenced Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/query-referenced-data-items)
+- [Update Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/update-data-items)
+
+</Note>
+
+A large employment agency maintains its job listings in an external database. The agency has several branches. Each branch operates in a different area and has its own Wix site.
+
+To enable each branch to independently access and manage the job listings stored in the database, the agency implements the External Database service plugin and hosts it on the `https://www.<example-domain>.com` base URL. It then [creates a private app](##private-apps*fallback::https://dev.wix.com/docs/build-apps/get-started/overview/exposing-apps-publicly-and-privately#private-apps) and configures it with the [details of the service](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions). Each branch installs the app on its site to gain independent access to the database. Site visitors can then query, sort, and filter relevant listings on the site branch most relevant to them.
+
+In this flow, a site visitor searches for open kitchen staff positions on a branch's site. After finding a relevant position, they browse for other listings by the same employer. Once filled, the branch closes the position.
+
+1. On a dedicated search page, a site visitor searches for open listings using the following search and sorting criteria:
+
+    - Locality: North Utah
+    - Sector: Restaurants
+    - Position: Kitchen Staff
+    - Show listing details: Job Title, Employer, Address, Hourly Salary
+    - Sort: New-to-old
+    - Page limit: 5
+
+2. Based on these preferences, Wix Data automatically sends a [Query Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/query-data-items) request to the service method hosted at `https://www.<example-domain>.com/v3/items/query`. The request object looks like this:
+
+    ```json
+    {
+      "collectionId": "northUtahJobs",
+      "query": {
+        "filter": {
+          "jobTitle": "kitchenStaff",
+          "status": "OPEN"
+        },
+        "sort": [{
+          "fieldName": "_updatedDate",
+          "order": "DESC"
+        }
+        ],
+        "paging": {
+          "limit": 5,
+          "offset": 0
+        },
+        "fields": ["_id", "jobTitle", "employer", "address", "salaryHourly", "_updatedDate"] // The details of the listing to retrieve
+
+      },
+      "includeReferencedItems": [{
+        "fieldKey": "employer",
+      }],
+      "consistentRead": false,
+      "returnTotalCount": true
+    }
+    ```
+
+    The method responds with the relevant listings, filtered and sorted as specified in the query. For example:
+
+    ```json
+    {
+      "items": [
+        {
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "jobTitle": "kitchenStaff",
+          "employer": "hellsKitchen",
+          "address": "616 Old Nick Road, Salt Lake City, Utah",
+          "salaryHourly": 10,
+          "_updatedDate": {
+            "$date": "2021-02-03T04\:05\:06Z"
+          },
+          "employer": {
+            "_id": "faa17edb-2d88-488d-8e95-24b9364c3284",
+            "name": "hellsKitchen",
+            "address": "616 Old Nick Road, Salt Lake City, Utah",
+            "numEmployees": "14",
+            "reputation": 4.4
+          }
+        },
+        {
+          "_id": "528a0b23-d6d8-464a-82af-09e0c00f56b0",
+          "jobTitle": "kitchenStaff",
+          "employer": "Joe's Magic Burgers",
+          "address": "23 Hawkins Street, Arborville, Utah",
+          "salaryHourly": 9.5,
+          "_updatedDate": {
+            "$date": "2021-02-02T12\:53\:01Z"
+          },
+          "employer": {
+            "_id": "faa17edb-2d88-488d-8e95-24b9364c3284",
+            "name": "Joe's Magic Burgers",
+            "address": "46 Horseshoe Lane, Utah",
+            "numEmployees": "38",
+            "reputation": 4.9
+          }
+        },
+      ],
+      "pagingMetadata": {
+        "total": 2
+      }
+    }
+    ```
+
+3. The site receives the data as if it were stored in a native Wix Data collection. It then parses the response and displays the results to the visitor.
+
+4. One of the listings retrieved by Wix Data is for a position offered by Hell's Kitchen. The visitor wants to check which other positions Hell's Kitchen offers. To do that, Wix Data sends a [Query Referenced Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/query-referenced-data-items) request to the service method hosted at `https://www.<example-domain>.com/v3/items/query-referenced`. For each position listed by this employer, the visitor is interested in the job title, work address, hourly salary, and position status. The request object looks like this:
+
+    ```json
+    {
+      "collectionId": "employers",
+      "referringItemIds": ["faa17edb-2d88-488d-8e95-24b9364c3284"], // Hell's Kitchen's ID
+      "referencedItemIds": [],
+      "order": "ASC",
+      "referringFieldKey": "positions",
+      "consistentRead": false,
+      "fieldsToReturn": ["_id", "jobTitle", "address", "hourlySalary", "status"],
+      "returnTotalCount": false,
+      "includeReferencedItems": true
+    }
+    ```
+
+    The method responds with all the job positions offered by Hell's Kitchen, filtered and sorted as specified in the query. For example:
+
+    ```json
+    {
+      "items": [
+        {
+          "referringItemId": "faa17edb-2d88-488d-8e95-24b9364c3284",
+          "referencedItemId": "c285e77c-a86b-4361-a55f-c6b934d70187", 
+          "referencedItem": {
+            "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+            "jobTitle": "kitchenStaff",
+            "address": "616 Old Nick Road, Utah",
+            "hourlySalary": "10",
+            "status": "OPEN"
+          }
+        },
+        {
+          "referringItemId": "faa17edb-2d88-488d-8e95-24b9364c3284",
+          "referencedItemId": "d345e77c-4f6b-5g60-4fh7-d6b9dd70kf9",
+          "referencedItem": {
+            "_id": "d345e77c-4f6b-5g60-4fh7-d6b9dd70kf9",
+            "jobTitle": "shiftManager",
+            "address": "616 Old Nick Road, Utah",
+            "hourlySalary": "14.5",
+            "status": "OPEN"
+          }
+        },
+        {
+          "referringItemId": "faa17edb-2d88-488d-8e95-24b9364c3284",
+          "referencedItemId": "mir0958c-mfe8-kdo9-jf71-mfe0kfik4lkfp",
+          "referencedItem": {
+            "_id": "mir0958c-mfe8-kdo9-jf71-mfe0kfik4lkfp",
+            "jobTitle": "hostPerson",
+            "address": "616 Old Nick Road, Utah",
+            "hourlySalary": "9.5",
+            "status": "HIRED"
+          }
+        },
+        // Additional positions
+      ],
+      "pagingMetadata": {}
+    }
+    ```
+
+5. The site receives the data as if it were stored in a native Wix Data collection. It parses the data, filters for positions whose `status` is `OPEN`, and displays the results to the visitor.
+
+6. The Hell's Kitchen branch on Old Nick Road hires a new employee for the kitchen staff position. The employment agency's branch then closes the position. To do that, Wix Data sends an [Update Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/external-database-service-plugin/update-data-items) request to the service method hosted at `https://www.<example-domain>.com/v3/items/update` to update the position's status as `HIRED`. The request object looks like this:
+
+    ```json
+    {
+      "collectionId": "northUtahJobs",
+      "items": [
+        {
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "jobTitle": "kitchenStaff",
+          "employer": "hellsKitchen",
+          "address": "616 Old Nick Road, Utah",
+          "salaryHourly": 10,
+          "status": "HIRED",
+          "_updatedDate": {
+            "$date": "2021-02-15T15\:22\:36Z"
+          }
+        } 
+      ]
+    }
+    ```
+
+    The method responds with the updated item:
+
+    ```json
+    {
+      "results": [
+        {
+          "item": {
+            "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+            "jobTitle": "kitchenStaff",
+            "employer": "hellsKitchen",
+            "address": "616 Old Nick Road, Utah",
+            "salaryHourly": 10,
+            "status": "HIRED",
+            "_updatedDate": {
+              "$date": "2021-02-15T15\:22\:36Z"
+            }
+          }
+        }
+      ]
+    }
+    ```

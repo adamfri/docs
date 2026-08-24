@@ -1,0 +1,1053 @@
+---
+title: "Update Contact"
+description: "Updates a contact."
+icon: "pen"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-patch">PATCH</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates a contact.
+
+    Each time the contact is updated, `revision` increments by 1. The current `revision` must be passed when updating the contact. This ensures you're working with the latest contact and prevents unintended overwrites.
+
+    Restrictions:
+    - `externalId` can be set only once and can't be changed after creation.
+    - The main email of a contact that is a site member can't be changed. Update it through the [Members API](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/member-management/members/introduction) instead.
+    - At least one of `name`, `email`, or `phone` must remain after the update.
+
+    Image upload: When you provide an image URL, the image is uploaded asynchronously and an `imageUploadId` is returned for tracking upload progress. Call [Get Contact Image Upload Status](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/get-contact-image-upload-status) to monitor the upload.
+
+    To update multiple contacts in a single request, call [Bulk Update Contacts](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-update-contacts).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    PATCH https://www.wixapis.com/contacts/v5/contacts/{contact.id}
+    ```
+
+    ## Path Params
+
+    <ParamField path="contact.id" type="string" required>
+
+      Contact ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="contact" type="Contact" required>
+
+      Contact to update. May be partial.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="allowDuplicates" type="boolean">
+
+      Whether to update the contact even if it becomes a duplicate of another contact.
+      More about duplicate contacts can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts).
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="contact" type="Contact">
+
+      Updated contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="imageUploadId" type="string">
+
+      The upload ID of the image upload process.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INSUFFICIENT_CONTACT_DATA` | Contact must have a name, phone number or email address. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_EMAIL` | The contact has duplicate emails. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_PHONE` | A contact has duplicate phones. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS` | A contact has duplicate addresses. |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_DEFAULT_ADDRESSES` | The contact has more than one address marked as default. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS_ID` | A contact has multiple addresses with the same ID. |
+    | `400` | `INVALID_ARGUMENT` | `EMAIL_REQUIRED` | A contact has additional emails but no email. |
+    | `400` | `INVALID_ARGUMENT` | `PHONE_REQUIRED` | A contact has additional phones but no phone. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_CHANGE_EXTERNAL_ID` | The contact's external ID can't be changed. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_CONTACT_EXISTS` | A contact with the same identifier already exists. More about identifiers can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts). |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_UPDATE_MEMBER_EMAIL` | A contact that is a site member can't have its email updated. Update the site member's login email through the Members API instead. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The contact time zone is not in valid IANA format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_IMAGE_URL` | The contact image URL is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Updates an existing contact by ID and revision.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/contacts/v5/contacts/51481384-482d-4d71-8993-b4c70a964026' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "contact": {
+          "revision": "1",
+          "name": {
+            "first": "Robert",
+            "last": "Johnson"
+          },
+          "company": {
+            "name": "Johnson Consulting",
+            "jobTitle": "Principal Consultant"
+          }
+        },
+        "allowDuplicates": false
+      }'
+      ```
+
+      ```json Response
+      {
+        "contact": {
+          "id": "51481384-482d-4d71-8993-b4c70a964026",
+          "revision": "2",
+          "createdDate": "2026-07-01T18:14:36.361Z",
+          "updatedDate": "2026-07-01T18:18:33.465Z",
+          "name": {
+            "first": "Robert",
+            "last": "Johnson"
+          },
+          "email": {
+            "email": "bob.johnson@example.com",
+            "subscriptionStatus": {
+              "status": "NOT_SET"
+            },
+            "deliverabilityStatus": "NOT_SET"
+          },
+          "additionalEmails": [],
+          "phone": {
+            "tag": "OTHER",
+            "phone": "+1-555-0103",
+            "subscriptionStatus": {
+              "status": "NO_SUBSCRIPTION_STATUS"
+            },
+            "deliverabilityStatus": "NO_PHONE_DELIVERABILITY_STATUS"
+          },
+          "additionalPhones": [],
+          "addresses": [],
+          "company": {
+            "name": "Johnson Consulting",
+            "jobTitle": "Principal Consultant"
+          },
+          "locationIds": [],
+          "source": {
+            "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+          },
+          "lastActivity": {
+            "date": "2026-07-01T18:14:36.361Z",
+            "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+          },
+          "segmentIds": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates a contact.
+
+    Each time the contact is updated, `revision` increments by 1. The current `revision` must be passed when updating the contact. This ensures you're working with the latest contact and prevents unintended overwrites.
+
+    Restrictions:
+    - `externalId` can be set only once and can't be changed after creation.
+    - The main email of a contact that is a site member can't be changed. Update it through the [Members API](https://dev.wix.com/docs/api-reference/crm/members-contacts/members/member-management/members/introduction) instead.
+    - At least one of `name`, `email`, or `phone` must remain after the update.
+
+    Image upload: When you provide an image URL, the image is uploaded asynchronously and an `imageUploadId` is returned for tracking upload progress. Call [Get Contact Image Upload Status](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/get-contact-image-upload-status) to monitor the upload.
+
+    To update multiple contacts in a single request, call [Bulk Update Contacts](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-update-contacts).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsV5 } from '@wix/crm';
+
+    contactsV5.updateContact(_id, contact, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="_id" type="string" required>
+
+      Contact ID.
+
+      **Read-only.**
+
+    </ParamField>
+
+    <ParamField body="contact" type="UpdateContact" required>
+
+      Contact to update. May be partial.
+
+      <Expandable title="contact properties">
+
+        <ParamField body="_id" type="string">
+
+          Contact ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer" required>
+
+          Revision number, which increments by 1 each time the Contact is updated.
+          To prevent conflicting changes,
+          the current revision must be passed when updating the Contact.
+
+          Ignored when creating a Contact.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="_createdDate" type="datetime">
+
+          Date and time the contact was created.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="_updatedDate" type="datetime">
+
+          Date and time the contact was last updated.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="externalId" type="string">
+
+          Contact external ID. Used to identify contacts from external systems.
+          This field can only be set once and can't be updated after creation.
+
+        </ParamField>
+
+        <ParamField body="name" type="ContactName">
+
+          Contact's name information including first and last name.
+
+          <Expandable title="name properties">
+
+            <ParamField body="first" type="string">
+
+              Contact's first name.
+
+            </ParamField>
+
+            <ParamField body="last" type="string">
+
+              Contact's last name.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="email" type="ContactEmail">
+
+          The main email of the contact with subscription status and deliverability information.
+          This email is used for contact matching and deduplication logic.
+
+          <Expandable title="email properties">
+
+            <ParamField body="email" type="string">
+
+              Main email address for the contact. Used for communication and contact matching.
+
+              Stored in normalized form: leading and trailing whitespace is trimmed and the address is lowercased.
+
+              Constraints: `format EMAIL`, `maxLength 320`.
+
+            </ParamField>
+
+            <ParamField body="subscriptionStatus" type="ContactSubscription">
+
+              Indicates the recipient's opt-in or opt-out status for marketing emails.
+              This field is read-only and managed by the subscription system.
+
+              Updates are eventually consistent, reflecting marketing consent changes after they're processed.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `ContactSubscription` object._
+
+            </ParamField>
+
+            <ParamField body="deliverabilityStatus" type="string">
+
+              Indicates the last reported delivery status of emails sent to this address.
+              This field is read-only and updated automatically by the email delivery system.
+
+              - `NOT_SET`: No delivery status reported. Default value.
+              - `VALID`: Emails are being successfully delivered to this address.
+              - `BOUNCED`: The last email to this address bounced or was rejected by the recipient's email server.
+              - `SPAM_COMPLAINT`: Recipient registered a spam complaint with their email provider.
+              - `INACTIVE`: Multiple emails have been delivered without any engagement from the recipient.
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `NOT_SET`
+              - `VALID`
+              - `BOUNCED`
+              - `SPAM_COMPLAINT`
+              - `INACTIVE`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalEmails" type="AdditionalEmail[]">
+
+          Additional emails of the contact.
+          These emails do not affect subscription status or contact matching/deduplication.
+          The main email field must be set before additional emails can be added.
+
+          Constraints: `maxItems 10`.
+
+          <Expandable title="additionalEmails properties">
+
+            <ParamField body="email" type="string">
+
+              Additional email address for the contact.
+              Does not affect subscription status or contact matching logic.
+
+              Constraints: `format EMAIL`, `maxLength 320`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="phone" type="ContactPhone">
+
+          The main phone of the contact with subscription status and deliverability information.
+          This phone is used for contact matching and deduplication logic.
+          At least one of name, email, or phone is required for contact creation.
+
+          <Expandable title="phone properties">
+
+            <ParamField body="tag" type="string">
+
+              Phone type classification. Helps categorize the phone number's purpose.
+
+              Default: `OTHER`
+
+              **Supported values:**
+
+              - `OTHER`
+              - `MAIN`
+              - `HOME`
+              - `MOBILE`
+              - `WORK`
+              - `FAX`
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Primary phone number for the contact. Used for communication and contact matching.
+
+              Constraints: `minLength 1`, `maxLength 50`.
+
+            </ParamField>
+
+            <ParamField body="e164" type="string">
+
+              Phone number in [ITU E.164 international](https://www.itu.int/rec/T-REC-E.164/) format (e.g., +12345550123).
+              This field is automatically generated from the phone field if it represents a valid E.164 number.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="subscriptionStatus" type="ContactSubscription">
+
+              Indicates the recipient's opt-in or opt-out status for SMS/text message marketing.
+              This field is read-only and managed by the subscription system.
+
+              Updates are eventually consistent, reflecting marketing consent changes after they're processed.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `ContactSubscription` object._
+
+            </ParamField>
+
+            <ParamField body="deliverabilityStatus" type="string">
+
+              Indicates the delivery status for SMS messages sent to this phone number.
+              This field is read-only and updated automatically by the SMS delivery system.
+              - `NO_PHONE_DELIVERABILITY_STATUS`: No status exists. Used when the phone is not a valid E164 number.
+              - `NOT_SET`: No delivery status reported. Default when the phone is a valid E164 number.
+              - `VALID`: Last message was sent and delivered successfully.
+              - `INVALID`: The number is invalid (landline, number disconnected, etc.).
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `NO_PHONE_DELIVERABILITY_STATUS`
+              - `NOT_SET`
+              - `VALID`
+              - `INVALID`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalPhones" type="AdditionalPhone[]">
+
+          Additional phones of the contact.
+          These phones do not affect subscription status or contact matching/deduplication.
+          The main phone field must be set before additional phones can be added.
+
+          Constraints: `maxItems 10`.
+
+          <Expandable title="additionalPhones properties">
+
+            <ParamField body="tag" type="string">
+
+              Phone type classification for the additional phone number.
+
+              Default: `OTHER`
+
+              **Supported values:**
+
+              - `OTHER`
+              - `MAIN`
+              - `HOME`
+              - `MOBILE`
+              - `WORK`
+              - `FAX`
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Additional phone number for the contact.
+              Does not affect subscription status or contact matching logic.
+
+              Constraints: `minLength 1`, `maxLength 50`.
+
+            </ParamField>
+
+            <ParamField body="e164" type="string">
+
+              Additional phone number in [ITU E.164 international](https://www.itu.int/rec/T-REC-E.164/) format (e.g., +12345550123).
+              This field is automatically generated from the phone field if it represents a valid E.164 number.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="addresses" type="ContactAddress[]">
+
+          Contact's physical addresses.
+          Each address can be tagged (HOME, WORK, BILLING, SHIPPING, OTHER) and one can be set as default.
+          If no address is marked as default, the first address automatically becomes the default.
+
+          Constraints: `maxItems 50`.
+
+          <Expandable title="addresses properties">
+
+            <ParamField body="tag" type="string">
+
+              Address type classification. Helps categorize the address purpose.
+
+              Default: `OTHER`
+
+              **Supported values:**
+
+              - `OTHER`
+              - `HOME`
+              - `WORK`
+              - `BILLING`
+              - `SHIPPING`
+
+            </ParamField>
+
+            <ParamField body="address" type="Address">
+
+              Physical address information including street, city, country, and postal code.
+              Contains structured address data following common address formatting standards.
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ParamField>
+
+            <ParamField body="defaultAddress" type="boolean">
+
+              Whether this address is the contact's default address.
+              Only one address can be designated as default per contact.
+              If no address is explicitly set as default, the first address automatically becomes the default.
+
+            </ParamField>
+
+            <ParamField body="_id" type="string">
+
+              Address ID.
+
+            </ParamField>
+
+            <ParamField body="recipient" type="Recipient">
+
+              Address recipient information for delivery purposes.
+
+              _Nested structure omitted for brevity — see the `Recipient` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="company" type="ContactCompany">
+
+          Contact's company information including company name and job title.
+
+          <Expandable title="company properties">
+
+            <ParamField body="name" type="string">
+
+              Contact's company name.
+
+            </ParamField>
+
+            <ParamField body="jobTitle" type="string">
+
+              Contact's job title.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="locale" type="string">
+
+          Locale in
+          [IETF BCP 47 language tag](https://en.wikipedia.org/wiki/IETF_language_tag) format.
+          Typically, this is a lowercase 2-letter language code,
+          followed by a hyphen, followed by an uppercase 2-letter country code.
+          For example, `en-US` for U.S. English, and `de-DE` for Germany German.
+
+        </ParamField>
+
+        <ParamField body="birthdate" type="string">
+
+          Birth date in `YYYY-MM-DD` format. For example, `2020-03-15`.
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          IANA time zone identifier for the contact's location.
+          Valid values are IANA time zone IDs, such as 'Europe/Rome' or 'America/New_York'.
+
+        </ParamField>
+
+        <ParamField body="assigneeId" type="string">
+
+          Site contributor user ID assigned to manage communication with this contact.
+          Must be a valid GUID referencing an existing site contributor.
+          Only one assignee can be set per contact.
+
+        </ParamField>
+
+        <ParamField body="locationIds" type="string[]">
+
+          List of business location IDs associated with this contact.
+          Used for multi-location businesses to organize contacts by physical business locations.
+          Each ID must be a valid GUID referencing an existing business location.
+
+          Constraints: `format GUID`, `maxItems 50`.
+
+        </ParamField>
+
+        <ParamField body="image" type="string">
+
+          Contact's profile image.
+          If the contact is also a site member, clients should prefer to view `member_info.profile_info.photo`
+          when it exists, as it reflects the member's current profile photo.
+
+        </ParamField>
+
+        <ParamField body="source" type="ContactSource">
+
+          Details about the origin of the contact.
+          This field is immutable and set automatically when the contact is created.
+
+          Constraints: `immutable`.
+
+          <Expandable title="source properties">
+
+            <ParamField body="userId" type="string">
+
+              ID of the user who created this contact.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="appId" type="string">
+
+              ID of the application that created this contact.
+
+              **Read-only.**
+
+            </ParamField>
+
+            <ParamField body="additionalInfo" type="string">
+
+              Additional information about the contact's origin or creation context.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="lastActivity" type="ContactActivity">
+
+          Details about the contact's most recent activity on the site.
+          Includes activity date and template ID. This field is read-only and updated automatically.
+
+          **Read-only.**
+
+          <Expandable title="lastActivity properties">
+
+            <ParamField body="date" type="datetime">
+
+              Date and time when the contact's most recent activity occurred.
+
+            </ParamField>
+
+            <ParamField body="templateId" type="string">
+
+              ID of the activity template that defines the type of activity performed.
+              References a template in the contacts activity log system.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="segmentIds" type="string[]">
+
+          IDs of the segments the contact belongs to.
+          Segments are used for organizing and targeting groups of contacts.
+
+          **Read-only.** Constraints: `format GUID`, `maxItems 60`.
+
+        </ParamField>
+
+        <ParamField body="memberInfo" type="MemberInfo">
+
+          Contact's site membership information including member ID, status, and profile details.
+          This field is read-only and populated automatically when the contact is also a site member.
+
+          Updates are eventually consistent: changes to the underlying member, identity, or profile are reflected after the corresponding events are processed.
+
+          **Read-only.**
+
+          <Expandable title="memberInfo properties">
+
+            <ParamField body="memberId" type="string">
+
+              Member ID.
+
+            </ParamField>
+
+            <ParamField body="signupDate" type="datetime">
+
+              Date and time the member signed up.
+
+            </ParamField>
+
+            <ParamField body="email" type="string">
+
+              Email the member uses to log in.
+
+            </ParamField>
+
+            <ParamField body="emailVerified" type="boolean">
+
+              Whether the email is verified.
+
+            </ParamField>
+
+            <ParamField body="emailVerificationRequired" type="boolean">
+
+              Whether the member is required to verify their email before they can log in.
+
+            </ParamField>
+
+            <ParamField body="status" type="string">
+
+              Member status.
+              - `PENDING`: Member created and is waiting for approval by site owner.
+              - `ACTIVE`: Member can log in to the site.
+              - `BLOCKED`: Member is blocked and cannot log in to the site.
+              - `OFFLINE`: Member is a [managed writer](https://support.wix.com/en/article/wix-blog-adding-managed-writers-to-your-blog) for the site blog and cannot log in to the site.
+
+              **Supported values:**
+
+              - `PENDING`
+              - `ACTIVE`
+              - `BLOCKED`
+              - `OFFLINE`
+
+            </ParamField>
+
+            <ParamField body="profileInfo" type="ProfileInfo">
+
+              Information about the member's public profile.
+
+              _Nested structure omitted for brevity — see the `ProfileInfo` object._
+
+            </ParamField>
+
+            <ParamField body="userInfo" type="UserInfo">
+
+              Information about the member's user account.
+
+              _Nested structure omitted for brevity — see the `UserInfo` object._
+
+            </ParamField>
+
+            <ParamField body="sessionInfo" type="SessionInfo">
+
+              Information about the member's login sessions.
+
+              _Nested structure omitted for brevity — see the `SessionInfo` object._
+
+            </ParamField>
+
+            <ParamField body="groupInfo" type="GroupInfo">
+
+              Information about the groups the member belongs to.
+
+              _Nested structure omitted for brevity — see the `GroupInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="tags" type="PrivateTags">
+
+          Tags assigned to the contact for organization and filtering.
+
+          <Expandable title="tags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission to access, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Extended fields for storing custom contact data beyond the standard fields.
+          Allows adding custom properties specific to business needs.
+          To define a custom extended field, use the [Schema Service API](https://dev.wix.com/docs/api-reference/business-management/data-extension-schema/about-the-data-extension-schema-api) with the contacts FQDN: `wix.contacts.*.contact`.
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="UpdateContactOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="allowDuplicates" type="boolean">
+
+          Whether to update the contact even if it becomes a duplicate of another contact.
+          More about duplicate contacts can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Contact`.
+
+    See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INSUFFICIENT_CONTACT_DATA` | Contact must have a name, phone number or email address. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_EMAIL` | The contact has duplicate emails. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_PHONE` | A contact has duplicate phones. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS` | A contact has duplicate addresses. |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_DEFAULT_ADDRESSES` | The contact has more than one address marked as default. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS_ID` | A contact has multiple addresses with the same ID. |
+    | `400` | `INVALID_ARGUMENT` | `EMAIL_REQUIRED` | A contact has additional emails but no email. |
+    | `400` | `INVALID_ARGUMENT` | `PHONE_REQUIRED` | A contact has additional phones but no phone. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_CHANGE_EXTERNAL_ID` | The contact's external ID can't be changed. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_CONTACT_EXISTS` | A contact with the same identifier already exists. More about identifiers can be found [here](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts). |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_UPDATE_MEMBER_EMAIL` | A contact that is a site member can't have its email updated. Update the site member's login email through the Members API instead. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The contact time zone is not in valid IANA format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_IMAGE_URL` | The contact image URL is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Updated | `wix.contacts.v5.contact_updated` | Triggered when a contact is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-update-contact" id="ex-sdk-update-contact-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-update-contact" id="ex-sdk-update-contact-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-update-contact-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-update-contact-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Update contact information</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">updateContact (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-update-contact-0"><span className="wix-picker-name">Update contact information</span></label>
+    <label htmlFor="ex-sdk-update-contact-1"><span className="wix-picker-name">updateContact (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Update contact information
+    import { contactsV5 } from "@wix/crm";
+
+    const contactId = "e3f2e525-571b-4274-add8-06034b27c13c";
+
+    const contact = {
+      revision: "1",
+      name: { first: "Robert", last: "Johnson" },
+      company: { name: "Johnson Consulting", jobTitle: "Principal Consultant" },
+    };
+
+    const options = {
+      allowDuplicates: false,
+    };
+
+    async function updateContact() {
+      const response = await contactsV5.updateContact(contactId, contact, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "revision": "2",
+     *   "name": {
+     *     "first": "Robert",
+     *     "last": "Johnson"
+     *   },
+     *   "email": {
+     *     "email": "bob.johnson@example.com",
+     *     "subscriptionStatus": { "status": "NOT_SET" },
+     *     "deliverabilityStatus": "NOT_SET"
+     *   },
+     *   "phone": {
+     *     "tag": "OTHER",
+     *     "phone": "+1-555-0103",
+     *     "subscriptionStatus": { "status": "NO_SUBSCRIPTION_STATUS" },
+     *     "deliverabilityStatus": "NO_PHONE_DELIVERABILITY_STATUS"
+     *   },
+     *   "company": {
+     *     "name": "Johnson Consulting",
+     *     "jobTitle": "Principal Consultant"
+     *   },
+     *   "source": { "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438" },
+     *   "lastActivity": {
+     *     "date": "2026-07-01T18:32:02.235Z",
+     *     "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+     *   },
+     *   "_id": "e3f2e525-571b-4274-add8-06034b27c13c",
+     *   "_createdDate": "2026-07-01T18:32:02.235Z",
+     *   "_updatedDate": "2026-07-01T18:33:59.018Z"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript updateContact (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsV5 } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsV5 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function updateContact(_id,contact,options) {
+      const response = await myWixClient.contactsV5.updateContact(_id,contact,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

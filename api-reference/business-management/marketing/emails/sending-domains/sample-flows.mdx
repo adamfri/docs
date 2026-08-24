@@ -1,0 +1,37 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Authenticate a custom domain for email sending
+
+A Wix user wants to send marketing emails from their custom domain with improved deliverability and brand reputation. They've already configured sender details with a verified email address (for example, `info@example.com`). When sender details are created, a sending domain for that email's domain (for example, `example.com`) becomes available for authentication.
+
+To authenticate a custom domain for email sending:
+
+1. Call [Query Sending Domains](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/query-sending-domains) to retrieve sending domains. You must filter by `domain` (with the domain name from the sender email, for example, `example.com` from `info@example.com`) or by `id`. Without a filter, the method returns a `SENDER_DETAILS_DO_NOT_EXIST` error.
+
+2. From the response, find the sending domain that matches the sender email's domain (for example, `example.com` from `info@example.com`). Verify the sending domain's `status` property is `NOT_AUTHENTICATED` or `INITIALIZING`. Then extract the `id` and the `dnsRecords` array.
+
+3. From the `dnsRecords` array, extract each record's `hostName` and `value`.
+
+4. Add the CNAME records to the domain's DNS configuration at a DNS provider (for example, GoDaddy, Cloudflare, or Namecheap). You can add them manually or programmatically if you have access to the DNS provider's API.
+
+<Note>
+
+If Wix manages DNS for the domain (domain purchased from Wix or connected via nameservers), Wix adds the DNS records automatically.
+
+</Note>
+
+5. Wait for DNS propagation. DNS propagation typically takes a few hours but can take up to 48 hours. Before continuing, use DNS lookup tools to verify the CNAME records are visible globally:
+   - Command line: `dig {hostName} CNAME`.
+   - Online tool: <a href="fallback::https://dnschecker.org" target="_blank" rel="noopener noreferrer">DNS Checker</a>.
+
+6. Call [Authenticate Sending Domain](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/authenticate-sending-domain) with the `sendingDomainId` to verify the DNS records. If the records are correctly configured and DNS has propagated, the domain's `status` property changes to `AUTHENTICATED`. If authentication fails, wait for DNS to finish propagating, and then retry the Authenticate Sending Domain call.
+
+7. Call [Get Sending Domain](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/get-sending-domain) to confirm the `status` property is `AUTHENTICATED`.
+
+See [Troubleshooting](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/troubleshooting) for solutions to common issues such as DNS propagation delays, prerequisite errors, and domain status problems.

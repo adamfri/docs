@@ -1,0 +1,601 @@
+---
+title: "Book From Waitlist"
+description: "Books a site member into the session for which they are waitlisted (waiting resource), and the associated booking is checked out."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<div className="wix-api-columns">
+
+<div className="wix-ref">
+
+<Info>
+
+  **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+</Info>
+
+Books a site member into the session for which they are waitlisted (waiting resource), and the associated booking is checked out.
+Waitlist registration status is changed to ENROLLED.
+> **Permissions**
+> This endpoint requires the Manage Bookings permissions scope
+
+## Endpoint
+
+```http
+POST /v1/waitingList/{registrationId}
+```
+
+## Path Params
+
+<ParamField path="registrationId" type="string" required>
+
+  Registration to book.
+
+</ParamField>
+
+## Body Params
+
+<ParamField body="couponCode" type="string">
+
+  Coupon code to apply to this booking at checkout.
+
+</ParamField>
+
+<ParamField body="planSelection" type="PaidPlan">
+
+  Selected paid plan to apply to this booking at checkout.
+
+  <Expandable title="planSelection properties">
+
+    <ParamField body="orderId" type="string">
+
+      Order ID when the Pricing Plan was purchased.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="benefitId" type="string">
+
+      Benefit ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="planId" type="string">
+
+      ID of the pricing plan.
+
+    </ParamField>
+
+  </Expandable>
+
+</ParamField>
+
+<ParamField body="notifyParticipants" type="boolean" />
+
+<ParamField body="selectedPaymentOption" type="string">
+
+  Selected payment option.
+
+  One of the payment options offered by the service.
+  This field is set when the user selects an option during booking.
+  If left undefined, the payment option is resolved by the service configuration on checkout.
+
+  **Supported values:**
+
+  - `UNDEFINED` — Undefined payment option.
+  - `OFFLINE` — Offline payment.
+  - `ONLINE` — Online payment.
+  - `MEMBERSHIP` — Payment using a Wix Pricing Plan.
+  - `MEMBERSHIP_OFFLINE` — Customers can pay only in person with a Wix Pricing Plan, while the Wix user
+  must manually redeem the pricing plan in the dashboard.
+
+</ParamField>
+
+<ParamField body="flowControlSettings" type="FlowControlSettings">
+
+  Sets the book flow behavior, some behaviors required permissions.
+
+  <Expandable title="flowControlSettings properties">
+
+    <ParamField body="forceEnrollment" type="boolean">
+
+      when defined as true, enroll the specifid registration to the session, with no regard to the registration status.
+      required BBOOKINGS.IGNORE_BOOKING_POLICY and BOOKINGS.OVERRIDE_AVAILABILITY permission.
+
+    </ParamField>
+
+    <ParamField body="forceInPersonCheckout" type="boolean">
+
+      when defined as true, checkout the booking as "in-person" method, that doesnt required online payment.
+      required BOOKINGS.MANAGE_PAYMENTS permission.
+
+    </ParamField>
+
+  </Expandable>
+
+</ParamField>
+
+<ParamField body="status" type="string">
+
+  Booking status.
+  One of:
+  - `"CREATED"` - The booking was created. This is the default status.
+  - `"CONFIRMED"` - The booking has been confirmed and appears on the bookings calendar. Required BOOKINGS.MANAGE_BOOKINGS permission.
+  Without the required permission, a "CONFIRMED" status will cause "Missing required permission to create booking with overridden bookingStatus" error.
+  Providing a status other than "CREATED" or "CONFIRMED" will cause an error.
+  For example, "CANCEL" status will throw an "Invalid status. CANCEL is not permitted" error.
+
+  **Supported values:**
+
+  - `CREATED` — The booking was created, but the customer hasn't completed the related eCommerce order yet.
+  - `CONFIRMED` — The merchant has confirmed the booking and it appears in the business calendar. Merchants can set up their [services](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/introduction) to automatically confirm all `PENDING` bookings.
+  - `CANCELED` — The customer has canceled the booking. Depending on the relevant service's [policy snapshot](https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policy-snapshots/introduction)
+  they may have to pay a [cancellation fee](https://dev.wix.com/docs/rest/business-solutions/bookings/pricing/booking-fees/introduction).
+  - `PENDING` — The merchant must manually confirm the booking before it appears in the business calendar.
+  - `DECLINED` — The merchant has declined the booking before the customer was charged.
+  - `WAITING_LIST` — Currently, you can't call [Register to Waitlist](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/waitlist/register-to-waitlist) for course or appointment bookings, even though this is supported in live sites.
+
+</ParamField>
+
+## Response Object
+
+<ResponseField name="registrationId" type="string" />
+
+<ResponseField name="booking" type="Booking">
+
+  Checked-out booking.
+  (Online-payments can only be completed in the Wix Bookings UI.)
+
+  <Expandable title="booking properties">
+
+    <ResponseField name="id" type="string">
+
+      Booking ID.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="bookedEntity" type="BookedEntity">
+
+      An object describing the entity that was booked.
+
+      <Expandable title="bookedEntity properties">
+
+        <ResponseField name="serviceId" type="string">
+
+          ID of the booked service.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="scheduleId" type="string">
+
+          ID of the booked schedule.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Session title at the time of booking.
+
+        </ResponseField>
+
+        <ResponseField name="location" type="Location">
+
+          Location of the session.
+
+          _Nested structure omitted for brevity — see the `Location` object._
+
+        </ResponseField>
+
+        <ResponseField name="rate" type="Rate">
+
+          Price options offered to book this session at the time of booking.
+
+          _Nested structure omitted for brevity — see the `Rate` object._
+
+        </ResponseField>
+
+        <ResponseField name="tags" type="string[]">
+
+          A list of tags for the booking.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="type" type="type">
+
+          type
+
+          _Nested structure omitted for brevity — see the `type` object._
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bookedResources" type="BookedResource[]">
+
+      A list of booked resources. Currently, only one is supported. The booked resource would generally be the staff-member giving the session.
+
+      <Expandable title="bookedResources properties">
+
+        <ResponseField name="id" type="string">
+
+          Booked resource ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Resource's name at the time of booking.
+
+        </ResponseField>
+
+        <ResponseField name="email" type="string">
+
+          Resource's email at the time of booking.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="formInfo" type="FormInfo">
+
+      Form information submitted when booking. FormInfo contains contact details, participants, and other form fields, set up for the service.
+
+      <Expandable title="formInfo properties">
+
+        <ResponseField name="contactDetails" type="ContactDetails">
+
+          Contact details of the customer making the booking.
+
+          _Nested structure omitted for brevity — see the `ContactDetails` object._
+
+        </ResponseField>
+
+        <ResponseField name="paymentSelection" type="PaymentSelection[]">
+
+          A list of rates and the number of participants for each rate.
+          Required.
+
+          _Nested structure omitted for brevity — see the `PaymentSelection[]` object._
+
+        </ResponseField>
+
+        <ResponseField name="customFormFields" type="object" deprecated>
+
+          Other custom field values that were specified by the user. In the form of field_id to value mapping.
+          Deprecated. use `additional_fields`.
+
+          **Deprecated.** Constraints: `format map`.
+
+          _Nested structure omitted for brevity — see the `object` object._
+
+        </ResponseField>
+
+        <ResponseField name="additionalFields" type="CustomFormField[]">
+
+          Additional custom fields submitted with the form.
+
+          _Nested structure omitted for brevity — see the `CustomFormField[]` object._
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="paymentDetails" type="PaymentDetails">
+
+      Payment Details.
+
+      <Expandable title="paymentDetails properties">
+
+        <ResponseField name="id" type="string">
+
+          Checkout ID.
+
+        </ResponseField>
+
+        <ResponseField name="balance" type="Balance">
+
+          The final price, currency, down payment, and amount received.
+
+          _Nested structure omitted for brevity — see the `Balance` object._
+
+        </ResponseField>
+
+        <ResponseField name="paidPlanDetails" type="PaidPlanDetails">
+
+          Pricing plan details, if a pricing plan was used to pay for the booking.
+
+          _Nested structure omitted for brevity — see the `PaidPlanDetails` object._
+
+        </ResponseField>
+
+        <ResponseField name="couponDetails" type="CouponDetails">
+
+          Coupon details, if a coupon was used to pay for the booking.
+
+          _Nested structure omitted for brevity — see the `CouponDetails` object._
+
+        </ResponseField>
+
+        <ResponseField name="wixPayDetails" type="WixPayDetails" deprecated>
+
+          Deprecated. Use `wixPayMultipleDetails`.
+
+          **Deprecated.**
+
+          _Nested structure omitted for brevity — see the `WixPayDetails` object._
+
+        </ResponseField>
+
+        <ResponseField name="state" type="string">
+
+          Checkout current state.
+
+          **Supported values:**
+
+          - `UNDEFINED` — Undefined checkout status.
+          - `COMPLETE` — Amount paid in full.
+          - `PENDING_CASHIER` — An online payment is in progress and awaiting a response.
+          - `REJECTED` — The checkout request was rejected by the online payment process.
+          - `READY` — All online checkout requirements were met. For example, when the service uses pay in person, or a partial or down payment was paid online.
+          - `CANCELED` — Checkout cancelled.
+          - `REFUNDED` — When using Pricing Plans, if the booking was cancelled, it will be automatically refunded.
+          - `PENDING_MERCHANT` — An online payment was made, but the owner has not set up the necessary details.
+          - `WIX_PAY_FAILURE` — Online payment failure.
+          - `PENDING_MARK_AS_PAID` — Offline transaction. The transaction will be complete when explicitly marked as paid.
+          - `PENDING_BUYER` — The transaction started, but is waiting for confirmation on the buyer's side. This can be due to credit or fraud checking on the provider's side, a long bank transfer, or similar processes.
+
+        </ResponseField>
+
+        <ResponseField name="wixPayMultipleDetails" type="WixPayDetails[]">
+
+          All payment history for a booking, when the Wix Pay service is used.
+
+          _Nested structure omitted for brevity — see the `WixPayDetails[]` object._
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Booking status.
+
+      **Supported values:**
+
+      - `UNDEFINED`
+      - `PENDING_CHECKOUT` — The booking is waiting to be checked out.
+      - `CONFIRMED` — The booking has been approved by the owner.
+      - `CANCELED` — The booking has been canceled.
+      - `PENDING` — The booking has been created.
+      - `PENDING_APPROVAL` — The booking is waiting for the owner to approve or decline.
+      - `DECLINED` — The booking was declined by the owner.
+
+    </ResponseField>
+
+    <ResponseField name="created" type="datetime">
+
+      Date and time when the booking was created.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the booking was created.
+
+    </ResponseField>
+
+    <ResponseField name="attendanceInfo" type="AttendanceInfo">
+
+      Attendance information.
+
+      <Expandable title="attendanceInfo properties">
+
+        <ResponseField name="attendanceStatus" type="boolean">
+
+          Whether the booked contact attended the session.
+
+        </ResponseField>
+
+        <ResponseField name="numberOfAttendees" type="integer">
+
+          The number of attendees that attended the session. This can be greater than 1 when the booking is made for a group of people.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="externalUserId" type="string">
+
+      External ID provided by the client app on creation.
+
+    </ResponseField>
+
+    <ResponseField name="bookingSource" type="BookingSource">
+
+      An object describing the platform and application that made the booking.
+
+      <Expandable title="bookingSource properties">
+
+        <ResponseField name="platform" type="string">
+
+          Platform from which a booking was created
+
+          **Supported values:**
+
+          - `UNDEFINED_PLATFORM`
+          - `WEB`
+          - `MOBILE_APP`
+
+        </ResponseField>
+
+        <ResponseField name="actor" type="string">
+
+          Actor that created this booking.
+
+          **Supported values:**
+
+          - `UNDEFINED_ACTOR`
+          - `BUSINESS`
+          - `CUSTOMER`
+
+        </ResponseField>
+
+        <ResponseField name="appDefId" type="string">
+
+          Wix site ID of the application that created this booking.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="appName" type="string">
+
+          Name of the application that created this booking, as saved in Wix-dev-center at the time of booking.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Expandable>
+
+</ResponseField>
+
+## Errors
+
+<Note>
+
+  This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+</Note>
+
+</div>
+
+<div className="wix-examples">
+
+## Examples
+
+Books a site member into the session for which he was waitlisted, according to the provided registration Id.
+
+<CodeGroup>
+
+  ```bash Request
+  curl -X POST \
+   'https://www.wixapis.com/bookings/v1/waitlist/enroll' \
+    -H 'Authorization: <AUTH>' \
+    --data '{
+           	"registrationId": "2724acf6-fedd-402b-8cbc-48bc784481d9"
+           }'
+  ```
+
+  ```json Response
+  {
+      "registrationId": "2724acf6-fedd-402b-8cbc-48bc784481d9",
+      "booking": {
+          "id": "668bfc5c-b022-4fea-8c14-c19416bfb710",
+          "bookedEntity": {
+              "serviceId": "7a371719-1250-4a62-b559-8b758bc7a359",
+              "scheduleId": "fc836136-2ce9-4d8a-8f7f-a4a932fdf20a",
+              "singleSession": {
+                  "sessionId": "193ZPR9ppP9emJUCLevcLf6orynNEIDt5nc0520xjGQILnPPaF5s62yK3BWz7ExgIRM1VRioAcbF7zzwvoBTEIScx8fykHVtU2r5GoJrd7PuRidnB3zvYGeB6vu46SF7RN6M20Jg3OP1PZhRjhbotC5iz5mBXEncK2sHCaVgGczVpDEUts19ULscMtZ8dzmp6Hd6caRs6g5UcGtKSnvH5KJPYdojijsgantqsSTmFokncR3Y5PHqiIRaLeERqoPVfZbwXR7nJIOAe5EjjoMPFhRTOoczpbq9zjDLsREsYtStLaYvO2zhufHEWlp5Gq7mB9cXh1UmPbR7rp",
+                  "start": "2020-05-05T07:00:00Z",
+                  "end": "2020-05-05T08:00:00Z"
+              },
+              "title": "class",
+              "location": {
+                  "locationType": "OWNER_BUSINESS"
+              },
+              "rate": {
+                  "labeledPriceOptions": {
+                      "general": {
+                          "amount": "12",
+                          "currency": "USD",
+                          "downPayAmount": "0"
+                      }
+                  }
+              },
+              "tags": [
+                  "GROUP"
+              ]
+          },
+          "bookedResources": [
+              {
+                  "id": "936d2078-79ba-49ca-b82d-8f12b8a050ac",
+                  "name": "Dorgal",
+                  "email": "dorga@wix.com"
+              }
+          ],
+          "formInfo": {
+              "contactDetails": {
+                  "contactId": "bbcbea1c-d492-45cd-9d30-d6685137ebd5",
+                  "firstName": "Homer",
+                  "lastName": "Simpson",
+                  "email": "Doh@Doh.com",
+                  "phone": "5558707",
+                  "timeZone": "Asia/Jerusalem",
+                  "countryCode": "IL"
+              },
+              "paymentSelection": [
+                  {
+                      "rateLabel": "general",
+                      "numberOfParticipants": 1
+                  }
+              ],
+              "customFormFields": {},
+              "additionalFields": []
+          },
+          "paymentDetails": {
+              "balance": {
+                  "finalPrice": {
+                      "amount": "12",
+                      "currency": "USD",
+                      "downPayAmount": "0"
+                  },
+                  "amountReceived": "0"
+              },
+              "state": "READY",
+              "wixPayMultipleDetails": []
+          },
+          "status": "CONFIRMED",
+          "created": "2020-05-04T17:36:15.647Z"
+      }
+  }
+  ```
+
+</CodeGroup>
+
+</div>
+
+</div>

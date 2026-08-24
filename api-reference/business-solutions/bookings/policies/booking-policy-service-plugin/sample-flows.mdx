@@ -1,0 +1,37 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Limit early bookings
+
+Your custom booking app could prevent customers from booking more than 7 days in advance. The app implements the Booking Policy service plugin to enforce this limit.
+
+1. A customer visits the booking page to view available times.
+1. Wix calls your implementation of [List Booking Policies](fallback::https://github.com/wix-private/scheduler/blob/dc19c8bb436ef197f2920a017efc68d04f6dd280/bookings-backend/service-availability/booking-policy-provider/proto-spi/appendices/docs/guides/policies/booking-policy-service-plugin/list-booking-policies*original::policies/booking-policy-service-plugin/list-booking-policies) with the relevant service IDs.
+1. Your implementation returns a policy with `limitEarlyBooking.enabled` set to `true` and `limitEarlyBooking.earliestBookingInMinutes` set to `10080` (7 days).
+1. Wix calculates which time slots violate this policy and populates the `bookingPolicyViolations` property.
+1. The booking calendar displays only time slots within the 7-day window as available.
+
+## Allow booking up until session start
+
+A fitness studio wants to allow customers to book classes until the exact start time. Your app implements the Booking Policy service plugin to disable late booking restrictions.
+
+1. A customer visits the class schedule to book an upcoming class.
+1. Wix calls your implementation of [List Booking Policies](fallback::https://github.com/wix-private/scheduler/blob/dc19c8bb436ef197f2920a017efc68d04f6dd280/bookings-backend/service-availability/booking-policy-provider/proto-spi/appendices/docs/guides/policies/booking-policy-service-plugin/list-booking-policies*original::policies/booking-policy-service-plugin/list-booking-policies) with the class service IDs.
+1. Your implementation returns a policy with `limitLateBooking.enabled` set to `false`.
+1. Wix calculates time slot availability without late booking restrictions.
+1. The booking calendar allows customers to book any class that hasn't started yet.
+
+## Disable online booking for specific services
+
+A salon offers certain premium services that require phone booking only. Your app implements the Booking Policy service plugin to disable online booking for these services.
+
+1. A customer browses the salon's services.
+1. Wix calls your implementation of [List Booking Policies](fallback::https://github.com/wix-private/scheduler/blob/dc19c8bb436ef197f2920a017efc68d04f6dd280/bookings-backend/service-availability/booking-policy-provider/proto-spi/appendices/docs/guides/policies/booking-policy-service-plugin/list-booking-policies*original::policies/booking-policy-service-plugin/list-booking-policies) with the service IDs.
+1. For premium services, your implementation returns a policy with `onlineBooking.enabled` set to `false`.
+1. Wix marks these time slots with a policy violation.
+1. The booking calendar indicates that online booking is unavailable for premium services.

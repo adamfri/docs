@@ -1,0 +1,495 @@
+---
+title: "Upsert Contact"
+description: "Creates a contact, or updates an existing one when a match is found based on the contact's identifiers."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a contact, or updates an existing one when a match is found based on the contact's identifiers.
+
+    Matching uses `externalId`, `email.email`, and `phone.phone` to find an existing contact. See [contact matching](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts) for the detailed matching rules.
+
+    Upsert modes: Set `upsertMode` to control how an existing contact is updated:
+    - `OVERWRITE` (default): Replaces existing field values.
+    - `APPEND`: Sets a non-array field only if it doesn't already have a value, and appends to array fields.
+    - `OVERWRITE_APPEND_ARRAYS`: Overwrites non-array fields and appends to array fields.
+
+    Member contacts: Set `updateMember` to `true` when upserting a contact that is a site member.
+
+    The response's `action` field indicates whether the contact was `CREATED` or `UPDATED`.
+
+    Image upload: When you provide an image URL, the image is uploaded asynchronously and an `imageUploadId` is returned for tracking upload progress. Call [Get Contact Image Upload Status](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/get-contact-image-upload-status) to monitor the upload.
+
+    To create or update multiple contacts in a single request, call [Bulk Upsert Contacts](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-upsert-contacts).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/contacts/v5/contacts/upsert
+    ```
+
+    ## Body Params
+
+    <ParamField body="contact" type="Contact" required>
+
+      Contact to upsert.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="upsertMode" type="string">
+
+      Mode that determines how an existing contact is updated when a match is found. See the endpoint description for the supported modes.
+
+      **Supported values:**
+
+      - `OVERWRITE` — Replaces existing field values. Default value.
+      - `APPEND` — Sets a non-array field only if it doesn't already have a value, and appends to array fields.
+      - `OVERWRITE_APPEND_ARRAYS` — Overwrites non-array fields and appends to array fields.
+
+    </ParamField>
+
+    <ParamField body="updateMember" type="boolean">
+
+      Whether to update the contact even if it's a site member.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="contact" type="Contact">
+
+      Upserted contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="action" type="string">
+
+      The action performed on the contact.
+
+      **Supported values:**
+
+      - `UPDATED`
+      - `CREATED`
+
+    </ResponseField>
+
+    <ResponseField name="imageUploadId" type="string">
+
+      The upload ID of the image upload process.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INSUFFICIENT_CONTACT_DATA` | A contact must have a name, phone number or email address. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_EMAIL` | The contact has duplicate emails. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_PHONE` | A contact has duplicate phones. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS` | A contact has duplicate addresses. |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_DEFAULT_ADDRESSES` | The contact has more than one address marked as default. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS_ID` | A contact has multiple addresses with the same ID. |
+    | `400` | `INVALID_ARGUMENT` | `EMAIL_REQUIRED` | A contact has additional emails but no email. |
+    | `400` | `INVALID_ARGUMENT` | `PHONE_REQUIRED` | A contact has additional phones but no phone. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The contact time zone is not in valid IANA format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_IMAGE_URL` | The contact image URL is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_CHANGE_EXTERNAL_ID` | The contact's external ID can't be changed. |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_UPDATE_MEMBER_EMAIL` | A contact that is a site member can't have its email updated. Update the site member's login email through the Members API instead. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_UPDATE_MEMBER` | Updating a site member's contact isn't allowed. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_UPDATE_MEMBER` | A contact that is a site member can't be updated unless `updateMember` is set to `true` in the request. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates a new contact or updates an existing one using matching identifiers.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/contacts/v5/contacts/upsert' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "contact": {
+          "externalId": "crm-ext-ups-3d92",
+          "name": {
+            "first": "Sofia",
+            "last": "Nguyen"
+          },
+          "email": {
+            "email": "sofia.nguyen@example.com"
+          },
+          "phone": {
+            "tag": "MOBILE",
+            "phone": "+14155558823"
+          },
+          "company": {
+            "name": "Nguyen Analytics",
+            "jobTitle": "Data Lead"
+          }
+        },
+        "upsertMode": "OVERWRITE"
+      }'
+      ```
+
+      ```json Response
+      {
+        "contact": {
+          "id": "4b4f4016-7bf1-4334-86eb-b0bebdc3f7df",
+          "revision": "1",
+          "createdDate": "2026-07-01T18:18:57.044Z",
+          "updatedDate": "2026-07-01T18:18:57.044Z",
+          "externalId": "crm-ext-ups-3d92",
+          "name": {
+            "first": "Sofia",
+            "last": "Nguyen"
+          },
+          "email": {
+            "email": "sofia.nguyen@example.com",
+            "subscriptionStatus": {
+              "status": "NOT_SET"
+            },
+            "deliverabilityStatus": "NOT_SET"
+          },
+          "additionalEmails": [],
+          "phone": {
+            "tag": "MOBILE",
+            "phone": "+14155558823",
+            "e164": "+14155558823",
+            "subscriptionStatus": {
+              "status": "NOT_SET"
+            },
+            "deliverabilityStatus": "NOT_SET"
+          },
+          "additionalPhones": [],
+          "addresses": [],
+          "company": {
+            "name": "Nguyen Analytics",
+            "jobTitle": "Data Lead"
+          },
+          "locationIds": [],
+          "source": {
+            "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438"
+          },
+          "lastActivity": {
+            "date": "2026-07-01T18:18:57.044Z",
+            "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+          },
+          "segmentIds": []
+        },
+        "action": "CREATED"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a contact, or updates an existing one when a match is found based on the contact's identifiers.
+
+    Matching uses `externalId`, `email.email`, and `phone.phone` to find an existing contact. See [contact matching](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/matching-contacts) for the detailed matching rules.
+
+    Upsert modes: Set `upsertMode` to control how an existing contact is updated:
+    - `OVERWRITE` (default): Replaces existing field values.
+    - `APPEND`: Sets a non-array field only if it doesn't already have a value, and appends to array fields.
+    - `OVERWRITE_APPEND_ARRAYS`: Overwrites non-array fields and appends to array fields.
+
+    Member contacts: Set `updateMember` to `true` when upserting a contact that is a site member.
+
+    The response's `action` field indicates whether the contact was `CREATED` or `UPDATED`.
+
+    Image upload: When you provide an image URL, the image is uploaded asynchronously and an `imageUploadId` is returned for tracking upload progress. Call [Get Contact Image Upload Status](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/get-contact-image-upload-status) to monitor the upload.
+
+    To create or update multiple contacts in a single request, call [Bulk Upsert Contacts](https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/bulk-upsert-contacts).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CONTACTS.MANAGE-CONTACTS">Manage Contacts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { contactsV5 } from '@wix/crm';
+
+    contactsV5.upsertContact(contact, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="contact" type="Contact" required>
+
+      Contact to upsert.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="UpsertContactOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="upsertMode" type="string">
+
+          Mode that determines how an existing contact is updated when a match is found. See the endpoint description for the supported modes.
+
+          **Supported values:**
+
+          - `OVERWRITE` — Replaces existing field values. Default value.
+          - `APPEND` — Sets a non-array field only if it doesn't already have a value, and appends to array fields.
+          - `OVERWRITE_APPEND_ARRAYS` — Overwrites non-array fields and appends to array fields.
+
+        </ParamField>
+
+        <ParamField body="updateMember" type="boolean">
+
+          Whether to update the contact even if it's a site member.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="contact" type="Contact">
+
+      Upserted contact.
+
+      See the [Contact Object](/api-reference/crm/members-contacts/contacts/contacts-v5/contact-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="action" type="string">
+
+      The action performed on the contact.
+
+      **Supported values:**
+
+      - `UPDATED`
+      - `CREATED`
+
+    </ResponseField>
+
+    <ResponseField name="imageUploadId" type="string">
+
+      The upload ID of the image upload process.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INSUFFICIENT_CONTACT_DATA` | A contact must have a name, phone number or email address. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_EMAIL` | The contact has duplicate emails. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_PHONE` | A contact has duplicate phones. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS` | A contact has duplicate addresses. |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_DEFAULT_ADDRESSES` | The contact has more than one address marked as default. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_ADDRESS_ID` | A contact has multiple addresses with the same ID. |
+    | `400` | `INVALID_ARGUMENT` | `EMAIL_REQUIRED` | A contact has additional emails but no email. |
+    | `400` | `INVALID_ARGUMENT` | `PHONE_REQUIRED` | A contact has additional phones but no phone. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_TIME_ZONE` | The contact time zone is not in valid IANA format. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_IMAGE_URL` | The contact image URL is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_CHANGE_EXTERNAL_ID` | The contact's external ID can't be changed. |
+    | `428` | `FAILED_PRECONDITION` | `CANNOT_UPDATE_MEMBER_EMAIL` | A contact that is a site member can't have its email updated. Update the site member's login email through the Members API instead. |
+    | `403` | `PERMISSION_DENIED` | `UNAUTHORIZED_UPDATE_MEMBER` | Updating a site member's contact isn't allowed. |
+    | `400` | `INVALID_ARGUMENT` | `CANNOT_UPDATE_MEMBER` | A contact that is a site member can't be updated unless `updateMember` is set to `true` in the request. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Contact Created | `wix.contacts.v5.contact_created` | Triggered when a contact is created. |
+    | Contact Updated | `wix.contacts.v5.contact_updated` | Triggered when a contact is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-upsert-contact" id="ex-sdk-upsert-contact-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-upsert-contact" id="ex-sdk-upsert-contact-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-upsert-contact-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-upsert-contact-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create or update a contact using upsert</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">upsertContact (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-upsert-contact-0"><span className="wix-picker-name">Create or update a contact using upsert</span></label>
+    <label htmlFor="ex-sdk-upsert-contact-1"><span className="wix-picker-name">upsertContact (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create or update a contact using upsert
+    import { contactsV5 } from "@wix/crm";
+
+    const contact = {
+      externalId: "crm-ext-ups-3d92",
+      name: { first: "Sofia", last: "Nguyen" },
+      email: { email: "sofia.nguyen@example.com" },
+      phone: { tag: contactsV5.PhoneTag.MOBILE, phone: "+14155558823" },
+      company: { name: "Nguyen Analytics", jobTitle: "Data Lead" },
+    };
+
+    const options = {
+      upsertMode: contactsV5.UpsertMode.OVERWRITE,
+    };
+
+    async function upsertContact() {
+      const response = await contactsV5.upsertContact(contact, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "contact": {
+     *     "revision": "1",
+     *     "externalId": "crm-ext-ups-3d92",
+     *     "name": { "first": "Sofia", "last": "Nguyen" },
+     *     "email": {
+     *       "email": "sofia.nguyen@example.com",
+     *       "subscriptionStatus": { "status": "NOT_SET" },
+     *       "deliverabilityStatus": "NOT_SET"
+     *     },
+     *     "phone": {
+     *       "tag": "MOBILE",
+     *       "phone": "+14155558823",
+     *       "e164": "+14155558823",
+     *       "subscriptionStatus": { "status": "NOT_SET" },
+     *       "deliverabilityStatus": "NOT_SET"
+     *     },
+     *     "company": { "name": "Nguyen Analytics", "jobTitle": "Data Lead" },
+     *     "source": { "appId": "e9022116-5b20-46d1-a29d-fd1b611ca438" },
+     *     "lastActivity": {
+     *       "date": "2026-07-01T18:34:26.137Z",
+     *       "templateId": "202edbe8-e365-490d-aa18-4335b26ab8c1"
+     *     },
+     *     "_id": "c97ff9b0-345e-44b9-a93f-2a1442a11f3f",
+     *     "_createdDate": "2026-07-01T18:34:26.137Z",
+     *     "_updatedDate": "2026-07-01T18:34:26.137Z"
+     *   },
+     *   "action": "CREATED"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript upsertContact (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { contactsV5 } from '@wix/crm';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { contactsV5 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function upsertContact(contact,options) {
+      const response = await myWixClient.contactsV5.upsertContact(contact,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

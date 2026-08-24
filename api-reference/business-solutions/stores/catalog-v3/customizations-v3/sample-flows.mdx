@@ -1,0 +1,360 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Set up customizations for a clothing store
+
+1. [Create a Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/create-customization) with type `PRODUCT_OPTION`, and with different product colors (`choices`): red, green, blue.
+   + Render type must be `SWATCH_CHOICES` and choice type must be `ONE_COLOR`.
+   ```json
+   {
+     "customization": {
+        "customizationType": "PRODUCT_OPTION",
+        "customizationRenderType": "SWATCH_CHOICES",
+        "name": "Color",
+        "choicesSettings": {
+          "choices": [
+            {
+              "choiceType": "ONE_COLOR",
+              "name": "Blue",
+              "colorCode": "#0000FF"
+            },
+            {
+              "choiceType": "ONE_COLOR",
+              "name": "Yellow",
+              "colorCode": "#FFFF00"
+            },
+            {
+              "choiceType": "ONE_COLOR",
+              "name": "Green",
+              "colorCode": "#008000"
+            }
+          ]
+        }
+  	  }
+   }
+   ```
+2. [Create a Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/create-customization), with type `PRODUCT_OPTION`, and with different product sizes (`choices`): S, M, L, XL.
+   + Customization render type must be `TEXT_CHOICES` and choice types must be `CHOICE_TEXT`.
+   ```json
+   {
+     "customization": {
+       "customizationRenderType": "TEXT_CHOICES",
+       "customizationType": "PRODUCT_OPTION",
+       "name": "Size",
+       "choicesSettings": {
+          "choices": [
+            {
+              "choiceType": "CHOICE_TEXT",
+              "name": "S"
+            },
+            {
+              "choiceType": "CHOICE_TEXT",
+              "name": "M"
+            },
+            {
+              "choiceType": "CHOICE_TEXT",
+              "name": "L"
+            },
+            {
+              "choiceType": "CHOICE_TEXT",
+              "name": "XL"
+            }
+          ]
+        }
+     }
+   }
+   ```
+3. [Create a Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/create-customization), with type `MODIFIER`, in order to specify free text to be on a product.
+   + Render type must be `FREE_TEXT`.
+   + Set `freeTextInput.title` to "Choose text to be on shirt", and have and a range of 10-50 characters.
+   ```json
+   {
+     "customization": {
+       "customizationRenderType": "FREE_TEXT",
+       "customizationType": "MODIFIER",
+       "name": "Name for Personalization",
+       "freeTextInput": {
+         "title": "Add your name for personalization",
+         "minCharCount": 10,
+         "maxCharCount": 50
+       }
+     }
+   }
+   ```
+4. Add customization choices to the Color customization (for example, add yellow).
+   ```json
+      {
+        "choices": [{
+            "choiceType": "ONE_COLOR",
+            "name": "Red",
+            "colorCode": "#FF0000"
+         }]
+   }
+   ```
+5. [Query](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/query-customizations) for all the customizations of type `PRODUCT_OPTION` and render type `SWATCH_CHOICES`.
+   ::::tabs
+   :::REST_TAB
+   ```json
+         {
+         "query": {
+            "filter": {
+               "customizationRenderType": "SWATCH_CHOICES"
+            },
+            "cursorPaging": {
+               "limit": 10
+            }
+         }
+      }
+      ```
+   :::
+   :::SDK_TAB
+   ```js
+   const query = customizationsV3.queryCustomizations().eq("customizationRenderType", "SWATCH_CHOICES").limit(10);
+   ```
+   :::
+   ::::
+
+## Create a product with new options
+
+To assign a new non-existing option to a new product, you can provide the option to the Create Product request.
+
+To create a product with new options, call [Create Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product) and pass the `name`, `optionRenderType`, and `choices`:
+```json
+{
+   "product": {
+      "name": "Running Shoes",
+      "physicalProperties": {},
+      "productType": "PHYSICAL",
+      "options": [
+         {
+            "name": "Size",
+            "optionRenderType": "TEXT_CHOICES",
+            "choicesSettings": {
+               "choices": [
+                  {
+                     "name": "32",
+                     "choiceType": "CHOICE_TEXT"
+                  },
+                  {
+                     "name": "33",
+                     "choiceType": "CHOICE_TEXT"
+                  },
+                  {
+                     "name": "34",
+                     "choiceType": "CHOICE_TEXT"
+                  }
+               ]
+            }
+         }
+      ],
+      "variantsInfo": {
+         "variants": [
+            {
+               "choices": [
+                  {
+                     "optionChoiceNames": {
+                        "choiceName": "32",
+                        "optionName": "Size",
+                        "renderType": "TEXT_CHOICES"
+                     }
+                  }
+               ],
+               "price": {
+                  "basePrice": {
+                     "amount": "47"
+                  }
+               }
+            },
+            {
+               "choices": [
+                  {
+                     "optionChoiceNames": {
+                        "choiceName": "33",
+                        "optionName": "Size",
+                        "renderType": "TEXT_CHOICES"
+                     }
+                  }
+               ],
+               "price": {
+                  "basePrice": {
+                     "amount": "47"
+                  }
+               }
+            }
+         ]
+      }
+   }
+}
+```
+> Note that if an option with `option.name` already exists, it will assign the existing option to the product.
+
+## Create a product with new modifiers
+
+To assign a new non-existing modifier to a new product, you can provide the modifier to the Create Product request.
+
+To create a product with new modifiers, call [Create Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product) and pass the `name`, `modifierRenderType`, and `freeTextSettings`:
+```json
+{
+  "product": {
+    "name": "T-Shirt",
+    "physicalProperties": {},
+    "productType": "PHYSICAL",
+    "modifiers": [
+      {
+        "name": "Text on T-Shirt",
+        "modifierRenderType": "FREE_TEXT",
+        "mandatory": true,
+        "freeTextSettings": {
+          "title": "Choose text to be on shirt",
+          "maxCharCount": 20,
+          "minCharCount": 10
+        }
+      }
+    ],
+    "variantsInfo": {
+      "variants": [
+        {
+          "price": {
+            "basePrice": {
+              "amount": "17"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+> Note that if a modifier with `modifier.name` already exists, it will assign the existing modifier to the product.
+
+## Update an option name
+
+To change the name of an option, which updates all products to which it is assigned, call [Update Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/update-customization) with the requested changes:
+```json
+{
+   "customization": {
+      "name": "Shoe Size",
+      "id": "b10beb03-a063-4a87-8d12-4879338d52ab",
+      "revision": "1"
+   }
+}
+```
+
+## Delete a modifier
+
+To delete a modifier, which removes it from any product to which it is assigned, call [Delete Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/delete-customization) with the `customizationId` of the modifier you want to delete:
+```json
+{
+  "customizationId": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+}
+```
+
+## Group choices under a primary choice
+
+You can organize related choices into groups for storefront filtering. For example, if a "Color" option has many shades of blue, you can group them under a "Blue" primary choice so that customers see a cleaner filter list.
+
+To group choices under a primary choice:
+
+1. Call [Create Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/create-customization) with all the choices you need, including the primary and linked choices:
+   ```json
+   {
+     "customization": {
+       "customizationType": "PRODUCT_OPTION",
+       "customizationRenderType": "SWATCH_CHOICES",
+       "name": "Color",
+       "choicesSettings": {
+         "choices": [
+           {
+             "choiceType": "ONE_COLOR",
+             "name": "Blue",
+             "colorCode": "#0000FF"
+           },
+           {
+             "choiceType": "ONE_COLOR",
+             "name": "Navy Blue",
+             "colorCode": "#000080"
+           },
+           {
+             "choiceType": "ONE_COLOR",
+             "name": "Sky Blue",
+             "colorCode": "#87CEEB"
+           },
+           {
+             "choiceType": "ONE_COLOR",
+             "name": "Red",
+             "colorCode": "#FF0000"
+           }
+         ]
+       }
+     }
+   }
+   ```
+
+2. Note the choice IDs from the response. For example, "Blue" gets ID `aaa...`, "Navy Blue" gets `bbb...`, and "Sky Blue" gets `ccc...`.
+
+3. Call [Update Customization Choices](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/update-customization-choices) to assign `primaryChoiceIds` to the linked choices. Set the `primaryChoiceIds` of "Navy Blue" and "Sky Blue" to the ID of "Blue":
+   ```json
+   {
+     "customizationId": "<CUSTOMIZATION_ID>",
+     "revision": 1,
+     "choices": [
+       {
+         "choice": {
+           "id": "bbb...",
+           "primaryChoiceIds": ["aaa..."]
+         }
+       },
+       {
+         "choice": {
+           "id": "ccc...",
+           "primaryChoiceIds": ["aaa..."]
+         }
+       }
+     ]
+   }
+   ```
+
+4. In the storefront filter, "Navy Blue" and "Sky Blue" are now grouped under "Blue" instead of appearing as separate top-level filter options.
+
+## Set the sort order for choices in storefront filters
+
+You can control how a customization's choices appear in storefront filter panels by setting a sort order. You can also manually reorder the choices list.
+
+To set the sort strategy:
+
+1. Call [Get Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/get-customization) to retrieve the customization and its current `revision`.
+1. Call [Update Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/update-customization) with the desired `choicesSettings.sortOrder`. For example, to sort alphabetically by name:
+   ```json
+   {
+     "customization": {
+       "id": "b10beb03-a063-4a87-8d12-4879338d52ab",
+       "revision": "3",
+       "choicesSettings": {
+         "sortOrder": "BY_NAME"
+       }
+     }
+   }
+   ```
+
+To manually reorder choices:
+
+1. Call [Get Customization](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/get-customization) to retrieve the customization, its current `revision`, and choice IDs.
+1. Call [Reorder Customization Choices](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/reorder-customization-choices) with all current choice IDs in the desired display order. This sets `sortOrder` to `MANUAL`:
+   ```json
+   {
+     "customizationId": "b10beb03-a063-4a87-8d12-4879338d52ab",
+     "revision": "3",
+     "choiceIds": [
+       "a1b2c3d4-...",
+       "e5f6g7h8-...",
+       "i9j0k1l2-..."
+     ]
+   }
+   ```

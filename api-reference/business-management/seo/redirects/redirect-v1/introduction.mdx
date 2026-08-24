@@ -1,0 +1,86 @@
+---
+title: "Introduction"
+description: "A redirect sends a visitor who requests one path on a site to another path or URL."
+icon: "file-lines"
+---
+
+A redirect sends a visitor who requests one path on a site to another path or URL. Sites use redirects to keep old links working after a page is renamed or removed, to consolidate duplicate URLs, and to point a whole section of a site somewhere else.
+
+With the SEO Redirects API, you can:
+
+- Retrieve a site's redirects, one at a time or all at once.
+- Create redirects that match a single path, or a path and everything under it.
+- Create redirects that apply to one language of a multilingual site.
+- Create and delete redirects in batches of up to 500.
+
+## How a redirect behaves on the site
+
+A redirect returns a 301 permanent redirect to the visitor, so search engines treat the target as the page's new home.
+
+A redirect takes effect on the live site as soon as it's created, with no site publish, and stops taking effect as soon as it's deleted.
+
+A redirect also takes precedence over a page that exists at the same path. Creating a redirect from a path that still serves a page makes that page unreachable until the redirect is deleted.
+
+## Exact and group redirects
+
+A redirect matches either one path or a whole branch of the site, depending on `options.groupRedirect`:
+
+- **Exact:** `options.groupRedirect` is `false` or omitted, and only the `from` path matches.
+- **Group:** `options.groupRedirect` is `true`, and every path under `from` matches. The rest of the URL carries over to the target, so a group redirect from `/forum/questions/` to `/forum/faqs/` sends `/forum/questions/my-post` to `/forum/faqs/my-post`.
+
+An exact redirect and a group redirect that share a `from` path are two different redirects.
+
+## Changing a redirect
+
+There's no method to update a redirect. To change one, retrieve it, delete it, then create the replacement:
+
+1. Call [Get Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/get-redirect) and keep the response.
+1. Call [Delete Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/delete-redirect) with the same ID.
+1. Call [Create Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect) with the fields you retrieved and your changes applied.
+
+Carry the whole redirect across, not only the fields you're changing. [Create Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect) fills a field you omit with its default rather than with the redirect's previous value, so an omitted `options` turns a group redirect into an exact one, and an omitted `language` turns a language-scoped redirect into one that applies to every language. Keep `id` to preserve the redirect's identity, or omit it to get a new one.
+
+## Redirects that get deleted for you
+
+Two situations delete a redirect that's already on the site, without a separate call and without a confirmation step. The deleted redirect can't be recovered, so retrieve it first if you might need to restore it.
+
+- **Loops.** If a new redirect points at a path that another redirect starts from, the other redirect is deleted and the create goes ahead. [Bulk Create Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) does the same for a loop against a redirect on the site, but fails the individual redirect with `REDIRECT_LOOP` when the loop is with an earlier redirect in the same request.
+- **`options.forceReplace`.** Setting it to `true` deletes the redirect that already starts from the same `from` path, instead of failing with `FROM_URL_EXISTS`.
+
+## Reading bulk results
+
+[Bulk Create Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) and [Bulk Delete Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-delete-redirects) report each redirect separately, inside a successful response:
+
+- Read each outcome from `results[].itemMetadata`, matched to your request by `originalIndex`. A failed item carries an `error` with a `code` such as `FROM_URL_EXISTS` or `REDIRECT_NOT_FOUND`.
+- Read the totals from `bulkActionMetadata`. Its `undetailedFailures` counts redirects whose outcome is unknown: they carry no error, and they may or may not have been written, so call [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) to check them.
+- A malformed request, such as an empty list, is rejected as a whole. It returns a 400 and carries no per-item results.
+
+[Bulk Create Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) isn't atomic. If a redirect is deleted to resolve a loop or a conflict and the write that follows fails, the deleted redirect is gone and nothing takes its place. Repeating the same request recreates it.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- There's no method to update a redirect and no method to query redirects. To change a redirect, delete it and create the replacement. To find redirects, call [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) and filter the result on your side.
+- [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects) returns every redirect on the site in one response, including redirects that Wix created on the site owner's behalf, such as when a page's URL slug is renamed in the editor.
+- A `from` path can't be the site root.
+- A `from` or `to` path on a redirect scoped to a `language` is stored without the language prefix, so a `fr` redirect created from `/fr/about` is returned as `/about`.
+- Deleting a redirect scoped to a language stops it taking effect, but the redirect can still appear in [List Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/list-redirects).
+- Creating a redirect identical to one already on the site changes nothing and succeeds. [Create Redirect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/create-redirect) returns the redirect from the request, without an `id` or a `createdDate`, and [Bulk Create Redirects](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/bulk-create-redirects) reports a success with no `id`.
+- No webhook is triggered when a redirect is created or deleted. Don't treat the absence of an event as the absence of a change.
+
+## Use cases
+
+- [Change where an existing redirect points](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/sample-flows#change-where-an-existing-redirect-points)
+- [Redirect a whole section of a site](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/sample-flows#redirect-a-whole-section-of-a-site)
+- [Migrate a batch of URLs from another platform](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/sample-flows#migrate-a-batch-of-urls-from-another-platform)
+- [Clean up redirects for a retired section of a site](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/redirects/redirect-v1/sample-flows#clean-up-redirects-for-a-retired-section-of-a-site)
+
+## Terminology
+
+- **Redirect:** A rule that sends a visitor who requests one path on a site to another path or URL.
+- **Exact redirect:** A redirect that matches only its `from` path.
+- **Group redirect:** A redirect that matches its `from` path and everything under it, carrying the rest of the URL over to the target.
+- **Language-scoped redirect:** A redirect that applies to one language version of a multilingual site. A redirect with no `language` applies to every language.
+
+@sdk_package_setup

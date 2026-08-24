@@ -1,0 +1,1128 @@
+---
+title: "Create Draft Order"
+description: "Creates a draft order."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a draft order.
+
+    Pass one of the following in `source`:
+    + `sourceOrderId`: Creates a draft for editing an existing order. If the order already has an active draft that you created, the existing draft is returned with `preexistingDraftOrder: true`. To apply the draft's changes to the original order, call [Commit Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/commit-draft-order).
+    + `draftOrder`: Creates a draft order from scratch with the provided initial values. To convert it to an order, call [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft).
+
+    <Note>
+
+    + An order can have a single active draft at a time. If the active draft was created by a different identity, the call fails with `ORDER_IS_ALREADY_EDITED`.
+    + A draft created for an existing order expires 24 hours after its last update. Modifying the draft resets the timer, and an expired draft is replaced with a new one on the next call to Create Draft Order. Drafts created from scratch don't expire.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.MANAGE-ECOM">Manage eCommerce - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/draft-orders
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string">
+
+      ID of the order to create a draft for.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="calculatedDraftOrder" type="CalculatedDraftOrder">
+
+      Draft order calculated with the latest changes.
+
+      <Expandable title="calculatedDraftOrder properties">
+
+        <ResponseField name="draftOrder" type="DraftOrder">
+
+          Draft order.
+
+          See the [Draft Order Object](/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-object) for this object's fields.
+
+        </ResponseField>
+
+        <ResponseField name="shippingOptions" type="ShippingOption[]">
+
+          Shipping options.
+
+          <Expandable title="shippingOptions properties">
+
+            <ResponseField name="carrierId" type="string">
+
+              Carrier ID.
+
+            </ResponseField>
+
+            <ResponseField name="code" type="string">
+
+              Unique code that acts as an ID for a shipping rate. For example, `"usps_std_overnight"`.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Shipping rate title. For example, `"USPS Standard Overnight Delivery"`, `"Standard"`, or `"First-Class Package International"`.
+
+            </ResponseField>
+
+            <ResponseField name="logistics" type="DeliveryLogistics">
+
+              Shipping logistics.
+
+              _Nested structure omitted for brevity — see the `DeliveryLogistics` object._
+
+            </ResponseField>
+
+            <ResponseField name="cost" type="ShippingPrice">
+
+              Shipping cost.
+
+              _Nested structure omitted for brevity — see the `ShippingPrice` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="calculationErrors" type="CalculationErrors">
+
+          Errors that occurred during calculation.
+
+          <Expandable title="calculationErrors properties">
+
+            <ResponseField name="taxCalculationError" type="Details">
+
+              Tax calculation error.
+
+              _Nested structure omitted for brevity — see the `Details` object._
+
+            </ResponseField>
+
+            <ResponseField name="orderValidationErrors" type="ApplicationError[]">
+
+              Order validation errors.
+
+              _Nested structure omitted for brevity — see the `ApplicationError[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="shippingCalculationError" type="shippingCalculationError">
+
+              shippingCalculationError
+
+              _Nested structure omitted for brevity — see the `shippingCalculationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="preexistingDraftOrder" type="boolean">
+
+      Whether the response contains a draft order that existed before request.
+
+      `true`: The draft order already exists and is updated.
+      `false`: A new draft order is created.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANNOT_BE_EDITED` | Order can't be edited. |
+    | `409` | `ALREADY_EXISTS` | `ORDER_IS_ALREADY_EDITED` | Order is already being edited by another owner. |
+    | `500` | `INTERNAL` | `FAILED_TO_FETCH_SETTINGS` | Couldn't fetch settings. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATED_LINE_ITEM_IDS` | Line items have duplicated IDs. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_NOT_AVAILABLE` | Catalog item isn't available. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_NOT_FOUND` | Couldn't find the catalog item. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_PAYMENT_OPTION_UNSUPPORTED` | Catalog item's payment option isn't supported. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_ALREADY_EXIST` | There is already a catalog item with this ID on the draft order. |
+    | `400` | `INVALID_ARGUMENT` | `GIFT_CARD_ITEM_UNSUPPORTED` | Gift card items aren't supported. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_ITEM_UNSUPPORTED` | Subscription items aren't supported. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATED_EXTERNAL_LINE_ITEM_ID` | External line item ID isn't unique. Each line item must have a unique external ID. |
+    | `404` | `NOT_FOUND` | `NOT_AUTHORIZED_TO_READ_DRAFT_ORDERS` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Draft Order Created | `wix.ecom.v1.draft_order_created` | Triggered when a draft order is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-draft-order" id="ex-rest-create-draft-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-draft-order" id="ex-rest-create-draft-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-draft-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-draft-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Draft Order from scratch</span><span className="wix-picker-desc">Creates a new draft order with initial values by passing draftOrder</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Draft Order for an existing order</span><span className="wix-picker-desc">Creates a draft for editing an existing order by passing sourceOrderId</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-draft-order-0"><span className="wix-picker-name">Create Draft Order from scratch</span><span className="wix-picker-desc">Creates a new draft order with initial values by passing draftOrder</span></label>
+    <label htmlFor="ex-rest-create-draft-order-1"><span className="wix-picker-name">Create Draft Order for an existing order</span><span className="wix-picker-desc">Creates a draft for editing an existing order by passing sourceOrderId</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+          'https://www.wixapis.com/ecom/v1/draft-orders' \
+          -H 'Authorization:  <AUTH>' \
+          -H 'Content-type: application/json' \
+          -d '{
+                "draftOrder": {
+                  "catalogLineItems": [
+                    {
+                      "catalogReference": {
+                        "catalogItemId": "89cb103f-d8cd-4707-8b99-ad614405b2a9",
+                        "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+                      },
+                      "quantity": 1
+                    }
+                  ]
+                }
+              }'
+      ```
+
+      ```json Response
+      {
+        "calculatedDraftOrder": {
+          "draftOrder": {
+            "id": "7f4c1e09-58d1-4a5b-9a6e-2b0f4d0c3a17",
+            "lineItems": [
+              {
+                "lineItem": {
+                  "id": "00000000-0000-0000-0000-000000000001",
+                  "productName": {
+                    "original": "Shoe",
+                    "translated": "Shoe"
+                  },
+                  "catalogReference": {
+                    "catalogItemId": "89cb103f-d8cd-4707-8b99-ad614405b2a9",
+                    "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+                  },
+                  "quantity": 1,
+                  "totalDiscount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "descriptionLines": [],
+                  "image": {
+                    "id": "3c76e2_bf235c38610f4d2a905db71095b351cf~mv2.jpg",
+                    "url": "https://static.wixstatic.com/media/3c76e2_bf235c38610f4d2a905db71095b351cf~mv2.jpg/v1/fit/w_1000,h_1000,q_90/file.jpg",
+                    "height": 2848,
+                    "width": 4271
+                  },
+                  "physicalProperties": {
+                    "sku": "",
+                    "shippable": true
+                  },
+                  "itemType": {
+                    "preset": "PHYSICAL"
+                  },
+                  "price": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "priceBeforeDiscounts": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "totalPriceBeforeTax": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "totalPriceAfterTax": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "paymentOption": "FULL_PAYMENT_ONLINE",
+                  "taxDetails": {
+                    "taxableAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxRate": "0.0000",
+                    "totalTax": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    }
+                  },
+                  "taxInfo": {
+                    "taxAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxableAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxRate": "0.0000",
+                    "taxIncludedInPrice": false,
+                    "taxBreakdown": []
+                  },
+                  "locations": [],
+                  "lineItemPrice": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "taxableAddress": {
+                    "addressType": "SHIPPING"
+                  }
+                }
+              }
+            ],
+            "additionalFees": [],
+            "discounts": [],
+            "createdDate": "2024-10-22T06:17:41.753Z",
+            "updatedDate": "2024-10-22T06:17:41.753Z",
+            "createdBy": {
+              "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+            },
+            "status": "DRAFT",
+            "weightUnit": "LB",
+            "currency": "USD",
+            "priceSummary": {
+              "subtotal": {
+                "amount": "50.00",
+                "formattedAmount": "$50.00"
+              },
+              "shipping": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "tax": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "discount": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "total": {
+                "amount": "50.00",
+                "formattedAmount": "$50.00"
+              },
+              "totalAdditionalFees": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "taxSummary": {
+              "totalTax": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "balanceSummary": {
+              "balance": {
+                "amount": "50.00",
+                "formattedAmount": "$50.00"
+              },
+              "paid": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "refunded": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "authorized": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "taxInfo": {
+              "totalTax": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "taxBreakdown": []
+            }
+          },
+          "shippingOptions": [],
+          "calculationErrors": {
+            "orderValidationErrors": []
+          }
+        },
+        "preexistingDraftOrder": false
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+          'https://www.wixapis.com/ecom/v1/draft-orders' \
+          -H 'Authorization:  <AUTH>' \
+          -H 'Content-type: application/json' \
+          -d '{
+                "sourceOrderId": "9d848eb0-fc48-45ea-ac00-11806ea2d1c8"
+              }'
+      ```
+
+      ```json Response
+      {
+        "calculatedDraftOrder": {
+          "draftOrder": {
+            "id": "3c1f2555-ed23-43aa-82f4-38a3a45929f6",
+            "orderId": "9d848eb0-fc48-45ea-ac00-11806ea2d1c8",
+            "lineItems": [
+              {
+                "lineItem": {
+                  "id": "00000000-0000-0000-0000-000000000001",
+                  "productName": {
+                    "original": "Shoe",
+                    "translated": "Shoe"
+                  },
+                  "catalogReference": {
+                    "catalogItemId": "89cb103f-d8cd-4707-8b99-ad614405b2a9",
+                    "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+                  },
+                  "quantity": 1,
+                  "totalDiscount": {
+                    "amount": "0.00",
+                    "formattedAmount": "$0.00"
+                  },
+                  "descriptionLines": [],
+                  "image": {
+                    "id": "3c76e2_bf235c38610f4d2a905db71095b351cf~mv2.jpg",
+                    "url": "https://static.wixstatic.com/media/3c76e2_bf235c38610f4d2a905db71095b351cf~mv2.jpg/v1/fit/w_1000,h_1000,q_90/file.jpg",
+                    "height": 2848,
+                    "width": 4271
+                  },
+                  "physicalProperties": {
+                    "sku": "",
+                    "shippable": true
+                  },
+                  "itemType": {
+                    "preset": "PHYSICAL"
+                  },
+                  "price": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "priceBeforeDiscounts": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "totalPriceBeforeTax": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "totalPriceAfterTax": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "paymentOption": "FULL_PAYMENT_ONLINE",
+                  "taxDetails": {
+                    "taxableAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxRate": "0.0000",
+                    "totalTax": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    }
+                  },
+                  "taxInfo": {
+                    "taxAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxableAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxRate": "0.0000",
+                    "taxIncludedInPrice": false,
+                    "taxBreakdown": []
+                  },
+                  "locations": [],
+                  "lineItemPrice": {
+                    "amount": "50.00",
+                    "formattedAmount": "$50.00"
+                  },
+                  "taxableAddress": {
+                    "addressType": "SHIPPING"
+                  }
+                }
+              }
+            ],
+            "shippingInfo": {
+              "shippingInfo": {
+                "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+                "code": "17b15dc5-c0a2-4cab-ad57-286e8c716736",
+                "title": "Standard US Shipping",
+                "logistics": {
+                  "deliveryTime": "",
+                  "shippingDestination": {
+                    "address": {
+                      "country": "US",
+                      "subdivision": "US-NY",
+                      "city": "New York"
+                    }
+                  }
+                },
+                "cost": {
+                  "price": {
+                    "amount": "10",
+                    "formattedAmount": "$10.00"
+                  },
+                  "totalPriceBeforeTax": {
+                    "amount": "10",
+                    "formattedAmount": "$10.00"
+                  },
+                  "totalPriceAfterTax": {
+                    "amount": "10.00",
+                    "formattedAmount": "$10.00"
+                  },
+                  "taxDetails": {
+                    "taxableAmount": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    },
+                    "taxRate": "0.0000",
+                    "totalTax": {
+                      "amount": "0.00",
+                      "formattedAmount": "$0.00"
+                    }
+                  }
+                },
+                "region": {
+                  "name": "International"
+                }
+              }
+            },
+            "buyerInfo": {
+              "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+              "email": "example@example.com",
+              "visitorId": "887f5d8c-133d-413b-b8e7-097e58128bee"
+            },
+            "billingInfo": {
+              "address": {
+                "country": "US",
+                "subdivision": "US-NY",
+                "city": "New York",
+                "postalCode": "10173",
+                "addressLine": "525 5th Ave",
+                "countryFullname": "United States",
+                "subdivisionFullname": "New York"
+              },
+              "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "0555555555",
+                "company": ""
+              }
+            },
+            "additionalFees": [],
+            "discounts": [],
+            "createdDate": "2024-10-22T06:17:41.753Z",
+            "updatedDate": "2024-10-22T06:17:41.753Z",
+            "createdBy": {
+              "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+            },
+            "status": "DRAFT",
+            "weightUnit": "LB",
+            "currency": "USD",
+            "priceSummary": {
+              "subtotal": {
+                "amount": "50.00",
+                "formattedAmount": "$50.00"
+              },
+              "shipping": {
+                "amount": "10.00",
+                "formattedAmount": "$10.00"
+              },
+              "tax": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "discount": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "total": {
+                "amount": "60.00",
+                "formattedAmount": "$60.00"
+              },
+              "totalAdditionalFees": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "taxSummary": {
+              "totalTax": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "balanceSummary": {
+              "balance": {
+                "amount": "60.00",
+                "formattedAmount": "$60.00"
+              },
+              "paid": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "refunded": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "authorized": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              }
+            },
+            "recipientInfo": {
+              "recipientInfo": {
+                "address": {
+                  "country": "US",
+                  "subdivision": "US-NY",
+                  "city": "New York",
+                  "postalCode": "10173",
+                  "addressLine": "525 5th Ave",
+                  "countryFullname": "United States",
+                  "subdivisionFullname": "New York"
+                },
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "phone": "0555555555",
+                  "company": ""
+                }
+              }
+            },
+            "taxInfo": {
+              "totalTax": {
+                "amount": "0.00",
+                "formattedAmount": "$0.00"
+              },
+              "taxBreakdown": []
+            },
+            "buyerDetails": {
+              "buyerInfo": {
+                "contactId": "24de6f0b-60ce-4faa-9138-2e39f1415615",
+                "email": "example@example.com",
+                "visitorId": "887f5d8c-133d-413b-b8e7-097e58128bee"
+              }
+            },
+            "billingDetails": {
+              "billingInfo": {
+                "address": {
+                  "country": "US",
+                  "subdivision": "US-NY",
+                  "city": "New York",
+                  "postalCode": "10173",
+                  "addressLine": "525 5th Ave",
+                  "countryFullname": "United States",
+                  "subdivisionFullname": "New York"
+                },
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "phone": "0555555555",
+                  "company": ""
+                }
+              }
+            }
+          },
+          "shippingOptions": [
+            {
+              "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+              "code": "ca89cf82-0d1e-ae9e-8377-c2eac8966d97",
+              "title": "Standart",
+              "logistics": {
+                "deliveryTime": "3-5 days"
+              },
+              "cost": {
+                "price": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                },
+                "currency": "USD"
+              }
+            },
+            {
+              "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+              "code": "36b347c8-8c01-a7bc-fd98-807de29366ea",
+              "title": "Fast",
+              "logistics": {
+                "deliveryTime": "1-2 days"
+              },
+              "cost": {
+                "price": {
+                  "amount": "1",
+                  "formattedAmount": "$1.00"
+                },
+                "currency": "USD"
+              }
+            },
+            {
+              "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+              "code": "17b15dc5-c0a2-4cab-ad57-286e8c716736",
+              "title": "Standard US Shipping",
+              "logistics": {
+                "deliveryTime": ""
+              },
+              "cost": {
+                "price": {
+                  "amount": "10",
+                  "formattedAmount": "$10.00"
+                },
+                "currency": "USD"
+              }
+            },
+            {
+              "carrierId": "50d8c12f-715e-41ad-be25-d0f61375dbee",
+              "code": "pickup-b88ef927-32d6-4425-b44d-ff2857b9555f",
+              "title": "At store",
+              "logistics": {
+                "instructions": "Any time",
+                "pickupDetails": {
+                  "address": {
+                    "country": "IE",
+                    "subdivision": "IE-WW",
+                    "city": "Dublin",
+                    "addressLine": "Dublin"
+                  },
+                  "pickupMethod": "STORE_PICKUP"
+                }
+              },
+              "cost": {
+                "price": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                },
+                "currency": "USD"
+              }
+            }
+          ],
+          "calculationErrors": {
+            "orderValidationErrors": []
+          }
+        },
+        "preexistingDraftOrder": false
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a draft order.
+
+    Pass one of the following in `source`:
+    + `sourceOrderId`: Creates a draft for editing an existing order. If the order already has an active draft that you created, the existing draft is returned with `preexistingDraftOrder: true`. To apply the draft's changes to the original order, call [Commit Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/commit-draft-order).
+    + `draftOrder`: Creates a draft order from scratch with the provided initial values. To convert it to an order, call [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft).
+
+    <Note>
+
+    + An order can have a single active draft at a time. If the active draft was created by a different identity, the call fails with `ORDER_IS_ALREADY_EDITED`.
+    + A draft created for an existing order expires 24 hours after its last update. Modifying the draft resets the timer, and an expired draft is replaced with a new one on the next call to Create Draft Order. Drafts created from scratch don't expire.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-ECOM-MEGA.MANAGE-ECOM">Manage eCommerce - all permissions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { draftOrders } from '@wix/ecom';
+
+    draftOrders.createDraftOrder(options): Promise<CreateDraftOrderResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="CreateDraftOrderOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="orderId" type="string">
+
+          ID of the order to create a draft for.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="source" type="source">
+
+          source
+
+          <Expandable title="source properties">
+
+            <ParamField body="sourceOrderId" type="string">
+
+              ID of the order to create a draft for.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="draftOrder" type="DraftOrderInput">
+
+              Initial values used to create a new draft order.
+
+              _Nested structure omitted for brevity — see the `DraftOrderInput` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CreateDraftOrderResponse>`.
+
+    <ResponseField name="calculatedDraftOrder" type="CalculatedDraftOrder">
+
+      Draft order calculated with the latest changes.
+
+      <Expandable title="calculatedDraftOrder properties">
+
+        <ResponseField name="draftOrder" type="DraftOrder">
+
+          Draft order.
+
+          See the [Draft Order Object](/api-reference/business-solutions/e-commerce/orders/draft-orders/draft-order-object) for this object's fields.
+
+        </ResponseField>
+
+        <ResponseField name="shippingOptions" type="ShippingOption[]">
+
+          Shipping options.
+
+          <Expandable title="shippingOptions properties">
+
+            <ResponseField name="carrierId" type="string">
+
+              Carrier ID.
+
+            </ResponseField>
+
+            <ResponseField name="code" type="string">
+
+              Unique code that acts as an ID for a shipping rate. For example, `"usps_std_overnight"`.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Shipping rate title. For example, `"USPS Standard Overnight Delivery"`, `"Standard"`, or `"First-Class Package International"`.
+
+            </ResponseField>
+
+            <ResponseField name="logistics" type="DeliveryLogistics">
+
+              Shipping logistics.
+
+              _Nested structure omitted for brevity — see the `DeliveryLogistics` object._
+
+            </ResponseField>
+
+            <ResponseField name="cost" type="ShippingPrice">
+
+              Shipping cost.
+
+              _Nested structure omitted for brevity — see the `ShippingPrice` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="calculationErrors" type="CalculationErrors">
+
+          Errors that occurred during calculation.
+
+          <Expandable title="calculationErrors properties">
+
+            <ResponseField name="taxCalculationError" type="Details">
+
+              Tax calculation error.
+
+              _Nested structure omitted for brevity — see the `Details` object._
+
+            </ResponseField>
+
+            <ResponseField name="orderValidationErrors" type="ApplicationError[]">
+
+              Order validation errors.
+
+              _Nested structure omitted for brevity — see the `ApplicationError[]` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="shippingCalculationError" type="shippingCalculationError">
+
+              shippingCalculationError
+
+              _Nested structure omitted for brevity — see the `shippingCalculationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="preexistingDraftOrder" type="boolean">
+
+      Whether the response contains a draft order that existed before request.
+
+      `true`: The draft order already exists and is updated.
+      `false`: A new draft order is created.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANNOT_BE_EDITED` | Order can't be edited. |
+    | `409` | `ALREADY_EXISTS` | `ORDER_IS_ALREADY_EDITED` | Order is already being edited by another owner. |
+    | `500` | `INTERNAL` | `FAILED_TO_FETCH_SETTINGS` | Couldn't fetch settings. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATED_LINE_ITEM_IDS` | Line items have duplicated IDs. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_NOT_AVAILABLE` | Catalog item isn't available. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_NOT_FOUND` | Couldn't find the catalog item. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_PAYMENT_OPTION_UNSUPPORTED` | Catalog item's payment option isn't supported. |
+    | `400` | `INVALID_ARGUMENT` | `CATALOG_ITEM_ALREADY_EXIST` | There is already a catalog item with this ID on the draft order. |
+    | `400` | `INVALID_ARGUMENT` | `GIFT_CARD_ITEM_UNSUPPORTED` | Gift card items aren't supported. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_ITEM_UNSUPPORTED` | Subscription items aren't supported. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATED_EXTERNAL_LINE_ITEM_ID` | External line item ID isn't unique. Each line item must have a unique external ID. |
+    | `404` | `NOT_FOUND` | `NOT_AUTHORIZED_TO_READ_DRAFT_ORDERS` | The [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) used to call the method doesn't have the required permissions. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Draft Order Created | `wix.ecom.v1.draft_order_created` | Triggered when a draft order is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-draft-order" id="ex-sdk-create-draft-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-draft-order" id="ex-sdk-create-draft-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-draft-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-draft-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a draft order from scratch</span><span className="wix-picker-desc">Creates a draft order with initial line items and buyer info. To create a draft for editing an existing order, pass sourceOrderId instead of draftOrder</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createDraftOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-draft-order-0"><span className="wix-picker-name">Create a draft order from scratch</span><span className="wix-picker-desc">Creates a draft order with initial line items and buyer info. To create a draft for editing an existing order, pass sourceOrderId instead of draftOrder</span></label>
+    <label htmlFor="ex-sdk-create-draft-order-1"><span className="wix-picker-name">createDraftOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a draft order from scratch
+    import { draftOrders } from "@wix/ecom";
+
+    async function createDraftOrder() {
+      const response = await draftOrders.createDraftOrder({
+        draftOrder: {
+          catalogLineItems: [
+            {
+              catalogReference: {
+                catalogItemId: "b87b5f05-b35e-4292-9c5c-dae947a5130c",
+                appId: "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+                options: {
+                  variantId: "24d3f669-f590-4e59-92dd-769434be3a7b"
+                }
+              },
+              quantity: 2
+            }
+          ],
+          buyerInfo: {
+            contactId: "e714c37e-5fc3-4fc7-a68a-6e469a41ee27",
+            email: "john.doe@example.com"
+          }
+        }
+      });
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createDraftOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { draftOrders } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { draftOrders },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createDraftOrder(options) {
+      const response = await myWixClient.draftOrders.createDraftOrder(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

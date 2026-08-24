@@ -1,0 +1,206 @@
+---
+title: "Introduction"
+description: "<blockquote class=\"important\" Important: When developing websites or building apps with Blocks, use Velo service plugins."
+icon: "file-lines"
+---
+
+<Note>
+
+When developing websites or building apps with Blocks, use [Velo service plugins](fallback::https://dev.wix.com/docs/velo/events-service-plugins/about-events-service-plugins-and-the-sdk).
+
+</Note>
+
+As an additional fees calculation provider, you can integrate with Wix to allow merchants to request and use your services on their Wix sites.
+The additional fees you calculate are then included on the site's cart and checkout pages.  
+
+The integration is done via an app in the Wix App Market and by implementing the Additional Fees [service plugin](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions). After the app is installed on a site, Wix calls your service whenever the site needs to calculate additional fees for a transaction.  
+
+Using the service plugin, you can design your app to calculate various additional fees for the merchant's customers, including:
++ Fragile packaging fees
++ Shipping insurance fees
++ Item warranty fees
++ Gift wrapping fees
++ Carbon offset fees
+
+Learn more about [service plugin extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions).
+
+## Before you begin
+
+It's important to note that when Wix calls your implementation of the Calculate Additional Fees method, the app must return fees in the same currency as the Wix site. Extract the `currency` for a site from the request to ensure the correct currency is used in your calculation.
+
+## How it works
+
+### When Wix calls your service
+
+Wix calls your Calculate Additional Fees implementation in the following scenarios:
+
++ When a site visitor views their cart
++ When a site visitor begins the checkout process
++ When cart contents change during checkout (items added, removed, or quantities updated)
++ When shipping information changes during checkout
+
+Each call includes comprehensive information about the cart, including line items, applied discounts, shipping details, and buyer information.
+
+### What Wix does with your response
+
+The additional fees you return are:
+
++ Displayed as separate line items on the cart and checkout pages
++ Added to the order total calculation
++ Included in the final order when the purchase is completed
++ Subject to tax calculation if you mark them as taxable
+
+Site visitors see each fee with the name you provide, along with the fee amount.
+
+### Performance requirements
+
+Your implementation must respond within 3 seconds. If your service takes longer or returns an error:
+
++ Wix proceeds without additional fees
++ The site visitor won't see any fees on their cart or checkout
++ The order completes without your fees applied
+
+To meet this requirement, consider:
+
++ Using cached fee calculations when possible
++ Avoiding synchronous calls to external services
++ Implementing timeout handling in your code
++ Testing your service under load
+
+### Request context
+
+Each request includes:
+
++ `lineItems`: Products in the cart with quantities, prices, and catalog references
++ `shippingAddress`: Delivery address (useful for location-based fees)
++ `buyerDetails`: Customer contact information
++ `appliedDiscounts`: All coupons and discounts applied to the cart
++ `shippingInfo`: Selected shipping method and costs
++ `purchaseFlowId`: Type of checkout flow (standard or express)
++ `subtotal`: Cart total before fees, shipping, and tax
+
+Use this information to calculate fees based on your business logic. For example:
+
++ Calculate fragile packaging fees only for breakable items
++ Apply carbon offset fees based on shipping distance
++ Adjust gift wrapping fees based on the number of items
+
+### Associating fees with line items
+
+When returning fees, you can optionally specify which line items each fee applies to using the `lineItemIds` field. This is useful for:
+
++ Applying item-specific fees (such as warranty or insurance for certain products)
++ Proportional tax calculation when fees are taxable
++ Providing detailed breakdowns in order reports
+
+If you don't specify `lineItemIds`, the fee applies to the entire order.
+
+<Tabs>
+
+<Tab title="REST">
+
+## Get started
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **eCommerce** in the left menu, then find **Ecom Additional Fees** and click **Create**.
+1. Provide the following configuration in the JSON editor and then click **Save**.
+
+    | Name            | Type   | Description                                                                                                                                                                                                                                                                                                     |
+    |-----------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `deploymentUri` | string | **Required.** Base URI where the endpoints are called. Wix eCommerce appends the endpoint path to the base URI. For example, to call the Calculate Additional Fees endpoint at `https://my-additional-fees.com/v1/calculateAdditionalFees`, the base URI you provide here is `https://my-additional-fees.com/`. |
+    | `filter`        | Struct | An optional [WQL filter](##filters*fallback::https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters) to apply to the payload passed to Calculate Additional Fees implementer. When provided, only requests that match the filter are forwarded to the implementer.                                                                                                                                                 |
+
+</Tab>
+
+<Tab title="SDK">
+
+## Get started
+
+**Self-hosted implementations:**
+
+To enable Wix to communicate with your app:
+
+1. Go to [Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/about-extensions) in your app's dashboard.
+1. Click **Create Extension** in the top right.
+1. Filter by **eCommerce** in the left menu, then find **Ecom Additional Fees** and click **Create**.
+1. Provide the following configuration in the JSON editor and then click **Save**.
+
+    | Name            | Type   | Description                                                                                                                                                                                                                                                                                                     |
+    |-----------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | `deploymentUri` | string | **Required.** Base URI where the endpoints are called. Wix eCommerce appends the endpoint path to the base URI. For example, to call the Calculate Additional Fees endpoint at `https://my-additional-fees.com/v1/calculateAdditionalFees`, the base URI you provide here is `https://my-additional-fees.com/`. |
+    | `filter`        | Struct | An optional [WQL filter](##filters*fallback::https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters) to apply to the payload passed to Calculate Additional Fees implementer. When provided, only requests that match the filter are forwarded to the implementer.                                                                                                                                                 |
+
+Define handler functions using [`additionalFees.provideHandlers()`](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions):
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`calculateAdditionalFees()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/additional-fees/additional-fees-service-plugin/calculate-additional-fees)    | Yes            |
+
+### Self-hosted: Basic code structure
+
+```js
+import { createClient } from '@wix/sdk';
+import { additionalFees } from '@wix/ecom/service-plugins'
+
+const wixClient = createClient({
+  auth: {
+    appId: <YOUR_APP_ID>,
+    publicKey: <YOUR_APP_PUBLIC_KEY>
+  },
+  modules: { additionalFees }
+});
+
+wixClient.additionalFees.provideHandlers({
+  calculateAdditionalFees: async (payload) => {
+
+    const { request, metadata } = payload;
+
+    // Add your logic here
+
+  }
+});
+
+// Implement a router to process all requests
+express.post('/plugins-and-webhooks/*', (req, res) => {
+  wixClient.process(req);
+});
+```
+
+**CLI implementations:**
+
+Learn how to [implement a service plugin with the CLI and the SDK](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli).
+
+Define handler functions using [`additionalFees.provideHandlers()`](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk#step-4--define-handler-functions):
+
+| Function                    | Required       |
+|-----------------------------|----------------|
+| [`calculateAdditionalFees()`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/additional-fees/additional-fees-service-plugin/calculate-additional-fees)    | Yes            |
+
+### CLI: Basic code structure
+
+```js
+import { additionalFees } from '@wix/ecom/service-plugins'
+
+additionalFees.provideHandlers({
+  calculateAdditionalFees: async (payload) => {
+
+    const {request, metadata} = payload;
+
+    // Add your logic here
+
+  }
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## See also
++ [About Service Plugin Extensions](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/service-plugins/about-service-plugin-extensions)
++ [Add a Service Plugin Extension With the CLI](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-cli/supported-extensions/backend-extensions/service-plugins/add-service-plugin-extensions-with-the-cli)
++ [Add a Self-hosted Service Plugin With the SDK](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-the-sdk)
++ [Add Self-hosted Service Plugin Extensions with REST](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/self-hosting/supported-extensions/backend-extensions/add-self-hosted-service-plugin-extensions-with-rest)

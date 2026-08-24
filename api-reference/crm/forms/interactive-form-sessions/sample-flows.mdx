@@ -1,0 +1,58 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. These examples provide helpful starting points as you plan your implementation.
+
+## Prerequisites
+These flows require an existing form from the [Wix Forms API](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/introduction). Collect the form ID and its field structure.
+ 
+  
+## Create AI-powered conversations on an external site
+
+You can transform any existing Wix form into an AI-powered conversational experience, making form completion more engaging and user-friendly for visitors to your external site.
+
+To create an AI-powered conversational experience:
+
+1. Call [Create Interactive Form Session](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/create-interactive-form-session) with your form ID to start the conversational experience.
+2. Process the initial AI greeting from the `responseChunks` array. The AI will introduce itself and explain the form's purpose.
+3. On your external site, display the conversation interface for the user and wait for their input.
+4. When the user provides a natural language response, call [Send User Message](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/send-user-message) with their response.
+5. Process the response chunks to extract form data and display follow-up questions. Look for `TEXT_DATA` chunks containing extracted information and `TEXT` chunks with the next questions.
+6. Continue the conversation loop until the AI returns a `SUBMISSION` chunk indicating successful form completion.
+
+## Resume and complete abandoned form submissions
+
+You can use the Interactive Form Sessions API to help users complete forms they've started elsewhere, such as from email campaigns, previous sessions, or imported data from other systems.
+
+To help users complete partially filled forms:
+
+1. Retrieve existing form data from your database, previous sessions, or external systems.
+2. Call [Create Interactive Form Session](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/create-interactive-form-session) with comprehensive pre-filled data as `currentValues`.
+3. Process the AI's acknowledgment of existing data. The response will contain `TEXT_DATA` chunks showing the pre-filled information and `TEXT` chunks asking about missing fields.
+4. Handle any `IMPORTANT_TEXT` chunks that indicate issues with existing data or requirements for missing fields.
+5. Continue the conversation to collect remaining required information.
+6. The API automatically merges new responses with existing data, with new values overriding existing ones for the same fields.
+
+## Create conversational product ordering experiences
+
+You can create engaging purchase experiences where customers describe what they want in natural language, and the AI guides them through product selection and checkout.
+
+<Note>
+
+Before implementing this flow, ensure you have:
+- A [form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/form-object) configured with `formFields` that have at least one field with `inputOptions.inputType` set to `PAYMENT`.
+- A [payment provider](fallback::https://support.wix.com/en/article/accepting-payments-an-overview) connected to the Wix site.
+
+</Note>
+
+To implement conversational product purchases:
+
+1. Call [Create Interactive Form Session](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/create-interactive-form-session) to start the conversational experience.
+2. Call [Send User Message](fallback::https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/send-user-message) to process product inquiries as users describe their needs in natural language.
+3. Handle product selection through `SINGLE_SELECT_INPUT` or `MULTI_SELECT_INPUT` response chunks that present relevant product options. 
+4. Continue the conversation loop until the AI returns a `SUBMISSION` chunk with both `submissionId` and `checkoutId`.
+5. Call [Get Checkout URL](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/checkout/get-checkout-url) to get a link to a checkout page that is pre-populated with the user's selections.
+6. Redirect the user to the returned checkout URL.

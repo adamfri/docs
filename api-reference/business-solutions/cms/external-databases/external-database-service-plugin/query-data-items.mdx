@@ -1,0 +1,904 @@
+---
+title: "Query Data Items"
+description: "Retrieves a list of items based on the provided filtering, sorting, and paging preferences."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves a list of items based on the provided filtering, sorting, and paging preferences.
+
+    See [API Query Language](https://dev.wix.com/api/rest/getting-started/api-query-language) for more information about handling data queries.
+
+    ## Endpoint
+
+    ```http
+    POST /v3/items/query
+    ```
+
+    ## Body Params
+
+    <ParamField body="collectionId" type="string" required>
+
+      ID of the collection to query.
+
+    </ParamField>
+
+    <ParamField body="query" type="QueryV2" required>
+
+      Query preferences. See [API Query Language](https://dev.wix.com/api/rest/getting-started/api-query-language) for information about handling data queries.
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object" required>
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+          **Note:** Your endpoint must properly handle requests with filtering preferences that adhere to Wix Data data types. For example, a query request that includes filtering by a field whose type is Date and Time would contain an object in the following format: `"someDateAndTimeFieldKey": { "$date": "YYYY-MM-DDTHH:mm:ss.sssZ"}`. Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-types-in-wix-data).
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="fields" type="string[]">
+
+          Array of projected fields. A list of specific field names to return.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="paging" type="Paging">
+
+              Paging options to limit and skip the number of items. Paging mode is defined when the collection is created.
+
+              _Nested structure omitted for brevity — see the `Paging` object._
+
+            </ParamField>
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`. Paging mode is defined when the collection is created.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="includeReferencedItems" type="ReferencedItemToInclude[]">
+
+      Fields for which to include the full referenced items in the query's results, rather than just their IDs.
+      Returned items are sorted in ascending order by the creation date of the reference.
+      If the field being querried is a multi-reference field and the array is empty, the response does not return any items.
+
+      <Expandable title="includeReferencedItems properties">
+
+        <ParamField body="fieldKey" type="string">
+
+          Field name in the referencing collection.
+
+        </ParamField>
+
+        <ParamField body="limit" type="integer">
+
+          Maximum number of referenced items to return.
+
+        </ParamField>
+
+        <ParamField body="filter" type="object">
+
+          Filter criteria to specify which items to include in the response.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="consistentRead" type="boolean" required>
+
+      Whether to retrieve data from the primary database instance. This decreases performance but ensures data retrieved is up-to-date even immediately after an update. Applicable if the external database is eventually consistent.
+
+    </ParamField>
+
+    <ParamField body="returnTotalCount" type="boolean" required>
+
+      When `true`, the query response must include the total number of items that match the query.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="items" type="object[]">
+
+      Retrieved items.
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="PagingMetadataV2">
+
+      Pagination information.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the query. Returned if offset paging is used and the `tooManyToCount` flag is not set.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors to navigate through the result pages using `next` and `prev`. Returned if cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `409` | `ALREADY_EXISTS` | `ITEM_ALREADY_EXISTS` | There is already an item with this ID. |
+    | `404` | `NOT_FOUND` | `ITEM_NOT_FOUND` | Couldn't find the item. |
+    | `409` | `ALREADY_EXISTS` | `COLLECTION_ALREADY_EXISTS` | There is already a collection with this ID. |
+    | `404` | `NOT_FOUND` | `COLLECTION_NOT_FOUND` | Couldn't find the collection. |
+    | `409` | `ALREADY_EXISTS` | `REFERENCE_ALREADY_EXISTS` | There is already a reference between these items. |
+    | `404` | `NOT_FOUND` | `REFERENCE_NOT_FOUND` | Couldn't find the reference. |
+    | `400` | `INVALID_ARGUMENT` | `VALIDATION_ERROR` | 1 or more field values are invalid. |
+    | `400` | `INVALID_ARGUMENT` | `COLLECTION_CHANGE_NOT_SUPPORTED` | The collection field can't be changed. |
+    | `400` | `INVALID_ARGUMENT` | `BAD_REQUEST` | The request is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-query-data-items" id="ex-rest-query-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-query-data-items" id="ex-rest-query-data-items-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-query-data-items" id="ex-rest-query-data-items-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-query-data-items" id="ex-rest-query-data-items-3" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-query-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-query-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Complex query</span><span className="wix-picker-desc">A query with filtering requirements, sorting preferences, and the fields and referenced items to include</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Query with cursor information</span><span className="wix-picker-desc">For collections that support cursor pagination, a cursor is provided for the second page and onwards</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Query a single data item by ID</span><span className="wix-picker-desc">Queries a single data item using a filter with an _id field</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Query data items</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-query-data-items-0"><span className="wix-picker-name">Complex query</span><span className="wix-picker-desc">A query with filtering requirements, sorting preferences, and the fields and referenced items to include</span></label>
+    <label htmlFor="ex-rest-query-data-items-1"><span className="wix-picker-name">Query with cursor information</span><span className="wix-picker-desc">For collections that support cursor pagination, a cursor is provided for the second page and onwards</span></label>
+    <label htmlFor="ex-rest-query-data-items-2"><span className="wix-picker-name">Query a single data item by ID</span><span className="wix-picker-desc">Queries a single data item using a filter with an _id field</span></label>
+    <label htmlFor="ex-rest-query-data-items-3"><span className="wix-picker-name">Query data items</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://external-db.example.com/v3/items/query  \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+        "collectionId": "cities",
+        "query": {
+          "filter": {
+            "$or": [{
+              "$and": [{
+                "name": {
+                  "$startsWith": "New"
+                }
+              }, {
+                "population": {
+                  "$gt": 1000000.0
+                }
+              }]
+            }, {
+              "$and": [{
+                "isCapital": true
+              }, {
+                "_updatedDate": {
+                  "$gt": {
+                    "$date": "2021-01-01T00:00:00Z"
+                  }
+                }
+              }, {
+                "$not": {
+                  "name": {
+                    "$startsWith": "New"
+                  }
+                }
+              }]
+            }]
+          },
+          "sort": [{
+            "fieldName": "country",
+            "order": "ASC"
+          }, {
+            "fieldName": "name",
+            "order": "DESC"
+          }],
+          "paging": {
+            "limit": 50,
+            "offset": 0
+          },
+          "fields": ["name", "_id", "population", "myTrips", "_updatedDate", "pointsOfInterest"]
+        },
+        "includeReferencedItems": [{
+          "fieldKey": "pointsOfInterest",
+          "limit": 50
+        }, {
+          "fieldKey": "myTrips",
+          "limit": 50,
+          "filter": {
+            "_owner": "6785b759-eeb3-4709-ac3c-91013d82690c"
+          }
+        }],
+        "consistentRead": false,
+        "returnTotalCount": false
+      }'
+      ```
+
+      ```json Response
+      {
+        "items": [{
+          "name": "New York",
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "population": 8336817.0,
+          "myTrips": [{
+            "_id": "528a0b23-d6d8-464a-82af-09e0c00f56b0",
+            "startDate": {
+              "$date": "2021-01-02T03:04:05Z"
+            }
+          }],
+          "_updatedDate": {
+            "$date": "2021-02-03T04:05:06Z"
+          },
+          "pointsOfInterest": [{
+            "_id": "faa17edb-2d88-488d-8e95-24b9364c3284",
+            "name": "Statue of Liberty"
+          }, {
+            "_id": "0348998e-48d7-463e-96c3-a571d4a568a8",
+            "name": "Empire State Building"
+          }]
+        }],
+        "pagingMetadata": {
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://external-db.example.com/v3/items/query  \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+        "collectionId": "cities",
+        "query": {
+          "filter": {
+          },
+          "sort": [],
+          "fields": [],
+          "cursorPaging": {
+            "limit": 2,
+            "cursor": "ImtpZCI6ImEz"
+          }
+        },
+        "includeReferencedItems": [],
+        "consistentRead": false,
+        "returnTotalCount": false
+      }'
+      ```
+
+      ```json Response
+      {
+        "items": [{
+          "name": "New York",
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "population": 8300000.0,
+          "country": "US",
+          "isCapital": false
+        }, {
+          "name": "Paris",
+          "_id": "e831385d-d067-4905-a98a-456f5a526ca2",
+          "population": 2100000.0,
+          "country": "FR",
+          "isCapital": true
+        }],
+        "pagingMetadata": {
+          "cursors": {
+            "next": "0O52kwmAcT",
+            "prev": "omZq6gTpR9"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://external-db.example.com/v3/items/query  \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+        "collectionId": "cities",
+        "query": {
+          "filter": {
+            "_id": "c285e77c-a86b-4361-a55f-c6b934d70187"
+          },
+          "sort": [],
+          "paging": {
+            "limit": 1,
+            "offset": 0
+          },
+          "fields": []
+        },
+        "includeReferencedItems": [],
+        "consistentRead": false,
+        "returnTotalCount": false
+      }'
+      ```
+
+      ```json Response
+      {
+        "items": [{
+          "name": "New York",
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "population": 8300000.0,
+          "country": "US",
+          "isCapital": false
+        }],
+        "pagingMetadata": {
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://external-db.example.com/v3/items/query  \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+        "collectionId": "cities",
+        "query": {
+          "filter": {
+          },
+          "sort": [],
+          "paging": {
+            "limit": 50,
+            "offset": 0
+          },
+          "fields": []
+        },
+        "includeReferencedItems": [],
+        "consistentRead": false,
+        "returnTotalCount": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "items": [{
+          "name": "New York",
+          "_id": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "population": 8300000.0,
+          "country": "US",
+          "isCapital": false
+        }],
+        "pagingMetadata": {
+          "total": 1
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves a list of items based on the provided filtering, sorting, and paging preferences.
+
+    See [API Query Language](https://dev.wix.com/api/rest/getting-started/api-query-language) for more information about handling data queries.
+
+    ## Method Declaration
+
+    ```typescript
+    import { externalDatabase } from '@wix/data';
+
+    externalDatabase.queryDataItems(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="QueryDataItemsRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="collectionId" type="string">
+
+          ID of the collection to query.
+
+        </ParamField>
+
+        <ParamField body="query" type="QueryV2">
+
+          Query preferences. See [API Query Language](https://dev.wix.com/api/rest/getting-started/api-query-language) for information about handling data queries.
+
+          <Expandable title="query properties">
+
+            <ParamField body="filter" type="object">
+
+              Filter object in the following format:
+              `"filter" : {`
+              "fieldName1": "value1",
+              "fieldName2":&#123;"$operator":"value2"&#125;
+              &#125;``
+              Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+              **Note:** Your endpoint must properly handle requests with filtering preferences that adhere to Wix Data data types. For example, a query request that includes filtering by a field whose type is Date and Time would contain an object in the following format: `"someDateAndTimeFieldKey": { "$date": "YYYY-MM-DDTHH:mm:ss.sssZ"}`. Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-types-in-wix-data).
+
+            </ParamField>
+
+            <ParamField body="sort" type="Sorting[]">
+
+              Sort object in the following format:
+              `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+              _Nested structure omitted for brevity — see the `Sorting[]` object._
+
+            </ParamField>
+
+            <ParamField body="fields" type="string[]">
+
+              Array of projected fields. A list of specific field names to return.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="pagingMethod" type="pagingMethod">
+
+              pagingMethod
+
+              _Nested structure omitted for brevity — see the `pagingMethod` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="includeReferencedItems" type="ReferencedItemToInclude[]">
+
+          Fields for which to include the full referenced items in the query's results, rather than just their IDs.
+          Returned items are sorted in ascending order by the creation date of the reference.
+          If the field being querried is a multi-reference field and the array is empty, the response does not return any items.
+
+          <Expandable title="includeReferencedItems properties">
+
+            <ParamField body="fieldKey" type="string">
+
+              Field name in the referencing collection.
+
+            </ParamField>
+
+            <ParamField body="limit" type="integer">
+
+              Maximum number of referenced items to return.
+
+            </ParamField>
+
+            <ParamField body="filter" type="object">
+
+              Filter criteria to specify which items to include in the response.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="consistentRead" type="boolean">
+
+          Whether to retrieve data from the primary database instance. This decreases performance but ensures data retrieved is up-to-date even immediately after an update. Applicable if the external database is eventually consistent.
+
+        </ParamField>
+
+        <ParamField body="returnTotalCount" type="boolean">
+
+          When `true`, the query response must include the total number of items that match the query.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="items" type="object[]">
+
+      Retrieved items.
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="PagingMetadataV2">
+
+      Pagination information.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the query. Returned if offset paging is used and the `tooManyToCount` flag is not set.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors to navigate through the result pages using `next` and `prev`. Returned if cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `409` | `ALREADY_EXISTS` | `ITEM_ALREADY_EXISTS` | There is already an item with this ID. |
+    | `404` | `NOT_FOUND` | `ITEM_NOT_FOUND` | Couldn't find the item. |
+    | `409` | `ALREADY_EXISTS` | `COLLECTION_ALREADY_EXISTS` | There is already a collection with this ID. |
+    | `404` | `NOT_FOUND` | `COLLECTION_NOT_FOUND` | Couldn't find the collection. |
+    | `409` | `ALREADY_EXISTS` | `REFERENCE_ALREADY_EXISTS` | There is already a reference between these items. |
+    | `404` | `NOT_FOUND` | `REFERENCE_NOT_FOUND` | Couldn't find the reference. |
+    | `400` | `INVALID_ARGUMENT` | `VALIDATION_ERROR` | 1 or more field values are invalid. |
+    | `400` | `INVALID_ARGUMENT` | `COLLECTION_CHANGE_NOT_SUPPORTED` | The collection field can't be changed. |
+    | `400` | `INVALID_ARGUMENT` | `BAD_REQUEST` | The request is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-data-items" id="ex-sdk-query-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-data-items" id="ex-sdk-query-data-items-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Example of items and pagingMetadata return values</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryDataItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-data-items-0"><span className="wix-picker-name">Example of items and pagingMetadata return values</span></label>
+    <label htmlFor="ex-sdk-query-data-items-1"><span className="wix-picker-name">queryDataItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Example of items and pagingMetadata return values
+    import { externalDatabase } from '@wix/data/service-plugins';
+
+    externalDatabase.provideHandlers({
+
+      queryDataItems: async ( payload ) => {
+        const {request, metadata} = payload;
+            // Use the `request` and `metadata` received from Wix and
+            // apply custom logic.
+          return {
+            // Return your response exactly as documented to integrate with Wix.
+            // Return value example:
+            items: [
+              {
+                name: "New York",
+                _id: "c285e77c-a86b-4361-a55f-c6b934d70187",
+                population: 8300000.0,
+                country: "US",
+                isCapital: false
+              }
+            ],
+            pagingMetadata: {
+              total: 1
+            }
+          }
+        }
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryDataItems (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { externalDatabase } from '@wix/data/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { externalDatabase },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function queryDataItems(request,metadata) {
+      const response = await myWixClient.externalDatabase.queryDataItems(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

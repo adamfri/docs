@@ -1,0 +1,4067 @@
+---
+title: "Invoice Object"
+description: "A request for payment issued by a business to a customer, containing line items, taxes, discounts, and payment terms."
+icon: "cube"
+---
+
+A request for payment issued by a business to a customer, containing line items, taxes, discounts, and payment terms.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Invoice ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the invoice is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the invoice.
+
+      Ignored when creating an invoice.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the invoice was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the invoice was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Invoice status.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `DRAFT` — Invoice is in draft status. Can be edited before publishing.
+      - `PUBLISHING` — Invoice number is being allocated.
+      - `PUBLISHED` — Invoice is published and ready for payment.
+      - `PARTIALLY_PAID` — Invoice has received at least one payment but isn't fully paid.
+      - `PAID` — Invoice is fully paid.
+      - `VOIDED` — Invoice is voided and no longer valid.
+
+    </ResponseField>
+
+    <ResponseField name="statusQualifiers" type="string[]">
+
+      Additional flags providing context about the invoice's state, independent of its primary status. These flags are system-managed and read-only.
+
+      **Read-only.** Constraints: `maxItems 2`.
+
+      **Supported values:**
+
+      - `SENT` — Invoice was sent to a customer.
+      - `VIEWED` — Mark Viewed was called for the invoice.
+      - `OVERDUE` — Invoice `dueDate` has passed and the invoice isn't fully paid or voided.
+
+    </ResponseField>
+
+    <ResponseField name="availableActions" type="string[]">
+
+      Actions that can be performed on this invoice based on its current status.
+
+      **Read-only.** Constraints: `maxItems 11`.
+
+      **Supported values:**
+
+      - `DELETE` — Invoice can be deleted. Available when invoice is in `DRAFT` status.
+      - `UPDATE` — Invoice can be updated. Available when invoice is in `DRAFT`, `PUBLISHED`, or `PARTIALLY_PAID` status.
+      - `PUBLISH` — Invoice can be published. Available when invoice is in `DRAFT` status.
+      - `PAY` — Payment can be recorded. Available when invoice is in `PUBLISHED` or `PARTIALLY_PAID` status.
+      - `VOID` — Invoice can be voided. Available when invoice is in `PUBLISHED` or `PARTIALLY_PAID` status.
+      - `SEND` — Invoice can be sent. Available when invoice is in `PUBLISHED` or later status.
+      - `MARK_AS_VIEWED` — Invoice can be marked as viewed. Available when invoice isn't in `DRAFT` status.
+      - `GENERATE_PDF_DOCUMENT` — PDF document can be generated. Not available while another PDF is being processed.
+      - `ARCHIVE` — Invoice can be archived. Available when invoice isn't in `DRAFT` status and isn't already archived.
+      - `UNARCHIVE` — Invoice can be unarchived. Available when invoice is archived.
+      - `MARK_AS_SENT` — Invoice can be marked as sent. Available when invoice isn't in `DRAFT` status.
+
+    </ResponseField>
+
+    <ResponseField name="sourceReference" type="SourceReference">
+
+      Information about the app that created the invoice.
+
+      Constraints: `immutable`.
+
+      <Expandable title="sourceReference properties">
+
+        <ResponseField name="appId" type="string">
+
+          ID of the app that created the invoice.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="externalReferenceId" type="string">
+
+          Developer-provided ID for linking this invoice to a record in an external system. For example, an order ID in a third-party platform.
+
+        </ResponseField>
+
+        <ResponseField name="externalProperties" type="object">
+
+          Additional metadata provided by the source app. Used for passing app-specific context
+          that does not fit into the standard fields, such as internal IDs or configuration details.
+
+          Constraints: `format map`, `maxItems 10`.
+
+          <Expandable title="externalProperties properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="string" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="reference" type="Reference">
+
+      Reference linking the invoice to a Wix eCommerce order or standalone context.
+
+      Constraints: `immutable`.
+
+      <Expandable title="reference properties">
+
+        <ResponseField name="referenceType" type="string">
+
+          Invoice type.
+
+          **Supported values:**
+
+          - `STANDALONE` — Independent invoice. An eCommerce order is created automatically when the first payment is made.
+          - `ORDER` — Invoice created for an existing Wix eCommerce order. Lifecycle is bound to that order.
+          - `MIGRATED` — Invoice migrated from an older invoicing system.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="referenceOptions" type="referenceOptions">
+
+          referenceOptions
+
+          <Expandable title="referenceOptions properties">
+
+            <ResponseField name="standaloneReference" type="Standalone">
+
+              Standalone invoice details. Wix eCommerce order is assigned when payment is initiated.
+
+              <Expandable title="standaloneReference properties">
+
+                <ResponseField name="orderId" type="string">
+
+                  Wix eCommerce order ID. Assigned automatically when payments are enabled.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="limitActions" type="boolean">
+
+                  Whether to restrict modification actions to the app that created the invoice.
+
+                  Constraints: `immutable`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="orderReference" type="Order">
+
+              Invoice reference to the existing Wix eCommerce order.
+
+              <Expandable title="orderReference properties">
+
+                <ResponseField name="orderId" type="string">
+
+                  Wix eCommerce order ID.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="orderNumber" type="integer">
+
+                  Wix eCommerce order number.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="migratedReference" type="Migrated">
+
+              Reference for invoices migrated from an older invoicing system.
+
+              <Expandable title="migratedReference properties">
+
+                <ResponseField name="orderId" type="string">
+
+                  Wix eCommerce order ID. Assigned automatically when payments are enabled.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="limitActions" type="boolean">
+
+                  Limit changes to the application identified by `sourceReference.appId` only. If set to true, the invoice will be locked for direct actions: `PUBLISH`, `UPDATE`, `DELETE`.
+
+                  Constraints: `immutable`.
+
+                </ResponseField>
+
+                <ResponseField name="orderNumber" type="integer">
+
+                  Wix eCommerce order number.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="regionalProperties" type="RegionalProperties">
+
+      Regional properties for the invoice. When not provided, defaults are taken from the [Site Properties API](https://dev.wix.com/docs/api-reference/business-management/site-properties/introduction).
+
+      <Expandable title="regionalProperties properties">
+
+        <ResponseField name="locale" type="Locale">
+
+          Locale used for formatting numbers, dates, and times.
+
+          <Expandable title="locale properties">
+
+            <ResponseField name="languageCode" type="string">
+
+              2-letter language code in ISO 639-1 format.
+
+              Constraints: `format LANGUAGE`.
+
+            </ResponseField>
+
+            <ResponseField name="country" type="string">
+
+              2-letter country code in ISO 3166 format.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="timeZone" type="string">
+
+          Time zone in UTC offset or IANA format.
+
+        </ResponseField>
+
+        <ResponseField name="language" type="string">
+
+          Invoice language in ISO 639-1 format.
+
+          Constraints: `format LANGUAGE`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="numbering" type="Numbering">
+
+      Invoice numbering. Assigned when the invoice is published.
+
+      **Read-only.**
+
+      <Expandable title="numbering properties">
+
+        <ResponseField name="number" type="integer">
+
+          Sequential invoice number.
+
+        </ResponseField>
+
+        <ResponseField name="prefix" type="string">
+
+          Prefix before the invoice number.
+
+        </ResponseField>
+
+        <ResponseField name="suffix" type="string">
+
+          Suffix after the invoice number.
+
+        </ResponseField>
+
+        <ResponseField name="displayNumber" type="string">
+
+          Full display number in `[prefix][number][suffix]` format.
+
+          Constraints: `maxLength 30`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="issueDate" type="datetime">
+
+      Date the invoice was issued.
+
+    </ResponseField>
+
+    <ResponseField name="dueDate" type="datetime">
+
+      Date when payment is due. Cannot be before `issueDate`.
+
+    </ResponseField>
+
+    <ResponseField name="title" type="string">
+
+      Invoice title.
+
+    </ResponseField>
+
+    <ResponseField name="currency" type="string">
+
+      Currency code for all monetary amounts on the invoice.
+      Three-letter code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format.
+      Set at creation and can't be changed.
+
+      Constraints: `format CURRENCY`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="customerInfo" type="CustomerInfo">
+
+      Customer information including contact details and billing address.
+
+      <Expandable title="customerInfo properties">
+
+        <ResponseField name="contactId" type="string">
+
+          ID of the customer's contact in the [Contacts API](https://dev.wix.com/docs/rest/crm/members-contacts/contacts/introduction).
+
+        </ResponseField>
+
+        <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+          Customer's contact details including name, email, and phone.
+
+          <Expandable title="contactDetails properties">
+
+            <ResponseField name="firstName" type="string">
+
+              Contact's first name.
+
+            </ResponseField>
+
+            <ResponseField name="lastName" type="string">
+
+              Contact's last name.
+
+            </ResponseField>
+
+            <ResponseField name="phone" type="string">
+
+              Contact's phone number.
+
+            </ResponseField>
+
+            <ResponseField name="company" type="string">
+
+              Contact's company name.
+
+            </ResponseField>
+
+            <ResponseField name="email" type="string">
+
+              Email associated with the address.
+
+            </ResponseField>
+
+            <ResponseField name="vatId" type="VatId">
+
+              Tax info. Currently usable only in Brazil.
+
+              <Expandable title="vatId properties">
+
+                <ResponseField name="id" type="string">
+
+                  Customer's tax ID.
+
+                  Constraints: `maxLength 100`.
+
+                </ResponseField>
+
+                <ResponseField name="type" type="string">
+
+                  Tax type.
+
+                  Supported values:
+                  + `CPF`: for individual tax payers
+                  + `CNPJ`: for corporations
+
+                  **Supported values:**
+
+                  - `UNSPECIFIED`
+                  - `CPF` — CPF - for individual tax payers.
+                  - `CNPJ` — CNPJ - for corporations
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="billingAddress" type="Address">
+
+          Customer's billing address.
+
+          <Expandable title="billingAddress properties">
+
+            <ResponseField name="country" type="string">
+
+              Two-letter country code in [ISO-3166 alpha-2](https://www.iso.org/obp/ui/#search/code/) format.
+
+            </ResponseField>
+
+            <ResponseField name="subdivision" type="string">
+
+              Code for a subdivision (such as state, prefecture, or province) in [ISO 3166-2](https://www.iso.org/standard/72483.html) format.
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string">
+
+              City name.
+
+            </ResponseField>
+
+            <ResponseField name="postalCode" type="string">
+
+              Postal or zip code.
+
+            </ResponseField>
+
+            <ResponseField name="streetAddress" type="StreetAddress">
+
+              Street address.
+
+              <Expandable title="streetAddress properties">
+
+                <ResponseField name="number" type="string">
+
+                  Street number.
+
+                  Constraints: `maxLength 50`.
+
+                </ResponseField>
+
+                <ResponseField name="name" type="string">
+
+                  Street name.
+
+                  Constraints: `maxLength 200`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="addressLine" type="string">
+
+              Main address line (usually street name and number).
+
+            </ResponseField>
+
+            <ResponseField name="addressLine2" type="string">
+
+              Free text providing more detailed address info. Usually contains apt, suite, floor.
+
+            </ResponseField>
+
+            <ResponseField name="hint" type="string">
+
+              Free text to help find the address.
+
+            </ResponseField>
+
+            <ResponseField name="geocode" type="AddressLocation">
+
+              Geocode object containing latitude and longitude coordinates.
+
+              <Expandable title="geocode properties">
+
+                <ResponseField name="latitude" type="number">
+
+                  Address latitude.
+
+                </ResponseField>
+
+                <ResponseField name="longitude" type="number">
+
+                  Address longitude.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="countryFullname" type="string">
+
+              Country's full name.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="subdivisionFullname" type="string">
+
+              Subdivision full-name.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="shippingInfo" type="ShippingInfo">
+
+      Shipping destination for the invoice, including the recipient's contact details and address. Can exist independently without a shipment. When a shipment is configured, `shipmentInfo` uses this address as the delivery destination unless a pickup address is specified.
+
+      <Expandable title="shippingInfo properties">
+
+        <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+          Recipient's contact details.
+
+          <Expandable title="contactDetails properties">
+
+            <ResponseField name="firstName" type="string">
+
+              Contact's first name.
+
+            </ResponseField>
+
+            <ResponseField name="lastName" type="string">
+
+              Contact's last name.
+
+            </ResponseField>
+
+            <ResponseField name="phone" type="string">
+
+              Contact's phone number.
+
+            </ResponseField>
+
+            <ResponseField name="company" type="string">
+
+              Contact's company name.
+
+            </ResponseField>
+
+            <ResponseField name="email" type="string">
+
+              Email associated with the address.
+
+            </ResponseField>
+
+            <ResponseField name="vatId" type="VatId">
+
+              Tax info. Currently usable only in Brazil.
+
+              <Expandable title="vatId properties">
+
+                <ResponseField name="id" type="string">
+
+                  Customer's tax ID.
+
+                  Constraints: `maxLength 100`.
+
+                </ResponseField>
+
+                <ResponseField name="type" type="string">
+
+                  Tax type.
+
+                  Supported values:
+                  + `CPF`: for individual tax payers
+                  + `CNPJ`: for corporations
+
+                  **Supported values:**
+
+                  - `UNSPECIFIED`
+                  - `CPF` — CPF - for individual tax payers.
+                  - `CNPJ` — CNPJ - for corporations
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="shippingAddress" type="Address">
+
+          Recipient's shipping address.
+
+          <Expandable title="shippingAddress properties">
+
+            <ResponseField name="country" type="string">
+
+              Two-letter country code in [ISO-3166 alpha-2](https://www.iso.org/obp/ui/#search/code/) format.
+
+            </ResponseField>
+
+            <ResponseField name="subdivision" type="string">
+
+              Code for a subdivision (such as state, prefecture, or province) in [ISO 3166-2](https://www.iso.org/standard/72483.html) format.
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string">
+
+              City name.
+
+            </ResponseField>
+
+            <ResponseField name="postalCode" type="string">
+
+              Postal or zip code.
+
+            </ResponseField>
+
+            <ResponseField name="streetAddress" type="StreetAddress">
+
+              Street address.
+
+              <Expandable title="streetAddress properties">
+
+                <ResponseField name="number" type="string">
+
+                  Street number.
+
+                  Constraints: `maxLength 50`.
+
+                </ResponseField>
+
+                <ResponseField name="name" type="string">
+
+                  Street name.
+
+                  Constraints: `maxLength 200`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="addressLine" type="string">
+
+              Main address line (usually street name and number).
+
+            </ResponseField>
+
+            <ResponseField name="addressLine2" type="string">
+
+              Free text providing more detailed address info. Usually contains apt, suite, floor.
+
+            </ResponseField>
+
+            <ResponseField name="hint" type="string">
+
+              Free text to help find the address.
+
+            </ResponseField>
+
+            <ResponseField name="geocode" type="AddressLocation">
+
+              Geocode object containing latitude and longitude coordinates.
+
+              <Expandable title="geocode properties">
+
+                <ResponseField name="latitude" type="number">
+
+                  Address latitude.
+
+                </ResponseField>
+
+                <ResponseField name="longitude" type="number">
+
+                  Address longitude.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="countryFullname" type="string">
+
+              Country's full name.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="subdivisionFullname" type="string">
+
+              Subdivision full-name.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="businessDetails" type="BusinessDetails">
+
+      Business details displayed on the invoice, such as company name, address, email, phone, and logo. Automatically populated from the [Site Properties API](https://dev.wix.com/docs/api-reference/business-management/site-properties/introduction) when the invoice is created, if not explicitly provided. These details aren't synced with Site Properties after creation and become permanently fixed once `status` reaches `PARTIALLY_PAID`, `PAID`, or `VOIDED`.
+
+      <Expandable title="businessDetails properties">
+
+        <ResponseField name="companyName" type="string">
+
+          Business name.
+
+        </ResponseField>
+
+        <ResponseField name="email" type="string">
+
+          Business email.
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Business phone.
+
+        </ResponseField>
+
+        <ResponseField name="address" type="Address">
+
+          Business address.
+
+          <Expandable title="address properties">
+
+            <ResponseField name="country" type="string">
+
+              Two-letter country code in [ISO-3166 alpha-2](https://www.iso.org/obp/ui/#search/code/) format.
+
+            </ResponseField>
+
+            <ResponseField name="subdivision" type="string">
+
+              Code for a subdivision (such as state, prefecture, or province) in [ISO 3166-2](https://www.iso.org/standard/72483.html) format.
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string">
+
+              City name.
+
+            </ResponseField>
+
+            <ResponseField name="postalCode" type="string">
+
+              Postal or zip code.
+
+            </ResponseField>
+
+            <ResponseField name="streetAddress" type="StreetAddress">
+
+              Street address.
+
+              <Expandable title="streetAddress properties">
+
+                <ResponseField name="number" type="string">
+
+                  Street number.
+
+                  Constraints: `maxLength 50`.
+
+                </ResponseField>
+
+                <ResponseField name="name" type="string">
+
+                  Street name.
+
+                  Constraints: `maxLength 200`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="addressLine" type="string">
+
+              Main address line (usually street name and number).
+
+            </ResponseField>
+
+            <ResponseField name="addressLine2" type="string">
+
+              Free text providing more detailed address info. Usually contains apt, suite, floor.
+
+            </ResponseField>
+
+            <ResponseField name="hint" type="string">
+
+              Free text to help find the address.
+
+            </ResponseField>
+
+            <ResponseField name="geocode" type="AddressLocation">
+
+              Geocode object containing latitude and longitude coordinates.
+
+              <Expandable title="geocode properties">
+
+                <ResponseField name="latitude" type="number">
+
+                  Address latitude.
+
+                </ResponseField>
+
+                <ResponseField name="longitude" type="number">
+
+                  Address longitude.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="countryFullname" type="string">
+
+              Country's full name.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="subdivisionFullname" type="string">
+
+              Subdivision full-name.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imageId" type="string">
+
+          Wix Media image ID for the business logo.
+
+        </ResponseField>
+
+        <ResponseField name="companyId" type="string">
+
+          Company registration number or other business identifier displayed on the invoice.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lineItems" type="LineItem[]">
+
+      Line items on the invoice.
+
+      Constraints: `minItems 0`, `maxItems 300`.
+
+      <Expandable title="lineItems properties">
+
+        <ResponseField name="lineItemType" type="string">
+
+          Line item type.
+
+          **Supported values:**
+
+          - `CUSTOM` — Custom line item with manually specified details.
+          - `CATALOG` — Line item from a product catalog.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="shipmentInfo" type="ShipmentInfo">
+
+      Delivery and shipping cost details (carrier, method, price, tax) tied to the Wix eCommerce integration. Defaults to using `shippingInfo.shippingAddress` as the delivery destination unless `shipmentInfo.logistics.pickupDetails` is specified.
+
+      <Expandable title="shipmentInfo properties">
+
+        <ResponseField name="carrierId" type="string">
+
+          Shipping carrier ID.
+
+        </ResponseField>
+
+        <ResponseField name="code" type="string">
+
+          Shipping method code.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Shipping method title.
+
+        </ResponseField>
+
+        <ResponseField name="logistics" type="DeliveryLogistics">
+
+          Delivery logistics details.
+
+          <Expandable title="logistics properties">
+
+            <ResponseField name="deliveryTime" type="string">
+
+              Expected delivery time as free text.
+
+            </ResponseField>
+
+            <ResponseField name="deliveryTimeSlot" type="DeliveryTimeSlot">
+
+              Expected delivery time window.
+
+              <Expandable title="deliveryTimeSlot properties">
+
+                <ResponseField name="from" type="datetime">
+
+                  Start of the delivery window.
+
+                </ResponseField>
+
+                <ResponseField name="to" type="datetime">
+
+                  End of the delivery window.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="instructions" type="string">
+
+              Carrier delivery instructions.
+
+            </ResponseField>
+
+            <ResponseField name="pickupDetails" type="PickupDetails">
+
+              Pickup address override. If not provided, the delivery destination defaults to the invoice's `shippingInfo.shippingAddress`.
+
+              <Expandable title="pickupDetails properties">
+
+                <ResponseField name="address" type="Address">
+
+                  Pickup address.
+
+                  _Nested structure omitted for brevity — see the `Address` object._
+
+                </ResponseField>
+
+                <ResponseField name="pickupMethod" type="string">
+
+                  Pickup method.
+
+                  **Supported values:**
+
+                  - `PICKUP_POINT`
+                  - `STORE_PICKUP`
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="region" type="ShipmentRegion">
+
+          Shipping region.
+
+          <Expandable title="region properties">
+
+            <ResponseField name="name" type="string">
+
+              Region name.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="price" type="string">
+
+          Shipping price.
+
+        </ResponseField>
+
+        <ResponseField name="taxInfo" type="ShipmentTaxInfo">
+
+          Tax information for shipping.
+
+          <Expandable title="taxInfo properties">
+
+            <ResponseField name="taxGroupId" type="string">
+
+              Reference to a tax group that defines the tax rules applicable to the shipment.
+              Use the Tax Groups API ([SDK](https://dev.wix.com/docs/sdk/backend-modules/billing/tax-groups/introduction) | [REST](https://dev.wix.com/docs/rest/business-solutions/e-commerce/tax/tax-groups/introduction)) to retrieve available tax groups for the business.
+              If not specified, the default tax rules for the business will apply.
+
+            </ResponseField>
+
+            <ResponseField name="taxBreakdown" type="ShipmentTaxBreakdown[]">
+
+              Tax breakdown for shipping.
+
+              **Read-only.** Constraints: `maxItems 7`.
+
+              <Expandable title="taxBreakdown properties">
+
+                <ResponseField name="name" type="string">
+
+                  Tax name.
+
+                  Constraints: `maxLength 200`.
+
+                </ResponseField>
+
+                <ResponseField name="rate" type="string">
+
+                  Tax rate as a decimal. For example, `0.13` for 13%.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`.
+
+                </ResponseField>
+
+                <ResponseField name="taxableAmount" type="string">
+
+                  Taxable amount this tax applies to.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="exemptAmount" type="string">
+
+                  Amount of the price that was exempt from tax.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="taxAmount" type="string">
+
+                  Applied tax amount.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="taxIncludedInPrice" type="boolean">
+
+              Whether tax is included in the shipping price.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="totals" type="ShipmentTotals">
+
+          Shipping cost totals.
+
+          **Read-only.**
+
+          <Expandable title="totals properties">
+
+            <ResponseField name="discount" type="string">
+
+              Shipping discount.
+
+            </ResponseField>
+
+            <ResponseField name="priceBeforeTax" type="string">
+
+              Shipping price before tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="exempt" type="string">
+
+              Tax-exempt shipping amount.
+
+            </ResponseField>
+
+            <ResponseField name="tax" type="string">
+
+              Shipping tax amount.
+
+            </ResponseField>
+
+            <ResponseField name="priceAfterTax" type="string">
+
+              Shipping price after tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalFees" type="AdditionalFee[]">
+
+      Additional fees applied to the invoice.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="additionalFees properties">
+
+        <ResponseField name="id" type="string">
+
+          Fee ID.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Fee name.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="string">
+
+          Fee amount.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="discounts" type="Discount[]">
+
+      Invoice-level discounts.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="discounts properties">
+
+        <ResponseField name="id" type="string">
+
+          Discount ID.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Discount name.
+
+        </ResponseField>
+
+        <ResponseField name="discountType" type="string">
+
+          Type of the discount.
+
+          **Supported values:**
+
+          - `FIXED` — Fixed monetary amount.
+          - `PERCENTAGE` — Percentage-based discount.
+
+        </ResponseField>
+
+        <ResponseField name="appliedAmount" type="string">
+
+          Calculated discount amount actually applied.
+
+          **Read-only.** Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="deposit" type="Deposit">
+
+      Deposit payment configuration.
+
+      <Expandable title="deposit properties">
+
+        <ResponseField name="depositType" type="string">
+
+          Type of the deposit.
+
+          **Supported values:**
+
+          - `FIXED` — Fixed monetary amount.
+          - `PERCENTAGE` — Percentage-based deposit.
+
+        </ResponseField>
+
+        <ResponseField name="total" type="string">
+
+          Calculated deposit amount.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="depositOptions" type="depositOptions">
+
+          depositOptions
+
+          <Expandable title="depositOptions properties">
+
+            <ResponseField name="fixedDeposit" type="string">
+
+              Fixed deposit amount.
+
+              Constraints: `format DECIMAL_VALUE`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="percentageDeposit" type="string">
+
+              Deposit as a percentage of the invoice total.
+
+              Constraints: `format DECIMAL_VALUE`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="taxInfo" type="TaxInfo">
+
+      Tax information.
+
+      **Read-only.**
+
+      <Expandable title="taxInfo properties">
+
+        <ResponseField name="taxBreakdown" type="TaxBreakdown[]">
+
+          Breakdown of taxes applied.
+
+          Constraints: `maxItems 50`.
+
+          <Expandable title="taxBreakdown properties">
+
+            <ResponseField name="name" type="string">
+
+              Tax name.
+
+              Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="rate" type="string">
+
+              Tax rate as a decimal. For example, `0.13` for 13%.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAmount" type="string">
+
+              Amount subject to this tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="exemptAmount" type="string">
+
+              Amount exempt from this tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="taxAmount" type="string">
+
+              Tax amount applied.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxExempt" type="boolean">
+
+          Whether the invoice is tax-exempt.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Payment records.
+
+      **Read-only.** Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="id" type="string">
+
+          Payment ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#combined_date_and_time_representations) format.
+
+        </ResponseField>
+
+        <ResponseField name="updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#combined_date_and_time_representations) format.
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="string">
+
+          Payment amount.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="paymentDate" type="datetime">
+
+          Date and time the payment was made.
+
+        </ResponseField>
+
+        <ResponseField name="paymentType" type="string">
+
+          Type of payment method used.
+
+          **Supported values:**
+
+          - `REGULAR` — Standard payment made through Wix Payments, Stripe, or other [supported payment gateways](https://www.wix.com/payments/payment-gateways). Doesn't include gift cards.
+          - `GIFT_CARD` — Payment using a Wix eCommerce gift card.
+
+        </ResponseField>
+
+        <ResponseField name="receiptType" type="string">
+
+          Type of receipt.
+
+          **Supported values:**
+
+          - `WIX` — Wix receipt.
+          - `EXTERNAL` — External receipt.
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRounding">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="roundingAmount" type="string">
+
+              The difference between 'amount' and 'unroundedAmount'.
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              Constraints: `format DECIMAL_VALUE`, `>= -1000000000000000`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="unroundedAmount" type="string">
+
+              Payment amount before cash rounding was applied.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="totals" type="Totals">
+
+      Financial summary including subtotal, taxes, and total amount.
+
+      **Read-only.**
+
+      <Expandable title="totals properties">
+
+        <ResponseField name="subtotal" type="string">
+
+          Subtotal before taxes, discounts, and fees.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="discount" type="string">
+
+          Total discount amount.
+
+        </ResponseField>
+
+        <ResponseField name="shipping" type="string">
+
+          Total shipping costs.
+
+        </ResponseField>
+
+        <ResponseField name="exempt" type="string">
+
+          Total tax-exempt amount.
+
+        </ResponseField>
+
+        <ResponseField name="tax" type="string">
+
+          Total tax amount.
+
+        </ResponseField>
+
+        <ResponseField name="total" type="string">
+
+          Total amount due.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="paidAmount" type="string">
+
+          Total amount already paid.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="balance" type="string">
+
+          Outstanding balance.
+
+          **Read-only.** Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="archived" type="boolean">
+
+      Whether the invoice is archived.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="customFields" type="CustomFields">
+
+      Custom fields displayed on the invoice document.
+
+      <Expandable title="customFields properties">
+
+        <ResponseField name="headerCustomFields" type="CustomField[]">
+
+          Custom fields in the invoice header.
+
+          Constraints: `maxItems 4`.
+
+          <Expandable title="headerCustomFields properties">
+
+            <ResponseField name="title" type="string">
+
+              Field title.
+
+            </ResponseField>
+
+            <ResponseField name="value" type="string">
+
+              Field value.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="businessCustomFields" type="CustomField[]">
+
+          Custom fields in the business details section.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="businessCustomFields properties">
+
+            <ResponseField name="title" type="string">
+
+              Field title.
+
+            </ResponseField>
+
+            <ResponseField name="value" type="string">
+
+              Field value.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="customerCustomFields" type="CustomField[]">
+
+          Custom fields in the customer information section.
+
+          Constraints: `maxItems 4`.
+
+          <Expandable title="customerCustomFields properties">
+
+            <ResponseField name="title" type="string">
+
+              Field title.
+
+            </ResponseField>
+
+            <ResponseField name="value" type="string">
+
+              Field value.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="footerCustomField" type="FooterContent">
+
+          Footer content.
+
+          <Expandable title="footerCustomField properties">
+
+            <ResponseField name="overridePresetContent" type="boolean">
+
+              Whether to override the invoice preset's footer content. When `true`, the `content` in this field replaces the preset's default footer on the generated invoice. When `false`, the preset's footer content is used.
+
+            </ResponseField>
+
+            <ResponseField name="content" type="RichContent">
+
+              Footer content in rich text format. Used only when `overridePresetContent` is `true`.
+
+              <Expandable title="content properties">
+
+                <ResponseField name="nodes" type="Node[]">
+
+                  Node objects representing a rich content document.
+
+                  _Nested structure omitted for brevity — see the `Node[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="metadata" type="Metadata">
+
+                  Object metadata.
+
+                  _Nested structure omitted for brevity — see the `Metadata` object._
+
+                </ResponseField>
+
+                <ResponseField name="documentStyle" type="DocumentStyle">
+
+                  Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+                  _Nested structure omitted for brevity — see the `DocumentStyle` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="presetProperties" type="PresetProperties">
+
+      Invoice preset applied to this invoice. Determines the appearance and custom fields on the invoice document. If not provided, the [default preset](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoice-presets/set-default-invoice-preset) is used.
+
+      <Expandable title="presetProperties properties">
+
+        <ResponseField name="presetId" type="string">
+
+          Invoice preset ID. If not provided, the [default preset](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoice-presets/get-default-invoice-preset) is used.
+
+        </ResponseField>
+
+        <ResponseField name="invoicePreset" type="InvoicePreset">
+
+          Snapshot of the invoice preset at the time the invoice was published.
+
+          **Read-only.**
+
+          <Expandable title="invoicePreset properties">
+
+            <ResponseField name="id" type="string">
+
+              Invoice preset ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="revision" type="integer">
+
+              Revision number, which increments by 1 each time the invoice preset is updated. To prevent conflicting changes, the current revision must be passed when updating the invoice preset.
+
+              Ignored when creating an invoice preset.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the invoice preset was created.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the invoice preset was last updated.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Name of the preset.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ResponseField>
+
+            <ResponseField name="displaySettings" type="DisplaySettings">
+
+              Display settings that control which sections and fields appear on invoices created with this preset.
+
+              <Expandable title="displaySettings properties">
+
+                <ResponseField name="businessInfo" type="BusinessDisplayOptions">
+
+                  Options for displaying business information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `BusinessDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="customerInfo" type="CustomerDisplayOptions">
+
+                  Options for displaying customer information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `CustomerDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="itemsInfo" type="ItemsDisplayOptions">
+
+                  Options for displaying line item details on the invoice.
+
+                  _Nested structure omitted for brevity — see the `ItemsDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="totalsInfo" type="TotalsDisplayOptions">
+
+                  Options for displaying totals and tax information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `TotalsDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="paymentsInfo" type="PaymentsDisplayOptions">
+
+                  Options for displaying payment information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `PaymentsDisplayOptions` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="customFields" type="CustomFields">
+
+              Custom fields for adding additional information to invoices, such as header details, business information, customer information, and a footer.
+
+              <Expandable title="customFields properties">
+
+                <ResponseField name="headerCustomFields" type="CustomField[]">
+
+                  Custom fields displayed in the header section of the invoice.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomField[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="businessCustomFields" type="CustomField[]">
+
+                  Custom fields displayed in the business information section of the invoice.
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `CustomField[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="customerCustomFields" type="CustomField[]">
+
+                  Custom fields displayed in the customer information section of the invoice.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomField[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="footerCustomField" type="RichContent">
+
+                  Footer content displayed at the bottom of the invoice. Supports text formatting and images. Individual invoices can override this content using `customFields.footerCustomField.overridePresetContent`.
+
+                  _Nested structure omitted for brevity — see the `RichContent` object._
+
+                </ResponseField>
+
+                <ResponseField name="headerPlaceholders" type="CustomFieldPlaceholder[]">
+
+                  Placeholders for header fields that appear as blank titled fields on the invoice for the recipient to fill in.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomFieldPlaceholder[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="customerPlaceholders" type="CustomFieldPlaceholder[]">
+
+                  Placeholders for customer fields that appear as blank titled fields on the invoice for the recipient to fill in.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomFieldPlaceholder[]` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="defaultPreset" type="boolean">
+
+              Whether this preset is the default preset.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="displayValues" type="DisplayValues">
+
+              Display value overrides for invoices created with this preset. When set, these values replace the corresponding values on the generated invoice document.
+
+              <Expandable title="displayValues properties">
+
+                <ResponseField name="titleOverride" type="string">
+
+                  Title to display on the generated invoice document, overriding the invoice's own `title`. If not set, the invoice's `title` is used.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="defaultDaysUntilDue" type="integer">
+
+              Number of days after invoice creation until the invoice is due. Set to `0` for due on receipt.
+
+              Default: `30`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="attachments" type="Attachment[]">
+
+      Files attached to the invoice.
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="attachments properties">
+
+        <ResponseField name="fileName" type="string">
+
+          File name. For example, `invoice.pdf`.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="fileUrl" type="string">
+
+          File URL.
+
+          Constraints: `format WEB_URL`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="documentInfo" type="DocumentInfo">
+
+      PDF document generation status.
+
+      **Read-only.**
+
+      <Expandable title="documentInfo properties">
+
+        <ResponseField name="status" type="string">
+
+          Document generation status.
+
+          **Supported values:**
+
+          - `PROCESSING` — PDF generation is in progress.
+          - `AVAILABLE` — PDF is ready to download.
+          - `FAILED` — PDF generation failed.
+          - `EXPIRED` — PDF download URL has expired.
+          - `OUTDATED` — PDF is out of date because the invoice has been modified after generation.
+
+        </ResponseField>
+
+        <ResponseField name="downloadUrl" type="string">
+
+          URL to download the generated PDF. Available when `status` is `AVAILABLE`.
+
+        </ResponseField>
+
+        <ResponseField name="documentExpirationDate" type="datetime">
+
+          Date and time the document download URL expires.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="links" type="Links">
+
+      Invoice URL.
+
+      **Read-only.**
+
+      <Expandable title="links properties">
+
+        <ResponseField name="relativePath" type="string">
+
+          Relative URL path to the invoice.
+
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+
+          Full URL to the invoice.
+
+        </ResponseField>
+
+        <ResponseField name="previewPassword" type="string">
+
+          Password required to view the invoice when HIPAA compliance is enabled for the site.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="businessLocation" type="BusinessLocation">
+
+      Business location.
+
+      <Expandable title="businessLocation properties">
+
+        <ResponseField name="id" type="string">
+
+          Location ID. Learn more about the [Wix Locations API](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Location name.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="activityInfo" type="ActivityInfo">
+
+      Read-only record of when the invoice was last sent and last viewed.
+
+      **Read-only.**
+
+      <Expandable title="activityInfo properties">
+
+        <ResponseField name="sentToContactIds" type="string[]">
+
+          Contact IDs that the invoice was sent to.
+
+          Constraints: `format GUID`, `maxItems 5`.
+
+        </ResponseField>
+
+        <ResponseField name="lastSentDate" type="datetime">
+
+          Date and time the invoice was last sent.
+
+        </ResponseField>
+
+        <ResponseField name="lastViewedDate" type="datetime">
+
+          Date and time the invoice was last viewed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hasSubscriptions" type="boolean">
+
+      Whether the invoice contains subscription line items. `true` when at least one line item carries subscription info.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tags">
+
+      Tags for organizing invoices. `publicTags` are visible to anyone with access to the invoice. `privateTags` are restricted to site owners and require additional permissions to access.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission in order to access them, typically restricted from site members and visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="publicTags" type="TagList">
+
+          Tags that are exposed to anyone with access to the entity, including site members and visitors.
+
+          <Expandable title="publicTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Invoice ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the invoice is updated.
+      To prevent conflicting changes,
+      the current revision must be passed when updating the invoice.
+
+      Ignored when creating an invoice.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the invoice was created.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the invoice was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Invoice status.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `DRAFT` — Invoice is in draft status. Can be edited before publishing.
+      - `PUBLISHING` — Invoice number is being allocated.
+      - `PUBLISHED` — Invoice is published and ready for payment.
+      - `PARTIALLY_PAID` — Invoice has received at least one payment but isn't fully paid.
+      - `PAID` — Invoice is fully paid.
+      - `VOIDED` — Invoice is voided and no longer valid.
+
+    </ResponseField>
+
+    <ResponseField name="statusQualifiers" type="string[]">
+
+      Additional flags providing context about the invoice's state, independent of its primary status. These flags are system-managed and read-only.
+
+      **Read-only.** Constraints: `maxItems 2`.
+
+      **Supported values:**
+
+      - `SENT` — Invoice was sent to a customer.
+      - `VIEWED` — Mark Viewed was called for the invoice.
+      - `OVERDUE` — Invoice `dueDate` has passed and the invoice isn't fully paid or voided.
+
+    </ResponseField>
+
+    <ResponseField name="availableActions" type="string[]">
+
+      Actions that can be performed on this invoice based on its current status.
+
+      **Read-only.** Constraints: `maxItems 11`.
+
+      **Supported values:**
+
+      - `DELETE` — Invoice can be deleted. Available when invoice is in `DRAFT` status.
+      - `UPDATE` — Invoice can be updated. Available when invoice is in `DRAFT`, `PUBLISHED`, or `PARTIALLY_PAID` status.
+      - `PUBLISH` — Invoice can be published. Available when invoice is in `DRAFT` status.
+      - `PAY` — Payment can be recorded. Available when invoice is in `PUBLISHED` or `PARTIALLY_PAID` status.
+      - `VOID` — Invoice can be voided. Available when invoice is in `PUBLISHED` or `PARTIALLY_PAID` status.
+      - `SEND` — Invoice can be sent. Available when invoice is in `PUBLISHED` or later status.
+      - `MARK_AS_VIEWED` — Invoice can be marked as viewed. Available when invoice isn't in `DRAFT` status.
+      - `GENERATE_PDF_DOCUMENT` — PDF document can be generated. Not available while another PDF is being processed.
+      - `ARCHIVE` — Invoice can be archived. Available when invoice isn't in `DRAFT` status and isn't already archived.
+      - `UNARCHIVE` — Invoice can be unarchived. Available when invoice is archived.
+      - `MARK_AS_SENT` — Invoice can be marked as sent. Available when invoice isn't in `DRAFT` status.
+
+    </ResponseField>
+
+    <ResponseField name="sourceReference" type="SourceReference">
+
+      Information about the app that created the invoice.
+
+      Constraints: `immutable`.
+
+      <Expandable title="sourceReference properties">
+
+        <ResponseField name="appId" type="string">
+
+          ID of the app that created the invoice.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="externalReferenceId" type="string">
+
+          Developer-provided ID for linking this invoice to a record in an external system. For example, an order ID in a third-party platform.
+
+        </ResponseField>
+
+        <ResponseField name="externalProperties" type="object">
+
+          Additional metadata provided by the source app. Used for passing app-specific context
+          that does not fit into the standard fields, such as internal IDs or configuration details.
+
+          Constraints: `format map`, `maxItems 10`.
+
+          <Expandable title="externalProperties properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="string" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="reference" type="Reference">
+
+      Reference linking the invoice to a Wix eCommerce order or standalone context.
+
+      Constraints: `immutable`.
+
+      <Expandable title="reference properties">
+
+        <ResponseField name="referenceType" type="string">
+
+          Invoice type.
+
+          **Supported values:**
+
+          - `STANDALONE` — Independent invoice. An eCommerce order is created automatically when the first payment is made.
+          - `ORDER` — Invoice created for an existing Wix eCommerce order. Lifecycle is bound to that order.
+          - `MIGRATED` — Invoice migrated from an older invoicing system.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="referenceOptions" type="referenceOptions">
+
+          referenceOptions
+
+          <Expandable title="referenceOptions properties">
+
+            <ResponseField name="standaloneReference" type="Standalone">
+
+              Standalone invoice details. Wix eCommerce order is assigned when payment is initiated.
+
+              <Expandable title="standaloneReference properties">
+
+                <ResponseField name="orderId" type="string">
+
+                  Wix eCommerce order ID. Assigned automatically when payments are enabled.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="limitActions" type="boolean">
+
+                  Whether to restrict modification actions to the app that created the invoice.
+
+                  Constraints: `immutable`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="orderReference" type="Order">
+
+              Invoice reference to the existing Wix eCommerce order.
+
+              <Expandable title="orderReference properties">
+
+                <ResponseField name="orderId" type="string">
+
+                  Wix eCommerce order ID.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="orderNumber" type="integer">
+
+                  Wix eCommerce order number.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="migratedReference" type="Migrated">
+
+              Reference for invoices migrated from an older invoicing system.
+
+              <Expandable title="migratedReference properties">
+
+                <ResponseField name="orderId" type="string">
+
+                  Wix eCommerce order ID. Assigned automatically when payments are enabled.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+                <ResponseField name="limitActions" type="boolean">
+
+                  Limit changes to the application identified by `sourceReference.appId` only. If set to true, the invoice will be locked for direct actions: `PUBLISH`, `UPDATE`, `DELETE`.
+
+                  Constraints: `immutable`.
+
+                </ResponseField>
+
+                <ResponseField name="orderNumber" type="integer">
+
+                  Wix eCommerce order number.
+
+                  **Read-only.**
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="regionalProperties" type="RegionalProperties">
+
+      Regional properties for the invoice. When not provided, defaults are taken from the [Site Properties API](https://dev.wix.com/docs/api-reference/business-management/site-properties/introduction).
+
+      <Expandable title="regionalProperties properties">
+
+        <ResponseField name="locale" type="Locale">
+
+          Locale used for formatting numbers, dates, and times.
+
+          <Expandable title="locale properties">
+
+            <ResponseField name="languageCode" type="string">
+
+              2-letter language code in ISO 639-1 format.
+
+              Constraints: `format LANGUAGE`.
+
+            </ResponseField>
+
+            <ResponseField name="country" type="string">
+
+              2-letter country code in ISO 3166 format.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="timeZone" type="string">
+
+          Time zone in UTC offset or IANA format.
+
+        </ResponseField>
+
+        <ResponseField name="language" type="string">
+
+          Invoice language in ISO 639-1 format.
+
+          Constraints: `format LANGUAGE`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="numbering" type="Numbering">
+
+      Invoice numbering. Assigned when the invoice is published.
+
+      **Read-only.**
+
+      <Expandable title="numbering properties">
+
+        <ResponseField name="number" type="integer">
+
+          Sequential invoice number.
+
+        </ResponseField>
+
+        <ResponseField name="prefix" type="string">
+
+          Prefix before the invoice number.
+
+        </ResponseField>
+
+        <ResponseField name="suffix" type="string">
+
+          Suffix after the invoice number.
+
+        </ResponseField>
+
+        <ResponseField name="displayNumber" type="string">
+
+          Full display number in `[prefix][number][suffix]` format.
+
+          Constraints: `maxLength 30`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="issueDate" type="datetime">
+
+      Date the invoice was issued.
+
+    </ResponseField>
+
+    <ResponseField name="dueDate" type="datetime">
+
+      Date when payment is due. Cannot be before `issueDate`.
+
+    </ResponseField>
+
+    <ResponseField name="title" type="string">
+
+      Invoice title.
+
+    </ResponseField>
+
+    <ResponseField name="currency" type="string">
+
+      Currency code for all monetary amounts on the invoice.
+      Three-letter code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) format.
+      Set at creation and can't be changed.
+
+      Constraints: `format CURRENCY`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="customerInfo" type="CustomerInfo">
+
+      Customer information including contact details and billing address.
+
+      <Expandable title="customerInfo properties">
+
+        <ResponseField name="contactId" type="string">
+
+          ID of the customer's contact in the [Contacts API](https://dev.wix.com/docs/rest/crm/members-contacts/contacts/introduction).
+
+        </ResponseField>
+
+        <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+          Customer's contact details including name, email, and phone.
+
+          <Expandable title="contactDetails properties">
+
+            <ResponseField name="firstName" type="string">
+
+              Contact's first name.
+
+            </ResponseField>
+
+            <ResponseField name="lastName" type="string">
+
+              Contact's last name.
+
+            </ResponseField>
+
+            <ResponseField name="phone" type="string">
+
+              Contact's phone number.
+
+            </ResponseField>
+
+            <ResponseField name="company" type="string">
+
+              Contact's company name.
+
+            </ResponseField>
+
+            <ResponseField name="email" type="string">
+
+              Email associated with the address.
+
+            </ResponseField>
+
+            <ResponseField name="vatId" type="VatId">
+
+              Tax info. Currently usable only in Brazil.
+
+              <Expandable title="vatId properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Customer's tax ID.
+
+                  Constraints: `maxLength 100`.
+
+                </ResponseField>
+
+                <ResponseField name="type" type="string">
+
+                  Tax type.
+
+                  Supported values:
+                  + `CPF`: for individual tax payers
+                  + `CNPJ`: for corporations
+
+                  **Supported values:**
+
+                  - `UNSPECIFIED`
+                  - `CPF` — CPF - for individual tax payers.
+                  - `CNPJ` — CNPJ - for corporations
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="billingAddress" type="Address">
+
+          Customer's billing address.
+
+          <Expandable title="billingAddress properties">
+
+            <ResponseField name="streetAddress" type="StreetAddress">
+
+              streetAddress
+
+              <Expandable title="streetAddress properties">
+
+                <ResponseField name="name" type="string" />
+
+                <ResponseField name="number" type="string" />
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string" />
+
+            <ResponseField name="subdivision" type="string" />
+
+            <ResponseField name="country" type="string" />
+
+            <ResponseField name="postalCode" type="string" />
+
+            <ResponseField name="addressLine2" type="string" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="shippingInfo" type="ShippingInfo">
+
+      Shipping destination for the invoice, including the recipient's contact details and address. Can exist independently without a shipment. When a shipment is configured, `shipmentInfo` uses this address as the delivery destination unless a pickup address is specified.
+
+      <Expandable title="shippingInfo properties">
+
+        <ResponseField name="contactDetails" type="FullAddressContactDetails">
+
+          Recipient's contact details.
+
+          <Expandable title="contactDetails properties">
+
+            <ResponseField name="firstName" type="string">
+
+              Contact's first name.
+
+            </ResponseField>
+
+            <ResponseField name="lastName" type="string">
+
+              Contact's last name.
+
+            </ResponseField>
+
+            <ResponseField name="phone" type="string">
+
+              Contact's phone number.
+
+            </ResponseField>
+
+            <ResponseField name="company" type="string">
+
+              Contact's company name.
+
+            </ResponseField>
+
+            <ResponseField name="email" type="string">
+
+              Email associated with the address.
+
+            </ResponseField>
+
+            <ResponseField name="vatId" type="VatId">
+
+              Tax info. Currently usable only in Brazil.
+
+              <Expandable title="vatId properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Customer's tax ID.
+
+                  Constraints: `maxLength 100`.
+
+                </ResponseField>
+
+                <ResponseField name="type" type="string">
+
+                  Tax type.
+
+                  Supported values:
+                  + `CPF`: for individual tax payers
+                  + `CNPJ`: for corporations
+
+                  **Supported values:**
+
+                  - `UNSPECIFIED`
+                  - `CPF` — CPF - for individual tax payers.
+                  - `CNPJ` — CNPJ - for corporations
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="shippingAddress" type="Address">
+
+          Recipient's shipping address.
+
+          <Expandable title="shippingAddress properties">
+
+            <ResponseField name="streetAddress" type="StreetAddress">
+
+              streetAddress
+
+              <Expandable title="streetAddress properties">
+
+                <ResponseField name="name" type="string" />
+
+                <ResponseField name="number" type="string" />
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string" />
+
+            <ResponseField name="subdivision" type="string" />
+
+            <ResponseField name="country" type="string" />
+
+            <ResponseField name="postalCode" type="string" />
+
+            <ResponseField name="addressLine2" type="string" />
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="businessDetails" type="BusinessDetails">
+
+      Business details displayed on the invoice, such as company name, address, email, phone, and logo. Automatically populated from the [Site Properties API](https://dev.wix.com/docs/api-reference/business-management/site-properties/introduction) when the invoice is created, if not explicitly provided. These details aren't synced with Site Properties after creation and become permanently fixed once `status` reaches `PARTIALLY_PAID`, `PAID`, or `VOIDED`.
+
+      <Expandable title="businessDetails properties">
+
+        <ResponseField name="companyName" type="string">
+
+          Business name.
+
+        </ResponseField>
+
+        <ResponseField name="email" type="string">
+
+          Business email.
+
+        </ResponseField>
+
+        <ResponseField name="phone" type="string">
+
+          Business phone.
+
+        </ResponseField>
+
+        <ResponseField name="address" type="Address">
+
+          Business address.
+
+          <Expandable title="address properties">
+
+            <ResponseField name="streetAddress" type="StreetAddress">
+
+              streetAddress
+
+              <Expandable title="streetAddress properties">
+
+                <ResponseField name="name" type="string" />
+
+                <ResponseField name="number" type="string" />
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="city" type="string" />
+
+            <ResponseField name="subdivision" type="string" />
+
+            <ResponseField name="country" type="string" />
+
+            <ResponseField name="postalCode" type="string" />
+
+            <ResponseField name="addressLine2" type="string" />
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="imageId" type="string">
+
+          Wix Media image ID for the business logo.
+
+        </ResponseField>
+
+        <ResponseField name="companyId" type="string">
+
+          Company registration number or other business identifier displayed on the invoice.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="lineItems" type="LineItem[]">
+
+      Line items on the invoice.
+
+      Constraints: `minItems 0`, `maxItems 300`.
+
+      <Expandable title="lineItems properties">
+
+        <ResponseField name="lineItemType" type="string">
+
+          Line item type.
+
+          **Supported values:**
+
+          - `CUSTOM` — Custom line item with manually specified details.
+          - `CATALOG` — Line item from a product catalog.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="shipmentInfo" type="ShipmentInfo">
+
+      Delivery and shipping cost details (carrier, method, price, tax) tied to the Wix eCommerce integration. Defaults to using `shippingInfo.shippingAddress` as the delivery destination unless `shipmentInfo.logistics.pickupDetails` is specified.
+
+      <Expandable title="shipmentInfo properties">
+
+        <ResponseField name="carrierId" type="string">
+
+          Shipping carrier ID.
+
+        </ResponseField>
+
+        <ResponseField name="code" type="string">
+
+          Shipping method code.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Shipping method title.
+
+        </ResponseField>
+
+        <ResponseField name="logistics" type="DeliveryLogistics">
+
+          Delivery logistics details.
+
+          <Expandable title="logistics properties">
+
+            <ResponseField name="deliveryTime" type="string">
+
+              Expected delivery time as free text.
+
+            </ResponseField>
+
+            <ResponseField name="deliveryTimeSlot" type="DeliveryTimeSlot">
+
+              Expected delivery time window.
+
+              <Expandable title="deliveryTimeSlot properties">
+
+                <ResponseField name="from" type="datetime">
+
+                  Start of the delivery window.
+
+                </ResponseField>
+
+                <ResponseField name="to" type="datetime">
+
+                  End of the delivery window.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="instructions" type="string">
+
+              Carrier delivery instructions.
+
+            </ResponseField>
+
+            <ResponseField name="pickupDetails" type="PickupDetails">
+
+              Pickup address override. If not provided, the delivery destination defaults to the invoice's `shippingInfo.shippingAddress`.
+
+              <Expandable title="pickupDetails properties">
+
+                <ResponseField name="address" type="Address">
+
+                  Pickup address.
+
+                  _Nested structure omitted for brevity — see the `Address` object._
+
+                </ResponseField>
+
+                <ResponseField name="pickupMethod" type="string">
+
+                  Pickup method.
+
+                  **Supported values:**
+
+                  - `PICKUP_POINT`
+                  - `STORE_PICKUP`
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="region" type="ShipmentRegion">
+
+          Shipping region.
+
+          <Expandable title="region properties">
+
+            <ResponseField name="name" type="string">
+
+              Region name.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="price" type="string">
+
+          Shipping price.
+
+        </ResponseField>
+
+        <ResponseField name="taxInfo" type="ShipmentTaxInfo">
+
+          Tax information for shipping.
+
+          <Expandable title="taxInfo properties">
+
+            <ResponseField name="taxGroupId" type="string">
+
+              Reference to a tax group that defines the tax rules applicable to the shipment.
+              Use the Tax Groups API ([SDK](https://dev.wix.com/docs/sdk/backend-modules/billing/tax-groups/introduction) | [REST](https://dev.wix.com/docs/rest/business-solutions/e-commerce/tax/tax-groups/introduction)) to retrieve available tax groups for the business.
+              If not specified, the default tax rules for the business will apply.
+
+            </ResponseField>
+
+            <ResponseField name="taxBreakdown" type="ShipmentTaxBreakdown[]">
+
+              Tax breakdown for shipping.
+
+              **Read-only.** Constraints: `maxItems 7`.
+
+              <Expandable title="taxBreakdown properties">
+
+                <ResponseField name="name" type="string">
+
+                  Tax name.
+
+                  Constraints: `maxLength 200`.
+
+                </ResponseField>
+
+                <ResponseField name="rate" type="string">
+
+                  Tax rate as a decimal. For example, `0.13` for 13%.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`.
+
+                </ResponseField>
+
+                <ResponseField name="taxableAmount" type="string">
+
+                  Taxable amount this tax applies to.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="exemptAmount" type="string">
+
+                  Amount of the price that was exempt from tax.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+                <ResponseField name="taxAmount" type="string">
+
+                  Applied tax amount.
+
+                  Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="taxIncludedInPrice" type="boolean">
+
+              Whether tax is included in the shipping price.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="totals" type="ShipmentTotals">
+
+          Shipping cost totals.
+
+          **Read-only.**
+
+          <Expandable title="totals properties">
+
+            <ResponseField name="discount" type="string">
+
+              Shipping discount.
+
+            </ResponseField>
+
+            <ResponseField name="priceBeforeTax" type="string">
+
+              Shipping price before tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="exempt" type="string">
+
+              Tax-exempt shipping amount.
+
+            </ResponseField>
+
+            <ResponseField name="tax" type="string">
+
+              Shipping tax amount.
+
+            </ResponseField>
+
+            <ResponseField name="priceAfterTax" type="string">
+
+              Shipping price after tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="additionalFees" type="AdditionalFee[]">
+
+      Additional fees applied to the invoice.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="additionalFees properties">
+
+        <ResponseField name="_id" type="string">
+
+          Fee ID.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Fee name.
+
+          Constraints: `minLength 1`, `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="string">
+
+          Fee amount.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="discounts" type="Discount[]">
+
+      Invoice-level discounts.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="discounts properties">
+
+        <ResponseField name="_id" type="string">
+
+          Discount ID.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Discount name.
+
+        </ResponseField>
+
+        <ResponseField name="discountType" type="string">
+
+          Type of the discount.
+
+          **Supported values:**
+
+          - `FIXED` — Fixed monetary amount.
+          - `PERCENTAGE` — Percentage-based discount.
+
+        </ResponseField>
+
+        <ResponseField name="appliedAmount" type="string">
+
+          Calculated discount amount actually applied.
+
+          **Read-only.** Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="deposit" type="Deposit">
+
+      Deposit payment configuration.
+
+      <Expandable title="deposit properties">
+
+        <ResponseField name="depositType" type="string">
+
+          Type of the deposit.
+
+          **Supported values:**
+
+          - `FIXED` — Fixed monetary amount.
+          - `PERCENTAGE` — Percentage-based deposit.
+
+        </ResponseField>
+
+        <ResponseField name="total" type="string">
+
+          Calculated deposit amount.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="depositOptions" type="depositOptions">
+
+          depositOptions
+
+          <Expandable title="depositOptions properties">
+
+            <ResponseField name="fixedDeposit" type="string">
+
+              Fixed deposit amount.
+
+              Constraints: `format DECIMAL_VALUE`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="percentageDeposit" type="string">
+
+              Deposit as a percentage of the invoice total.
+
+              Constraints: `format DECIMAL_VALUE`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="taxInfo" type="TaxInfo">
+
+      Tax information.
+
+      **Read-only.**
+
+      <Expandable title="taxInfo properties">
+
+        <ResponseField name="taxBreakdown" type="TaxBreakdown[]">
+
+          Breakdown of taxes applied.
+
+          Constraints: `maxItems 50`.
+
+          <Expandable title="taxBreakdown properties">
+
+            <ResponseField name="name" type="string">
+
+              Tax name.
+
+              Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="rate" type="string">
+
+              Tax rate as a decimal. For example, `0.13` for 13%.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`.
+
+            </ResponseField>
+
+            <ResponseField name="taxableAmount" type="string">
+
+              Amount subject to this tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="exemptAmount" type="string">
+
+              Amount exempt from this tax.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="taxAmount" type="string">
+
+              Tax amount applied.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="taxExempt" type="boolean">
+
+          Whether the invoice is tax-exempt.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Payment records.
+
+      **Read-only.** Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="_id" type="string">
+
+          Payment ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#combined_date_and_time_representations) format.
+
+        </ResponseField>
+
+        <ResponseField name="_updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#combined_date_and_time_representations) format.
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="string">
+
+          Payment amount.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="paymentDate" type="datetime">
+
+          Date and time the payment was made.
+
+        </ResponseField>
+
+        <ResponseField name="paymentType" type="string">
+
+          Type of payment method used.
+
+          **Supported values:**
+
+          - `REGULAR` — Standard payment made through Wix Payments, Stripe, or other [supported payment gateways](https://www.wix.com/payments/payment-gateways). Doesn't include gift cards.
+          - `GIFT_CARD` — Payment using a Wix eCommerce gift card.
+
+        </ResponseField>
+
+        <ResponseField name="receiptType" type="string">
+
+          Type of receipt.
+
+          **Supported values:**
+
+          - `WIX` — Wix receipt.
+          - `EXTERNAL` — External receipt.
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRounding">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="roundingAmount" type="string">
+
+              The difference between 'amount' and 'unroundedAmount'.
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              Constraints: `format DECIMAL_VALUE`, `>= -1000000000000000`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="unroundedAmount" type="string">
+
+              Payment amount before cash rounding was applied.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="totals" type="Totals">
+
+      Financial summary including subtotal, taxes, and total amount.
+
+      **Read-only.**
+
+      <Expandable title="totals properties">
+
+        <ResponseField name="subtotal" type="string">
+
+          Subtotal before taxes, discounts, and fees.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="discount" type="string">
+
+          Total discount amount.
+
+        </ResponseField>
+
+        <ResponseField name="shipping" type="string">
+
+          Total shipping costs.
+
+        </ResponseField>
+
+        <ResponseField name="exempt" type="string">
+
+          Total tax-exempt amount.
+
+        </ResponseField>
+
+        <ResponseField name="tax" type="string">
+
+          Total tax amount.
+
+        </ResponseField>
+
+        <ResponseField name="total" type="string">
+
+          Total amount due.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="paidAmount" type="string">
+
+          Total amount already paid.
+
+          Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+        <ResponseField name="balance" type="string">
+
+          Outstanding balance.
+
+          **Read-only.** Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="archived" type="boolean">
+
+      Whether the invoice is archived.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="customFields" type="CustomFields">
+
+      Custom fields displayed on the invoice document.
+
+      <Expandable title="customFields properties">
+
+        <ResponseField name="headerCustomFields" type="CustomField[]">
+
+          Custom fields in the invoice header.
+
+          Constraints: `maxItems 4`.
+
+          <Expandable title="headerCustomFields properties">
+
+            <ResponseField name="title" type="string">
+
+              Field title.
+
+            </ResponseField>
+
+            <ResponseField name="value" type="string">
+
+              Field value.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="businessCustomFields" type="CustomField[]">
+
+          Custom fields in the business details section.
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="businessCustomFields properties">
+
+            <ResponseField name="title" type="string">
+
+              Field title.
+
+            </ResponseField>
+
+            <ResponseField name="value" type="string">
+
+              Field value.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="customerCustomFields" type="CustomField[]">
+
+          Custom fields in the customer information section.
+
+          Constraints: `maxItems 4`.
+
+          <Expandable title="customerCustomFields properties">
+
+            <ResponseField name="title" type="string">
+
+              Field title.
+
+            </ResponseField>
+
+            <ResponseField name="value" type="string">
+
+              Field value.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="footerCustomField" type="FooterContent">
+
+          Footer content.
+
+          <Expandable title="footerCustomField properties">
+
+            <ResponseField name="overridePresetContent" type="boolean">
+
+              Whether to override the invoice preset's footer content. When `true`, the `content` in this field replaces the preset's default footer on the generated invoice. When `false`, the preset's footer content is used.
+
+            </ResponseField>
+
+            <ResponseField name="content" type="RichContent">
+
+              Footer content in rich text format. Used only when `overridePresetContent` is `true`.
+
+              <Expandable title="content properties">
+
+                <ResponseField name="nodes" type="Node[]">
+
+                  Node objects representing a rich content document.
+
+                  _Nested structure omitted for brevity — see the `Node[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="metadata" type="Metadata">
+
+                  Object metadata.
+
+                  _Nested structure omitted for brevity — see the `Metadata` object._
+
+                </ResponseField>
+
+                <ResponseField name="documentStyle" type="DocumentStyle">
+
+                  Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+                  _Nested structure omitted for brevity — see the `DocumentStyle` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="presetProperties" type="PresetProperties">
+
+      Invoice preset applied to this invoice. Determines the appearance and custom fields on the invoice document. If not provided, the [default preset](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoice-presets/set-default-invoice-preset) is used.
+
+      <Expandable title="presetProperties properties">
+
+        <ResponseField name="presetId" type="string">
+
+          Invoice preset ID. If not provided, the [default preset](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoice-presets/get-default-invoice-preset) is used.
+
+        </ResponseField>
+
+        <ResponseField name="invoicePreset" type="InvoicePreset">
+
+          Snapshot of the invoice preset at the time the invoice was published.
+
+          **Read-only.**
+
+          <Expandable title="invoicePreset properties">
+
+            <ResponseField name="_id" type="string">
+
+              Invoice preset ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="revision" type="integer">
+
+              Revision number, which increments by 1 each time the invoice preset is updated. To prevent conflicting changes, the current revision must be passed when updating the invoice preset.
+
+              Ignored when creating an invoice preset.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the invoice preset was created.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the invoice preset was last updated.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Name of the preset.
+
+              Constraints: `minLength 1`, `maxLength 100`.
+
+            </ResponseField>
+
+            <ResponseField name="displaySettings" type="DisplaySettings">
+
+              Display settings that control which sections and fields appear on invoices created with this preset.
+
+              <Expandable title="displaySettings properties">
+
+                <ResponseField name="businessInfo" type="BusinessDisplayOptions">
+
+                  Options for displaying business information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `BusinessDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="customerInfo" type="CustomerDisplayOptions">
+
+                  Options for displaying customer information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `CustomerDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="itemsInfo" type="ItemsDisplayOptions">
+
+                  Options for displaying line item details on the invoice.
+
+                  _Nested structure omitted for brevity — see the `ItemsDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="totalsInfo" type="TotalsDisplayOptions">
+
+                  Options for displaying totals and tax information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `TotalsDisplayOptions` object._
+
+                </ResponseField>
+
+                <ResponseField name="paymentsInfo" type="PaymentsDisplayOptions">
+
+                  Options for displaying payment information on the invoice.
+
+                  _Nested structure omitted for brevity — see the `PaymentsDisplayOptions` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="customFields" type="CustomFields">
+
+              Custom fields for adding additional information to invoices, such as header details, business information, customer information, and a footer.
+
+              <Expandable title="customFields properties">
+
+                <ResponseField name="headerCustomFields" type="CustomField[]">
+
+                  Custom fields displayed in the header section of the invoice.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomField[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="businessCustomFields" type="CustomField[]">
+
+                  Custom fields displayed in the business information section of the invoice.
+
+                  Constraints: `maxItems 5`.
+
+                  _Nested structure omitted for brevity — see the `CustomField[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="customerCustomFields" type="CustomField[]">
+
+                  Custom fields displayed in the customer information section of the invoice.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomField[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="footerCustomField" type="RichContent">
+
+                  Footer content displayed at the bottom of the invoice. Supports text formatting and images. Individual invoices can override this content using `customFields.footerCustomField.overridePresetContent`.
+
+                  _Nested structure omitted for brevity — see the `RichContent` object._
+
+                </ResponseField>
+
+                <ResponseField name="headerPlaceholders" type="CustomFieldPlaceholder[]">
+
+                  Placeholders for header fields that appear as blank titled fields on the invoice for the recipient to fill in.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomFieldPlaceholder[]` object._
+
+                </ResponseField>
+
+                <ResponseField name="customerPlaceholders" type="CustomFieldPlaceholder[]">
+
+                  Placeholders for customer fields that appear as blank titled fields on the invoice for the recipient to fill in.
+
+                  Constraints: `maxItems 4`.
+
+                  _Nested structure omitted for brevity — see the `CustomFieldPlaceholder[]` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="defaultPreset" type="boolean">
+
+              Whether this preset is the default preset.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="displayValues" type="DisplayValues">
+
+              Display value overrides for invoices created with this preset. When set, these values replace the corresponding values on the generated invoice document.
+
+              <Expandable title="displayValues properties">
+
+                <ResponseField name="titleOverride" type="string">
+
+                  Title to display on the generated invoice document, overriding the invoice's own `title`. If not set, the invoice's `title` is used.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="defaultDaysUntilDue" type="integer">
+
+              Number of days after invoice creation until the invoice is due. Set to `0` for due on receipt.
+
+              Default: `30`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="attachments" type="Attachment[]">
+
+      Files attached to the invoice.
+
+      Constraints: `maxItems 5`.
+
+      <Expandable title="attachments properties">
+
+        <ResponseField name="fileName" type="string">
+
+          File name. For example, `invoice.pdf`.
+
+          Constraints: `minLength 1`, `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="fileUrl" type="string">
+
+          File URL.
+
+          Constraints: `format WEB_URL`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="documentInfo" type="DocumentInfo">
+
+      PDF document generation status.
+
+      **Read-only.**
+
+      <Expandable title="documentInfo properties">
+
+        <ResponseField name="status" type="string">
+
+          Document generation status.
+
+          **Supported values:**
+
+          - `PROCESSING` — PDF generation is in progress.
+          - `AVAILABLE` — PDF is ready to download.
+          - `FAILED` — PDF generation failed.
+          - `EXPIRED` — PDF download URL has expired.
+          - `OUTDATED` — PDF is out of date because the invoice has been modified after generation.
+
+        </ResponseField>
+
+        <ResponseField name="downloadUrl" type="string">
+
+          URL to download the generated PDF. Available when `status` is `AVAILABLE`.
+
+        </ResponseField>
+
+        <ResponseField name="documentExpirationDate" type="datetime">
+
+          Date and time the document download URL expires.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="links" type="Links">
+
+      Invoice URL.
+
+      **Read-only.**
+
+      <Expandable title="links properties">
+
+        <ResponseField name="relativePath" type="string">
+
+          Relative URL path to the invoice.
+
+        </ResponseField>
+
+        <ResponseField name="url" type="string">
+
+          Full URL to the invoice.
+
+        </ResponseField>
+
+        <ResponseField name="previewPassword" type="string">
+
+          Password required to view the invoice when HIPAA compliance is enabled for the site.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="businessLocation" type="BusinessLocation">
+
+      Business location.
+
+      <Expandable title="businessLocation properties">
+
+        <ResponseField name="_id" type="string">
+
+          Location ID. Learn more about the [Wix Locations API](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="name" type="string">
+
+          Location name.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="activityInfo" type="ActivityInfo">
+
+      Read-only record of when the invoice was last sent and last viewed.
+
+      **Read-only.**
+
+      <Expandable title="activityInfo properties">
+
+        <ResponseField name="sentToContactIds" type="string[]">
+
+          Contact IDs that the invoice was sent to.
+
+          Constraints: `format GUID`, `maxItems 5`.
+
+        </ResponseField>
+
+        <ResponseField name="lastSentDate" type="datetime">
+
+          Date and time the invoice was last sent.
+
+        </ResponseField>
+
+        <ResponseField name="lastViewedDate" type="datetime">
+
+          Date and time the invoice was last viewed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="hasSubscriptions" type="boolean">
+
+      Whether the invoice contains subscription line items. `true` when at least one line item carries subscription info.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tags">
+
+      Tags for organizing invoices. `publicTags` are visible to anyone with access to the invoice. `privateTags` are restricted to site owners and require additional permissions to access.
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission in order to access them, typically restricted from site members and visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="publicTags" type="TagList">
+
+          Tags that are exposed to anyone with access to the entity, including site members and visitors.
+
+          <Expandable title="publicTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs.
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

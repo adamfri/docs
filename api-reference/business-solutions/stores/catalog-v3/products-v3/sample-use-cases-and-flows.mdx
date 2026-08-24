@@ -1,0 +1,215 @@
+---
+title: "Sample Use Cases and Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Create and manage products
+
+This flow demonstrates how to create a product from scratch and manage its core details. This is a good starting point for understanding the Products API.
+
+To create and manage a product:
+
+1. Create a new product by calling [Create Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product). A product requires at least one variant with an `actualPrice`. For a basic physical product, provide the product name, set `productType` to `PHYSICAL`, include an empty `physicalProperties` object, and add a `variantsInfo` object with one variant:
+
+    ```json
+    {
+      "product": {
+        "name": "Classic Cotton T-Shirt",
+        "productType": "PHYSICAL",
+        "physicalProperties": {},
+        "variantsInfo": {
+          "variants": [
+            {
+              "price": {
+                "actualPrice": {
+                  "amount": "29.99"
+                }
+              },
+              "physicalProperties": {}
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+    The return value includes the generated product ID (`product.id`). Save this ID for subsequent operations.
+
+2. Add product images by calling [Update Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/update-product) with the `media.itemsInfo.items` array. Provide image URLs or Wix Media Manager IDs.
+
+3. Update the product inventory settings by calling Update Product with `stock.trackInventory` and `stock.inventoryStatus` fields.
+
+4. Make the product visible on your storefront by calling Update Product with `visible` set to `true`.
+
+5. Retrieve the complete product details by calling [Get Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/get-product) to verify that the changes were applied correctly.
+
+## Prepare your store for a sale
+
+Before a big sale, a Wix user might want to prepare their store by creating a new category for products on sale, adding ribbons to products to catch visitors' attention, and setting new actual prices and compare-at prices.
+
+To prepare a store for a sale:
+
+1. Add and arrange products in a category. This allows visitors to filter by this category on the storefront (if Wix users enabled this filter in the **Editor**). It also lets Wix users control which products visitors see first.
+
+2. Create a new ribbon by calling [Create Ribbon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/ribbons-v3/create-ribbon). Save the ribbon ID (`ribbon.id`) from the return value.
+
+3. To add the ribbon "Sale" to all products in the category, call [Bulk Update Products By Filter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/bulk-update-products-by-filter) with the following request body:
+
+```json
+{
+  "filter": {
+    "directCategoriesInfo.categories.id": "<categoryId>"
+  },
+  "product": {
+    "ribbon": {
+      "id": "<ribbonId>"
+    }
+  }
+}
+```
+
+4. Update the actual prices and compare-at prices. To simplify, consider a single product with 1 variant where the `actualPrice` is set at $100.
+
+5. Set a new `compareAtPrice`. This price indicates what's the price of the product before the sale. Call [Bulk Update Product Variants By Filter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/bulk-update-product-variants-by-filter) with a variant containing the desired `compareAtPrice` and `actualPrice`:
+
+```json
+{
+  "variant": {
+    "price": {
+      "compareAtPrice": {
+        "amount": "100"
+      },
+      "actualPrice": {
+        "amount": "90"
+      }
+    }
+  }
+}
+```
+
+After this call, the example product has a `compareAtPrice` of $100 and an `actualPrice` of $90.
+
+### Adjust prices by percentage
+
+To adjust all actual prices by a specific amount or percentage based on the original `actualPrice` value, call [Bulk Adjust Product Variants By Filter](fallback::https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/bulk-adjust-product-variants-by-filter) with the following request body:
+
+```json
+{
+  "actualPrice": {
+    "percentage": -10
+  }
+}
+```
+
+After this call, the example product has a `compareAtPrice` of $100 and an `actualPrice` of $81.
+
+### Calculate price from compare-at price
+
+To calculate a new `actualPrice` from `compareAtPrice` by applying a discount, call Bulk Adjust Product Variants By Filter with `actualPriceFromCompareAtPrice`. For example, to set `actualPrice` as a 20% discount from `compareAtPrice`, use the following request body:
+
+```json
+{
+  "actualPriceFromCompareAtPrice": {
+    "percentage": 20
+  }
+}
+```
+
+After this call, the example product has a `compareAtPrice` of $100 and an `actualPrice` of $80.
+
+### Set exact price for all variants
+
+To set the same exact `actualPrice` for all variants of all products, call Bulk Update Product Variants By Filter with a variant containing the desired `actualPrice`:
+
+```json
+{
+  "variant": {
+    "price": {
+      "actualPrice": {
+        "amount": "75"
+      }
+    }
+  }
+}
+```
+
+After this call, the example product has a `compareAtPrice` of $100 and an `actualPrice` of $75.
+
+## Add custom fields to products
+
+The Product object includes predefined fields that can't be removed or renamed. However, there may be instances where you need to add additional fields to accommodate specific flows or use cases for your app.
+
+For example, consider a real estate app that needs to store information about the total area and the type of unit (such as whether it's an apartment or a house). You can achieve this using the `extendedFields` field of the Product object.
+
+Before continuing, you may want to review the documentation on [data extensions or schema plugins](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions#extended-fields).
+
+1. Follow the guide to [extend an existing object](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/extend-an-existing-object) to create an extension of type "Stores Catalog Product" in the **app dashboard**. Be sure to note the namespace of your app, as you'll need it for the next steps. For this example, assume the namespace is `@real-estate-app/real-estate-app`.
+
+2. In the **JSON Editor**, enter the following value:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "unitType": {
+      "type": "string",
+      "maxLength": 50,
+      "x-wix-permissions": {
+        "read": [
+          "owning-app",
+          "users"
+        ],
+        "write": [
+          "owning-app",
+          "users"
+        ]
+      }
+    },
+    "areaInSqm": {
+      "type": "integer",
+      "minimum": 15,
+      "x-wix-permissions": {
+        "read": [
+          "owning-app",
+          "users"
+        ],
+        "write": [
+          "owning-app",
+          "users"
+        ]
+      }
+    }
+  }
+}
+```
+
+This defines 2 fields: `areaInSqm`, which includes minimum value validation, and `unitType`, which includes maximum length validation. Both fields can be read and written by your app as well as by Wix users.
+
+3. Save your extension. According to the guide to [extend an existing object](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/extend-an-existing-object), you must have your app approved before you can continue with testing.
+
+4. Once your app is approved, click **Test Your App** and select a site where you want to install it. Be sure to grant the app permissions to read and write to the stores catalog.
+
+5. You can now create a product with extended fields by calling Create Product or update an existing product by calling Update Product. In your request, include the `extendedFields` object with your namespace and the relevant field values.
+
+```json
+{
+  "product": {
+    "id": "e0f16062-2f78-457b-ab47-78847e206e49",
+    "revision": 1,
+    "name": "Luxury apartment in the city center",
+    "extendedFields": {
+      "namespaces": {
+        "@real-estate-app/real-estate-app": {
+          "unitType": "apartment",
+          "areaInSqm": 120
+        }
+      }
+    }
+  }
+}
+```
+
+6. When you call Get Product, the return value includes the `extendedFields` object with your namespace.

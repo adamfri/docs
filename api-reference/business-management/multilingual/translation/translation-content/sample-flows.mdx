@@ -1,0 +1,156 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that your app can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that your app can support. It provides a useful
+starting point as you plan your app's implementation.
+
+## Translate English content in your app to French
+
+If you're developing a delivery service app, the Wix user may want to translate content from the primary language (
+English) into a secondary language (French). They have two schemas, one for restaurant delivery and one for catering
+delivery. The content they want to translate includes delivery instructions, special notes for couriers, and customer
+communications. Follow the flow below to get started:
+
+1. **Prepare the content for translation** \
+   Use
+   the [Create Schema](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-schema/create-schema)
+   method to create schemas for both restaurant and catering delivery. In each schema, define all the fields that will
+   require translation.
+
+2. **Collect the original user-generated content** \
+   Prompt the Wix user to provide the original content in the site's primary language (English) for each schema. Call
+   the [Bulk Create Content](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/bulk-create-content)
+   method to save this collected content. This content will serve as the baseline for future translations.
+
+   **Example request:**
+
+      ::::tabs
+      :::REST_TAB
+      ```bash
+         curl -X POST \
+         'https://www.wixapis.com/translation-content/v1/bulk/contents/create' \
+         -H 'Authorization: <AUTH>' \
+         -H 'Content-Type: application/json' \
+         -d '{
+         "contents": [
+            {
+               "schemaId": "a4caeb4e-81ce-4921-a8d3-1f58329acfc5",
+               "entityId": "Delivery-Instruction-001",
+               "locale": "en-us",
+               "fields": {
+                  "instructions": {
+                     "textValue": "Leave the package at the front door.",
+                     "updatedBy": "USER",
+                     "published": false,
+                  },
+                  "special_notes": {
+                     "textValue": "Please ring the doorbell.",
+                     "updatedBy": "USER",
+                     "published": false,
+                  }
+               }
+            },
+            {
+               "schemaId": "a4caeb4e-81ce-4921-a8d3-1f58329acfc5",
+               "entityId": "Delivery-Instruction-002",
+               "locale": "en-us",
+               "fields": {
+                  "instructions": {
+                     "textValue": "For a package heavier then 20kg, please call in advance.",
+                     "updatedBy": "USER",
+                     "published": false,
+                  }
+               }
+            }
+         ],
+         "returnEntity": true
+         }'
+      ```
+      :::
+      :::SDK_TAB
+      ```js
+      import { translationSchemas } from "@wix/multilingual";
+
+      const contents = [
+            {
+               "schemaId": "a4caeb4e-81ce-4921-a8d3-1f58329acfc5",
+               "entityId": "Delivery-Instruction-001",
+               "locale": "en-us",
+               "fields": {
+                  "instructions": {
+                     "textValue": "Leave the package at the front door.",
+                     "updatedBy": "USER",
+                     "published": false,
+                  },
+                  "special_notes": {
+                     "textValue": "Please ring the doorbell.",
+                     "updatedBy": "USER",
+                     "published": false,
+                  }
+               }
+            },
+            {
+               "schemaId": "a4caeb4e-81ce-4921-a8d3-1f58329acfc5",
+               "entityId": "Delivery-Instruction-002",
+               "locale": "en-us",
+               "fields": {
+                  "instructions": {
+                     "textValue": "For a package heavier then 20kg, please call in advance.",
+                     "updatedBy": "USER",
+                     "published": false,
+                  }
+               }
+            }
+         ]
+
+      const options = {
+         returnEntity: true
+      }
+
+      async function bulkCreateContent(contents, options) {
+      const response = await translationContents.bulkCreateContent(
+         contents,
+         options,
+      );
+      }
+      ```
+      :::
+      ::::
+
+3. **Translate the content to French** \
+   The Wix user can translate the content manually or using their preferred translation service. Once translated, they
+   can add the French content through
+   the [Translation Manager](fallback::https://support.wix.com/en/article/wix-multilingual-using-the-translation-manager). The
+   Translation Manager automatically calls the API to store the translations and mark them as ready to publish.
+
+4. **Update as needed** \
+   If there are updates to the primary or secondary locale content, repeat the process to keep all content up-to-date.
+   Call [Query Contents](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/query-contents)
+   to check for existing content, and
+   either [Bulk Update Content](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/bulk-update-content)
+   or [Bulk Create Content](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/bulk-create-content)
+   to add or update the translation content.
+
+## Update default app content with user generated content
+
+Let's say you're developing an app that provides original default FAQ content in English for Wix users. The Wix user may
+prefer to update this default content with their own original content.
+
+1. Your app provides English FAQs as boilerplate content. Call
+   the [Create Content](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/create-content)
+   method to store this default content.
+
+2. Prompt the Wix user to replace the default content in
+   the [Translation Manager](fallback::https://support.wix.com/en/article/wix-multilingual-using-the-translation-manager) with
+   their own custom content.
+
+3. Listen for
+   the [Content Updated](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/content-updated)
+   event to make sure the Wix user has entered their custom content.
+
+4. Call
+   the [Update Content](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/update-content)
+   method to replace the default FAQ content in your app with the Wix user's content.

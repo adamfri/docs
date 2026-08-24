@@ -1,0 +1,671 @@
+---
+title: "Bulk Decrement Inventory Items"
+description: "Decrements quantities of multiple inventory items."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Decrements quantities of multiple inventory items.
+
+    <Note>
+
+    + `trackQuantity` must be `true` to allow for decrementing the quantity.
+    + If you pass `restrictInventory: true` and the `decrementData.decrementBy` amount is greater than the current quantity in stock, the request will fail with an `INSUFFICIENT_INVENTORY` error.
+    + Pass `restrictInventory: false` to allow for negative quantities.
+    + If you pass `preorderRequest: true` and the item is available for preorder, the item's `preorderCounter` will increase and the item's quantity will stay the same.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INVENTORY_ITEM_WRITE">Inventory write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/inventory-items/decrement
+    ```
+
+    ## Body Params
+
+    <ParamField body="decrementData" type="DecrementDataById[]" required>
+
+      Inventory item IDs and decrement data.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="decrementData properties">
+
+        <ParamField body="inventoryItemId" type="string" required>
+
+          Inventory item ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="decrementBy" type="integer" required>
+
+          Amount to decrement by.
+
+          Constraints: `min 1`, `max 99999`.
+
+        </ParamField>
+
+        <ParamField body="preorderRequest" type="boolean">
+
+          Whether the request to decrement the inventory item's quantity was made as part of a purchase that includes preorder items.
+
+          + If `true` and the item is available for preorder in the default location, negative inventory quantity is allowed.
+          + If `false` and the item is not available for preorder, negative inventory is not allowed.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="restrictInventory" type="boolean">
+
+      Whether inventory is restricted from going below zero.
+
+      Default: `true` - inventory does not go below zero.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the full inventory item entities in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="reason" type="string">
+
+      Reason for decrement inventory action.
+
+      **Supported values:**
+
+      - `ORDER`
+      - `MANUAL`
+      - `REVERT_INVENTORY_CHANGE`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkInventoryItemResult[]">
+
+      Inventory items updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InventoryItem">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Inventory Item Object](/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/inventory-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVENTORY_QUANTITY_NOT_TRACKED` | Decrement attempted for untracked inventory. Enable inventory tracking first. |
+    | `428` | `FAILED_PRECONDITION` | `INSUFFICIENT_INVENTORY` | Decrement would result in negative `quantity` or exceed preorder limit. Set `restrict_inventory` to `false` to allow negative quantities. |
+    | `428` | `FAILED_PRECONDITION` | `MIN_QUANTITY_LIMIT_REACHED` | Decrement would reduce inventory below minimum quantity limit or `preorderInfo.counter` would exceed its maximum value. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Inventory Item Updated | `wix.stores.catalog.v3.inventory_item_updated` | Triggered when an inventory item is updated. |
+    | Inventory Item Stock Status Updated | `wix.stores.catalog.v3.inventory_item_stock_status_updated` | Triggered when an inventory item's stock is updated. |
+    | Inventory Item Updated With Reason | `wix.stores.catalog.v3.inventory_item_updated_with_reason` | Triggered when an inventory item is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Bulk decrement Inventory items associated with product, variant, and location. to product, variant and location.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/stores/v3/bulk/inventory-items/decrement' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization:  <AUTH>' \
+        -d '{
+            "decrementData": [
+              {
+                "inventoryItemId": "9c346207-6467-434f-aa9e-8999c32d119d",
+                "decrementBy": 1
+              }
+            ],
+            "returnEntity": true,
+            "reason": "MANUAL"
+          }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "9c346207-6467-434f-aa9e-8999c32d119d",
+              "originalIndex": 0,
+              "success": true,
+              "error": null
+            },
+            "item": {
+              "id": "9c346207-6467-434f-aa9e-8999c32d119d",
+              "revision": "5",
+              "createdDate": "2024-06-27T09:23:55.186Z",
+              "updatedDate": "2024-07-04T11:45:25.227Z",
+              "variantId": "590cef15-c81d-4ed7-970c-1ff879946306",
+              "locationId": "8fb0985f-9027-43d6-b4f9-c4c4f5324194",
+              "productId": "babd2bcc-ea03-4b63-8053-0ec59c73fc36",
+              "quantity": 2,
+              "trackQuantity": true,
+              "availabilityStatus": "IN_STOCK",
+              "preorderInfo": {
+                "enabled": true,
+                "counter": 0,
+                "limit": 10,
+                "message": "Expected shipping by June",
+                "quantity": 10
+              },
+              "product": {
+                "name": "t shirt",
+                "directCategoryIds": [
+                  "05f9cc2f-b5df-4287-aa32-3314179192b8"
+                ]
+              },
+              "extendedFields": null
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Decrements quantities of multiple inventory items.
+
+    <Note>
+
+    + `trackQuantity` must be `true` to allow for decrementing the quantity.
+    + If you pass `restrictInventory: true` and the `decrementData.decrementBy` amount is greater than the current quantity in stock, the request will fail with an `INSUFFICIENT_INVENTORY` error.
+    + Pass `restrictInventory: false` to allow for negative quantities.
+    + If you pass `preorderRequest: true` and the item is available for preorder, the item's `preorderCounter` will increase and the item's quantity will stay the same.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INVENTORY_ITEM_WRITE">Inventory write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { inventoryItemsV3 } from '@wix/stores';
+
+    inventoryItemsV3.bulkDecrementInventoryItems(decrementData, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="decrementData" type="DecrementDataById[]" required>
+
+      Inventory item IDs and decrement data.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="decrementData properties">
+
+        <ParamField body="inventoryItemId" type="string" required>
+
+          Inventory item ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="decrementBy" type="integer" required>
+
+          Amount to decrement by.
+
+          Constraints: `min 1`, `max 99999`.
+
+        </ParamField>
+
+        <ParamField body="preorderRequest" type="boolean">
+
+          Whether the request to decrement the inventory item's quantity was made as part of a purchase that includes preorder items.
+
+          + If `true` and the item is available for preorder in the default location, negative inventory quantity is allowed.
+          + If `false` and the item is not available for preorder, negative inventory is not allowed.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkDecrementInventoryItemsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="restrictInventory" type="boolean">
+
+          Whether inventory is restricted from going below zero.
+
+          Default: `true` - inventory does not go below zero.
+
+        </ParamField>
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the full inventory item entities in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="reason" type="string">
+
+          Reason for decrement inventory action.
+
+          **Supported values:**
+
+          - `ORDER`
+          - `MANUAL`
+          - `REVERT_INVENTORY_CHANGE`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkInventoryItemResult[]">
+
+      Inventory items updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InventoryItem">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Inventory Item Object](/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/inventory-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVENTORY_QUANTITY_NOT_TRACKED` | Decrement attempted for untracked inventory. Enable inventory tracking first. |
+    | `428` | `FAILED_PRECONDITION` | `INSUFFICIENT_INVENTORY` | Decrement would result in negative `quantity` or exceed preorder limit. Set `restrict_inventory` to `false` to allow negative quantities. |
+    | `428` | `FAILED_PRECONDITION` | `MIN_QUANTITY_LIMIT_REACHED` | Decrement would reduce inventory below minimum quantity limit or `preorderInfo.counter` would exceed its maximum value. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Inventory Item Updated | `wix.stores.catalog.v3.inventory_item_updated` | Triggered when an inventory item is updated. |
+    | Inventory Item Stock Status Updated | `wix.stores.catalog.v3.inventory_item_stock_status_updated` | Triggered when an inventory item's stock is updated. |
+    | Inventory Item Updated With Reason | `wix.stores.catalog.v3.inventory_item_updated_with_reason` | Triggered when an inventory item is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-decrement-inventory-items" id="ex-sdk-bulk-decrement-inventory-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-decrement-inventory-items" id="ex-sdk-bulk-decrement-inventory-items-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-decrement-inventory-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-decrement-inventory-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk decrement inventory items</span><span className="wix-picker-desc">Decrease inventory quantity for items by ID</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkDecrementInventoryItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-decrement-inventory-items-0"><span className="wix-picker-name">Bulk decrement inventory items</span><span className="wix-picker-desc">Decrease inventory quantity for items by ID</span></label>
+    <label htmlFor="ex-sdk-bulk-decrement-inventory-items-1"><span className="wix-picker-name">bulkDecrementInventoryItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk decrement inventory items
+    import { inventoryItemsV3 } from "@wix/stores";
+
+    const decrementData = [
+      {
+        inventoryItemId: "9c346207-6467-434f-aa9e-8999c32d119d",
+        decrementBy: 1
+      }
+    ];
+
+    const options = {
+      returnEntity: true,
+      reason: inventoryItemsV3.ReasonType.MANUAL
+    };
+
+    async function bulkDecrementInventoryItems() {
+      const response = await inventoryItemsV3.bulkDecrementInventoryItems(decrementData, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "id": "9c346207-6467-434f-aa9e-8999c32d119d",
+     *         "originalIndex": 0,
+     *         "success": true
+     *       },
+     *       "item": {
+     *         "_id": "9c346207-6467-434f-aa9e-8999c32d119d",
+     *         "variantId": "590cef15-c81d-4ed7-970c-1ff879946306",
+     *         "productId": "babd2bcc-ea03-4b63-8053-0ec59c73fc36",
+     *         "quantity": 2,
+     *         "trackQuantity": true,
+     *         "availabilityStatus": "IN_STOCK"
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 1,
+     *     "totalFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkDecrementInventoryItems (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { inventoryItemsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { inventoryItemsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkDecrementInventoryItems(decrementData,options) {
+      const response = await myWixClient.inventoryItemsV3.bulkDecrementInventoryItems(decrementData,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

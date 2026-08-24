@@ -1,0 +1,59 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Move a site's page titles and descriptions onto Wix
+
+When a site is rebuilt on Wix, the titles and descriptions of its pages are worth carrying across, because they're what appears in search results.
+
+The tags you send replace an item's tags in full, so this flow reads each item before writing it.
+
+To move per-page SEO metadata onto a Wix site:
+
+1. Collect the titles and descriptions from the source site, keyed by something you can match to Wix pages, such as the page path.
+1. Call [List Item SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/list-item-seo-tags) for item type `STATIC_PAGE` to get the site's pages and their IDs. Follow the cursor until you've retrieved every page.
+1. Match each source page to a Wix page, and build the tag list for it.
+1. Call [Bulk Set Item SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/bulk-set-item-seo-tags) with up to 100 items per call, each entry naming its item ID and its field mask.
+1. Read `bulkActionMetadata.totalFailures`. If it's above zero, use `itemMetadata.originalIndex` on each failed result to find which items failed and why.
+1. Retry only the failed items. Writes are idempotent, so re-sending an item that already succeeded is safe.
+1. For a static page, set `publish` to `true` when you want the change on the live site rather than only in the draft.
+
+## Find which items still use inherited tags
+
+Before writing anything, it's useful to know which items a Wix user has already customized, so that an import doesn't overwrite deliberate choices.
+
+To audit an item type:
+
+1. Call [List Item SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/list-item-seo-tags) for the item type.
+1. For each item, read `hasOverride`. `true` means the item has tags of its own; `false` means it inherits them.
+1. Follow the cursor from `pagingMetadata` until every item has been retrieved. Pass back the cursor you received rather than constructing one.
+1. Write only to the items where `hasOverride` is `false`, leaving customized items untouched.
+
+Note that `hasOverride: false` doesn't mean the item shows Wix's built-in tags. It may inherit from a customized pattern for its item type, or from the site's tags. Read `resolvedTags` on an item to see the tags it actually renders with and where each came from.
+
+## Give one page a custom title, then undo it
+
+A Wix user may want a single page to differ from the pattern that generates titles for its type, and later want it back in line with the rest of the site.
+
+To set and then remove one item's tags:
+
+1. Call [Get Item SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/get-item-seo-tags) for the item, and keep its `tags` array.
+1. Add or replace the title tag in that array. For example:
+
+    ```json
+    {
+      "type": "title",
+      "children": "Winter collection | Ceramics studio"
+    }
+    ```
+
+1. Call [Set Item SEO Tags](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/set-item-seo-tags) with the full array and `tags` in the `fieldMask`.
+1. Check the response: `hasOverride` is now `true`, and `resolvedTags` shows the title attributed to the item.
+1. To undo it later, call [Reset Item SEO Tags To Default](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/reset-item-seo-tags-to-default) for the same item.
+1. Check the response again: `hasOverride` is `false`, and `resolvedTags` shows the title the item now inherits.
+
+Resetting removes only the tags set for the item. The item itself isn't affected, and any `noindex` directive that was set on it is removed along with its tags.

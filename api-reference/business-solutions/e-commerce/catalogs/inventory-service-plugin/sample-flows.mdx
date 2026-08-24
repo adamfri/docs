@@ -1,0 +1,33 @@
+---
+title: "Sample Flows"
+description: "This article presents sample flows you can support."
+icon: "file-lines"
+---
+
+This article presents sample flows you can support. You aren't limited to these exact flows, but they can be helpful jumping off points as you plan your inventory integration.
+
+## Decrement inventory as part of order placed flow
+
+You can reduce inventory levels when customers place orders to ensure accurate stock tracking and prevent overselling.
+
+To decrement inventory when an order is placed:
+
+1. A site visitor completes the checkout process.
+2. Wix sends a [Decrement Availability](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/catalogs/inventory-service-plugin/decrement-availability) request to your integration with `restrictInventoryValue` set to `true`.
+3. Your service validates that the requested items are in stock:
+   + If sufficient inventory is available, deduct the items from stock and return an empty response object.
+   + If any items have insufficient stock, return an error without modifying inventory levels.
+4. When an error is returned, the site visitor cannot complete the checkout and is notified about the unavailable items.
+
+## Update inventory as part of order edit flow
+
+You can adjust inventory levels when merchants edit existing orders, handling both items being added and removed from orders.
+
+To update inventory when an order is edited:
+
+1. A merchant edits an order in the Wix dashboard.
+2. The merchant replaces a line item with a different item from the same catalog.
+3. When the merchant commits the changes, Wix sends 2 requests to your service:
+   + A [Decrement Availability](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/catalogs/inventory-service-plugin/decrement-availability) request for the newly added item with `restrictInventoryValue` set to `false`.
+   + An [Increment Availability](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/catalogs/inventory-service-plugin/increment-availability) request for the removed item to restore its stock.
+4. Since these requests are initiated by the merchant and should not fail the order edit, the decrement request uses `restrictInventoryValue: false`, allowing your service to proceed even if it would result in negative inventory.

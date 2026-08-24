@@ -1,0 +1,947 @@
+---
+title: "List Availability Time Slot Configurations"
+description: "Retrieves availability time slot configurations for the specified services."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves availability time slot configurations for the specified services.
+
+    Wix calls this method when a customer views available booking times or books a service. For example:
+    - When a customer loads the Bookings calendar to select a time slot, [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) calls this method.
+    - When a customer books a service, [Get Availability Time Slot](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) calls this method.
+
+    Wix uses the returned configurations to calculate available time slots, considering:
+    - Service duration.
+    - Split interval and buffer time.
+    - Service locations.
+    - Required resource types and available resources.
+
+    Your implementation must return a configuration for each service in the request, in the same order.
+    All fields in the response must be returned unless explicitly marked as optional.
+
+    ## Endpoint
+
+    ```http
+    POST /v2/list-availability-time-slot-configurations
+    ```
+
+    ## Body Params
+
+    <ParamField body="serviceIds" type="string[]" deprecated>
+
+      Deprecated. Use `services` instead.
+
+      **Deprecated.** Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="services" type="Service[]">
+
+      Services to retrieve configurations for.
+
+      This list is ordered. Return configurations in the same order as the services in this list.
+      The same service ID may appear multiple times with different customer choices.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="services properties">
+
+        <ParamField body="serviceId" type="string">
+
+          Service ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="customerChoices" type="CustomerChoices">
+
+          Customer's selected choices for this service, such as duration from [service options and variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction) or [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+          <Expandable title="customerChoices properties">
+
+            <ParamField body="durationInMinutes" type="integer">
+
+              Duration selected by the customer in minutes. Based on the customer's selection from [service options and variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+              When using [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction), we recommend passing only `addOnIds` instead of `durationInMinutes`. Wix Bookings then calculates the total duration automatically. If you specify both `addOnIds` and `durationInMinutes`, `durationInMinutes` must equal the service duration plus all selected add-on durations.
+
+            </ParamField>
+
+            <ParamField body="addOnIds" type="string[]">
+
+              IDs of [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) selected by the customer.
+              When specifying this field, we recommend omitting `durationInMinutes`. Wix Bookings then calculates the total duration based on the service duration plus all selected add-on durations.
+
+              Constraints: `format GUID`, `maxItems 21`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="configurations" type="AvailabilityTimeSlotsConfiguration[]">
+
+      Configurations for the requested services. Must contain one configuration per service in the request, in the same order.
+
+      <Expandable title="configurations properties">
+
+        <ResponseField name="serviceId" type="string">
+
+          Service ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="resourceTypes" type="ResourceType[]">
+
+          [Resource types](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) required to book this service. For example, a room from the "rooms" resource type and a staff member from the "staff" resource type.
+
+          Constraints: `minItems 1`, `maxItems 9`.
+
+          <Expandable title="resourceTypes properties">
+
+            <ResponseField name="resourceTypeId" type="string">
+
+              Resource type ID.
+
+            </ResponseField>
+
+            <ResponseField name="resourceIds" type="string[]">
+
+              IDs of resources available for booking within this resource type. These may be a subset of all resources in the type.
+
+              Constraints: `format GUID`, `maxItems 220`.
+
+            </ResponseField>
+
+            <ResponseField name="numberOfResourcesRequired" type="integer">
+
+              Number of resources required to book the service.
+
+              Currently supports only a value of `1`.
+
+              Default: `1`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="locations" type="Location[]">
+
+          Locations where this service is offered.
+
+          You can specify multiple `BUSINESS` locations, but only a single `CUSTOM` or `CUSTOMER` location.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="locations properties">
+
+            <ResponseField name="id" type="string">
+
+              Location ID. Returned only for business locations.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Location name.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAddress" type="string">
+
+              Full address of the location.
+
+            </ResponseField>
+
+            <ResponseField name="locationType" type="string">
+
+              Location type.
+
+              **Supported values:**
+
+              - `CUSTOM` — Custom location specific to this service, not defined as a business location.
+              - `BUSINESS` — Business location defined under Business Info in the dashboard.
+              - `CUSTOMER` — Location determined by the customer at booking time.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="splitIntervalInMinutes" type="integer">
+
+          Time between available slots' start times in minutes. For example, with 5-minute intervals: `3:00`, `3:05`, and `3:10`.
+
+          Constraints: `min 1`, `max 44639`.
+
+        </ResponseField>
+
+        <ResponseField name="duration" type="Duration">
+
+          Service duration. Leave empty when `durationUnit.unitType` is `DAY`.
+
+          <Expandable title="duration properties">
+
+            <ResponseField name="defaultInMinutes" type="integer">
+
+              Default duration in minutes.
+
+              Constraints: `min 1`, `max 44639`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="bufferTimeInMinutes" type="integer">
+
+          Buffer time in minutes between the end of one slot and the start of the next.
+
+          Constraints: `min 0`, `max 720`.
+
+        </ResponseField>
+
+        <ResponseField name="scheduleId" type="string">
+
+          ID of the [schedule](https://dev.wix.com/docs/api-reference/business-management/calendar/schedules-v3/introduction) for this service.
+
+        </ResponseField>
+
+        <ResponseField name="durationUnit" type="DurationUnit">
+
+          Duration unit configuration for services that support a range of bookable durations.
+
+          For hourly duration ranges, return both `duration` (with `defaultInMinutes` set to the minimum duration) and `durationUnit`.
+          For daily duration ranges, return only `durationUnit` with `unitType` set to `DAY` and leave `duration` empty.
+
+          **Developer Preview.**
+
+          <Expandable title="durationUnit properties">
+
+            <ResponseField name="unitType" type="string">
+
+              Unit of time for the duration range.
+
+              **Supported values:**
+
+              - `HOUR` — Duration measured in hours. Availability is calculated as time slots.
+              - `DAY` — Duration measured in days. Availability is calculated as full-day windows.
+
+            </ResponseField>
+
+            <ResponseField name="minDuration" type="integer">
+
+              Minimum bookable duration. Value is in minutes when `unitType` is `HOUR`, and in days when `unitType` is `DAY`.
+              Must be less than or equal to `maxDuration`.
+
+              For example, `60` for a 1-hour minimum or `1` for a 1-day minimum.
+
+              Constraints: `min 1`, `max 1440`.
+
+            </ResponseField>
+
+            <ResponseField name="maxDuration" type="integer">
+
+              Maximum bookable duration. Value is in minutes when `unitType` is `HOUR`, and in days when `unitType` is `DAY`.
+              Must be greater than or equal to `minDuration`. Maximum for daily durations is 8 consecutive days.
+
+              For example, `240` for a 4-hour maximum or `8` for an 8-day maximum.
+
+              Constraints: `min 1`, `max 1440`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-list-availability-time-slot-configurations" id="ex-rest-list-availability-time-slot-configurations-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-list-availability-time-slot-configurations" id="ex-rest-list-availability-time-slot-configurations-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-list-availability-time-slot-configurations-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-list-availability-time-slot-configurations-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">List the availability time slot configuration with duration range - decoded JWT</span><span className="wix-picker-desc">Returns a configuration with a bookable duration range. The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">List the availability time slot configuration - decoded JWT</span><span className="wix-picker-desc">The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-list-availability-time-slot-configurations-0"><span className="wix-picker-name">List the availability time slot configuration with duration range - decoded JWT</span><span className="wix-picker-desc">Returns a configuration with a bookable duration range. The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded</span></label>
+    <label htmlFor="ex-rest-list-availability-time-slot-configurations-1"><span className="wix-picker-name">List the availability time slot configuration - decoded JWT</span><span className="wix-picker-desc">The data payload will include the following object as an encoded JWT. For the purposes of this example, we show the request and response objects decoded</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \ 'https://provider.example.com/v2/list-availability-time-slot-configurations' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "data": {
+          "request": {
+            "services": [
+              {
+                "serviceId": "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714"
+              }
+            ]
+          },
+          "metadata": {
+            "requestId": "1674480822.92546993606315181",
+            "identity": {
+              "identityType": "ANONYMOUS_VISITOR",
+              "anonymousVisitorId": "c7808c1d-e6a5-49e5-bcbe-b3fcf2f72d28"
+            },
+            "instanceId": "bb2b1658-9855-4598-b1e0-48e8cdb7f98a"
+          }
+        },
+        "aud": "3467d501-9004-498d-9b5c-d50f6d4ede66",
+        "iss": "wix.com",
+        "iat": 1674480823,
+        "exp": 1678080823
+      }'
+      ```
+
+      ```json Response
+      {
+        "configurations": [
+          {
+            "serviceId": "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714",
+            "resourceTypes": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resourceIds": [
+                  "57190dc3-8cb4-4bdb-9fc6-15458eafad64",
+                  "76570209-101f-409b-af97-b445bdb63125"
+                ],
+                "numberOfResourcesRequired": 1
+              }
+            ],
+            "locations": [
+              {
+                "id": "ba7cfc9f-732b-424f-844d-13c33a50cd47",
+                "name": "Location1",
+                "formattedAddress": "123 Main St, City1, Country1",
+                "locationType": "BUSINESS"
+              }
+            ],
+            "splitIntervalInMinutes": 60,
+            "duration": {
+              "defaultInMinutes": 60
+            },
+            "bufferTimeInMinutes": 0,
+            "durationUnit": {
+              "unitType": "HOUR",
+              "minDuration": 60,
+              "maxDuration": 240
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \ 'https://provider.example.com/v2/list-availability-time-slot-configurations' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "data": {
+          "request": {
+            "serviceIds": [
+              "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714"
+            ]
+          },
+          "metadata": {
+            "requestId": "1674480822.92546993606315181",
+            "identity": {
+              "identityType": "ANONYMOUS_VISITOR",
+              "anonymousVisitorId": "c7808c1d-e6a5-49e5-bcbe-b3fcf2f72d28"
+            },
+            "instanceId": "bb2b1658-9855-4598-b1e0-48e8cdb7f98a"
+          }
+        },
+        "aud": "3467d501-9004-498d-9b5c-d50f6d4ede66",
+        "iss": "wix.com",
+        "iat": 1674480823,
+        "exp": 1678080823
+      }'
+      ```
+
+      ```json Response
+      {
+        "configurations": [
+          {
+            "serviceId": "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714",
+            "resourceTypes": [
+              {
+                "resourceTypeId": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155",
+                "resourceIds": [
+                  "57190dc3-8cb4-4bdb-9fc6-15458eafad64",
+                  "76570209-101f-409b-af97-b445bdb63125"
+                ],
+                "numberOfResourcesRequired": 1,
+                "returnAvailableResources": true
+              }
+            ],
+            "locations": [
+              {
+                "id": "ba7cfc9f-732b-424f-844d-13c33a50cd47",
+                "name": "Location1",
+                "formattedAddress": "123 Main St, City1, Country1",
+                "locationType": "BUSINESS"
+              },
+              {
+                "id": "bb5c2a6b-af30-4023-bca3-7b4ffa5ef0e0",
+                "name": "Location2",
+                "formattedAddress": "456 Oak St, City2, Country2",
+                "locationType": "BUSINESS"
+              }
+            ],
+            "splitIntervalInMinutes": 30,
+            "duration": {
+              "defaultInMinutes": 60
+            },
+            "bufferTimeInMinutes": 30
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves availability time slot configurations for the specified services.
+
+    Wix calls this method when a customer views available booking times or books a service. For example:
+    - When a customer loads the Bookings calendar to select a time slot, [List Availability Time Slots](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) calls this method.
+    - When a customer books a service, [Get Availability Time Slot](https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) calls this method.
+
+    Wix uses the returned configurations to calculate available time slots, considering:
+    - Service duration.
+    - Split interval and buffer time.
+    - Service locations.
+    - Required resource types and available resources.
+
+    Your implementation must return a configuration for each service in the request, in the same order.
+    All fields in the response must be returned unless explicitly marked as optional.
+
+    ## Method Declaration
+
+    ```typescript
+    import { availabilityTimeSlotsConfiguration } from '@wix/bookings';
+
+    availabilityTimeSlotsConfiguration.listAvailabilityTimeSlotConfigurations(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="ListAvailabilityTimeSlotConfigurationsRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="serviceIds" type="string[]" deprecated>
+
+          Deprecated. Use `services` instead.
+
+          **Deprecated.** Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="services" type="Service[]">
+
+          Services to retrieve configurations for.
+
+          This list is ordered. Return configurations in the same order as the services in this list.
+          The same service ID may appear multiple times with different customer choices.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="services properties">
+
+            <ParamField body="serviceId" type="string">
+
+              Service ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="customerChoices" type="CustomerChoices">
+
+              Customer's selected choices for this service, such as duration from [service options and variants](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction) or [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+              _Nested structure omitted for brevity — see the `CustomerChoices` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="configurations" type="AvailabilityTimeSlotsConfiguration[]">
+
+      Configurations for the requested services. Must contain one configuration per service in the request, in the same order.
+
+      <Expandable title="configurations properties">
+
+        <ResponseField name="serviceId" type="string">
+
+          Service ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="resourceTypes" type="ResourceType[]">
+
+          [Resource types](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction) required to book this service. For example, a room from the "rooms" resource type and a staff member from the "staff" resource type.
+
+          Constraints: `minItems 1`, `maxItems 9`.
+
+          <Expandable title="resourceTypes properties">
+
+            <ResponseField name="resourceTypeId" type="string">
+
+              Resource type ID.
+
+            </ResponseField>
+
+            <ResponseField name="resourceIds" type="string[]">
+
+              IDs of resources available for booking within this resource type. These may be a subset of all resources in the type.
+
+              Constraints: `format GUID`, `maxItems 220`.
+
+            </ResponseField>
+
+            <ResponseField name="numberOfResourcesRequired" type="integer">
+
+              Number of resources required to book the service.
+
+              Currently supports only a value of `1`.
+
+              Default: `1`
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="locations" type="Location[]">
+
+          Locations where this service is offered.
+
+          You can specify multiple `BUSINESS` locations, but only a single `CUSTOM` or `CUSTOMER` location.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="locations properties">
+
+            <ResponseField name="_id" type="string">
+
+              Location ID. Returned only for business locations.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Location name.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAddress" type="string">
+
+              Full address of the location.
+
+            </ResponseField>
+
+            <ResponseField name="locationType" type="string">
+
+              Location type.
+
+              **Supported values:**
+
+              - `CUSTOM` — Custom location specific to this service, not defined as a business location.
+              - `BUSINESS` — Business location defined under Business Info in the dashboard.
+              - `CUSTOMER` — Location determined by the customer at booking time.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="splitIntervalInMinutes" type="integer">
+
+          Time between available slots' start times in minutes. For example, with 5-minute intervals: `3:00`, `3:05`, and `3:10`.
+
+          Constraints: `min 1`, `max 44639`.
+
+        </ResponseField>
+
+        <ResponseField name="duration" type="Duration">
+
+          Service duration. Leave empty when `durationUnit.unitType` is `DAY`.
+
+          <Expandable title="duration properties">
+
+            <ResponseField name="defaultInMinutes" type="integer">
+
+              Default duration in minutes.
+
+              Constraints: `min 1`, `max 44639`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="bufferTimeInMinutes" type="integer">
+
+          Buffer time in minutes between the end of one slot and the start of the next.
+
+          Constraints: `min 0`, `max 720`.
+
+        </ResponseField>
+
+        <ResponseField name="scheduleId" type="string">
+
+          ID of the [schedule](https://dev.wix.com/docs/api-reference/business-management/calendar/schedules-v3/introduction) for this service.
+
+        </ResponseField>
+
+        <ResponseField name="durationUnit" type="DurationUnit">
+
+          Duration unit configuration for services that support a range of bookable durations.
+
+          For hourly duration ranges, return both `duration` (with `defaultInMinutes` set to the minimum duration) and `durationUnit`.
+          For daily duration ranges, return only `durationUnit` with `unitType` set to `DAY` and leave `duration` empty.
+
+          **Developer Preview.**
+
+          <Expandable title="durationUnit properties">
+
+            <ResponseField name="unitType" type="string">
+
+              Unit of time for the duration range.
+
+              **Supported values:**
+
+              - `HOUR` — Duration measured in hours. Availability is calculated as time slots.
+              - `DAY` — Duration measured in days. Availability is calculated as full-day windows.
+
+            </ResponseField>
+
+            <ResponseField name="minDuration" type="integer">
+
+              Minimum bookable duration. Value is in minutes when `unitType` is `HOUR`, and in days when `unitType` is `DAY`.
+              Must be less than or equal to `maxDuration`.
+
+              For example, `60` for a 1-hour minimum or `1` for a 1-day minimum.
+
+              Constraints: `min 1`, `max 1440`.
+
+            </ResponseField>
+
+            <ResponseField name="maxDuration" type="integer">
+
+              Maximum bookable duration. Value is in minutes when `unitType` is `HOUR`, and in days when `unitType` is `DAY`.
+              Must be greater than or equal to `minDuration`. Maximum for daily durations is 8 consecutive days.
+
+              For example, `240` for a 4-hour maximum or `8` for an 8-day maximum.
+
+              Constraints: `min 1`, `max 1440`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-availability-time-slot-configurations" id="ex-sdk-list-availability-time-slot-configurations-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-availability-time-slot-configurations" id="ex-sdk-list-availability-time-slot-configurations-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-availability-time-slot-configurations" id="ex-sdk-list-availability-time-slot-configurations-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-availability-time-slot-configurations-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-availability-time-slot-configurations-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">listAvailabilityTimeSlotConfigurations</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listAvailabilityTimeSlotConfigurations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listAvailabilityTimeSlotConfigurations (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-availability-time-slot-configurations-0"><span className="wix-picker-name">listAvailabilityTimeSlotConfigurations</span></label>
+    <label htmlFor="ex-sdk-list-availability-time-slot-configurations-1"><span className="wix-picker-name">listAvailabilityTimeSlotConfigurations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-list-availability-time-slot-configurations-2"><span className="wix-picker-name">listAvailabilityTimeSlotConfigurations (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAvailabilityTimeSlotConfigurations
+    import { availabilityTimeSlotsConfiguration } from '@wix/bookings/service-plugins';
+
+    async function listAvailabilityTimeSlotConfigurations(request,metadata) {
+      const response = await availabilityTimeSlotsConfiguration.listAvailabilityTimeSlotConfigurations(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAvailabilityTimeSlotConfigurations (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { availabilityTimeSlotsConfiguration } from '@wix/bookings/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { availabilityTimeSlotsConfiguration },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listAvailabilityTimeSlotConfigurations(request,metadata) {
+      const response = await myWixClient.availabilityTimeSlotsConfiguration.listAvailabilityTimeSlotConfigurations(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAvailabilityTimeSlotConfigurations (with elevated permissions)
+    import { availabilityTimeSlotsConfiguration } from '@wix/bookings/service-plugins';
+    import { auth } from '@wix/essentials';
+
+    async function myListAvailabilityTimeSlotConfigurationsMethod(request,metadata) {
+      const elevatedListAvailabilityTimeSlotConfigurations = auth.elevate(availabilityTimeSlotsConfiguration.listAvailabilityTimeSlotConfigurations);
+      const response = await elevatedListAvailabilityTimeSlotConfigurations(request,metadata);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

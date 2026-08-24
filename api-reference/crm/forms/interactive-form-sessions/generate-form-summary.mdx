@@ -1,0 +1,1653 @@
+---
+title: "Generate Form Summary"
+description: "Generates an AI summary of a form's structure and purpose in natural language, based on the form's fields and configuration, of max 255 characters."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Generates an AI summary of a form's structure and purpose in natural language, based on the form's fields and configuration, of max 255 characters.
+
+    The summary describes what the form collects and its intended use case,
+    useful for accessibility, previews, and AI-powered form discovery.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/forms/ai/v1/interactive-form-sessions/generate-form-summary
+    ```
+
+    ## Body Params
+
+    <ParamField body="form" type="Form" required>
+
+      Form object to generate a summary for.
+      Must include the form's fields and configuration.
+
+      <Expandable title="form properties">
+
+        <ParamField body="id" type="string">
+
+          Form schema ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="formFields" type="Field[]">
+
+          Form fields that define the input elements and their validation rules.
+
+          The order of this array isn't the order the fields are displayed in. Display order comes from `steps`, where each layout item positions a field by `row` and `column`. Don't render fields in array order.
+
+          For a detailed explanation of how to compose each kind of field, including which `identifier`, `inputType`, and `componentType` values to combine, see [About Form Fields](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+          Constraints: `maxItems 500`.
+
+          <Expandable title="formFields properties">
+
+            <ParamField body="id" type="string">
+
+              Field ID.
+
+              The ID is stored in lowercase. Because the form's layout references each field by this ID, pass a lowercase GUID so that `id` and the layout's `fieldId` still match after the form schema is stored. IDs must be unique in the form.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the field is hidden from submitters.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="identifier" type="string">
+
+              Identification for the field, describing its purpose. For example, `TEXT_INPUT` or `CONTACTS_EMAIL`.
+
+              Set this to the known value for the kind of field you're creating.
+              An unrecognized value, such as a custom string or a GUID, is dropped rather than rejected: the request still succeeds, but the field doesn't appear in the response's `formFields`, and neither the field nor its submitted values appear in the Wix dashboard.
+
+              Several fields share a general-purpose `componentType`, so `identifier` is often the only value that distinguishes them.
+              For example, both a short answer field and a long answer field use the `TEXT_INPUT` component, and are told apart by their `TEXT_INPUT` and `TEXT_AREA` identifiers.
+
+              For the full list of known values, see [About Form Fields](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+            </ParamField>
+
+            <ParamField body="fieldType" type="string">
+
+              Field type.
+
+              `INPUT` fields collect data from submitters and are configured in `inputOptions`.
+              `DISPLAY` fields show information without collecting data and are configured in `displayOptions`.
+
+              **Supported values:**
+
+              - `UNKNOWN_FIELD_TYPE` — Unknown field type.
+              - `INPUT` — Input field that collects data from users.
+              - `DISPLAY` — Display field that shows information without collecting input.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="steps" type="Step[]">
+
+          Layout configuration that defines how form fields are organized across multiple steps.
+          Each step represents a page of the form.
+
+          Every field in `formFields`, including the submit button, must be placed by a layout item whose `fieldId` matches the field's `id`. A field that isn't placed still stores submitted values, but the Wix dashboard renders it, and the submissions made against it, as empty.
+
+          Use a single step unless the form is split across pages.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="steps properties">
+
+            <ParamField body="id" type="string">
+
+              Step ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Name of the step.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the step is hidden.
+
+            </ParamField>
+
+            <ParamField body="layout" type="FormLayout">
+
+              Layout configuration that defines how form fields are arranged within this step.
+
+              _Nested structure omitted for brevity — see the `FormLayout` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="rules" type="FormRule[]" deprecated>
+
+          Form rules, can be applied to layout and items properties.
+
+          **Deprecated.** Form rules, can be applied to layout and items properties. Use `form_rules` instead. Removal: 2026-04-01. Constraints: `maxItems 100`.
+
+          <Expandable title="rules properties">
+
+            <ParamField body="id" type="string">
+
+              Rule ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="condition" type="object">
+
+              Condition that determines when this rule's overrides should be applied.
+
+            </ParamField>
+
+            <ParamField body="overrides" type="FormOverride[]">
+
+              Changes to apply to form elements when the condition evaluates to true.
+
+              Constraints: `maxItems 500`.
+
+              _Nested structure omitted for brevity — see the `FormOverride[]` object._
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Name for the rule.
+
+            </ParamField>
+
+            <ParamField body="namespaceRule" type="boolean">
+
+              Namespace rules are part of business logic of app owning namespace, have limited editing possibilities
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer">
+
+          Revision number, which increments by 1 each time the form schema is updated.
+          To prevent conflicting changes, the current revision must be passed when updating the form schema.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="createdDate" type="datetime">
+
+          Date and time when the form schema was created.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="updatedDate" type="datetime">
+
+          Date and time when the form schema was last updated.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="deletedFields" type="FormField[]" deprecated>
+
+          Deprecated. Use `deletedFormFields` instead.
+
+          **Read-only.** **Deprecated.** Deprecated. Use `deletedFormFields` instead. Use `deleted_form_fields` instead. Removal: 2027-02-01. Constraints: `maxItems 150`.
+
+          <Expandable title="deletedFields properties">
+
+            <ParamField body="id" type="string">
+
+              Item ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="target" type="string">
+
+              Definition of a target where the value of field belongs.
+
+            </ParamField>
+
+            <ParamField body="validation" type="Validation">
+
+              Validation of field output value.
+
+              _Nested structure omitted for brevity — see the `Validation` object._
+
+            </ParamField>
+
+            <ParamField body="pii" type="boolean">
+
+              Mark the field as containing personal information. This will encrypt user data when storing it.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the field is hidden.
+
+            </ParamField>
+
+            <ParamField body="view" type="object">
+
+              Field view properties.
+
+            </ParamField>
+
+            <ParamField body="dataExtensionsDetails" type="DataExtensionsDetails">
+
+              Details identifying field, which is extension of other entity
+
+              _Nested structure omitted for brevity — see the `DataExtensionsDetails` object._
+
+            </ParamField>
+
+            <ParamField body="readOnly" type="boolean">
+
+              Whether the field is read only.
+              Default: false
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="deletedFormFields" type="Field[]">
+
+          Form fields that were soft deleted.
+
+          **Read-only.** Constraints: `maxItems 150`.
+
+          <Expandable title="deletedFormFields properties">
+
+            <ParamField body="id" type="string">
+
+              Field ID.
+
+              The ID is stored in lowercase. Because the form's layout references each field by this ID, pass a lowercase GUID so that `id` and the layout's `fieldId` still match after the form schema is stored. IDs must be unique in the form.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the field is hidden from submitters.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="identifier" type="string">
+
+              Identification for the field, describing its purpose. For example, `TEXT_INPUT` or `CONTACTS_EMAIL`.
+
+              Set this to the known value for the kind of field you're creating.
+              An unrecognized value, such as a custom string or a GUID, is dropped rather than rejected: the request still succeeds, but the field doesn't appear in the response's `formFields`, and neither the field nor its submitted values appear in the Wix dashboard.
+
+              Several fields share a general-purpose `componentType`, so `identifier` is often the only value that distinguishes them.
+              For example, both a short answer field and a long answer field use the `TEXT_INPUT` component, and are told apart by their `TEXT_INPUT` and `TEXT_AREA` identifiers.
+
+              For the full list of known values, see [About Form Fields](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+            </ParamField>
+
+            <ParamField body="fieldType" type="string">
+
+              Field type.
+
+              `INPUT` fields collect data from submitters and are configured in `inputOptions`.
+              `DISPLAY` fields show information without collecting data and are configured in `displayOptions`.
+
+              **Supported values:**
+
+              - `UNKNOWN_FIELD_TYPE` — Unknown field type.
+              - `INPUT` — Input field that collects data from users.
+              - `DISPLAY` — Display field that shows information without collecting input.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Data extensions for storing additional custom properties.
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="namespace" type="string">
+
+          Unique identifier for the app that owns this form schema.
+          For example, `wix.form_app.form` for Wix Forms.
+
+          See a list of namespaces for [apps made by Wix](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/introduction#namespaces-of-apps-made-by-wix) section.
+
+          Constraints: `minLength 10`, `maxLength 50`, `immutable`.
+
+        </ParamField>
+
+        <ParamField body="mediaFolderId" type="string">
+
+          Media folder ID for storing uploaded files from form submissions.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="limitationRule" type="LimitationRule">
+
+          Submission limits that can automatically disable the form when reached.
+
+          <Expandable title="limitationRule properties">
+
+            <ParamField body="maxAllowedSubmissions" type="integer">
+
+              Limitation by submission count, disables form when a set amount of submissions is reached.
+
+            </ParamField>
+
+            <ParamField body="dateTimeDeadline" type="datetime">
+
+              Limitation by submission date, disables form when a set date and time is reached.
+
+            </ParamField>
+
+            <ParamField body="submissionLimitPerUser" type="integer">
+
+              Limitation per user submission count, disables form when a set amount of submissions per user is reached.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="spamFilterProtectionLevel" type="string">
+
+          Level of spam protection applied to form submissions.
+
+          Default: `ADVANCED`
+
+          **Supported values:**
+
+          - `NONE` — No spam filtering. All submissions are accepted without screening.
+          - `BASIC` — Basic spam filtering. Provides minimal protection against obvious spam and the form is open to a high risk of spam submissions.
+          - `ADVANCED` — Advanced spam filtering. Provides comprehensive protection with intelligent screening and the form is open to a low risk of spam submissions.
+
+        </ParamField>
+
+        <ParamField body="requiredIndicatorProperties" type="RequiredIndicatorProperties">
+
+          Configuration for how required field indicators are displayed to the submitter.
+
+          <Expandable title="requiredIndicatorProperties properties">
+
+            <ParamField body="requiredIndicator" type="string">
+
+              Type of visual indicator used to mark required fields.
+
+              **Supported values:**
+
+              - `ASTERISK` — Display an asterisk (*) symbol to indicate required fields.
+              - `TEXT` — Display the text "Required" to indicate required fields.
+              - `NONE` — No visual indicator is shown for required fields.
+
+            </ParamField>
+
+            <ParamField body="requiredIndicatorPlacement" type="string">
+
+              Position where the required indicator appears relative to the field title.
+
+              **Supported values:**
+
+              - `AFTER_FIELD_TITLE` — Place the required indicator after the field title.
+              - `BEFORE_FIELD_TITLE` — Place the required indicator before the field title.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="submitSettings" type="SubmitSettings">
+
+          Configuration for actions taken after a form is successfully submitted.
+
+          <Expandable title="submitSettings properties">
+
+            <ParamField body="submitSuccessAction" type="string">
+
+              Action that's triggered after a form is successfully submitted.
+
+              **Supported values:**
+
+              - `NO_ACTION` — No action is taken after form submission.
+              - `THANK_YOU_MESSAGE` — Display a thank you message after form submission.
+              - `REDIRECT` — Redirect the user to a specified URL after form submission.
+              - `POPUP` — Display a popup after form submission.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="submitSuccessActionOptions" type="submitSuccessActionOptions">
+
+              submitSuccessActionOptions
+
+              _Nested structure omitted for brevity — see the `submitSuccessActionOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="disabledFormMessage" type="RichContent">
+
+          Message displayed to visitors when the form is disabled.
+          This allows you to inform submitters why the form isn't available.
+
+          <Expandable title="disabledFormMessage properties">
+
+            <ParamField body="nodes" type="Node[]">
+
+              Node objects representing a rich content document.
+
+              _Nested structure omitted for brevity — see the `Node[]` object._
+
+            </ParamField>
+
+            <ParamField body="metadata" type="Metadata">
+
+              Object metadata.
+
+              _Nested structure omitted for brevity — see the `Metadata` object._
+
+            </ParamField>
+
+            <ParamField body="documentStyle" type="DocumentStyle">
+
+              Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+              _Nested structure omitted for brevity — see the `DocumentStyle` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="enabled" type="boolean">
+
+          Whether the form is effectively active — `true` only when the user has not disabled the form
+          **and** no system service has placed an `activationBlock` on it.
+
+          Writing `enabled: true` records the user's intent to activate the form, but the value read
+          back may still be `false` if `activationBlock` is present (for example, a plan restriction is in
+          effect). Once the block is lifted the form becomes active automatically without any additional
+          write.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Display name of the form schema.
+
+          Names are unique in a namespace. If the name you pass is already taken, the request still succeeds, and the form schema is stored under a numbered variation of that name instead of returning an error. Read `name` from the response to learn the name the schema was actually saved under.
+
+        </ParamField>
+
+        <ParamField body="formRules" type="Rule[]">
+
+          Business logic rules that can modify form behavior based on user input or other conditions.
+          These rules can show/hide fields, change validation, or trigger actions.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="formRules properties">
+
+            <ParamField body="id" type="string">
+
+              Rule ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="expression" type="ConditionNode">
+
+              Conditional expression that determines when this rule should be applied.
+              The overrides defined in this rule are applied when this expression evaluates to true.
+
+              _Nested structure omitted for brevity — see the `ConditionNode` object._
+
+            </ParamField>
+
+            <ParamField body="overrides" type="FormOverride[]">
+
+              Form modifications that are applied when the rule expression evaluates to true.
+              Each override specifies how a form element should be changed.
+
+              Constraints: `maxItems 500`.
+
+              _Nested structure omitted for brevity — see the `FormOverride[]` object._
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Human-readable name for the rule.
+
+            </ParamField>
+
+            <ParamField body="namespaceRule" type="boolean">
+
+              Namespace rules are part of business logic of app owning namespace, have limited editing possibilities
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="tags" type="Tags">
+
+          Tag IDs collections associated with the current entity.
+
+          <Expandable title="tags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+            <ParamField body="tags" type="TagList">
+
+              Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="quizSettings" type="QuizSettings">
+
+          Quiz configuration for a scored form. Set this when the form is a quiz whose
+          answers are scored: it holds the passing criteria (score threshold in points or
+          percentage), how the result is shown on the confirmation page (score, pass/fail
+          status, or both), and the pass/fail messages. Absent on non-quiz forms.
+
+          <Expandable title="quizSettings properties">
+
+            <ParamField body="message" type="RichContent">
+
+              Rich-content message shown on the quiz result (confirmation) page, alongside any
+              score or pass/fail status configured in `results_display`.
+
+              _Nested structure omitted for brevity — see the `RichContent` object._
+
+            </ParamField>
+
+            <ParamField body="resultsDisplay" type="string">
+
+              How to display quiz results in the confirmation page.
+              Default: `DO_NOT_DISPLAY`
+
+              **Supported values:**
+
+              - `DO_NOT_DISPLAY` — Do not show quiz score and passing status.
+              - `SCORE` — Display only the user's score.
+              - `PASSING_STATUS` — Display the pass or fail message based on the user's score.
+              - `SCORE_AND_PASSING_STATUS` — Display both the score and pass/fail message.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="passingCriteria" type="passingCriteria">
+
+              passingCriteria
+
+              _Nested structure omitted for brevity — see the `passingCriteria` object._
+
+            </ParamField>
+
+            <ParamField body="resultsDisplayOptions" type="resultsDisplayOptions">
+
+              resultsDisplayOptions
+
+              _Nested structure omitted for brevity — see the `resultsDisplayOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="autoFillContact" type="string">
+
+          Source used for contact autofill when filling form fields. Default: FORM_INPUT.
+
+          **Supported values:**
+
+          - `MEMBER_DATA` — Use site member data to autofill contact fields.
+          - `FORM_INPUT` — Use form input data to autofill contact fields.
+
+        </ParamField>
+
+        <ParamField body="submissionAccess" type="string">
+
+          Controls who can read submissions of this form beyond the standard permission.
+
+          Default: `OWNER_AND_COLLABORATORS`
+
+          **Supported values:**
+
+          - `UNKNOWN_SUBMISSION_ACCESS` — Unknown submission access.
+          - `OWNER_AND_COLLABORATORS` — Only users with `WIX_FORM.SUBMISSIONS_READ_ANY` permission. Default behavior.
+          - `MEMBERS` — Logged-in site members can read submissions.
+          - `PUBLIC` — Any site visitor with a valid Wix session can read submissions.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="formSummary" type="string">
+
+      AI-generated natural language summary describing the form's structure, fields, and intended purpose.
+      Maximum 255 characters.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FORM` | Form object is missing or invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST "https://www.wixapis.com/forms/ai/v1/interactive-form-sessions/generate-form-summary" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer <ACCESS_TOKEN>" \
+        -d '{
+          "form": {
+            "id": "12345678-1234-1234-1234-123456789abc",
+            "formFields": [
+              {
+                "fieldType": "INPUT",
+                "inputOptions": {
+                  "inputType": "STRING",
+                  "target": "name",
+                  "required": true
+                }
+              },
+              {
+                "fieldType": "INPUT",
+                "inputOptions": {
+                  "inputType": "STRING",
+                  "target": "email",
+                  "required": true
+                }
+              },
+              {
+                "fieldType": "INPUT",
+                "inputOptions": {
+                  "inputType": "STRING",
+                  "target": "message"
+                }
+              }
+            ]
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "formSummary": "A contact form that collects the user's full name, email address, and an optional message."
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Generates an AI summary of a form's structure and purpose in natural language, based on the form's fields and configuration, of max 255 characters.
+
+    The summary describes what the form collects and its intended use case,
+    useful for accessibility, previews, and AI-powered form discovery.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { interactiveFormSessions } from '@wix/forms';
+
+    interactiveFormSessions.generateFormSummary(form): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="form" type="Form" required>
+
+      Form object to generate a summary for.
+      Must include the form's fields and configuration.
+
+      <Expandable title="form properties">
+
+        <ParamField body="_id" type="string">
+
+          Form schema ID.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="formFields" type="Field[]">
+
+          Form fields that define the input elements and their validation rules.
+
+          The order of this array isn't the order the fields are displayed in. Display order comes from `steps`, where each layout item positions a field by `row` and `column`. Don't render fields in array order.
+
+          For a detailed explanation of how to compose each kind of field, including which `identifier`, `inputType`, and `componentType` values to combine, see [About Form Fields](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+          Constraints: `maxItems 500`.
+
+          <Expandable title="formFields properties">
+
+            <ParamField body="_id" type="string">
+
+              Field ID.
+
+              The ID is stored in lowercase. Because the form's layout references each field by this ID, pass a lowercase GUID so that `id` and the layout's `fieldId` still match after the form schema is stored. IDs must be unique in the form.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the field is hidden from submitters.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="identifier" type="string">
+
+              Identification for the field, describing its purpose. For example, `TEXT_INPUT` or `CONTACTS_EMAIL`.
+
+              Set this to the known value for the kind of field you're creating.
+              An unrecognized value, such as a custom string or a GUID, is dropped rather than rejected: the request still succeeds, but the field doesn't appear in the response's `formFields`, and neither the field nor its submitted values appear in the Wix dashboard.
+
+              Several fields share a general-purpose `componentType`, so `identifier` is often the only value that distinguishes them.
+              For example, both a short answer field and a long answer field use the `TEXT_INPUT` component, and are told apart by their `TEXT_INPUT` and `TEXT_AREA` identifiers.
+
+              For the full list of known values, see [About Form Fields](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+            </ParamField>
+
+            <ParamField body="fieldType" type="string">
+
+              Field type.
+
+              `INPUT` fields collect data from submitters and are configured in `inputOptions`.
+              `DISPLAY` fields show information without collecting data and are configured in `displayOptions`.
+
+              **Supported values:**
+
+              - `UNKNOWN_FIELD_TYPE` — Unknown field type.
+              - `INPUT` — Input field that collects data from users.
+              - `DISPLAY` — Display field that shows information without collecting input.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="steps" type="Step[]">
+
+          Layout configuration that defines how form fields are organized across multiple steps.
+          Each step represents a page of the form.
+
+          Every field in `formFields`, including the submit button, must be placed by a layout item whose `fieldId` matches the field's `id`. A field that isn't placed still stores submitted values, but the Wix dashboard renders it, and the submissions made against it, as empty.
+
+          Use a single step unless the form is split across pages.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="steps properties">
+
+            <ParamField body="_id" type="string">
+
+              Step ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Name of the step.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the step is hidden.
+
+            </ParamField>
+
+            <ParamField body="layout" type="FormLayout">
+
+              Layout configuration that defines how form fields are arranged within this step.
+
+              _Nested structure omitted for brevity — see the `FormLayout` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="rules" type="FormRule[]" deprecated>
+
+          Form rules, can be applied to layout and items properties.
+
+          **Deprecated.** Form rules, can be applied to layout and items properties. Use `form_rules` instead. Removal: 2026-04-01. Constraints: `maxItems 100`.
+
+          <Expandable title="rules properties">
+
+            <ParamField body="_id" type="string">
+
+              Rule ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="condition" type="object">
+
+              Condition that determines when this rule's overrides should be applied.
+
+            </ParamField>
+
+            <ParamField body="overrides" type="FormOverride[]">
+
+              Changes to apply to form elements when the condition evaluates to true.
+
+              Constraints: `maxItems 500`.
+
+              _Nested structure omitted for brevity — see the `FormOverride[]` object._
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Name for the rule.
+
+            </ParamField>
+
+            <ParamField body="namespaceRule" type="boolean">
+
+              Namespace rules are part of business logic of app owning namespace, have limited editing possibilities
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="revision" type="integer">
+
+          Revision number, which increments by 1 each time the form schema is updated.
+          To prevent conflicting changes, the current revision must be passed when updating the form schema.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="_createdDate" type="datetime">
+
+          Date and time when the form schema was created.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="_updatedDate" type="datetime">
+
+          Date and time when the form schema was last updated.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="deletedFields" type="FormField[]" deprecated>
+
+          Deprecated. Use `deletedFormFields` instead.
+
+          **Read-only.** **Deprecated.** Deprecated. Use `deletedFormFields` instead. Use `deleted_form_fields` instead. Removal: 2027-02-01. Constraints: `maxItems 150`.
+
+          <Expandable title="deletedFields properties">
+
+            <ParamField body="_id" type="string">
+
+              Item ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="target" type="string">
+
+              Definition of a target where the value of field belongs.
+
+            </ParamField>
+
+            <ParamField body="validation" type="Validation">
+
+              Validation of field output value.
+
+              _Nested structure omitted for brevity — see the `Validation` object._
+
+            </ParamField>
+
+            <ParamField body="pii" type="boolean">
+
+              Mark the field as containing personal information. This will encrypt user data when storing it.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the field is hidden.
+
+            </ParamField>
+
+            <ParamField body="view" type="object">
+
+              Field view properties.
+
+            </ParamField>
+
+            <ParamField body="dataExtensionsDetails" type="DataExtensionsDetails">
+
+              Details identifying field, which is extension of other entity
+
+              _Nested structure omitted for brevity — see the `DataExtensionsDetails` object._
+
+            </ParamField>
+
+            <ParamField body="readOnly" type="boolean">
+
+              Whether the field is read only.
+              Default: false
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="deletedFormFields" type="Field[]">
+
+          Form fields that were soft deleted.
+
+          **Read-only.** Constraints: `maxItems 150`.
+
+          <Expandable title="deletedFormFields properties">
+
+            <ParamField body="_id" type="string">
+
+              Field ID.
+
+              The ID is stored in lowercase. Because the form's layout references each field by this ID, pass a lowercase GUID so that `id` and the layout's `fieldId` still match after the form schema is stored. IDs must be unique in the form.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="hidden" type="boolean">
+
+              Whether the field is hidden from submitters.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="identifier" type="string">
+
+              Identification for the field, describing its purpose. For example, `TEXT_INPUT` or `CONTACTS_EMAIL`.
+
+              Set this to the known value for the kind of field you're creating.
+              An unrecognized value, such as a custom string or a GUID, is dropped rather than rejected: the request still succeeds, but the field doesn't appear in the response's `formFields`, and neither the field nor its submitted values appear in the Wix dashboard.
+
+              Several fields share a general-purpose `componentType`, so `identifier` is often the only value that distinguishes them.
+              For example, both a short answer field and a long answer field use the `TEXT_INPUT` component, and are told apart by their `TEXT_INPUT` and `TEXT_AREA` identifiers.
+
+              For the full list of known values, see [About Form Fields](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+            </ParamField>
+
+            <ParamField body="fieldType" type="string">
+
+              Field type.
+
+              `INPUT` fields collect data from submitters and are configured in `inputOptions`.
+              `DISPLAY` fields show information without collecting data and are configured in `displayOptions`.
+
+              **Supported values:**
+
+              - `UNKNOWN_FIELD_TYPE` — Unknown field type.
+              - `INPUT` — Input field that collects data from users.
+              - `DISPLAY` — Display field that shows information without collecting input.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Data extensions for storing additional custom properties.
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="namespace" type="string">
+
+          Unique identifier for the app that owns this form schema.
+          For example, `wix.form_app.form` for Wix Forms.
+
+          See a list of namespaces for [apps made by Wix](https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/introduction#namespaces-of-apps-made-by-wix) section.
+
+          Constraints: `minLength 10`, `maxLength 50`, `immutable`.
+
+        </ParamField>
+
+        <ParamField body="mediaFolderId" type="string">
+
+          Media folder ID for storing uploaded files from form submissions.
+
+          **Read-only.**
+
+        </ParamField>
+
+        <ParamField body="limitationRule" type="LimitationRule">
+
+          Submission limits that can automatically disable the form when reached.
+
+          <Expandable title="limitationRule properties">
+
+            <ParamField body="maxAllowedSubmissions" type="integer">
+
+              Limitation by submission count, disables form when a set amount of submissions is reached.
+
+            </ParamField>
+
+            <ParamField body="dateTimeDeadline" type="datetime">
+
+              Limitation by submission date, disables form when a set date and time is reached.
+
+            </ParamField>
+
+            <ParamField body="submissionLimitPerUser" type="integer">
+
+              Limitation per user submission count, disables form when a set amount of submissions per user is reached.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="spamFilterProtectionLevel" type="string">
+
+          Level of spam protection applied to form submissions.
+
+          Default: `ADVANCED`
+
+          **Supported values:**
+
+          - `NONE` — No spam filtering. All submissions are accepted without screening.
+          - `BASIC` — Basic spam filtering. Provides minimal protection against obvious spam and the form is open to a high risk of spam submissions.
+          - `ADVANCED` — Advanced spam filtering. Provides comprehensive protection with intelligent screening and the form is open to a low risk of spam submissions.
+
+        </ParamField>
+
+        <ParamField body="requiredIndicatorProperties" type="RequiredIndicatorProperties">
+
+          Configuration for how required field indicators are displayed to the submitter.
+
+          <Expandable title="requiredIndicatorProperties properties">
+
+            <ParamField body="requiredIndicator" type="string">
+
+              Type of visual indicator used to mark required fields.
+
+              **Supported values:**
+
+              - `ASTERISK` — Display an asterisk (*) symbol to indicate required fields.
+              - `TEXT` — Display the text "Required" to indicate required fields.
+              - `NONE` — No visual indicator is shown for required fields.
+
+            </ParamField>
+
+            <ParamField body="requiredIndicatorPlacement" type="string">
+
+              Position where the required indicator appears relative to the field title.
+
+              **Supported values:**
+
+              - `AFTER_FIELD_TITLE` — Place the required indicator after the field title.
+              - `BEFORE_FIELD_TITLE` — Place the required indicator before the field title.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="submitSettings" type="SubmitSettings">
+
+          Configuration for actions taken after a form is successfully submitted.
+
+          <Expandable title="submitSettings properties">
+
+            <ParamField body="submitSuccessAction" type="string">
+
+              Action that's triggered after a form is successfully submitted.
+
+              **Supported values:**
+
+              - `NO_ACTION` — No action is taken after form submission.
+              - `THANK_YOU_MESSAGE` — Display a thank you message after form submission.
+              - `REDIRECT` — Redirect the user to a specified URL after form submission.
+              - `POPUP` — Display a popup after form submission.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="submitSuccessActionOptions" type="submitSuccessActionOptions">
+
+              submitSuccessActionOptions
+
+              _Nested structure omitted for brevity — see the `submitSuccessActionOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="disabledFormMessage" type="RichContent">
+
+          Message displayed to visitors when the form is disabled.
+          This allows you to inform submitters why the form isn't available.
+
+          <Expandable title="disabledFormMessage properties">
+
+            <ParamField body="nodes" type="Node[]">
+
+              Node objects representing a rich content document.
+
+              _Nested structure omitted for brevity — see the `Node[]` object._
+
+            </ParamField>
+
+            <ParamField body="metadata" type="Metadata">
+
+              Object metadata.
+
+              _Nested structure omitted for brevity — see the `Metadata` object._
+
+            </ParamField>
+
+            <ParamField body="documentStyle" type="DocumentStyle">
+
+              Global styling for header, paragraph, block quote, and code block nodes in the object.
+
+              _Nested structure omitted for brevity — see the `DocumentStyle` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="enabled" type="boolean">
+
+          Whether the form is effectively active — `true` only when the user has not disabled the form
+          **and** no system service has placed an `activationBlock` on it.
+
+          Writing `enabled: true` records the user's intent to activate the form, but the value read
+          back may still be `false` if `activationBlock` is present (for example, a plan restriction is in
+          effect). Once the block is lifted the form becomes active automatically without any additional
+          write.
+
+          Default: `true`
+
+        </ParamField>
+
+        <ParamField body="name" type="string">
+
+          Display name of the form schema.
+
+          Names are unique in a namespace. If the name you pass is already taken, the request still succeeds, and the form schema is stored under a numbered variation of that name instead of returning an error. Read `name` from the response to learn the name the schema was actually saved under.
+
+        </ParamField>
+
+        <ParamField body="formRules" type="Rule[]">
+
+          Business logic rules that can modify form behavior based on user input or other conditions.
+          These rules can show/hide fields, change validation, or trigger actions.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="formRules properties">
+
+            <ParamField body="_id" type="string">
+
+              Rule ID.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ParamField>
+
+            <ParamField body="expression" type="ConditionNode">
+
+              Conditional expression that determines when this rule should be applied.
+              The overrides defined in this rule are applied when this expression evaluates to true.
+
+              _Nested structure omitted for brevity — see the `ConditionNode` object._
+
+            </ParamField>
+
+            <ParamField body="overrides" type="FormOverride[]">
+
+              Form modifications that are applied when the rule expression evaluates to true.
+              Each override specifies how a form element should be changed.
+
+              Constraints: `maxItems 500`.
+
+              _Nested structure omitted for brevity — see the `FormOverride[]` object._
+
+            </ParamField>
+
+            <ParamField body="name" type="string">
+
+              Human-readable name for the rule.
+
+            </ParamField>
+
+            <ParamField body="namespaceRule" type="boolean">
+
+              Namespace rules are part of business logic of app owning namespace, have limited editing possibilities
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="tags" type="Tags">
+
+          Tag IDs collections associated with the current entity.
+
+          <Expandable title="tags properties">
+
+            <ParamField body="privateTags" type="TagList">
+
+              Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+            <ParamField body="tags" type="TagList">
+
+              Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+              _Nested structure omitted for brevity — see the `TagList` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="quizSettings" type="QuizSettings">
+
+          Quiz configuration for a scored form. Set this when the form is a quiz whose
+          answers are scored: it holds the passing criteria (score threshold in points or
+          percentage), how the result is shown on the confirmation page (score, pass/fail
+          status, or both), and the pass/fail messages. Absent on non-quiz forms.
+
+          <Expandable title="quizSettings properties">
+
+            <ParamField body="message" type="RichContent">
+
+              Rich-content message shown on the quiz result (confirmation) page, alongside any
+              score or pass/fail status configured in `results_display`.
+
+              _Nested structure omitted for brevity — see the `RichContent` object._
+
+            </ParamField>
+
+            <ParamField body="resultsDisplay" type="string">
+
+              How to display quiz results in the confirmation page.
+              Default: `DO_NOT_DISPLAY`
+
+              **Supported values:**
+
+              - `DO_NOT_DISPLAY` — Do not show quiz score and passing status.
+              - `SCORE` — Display only the user's score.
+              - `PASSING_STATUS` — Display the pass or fail message based on the user's score.
+              - `SCORE_AND_PASSING_STATUS` — Display both the score and pass/fail message.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="passingCriteria" type="passingCriteria">
+
+              passingCriteria
+
+              _Nested structure omitted for brevity — see the `passingCriteria` object._
+
+            </ParamField>
+
+            <ParamField body="resultsDisplayOptions" type="resultsDisplayOptions">
+
+              resultsDisplayOptions
+
+              _Nested structure omitted for brevity — see the `resultsDisplayOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="autoFillContact" type="string">
+
+          Source used for contact autofill when filling form fields. Default: FORM_INPUT.
+
+          **Supported values:**
+
+          - `MEMBER_DATA` — Use site member data to autofill contact fields.
+          - `FORM_INPUT` — Use form input data to autofill contact fields.
+
+        </ParamField>
+
+        <ParamField body="submissionAccess" type="string">
+
+          Controls who can read submissions of this form beyond the standard permission.
+
+          Default: `OWNER_AND_COLLABORATORS`
+
+          **Supported values:**
+
+          - `UNKNOWN_SUBMISSION_ACCESS` — Unknown submission access.
+          - `OWNER_AND_COLLABORATORS` — Only users with `WIX_FORM.SUBMISSIONS_READ_ANY` permission. Default behavior.
+          - `MEMBERS` — Logged-in site members can read submissions.
+          - `PUBLIC` — Any site visitor with a valid Wix session can read submissions.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="formSummary" type="string">
+
+      AI-generated natural language summary describing the form's structure, fields, and intended purpose.
+      Maximum 255 characters.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_FORM` | Form object is missing or invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-generate-form-summary" id="ex-sdk-generate-form-summary-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-generate-form-summary" id="ex-sdk-generate-form-summary-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-generate-form-summary-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-generate-form-summary-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">generateFormSummary</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">generateFormSummary (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-generate-form-summary-0"><span className="wix-picker-name">generateFormSummary</span></label>
+    <label htmlFor="ex-sdk-generate-form-summary-1"><span className="wix-picker-name">generateFormSummary (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateFormSummary
+    import { interactiveFormSessions } from '@wix/forms';
+
+    async function generateFormSummary(form) {
+      const response = await interactiveFormSessions.generateFormSummary(form);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateFormSummary (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { interactiveFormSessions } from '@wix/forms';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { interactiveFormSessions },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function generateFormSummary(form) {
+      const response = await myWixClient.interactiveFormSessions.generateFormSummary(form);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

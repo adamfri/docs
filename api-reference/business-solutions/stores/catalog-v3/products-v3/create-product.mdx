@@ -1,0 +1,2617 @@
+---
+title: "Create Product"
+description: "Creates a new product."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a new product.
+
+    You can also add a ribbon, brand, info sections, options, and modifiers in the same request.
+
+    <Note>
+
+    + This method doesn't create inventory items. Use [Create Product With Inventory](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product-with-inventory) to create a product with inventory in a single call, or create inventory items separately using the [Inventory Items API](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/introduction).
+    + When you create a product with inline options or modifiers (without referencing existing customization IDs), new standalone [Customization](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/introduction) entities are automatically created. These can be reused across other products.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_WRITE">Product write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/products
+    ```
+
+    ## Body Params
+
+    <ParamField body="product" type="Product" required>
+
+      Product to create.
+
+      At least 1 variant must be provided, and each variant must have an item in the `choices` field for every item in `options`.
+      If `options` is empty, 1 default variant must be provided with an empty `choices` list.
+
+      See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      Fields to include in the response.
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `URL` — The product's public storefront URL, including both relative path and full URL with base domain.
+      - `CURRENCY` — Currency information including the currency code and formatted price amounts for storefront display.
+      - `INFO_SECTION` — Returns basic info section metadata including IDs, unique names, and titles. Use with `INFO_SECTION_DESCRIPTION` or `INFO_SECTION_PLAIN_DESCRIPTION` to include content.
+      - `MERCHANT_DATA` — Returns merchant-related financial data including cost ranges and variant revenue details like cost, profit, and profit margin.
+      Requires the `SCOPE.STORES.PRODUCT_READ_ADMIN` permission scope.
+      - `PLAIN_DESCRIPTION` — Provides product description as plain HTML text.
+      - `INFO_SECTION_PLAIN_DESCRIPTION` — Returns info section descriptions as HTML content. Use with `INFO_SECTION` for complete metadata.
+      - `SUBSCRIPTION_PRICES_INFO` — Details subscription pricing options, empty for non-subscription products.
+      - `BREADCRUMBS_INFO` — Returns the category breadcrumb navigation path from root categories down to the product's main category, including category IDs, names, and slugs.
+      - `WEIGHT_MEASUREMENT_UNIT_INFO` — Returns the weight measurement unit (KG, LB) for the product.
+      - `VARIANT_OPTION_CHOICE_NAMES` — Enriches variant choices with human-readable option and choice names alongside render types.
+      - `MEDIA_ITEMS_INFO` — Returns all media items associated with the product, including detailed metadata (URLs, alt-text, dimensions, filenames, file sizes).
+      - `DESCRIPTION` — Returns the product description as rich content with complete node structure, metadata, and styling information.
+      - `DIRECT_CATEGORIES_INFO` — Provides the IDs and indexes of categories the product is directly assigned to.
+      - `ALL_CATEGORIES_INFO` — Provides IDs and indexes for all categories including inherited parent categories.
+      - `INFO_SECTION_DESCRIPTION` — Returns info section descriptions as rich content with complete node structure, metadata, and styling information. Use with `INFO_SECTION` for complete metadata.
+      - `THUMBNAIL` — Returns an optimized thumbnail image with standard dimensions, suitable for listings or previews.
+      - `PRODUCT_CHOICES_MEDIA_REFERENCES` — Returns media references associated with product option and modifier choices instead of the deprecated `linked_media` field.
+
+      When requested, choice objects will populate `media_references` with lightweight `MediaReference` objects containing only media IDs,
+      while the `linked_media` field will be returned empty to avoid duplication and reduce response payload size.
+
+      To get full media metadata (dimensions, alt text, filenames, etc.), request `MEDIA_ITEMS_INFO` on the product and correlate by media ID.
+
+      > **Note:** The `media_references` field is available on `ConnectedOptionChoice` and `ConnectedModifierChoice` objects.
+      - `PRODUCT_CHOICES_DISPLAY_IMAGE` — Returns display images for product option and modifier choices.
+      When requested, choice objects will populate `display_image` with a lightweight image containing only ID, URL, and alt text.
+      - `DISCOUNT_INFO` — Returns automatic discount info for product get/query/search responses and populates product-level `discountInfo.discountRuleNames`.
+
+      To receive discounted variant prices in get/query/search responses, request this together with `MIN_PRICE_VARIANT` (returned in `variantSummary.minPriceVariant.price.priceAfterDiscount`).
+      Formatted money amounts are returned only when `CURRENCY` is also requested.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="product" type="Product">
+
+      Created product.
+
+      See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_VARIANT_OPTION_CHOICE` | Variant's choice references a non-existent option. Every variant choice must reference an existing option in `options.id`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_VARIANT_OPTION_CHOICE` | Multiple variants have identical choices in `variantsInfo.variants.choices`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_PRODUCT_OPTIONS` | Multiple options have identical `name` and `optionRenderType`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_DEFAULT_VARIANT` | Product with multiple variants has a variant with empty `choices`. Only single-variant products can have empty choices. |
+    | `428` | `FAILED_PRECONDITION` | `VARIANTS_ARE_NOT_ALIGNED_WITH_PRODUCT` | Variants aren't aligned with the product. The variant `typedProperties` must match the `productType`, measurement units must align, and each variant must have exactly 1 choice for every option. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_SLUG_ERROR` | There is already a product with this `slug`. |
+    | `404` | `NOT_FOUND` | `DIGITAL_FILE_NOT_FOUND_ERROR` | Couldn't find the digital file referenced in `variantsInfo.variants.digitalProperties`. |
+    | `409` | `ALREADY_EXISTS` | `BARCODE_ALREADY_EXIST_ERROR` | There is already a variant with this `barcode`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_BARCODE_ERROR` | Multiple variants have identical `barcode` in the request. |
+    | `409` | `ALREADY_EXISTS` | `SKU_ALREADY_EXIST_ERROR` | There is already a variant with this `sku`. |
+    | `409` | `ALREADY_EXISTS` | `VARIANT_ID_ALREADY_EXISTS` | Multiple variants have identical `id`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PRODUCT_TYPE_FOR_SUBSCRIPTION` | Subscription added to a digital product. Digital products can't have subscriptions. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_ALL_SUBSCRIPTIONS_HIDDEN_FOR_SUBSCRIPTION_ONLY_PRODUCT` | All subscriptions are hidden for a subscription-only product. At least 1 subscription must be visible when `allowOneTimePurchases` is false. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SUBSCRIPTION_DISCOUNT_AMOUNT` | Subscription discount `amountOff` exceeds the minimum variant price. |
+    | `409` | `ALREADY_EXISTS` | `SUBSCRIPTION_ID_ALREADY_EXISTS` | There is already a subscription with this `id`. |
+    | `428` | `FAILED_PRECONDITION` | `PRODUCTS_LIMIT_EXCEEDED` | Number of products exceeds the server's limit of 50000. |
+    | `404` | `NOT_FOUND` | `PRODUCT_MEDIA_NOT_EXIST` | Couldn't find the media referenced in `options.choiceSettings.choices.media`. The media must exist in the product's `media` field. |
+    | `428` | `FAILED_PRECONDITION` | `ONLY_SPACES_STRING_ERROR` | Product `name` field contains only spaces. |
+    | `500` | `INTERNAL` | `BRAND_CREATION_FAILED` | Brand creation failed. |
+    | `404` | `NOT_FOUND` | `RIBBON_NOT_FOUND` | Couldn't find the ribbon. |
+    | `500` | `INTERNAL` | `RIBBON_CREATION_FAILED` | Ribbon creation failed. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_ADDITIONAL` | Same ribbon appears more than once in `additionalRibbons`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_PRIMARY_AND_ADDITIONAL` | Same ribbon used as both primary ribbon and additional ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTION_CREATION_FAILED` | Info section creation failed. |
+    | `404` | `NOT_FOUND` | `CUSTOMIZATION_NOT_EXIST` | Couldn't find the customization. |
+    | `500` | `INTERNAL` | `CUSTOMIZATIONS_CREATION_FAILED` | Customization creation failed. |
+    | `500` | `INTERNAL` | `ADD_CUSTOMIZATION_CHOICES_FAILED` | Failed to add customization choices. |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_EXIST` | Couldn't find the choice. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_NAME_AND_TYPE_REQUIRED` | Option is missing `name` or `type`. Options without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_CHOICE_NAME_AND_TYPE_REQUIRED` | Option choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_NAME_AND_TYPE_REQUIRED` | Modifier is missing `name` or `type`. Modifiers without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_CHOICE_NAME_AND_TYPE_REQUIRED` | Modifier choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `428` | `FAILED_PRECONDITION` | `TOO_MANY_OPTIONS_IN_REQUEST` | Number of options exceeds the server's limit. |
+    | `428` | `FAILED_PRECONDITION` | `COMPARE_AT_PRICE_LOWER_THAN_ACTUAL_PRICE` | The `compareAtPrice` is lower than the `actualPrice`. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SLUG_FORMAT` | The `slug` provided is not a valid URL slug. |
+    | `400` | `INVALID_ARGUMENT` | `VARIANTS_TYPED_PROPERTIES_ARE_NOT_ALIGNED` | Variants have different `typedProperties` types. All variants must have the same type. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION_CHOICE` | Variant choice doesn't exist in the product's option choices. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION` | Variant option doesn't exist in the product's options. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_INVALID_AUTO_RENEWAL` | The `autoRenewal` field is set to false. Set the number of billing cycles in `billingCycles` to prevent automatic renewal instead. |
+    | `400` | `INVALID_ARGUMENT` | `DIGITAL_PRODUCT_CANNOT_BE_VISIBLE_IN_POS` | Digital product is marked as visible in POS. Digital products can't be visible in POS. |
+    | `400` | `INVALID_ARGUMENT` | `DESCRIPTION_SIZE_TOO_BIG` | Product `description` field exceeds the maximum size of 32000 bytes. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_MEDIA_ERROR` | Multiple media items have identical IDs. Each media ID must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `BRAND_MISSING_ID` | Brand is missing an `id`. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_PER_UNIT_NOT_ALIGNED` | Price per unit isn't aligned between product and variants. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Created | `wix.stores.catalog.v3.product_created` | Triggered when a product is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-product" id="ex-rest-create-product-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-product" id="ex-rest-create-product-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-create-product" id="ex-rest-create-product-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-create-product" id="ex-rest-create-product-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-create-product" id="ex-rest-create-product-4" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-create-product" id="ex-rest-create-product-5" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-product-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-product-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Product</span><span className="wix-picker-desc">Create a product with options, modifiers, variants, media, and info sections</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a digital product</span><span className="wix-picker-desc">Create a digital product like an ebook or online course</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a physical product with shipping details</span><span className="wix-picker-desc">Create a physical product with weight, price per unit, and fulfiller settings</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a simple product with a plainDescription.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create product with subscriptions</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create minimal possible product</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-product-0"><span className="wix-picker-name">Create Product</span><span className="wix-picker-desc">Create a product with options, modifiers, variants, media, and info sections</span></label>
+    <label htmlFor="ex-rest-create-product-1"><span className="wix-picker-name">Create a digital product</span><span className="wix-picker-desc">Create a digital product like an ebook or online course</span></label>
+    <label htmlFor="ex-rest-create-product-2"><span className="wix-picker-name">Create a physical product with shipping details</span><span className="wix-picker-desc">Create a physical product with weight, price per unit, and fulfiller settings</span></label>
+    <label htmlFor="ex-rest-create-product-3"><span className="wix-picker-name">Create a simple product with a plainDescription.</span></label>
+    <label htmlFor="ex-rest-create-product-4"><span className="wix-picker-name">Create product with subscriptions</span></label>
+    <label htmlFor="ex-rest-create-product-5"><span className="wix-picker-name">Create minimal possible product</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/products' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+              "fields": [
+                  "VARIANT_OPTION_CHOICE_NAMES",
+                  "MERCHANT_DATA",
+                  "INFO_SECTION",
+                  "MEDIA_ITEMS_INFO",
+                  "DESCRIPTION",
+                  "URL",
+                  "CURRENCY",
+                  "WEIGHT_MEASUREMENT_UNIT_INFO"
+              ],
+              "product": {
+                  "name": "Coffee",
+                  "description": {
+                      "nodes": [
+                          {
+                              "type": "PARAGRAPH",
+                              "id": "foo",
+                              "nodes": [
+                                  {
+                                      "type": "TEXT",
+                                      "textData": {
+                                          "text": "Tasty and eco friendly, in a beautiful gift box."
+                                      }
+                                  }
+                              ],
+                              "paragraphData": {
+                                  "textStyle": {
+                                      "textAlignment": "AUTO"
+                                  }
+                              }
+                          }
+                      ],
+                      "metadata": {
+                          "version": 1,
+                          "id": "fb97b2c1-a3ff-4319-be5f-bbb7fdf0776c"
+                      }
+                  },
+                  "visible": true,
+                  "visibleInPos": true,
+                  "media": {
+                      "itemsInfo": {
+                          "items": [
+                              {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg"
+                              },
+                              {
+                                  "url": "https://example.jpeg"
+                              }
+                          ]
+                      }
+                  },
+                  "options": [
+                      {
+                          "name": "Size",
+                          "optionRenderType": "TEXT_CHOICES",
+                          "choicesSettings": {
+                              "choices": [
+                                  {
+                                      "choiceType": "CHOICE_TEXT",
+                                      "name": "S"
+                                  },
+                                  {
+                                      "choiceType": "CHOICE_TEXT",
+                                      "name": "L"
+                                  }
+                              ]
+                          }
+                      },
+                      {
+                          "name": "Box color",
+                          "optionRenderType": "SWATCH_CHOICES",
+                          "choicesSettings": {
+                              "choices": [
+                                  {
+                                      "choiceType": "ONE_COLOR",
+                                      "name": "red",
+                                      "colorCode": "#FF0000"
+                                  },
+                                  {
+                                      "choiceType": "ONE_COLOR",
+                                      "name": "blue",
+                                      "colorCode": "#0000FF"
+                                  }
+                              ]
+                          }
+                      }
+                  ],
+                  "modifiers": [
+                      {
+                          "name": "Engraving",
+                          "modifierRenderType": "FREE_TEXT",
+                          "mandatory": false,
+                          "freeTextSettings": {
+                              "minCharCount": 0,
+                              "maxCharCount": 499,
+                              "title": "Would you like to engrave something on the box?"
+                          }
+                      },
+                      {
+                          "name": "Remove price tag",
+                          "modifierRenderType": "TEXT_CHOICES",
+                          "mandatory": false,
+                          "choicesSettings": {
+                              "choices": [
+                                  {
+                                      "choiceType": "CHOICE_TEXT",
+                                      "name": "yes"
+                                  },
+                                  {
+                                      "choiceType": "CHOICE_TEXT",
+                                      "name": "no"
+                                  }
+                              ]
+                          }
+                      }
+                  ],
+                  "brand": {
+                      "name": "EcoCoffee"
+                  },
+                  "infoSections": [
+                      {
+                          "uniqueName": "Coffee refund",
+                          "title": "Refund policy",
+                          "description": {
+                              "nodes": [
+                                  {
+                                      "type": "PARAGRAPH",
+                                      "id": "xjkk51429",
+                                      "nodes": [
+                                          {
+                                              "type": "TEXT",
+                                              "textData": {
+                                                  "text": "2 weeks full refund unless you asked for engraving "
+                                              }
+                                          }
+                                      ]
+                                  }
+                              ],
+                              "metadata": {
+                                  "version": 1
+                              }
+                          }
+                      }
+                  ],
+                  "ribbon": {
+                      "name": "best seller"
+                  },
+                  "productType": "PHYSICAL",
+                  "physicalProperties": {
+                      "pricePerUnit": {
+                          "quantity": 1.0,
+                          "measurementUnit": "KG"
+                      }
+                  },
+                  "variantsInfo": {
+                      "variants": [
+                          {
+                              "visible": true,
+                              "sku": "c-s-r-1111",
+                              "barcode": "111111111",
+                              "choices": [
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Size",
+                                          "choiceName": "S",
+                                          "renderType": "TEXT_CHOICES"
+                                      }
+                                  },
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Box color",
+                                          "choiceName": "red",
+                                          "renderType": "SWATCH_CHOICES"
+                                      }
+                                  }
+                              ],
+                              "price": {
+                                  "compareAtPrice": {
+                                      "amount": "10"
+                                  },
+                                  "actualPrice": {
+                                      "amount": "9"
+                                  }
+                              },
+                              "revenueDetails": {
+                                  "cost": {
+                                      "amount": "8"
+                                  }
+                              },
+                              "physicalProperties": {
+                                  "weight": 0.2,
+                                  "pricePerUnit": {
+                                      "settings": {
+                                          "quantity": 150.0,
+                                          "measurementUnit": "G"
+                                      }
+                                  }
+                              }
+                          },
+                          {
+                              "visible": true,
+                              "barcode": "111111112",
+                              "choices": [
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Size",
+                                          "choiceName": "S",
+                                          "renderType": "TEXT_CHOICES"
+                                      }
+                                  },
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Box color",
+                                          "choiceName": "blue",
+                                          "renderType": "SWATCH_CHOICES"
+                                      }
+                                  }
+                              ],
+                              "price": {
+                                  "compareAtPrice": {
+                                      "amount": "10"
+                                  },
+                                  "actualPrice": {
+                                      "amount": "9.5"
+                                  }
+                              },
+                              "revenueDetails": {
+                                  "cost": {
+                                      "amount": "8"
+                                  }
+                              },
+                              "physicalProperties": {
+                                  "weight": 0.2,
+                                  "pricePerUnit": {
+                                      "settings": {
+                                          "quantity": 150.0,
+                                          "measurementUnit": "G"
+                                      }
+                                  }
+                              }
+                          },
+                          {
+                              "visible": false,
+                              "barcode": "111111113",
+                              "choices": [
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Size",
+                                          "choiceName": "L",
+                                          "renderType": "TEXT_CHOICES"
+                                      }
+                                  },
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Box color",
+                                          "choiceName": "red",
+                                          "renderType": "SWATCH_CHOICES"
+                                      }
+                                  }
+                              ],
+                              "price": {
+                                  "compareAtPrice": {
+                                      "amount": "15"
+                                  },
+                                  "actualPrice": {
+                                      "amount": "14"
+                                  }
+                              },
+                              "revenueDetails": {
+                                  "cost": {
+                                      "amount": "10"
+                                  }
+                              },
+                              "physicalProperties": {
+                                  "weight": 0.4,
+                                  "pricePerUnit": {
+                                      "settings": {
+                                          "quantity": 300.0,
+                                          "measurementUnit": "G"
+                                      }
+                                  }
+                              }
+                          },
+                          {
+                              "visible": true,
+                              "barcode": "111111114",
+                              "choices": [
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Size",
+                                          "choiceName": "L",
+                                          "renderType": "TEXT_CHOICES"
+                                      }
+                                  },
+                                  {
+                                      "optionChoiceNames": {
+                                          "optionName": "Box color",
+                                          "choiceName": "blue",
+                                          "renderType": "SWATCH_CHOICES"
+                                      }
+                                  }
+                              ],
+                              "price": {
+                                  "actualPrice": {
+                                      "amount": "15"
+                                  }
+                              },
+                              "physicalProperties": {
+                                  "weight": 0.4,
+                                  "pricePerUnit": {
+                                      "settings": {
+                                          "quantity": 300.0,
+                                          "measurementUnit": "G"
+                                      }
+                                  }
+                              }
+                          }
+                      ]
+                  }
+              }
+          }'
+      ```
+
+      ```json Response
+      {
+          "product": {
+              "id": "dff8dc87-05f8-462a-8e50-fc3575c64c22",
+              "revision": "1",
+              "createdDate": "2024-07-22T13:22:47.771Z",
+              "updatedDate": "2024-07-22T13:22:47.771Z",
+              "name": "Coffee",
+              "slug": "coffee",
+              "url": {
+                  "relativePath": "/product-page/coffee",
+                  "url": "https://my.wixsite.com/food-store/product-page/coffee"
+              },
+              "description": {
+                  "nodes": [
+                      {
+                          "type": "PARAGRAPH",
+                          "id": "foo",
+                          "nodes": [
+                              {
+                                  "type": "TEXT",
+                                  "id": "",
+                                  "nodes": [],
+                                  "textData": {
+                                      "text": "Tasty and eco friendly, in a beautiful gift box.",
+                                      "decorations": []
+                                  }
+                              }
+                          ],
+                          "paragraphData": {
+                              "textStyle": {
+                                  "textAlignment": "AUTO"
+                              }
+                          }
+                      }
+                  ],
+                  "metadata": {
+                      "version": 1,
+                      "id": "fb97b2c1-a3ff-4319-be5f-bbb7fdf0776c"
+                  }
+              },
+              "visible": true,
+              "visibleInPos": true,
+              "media": {
+                  "main": {
+                      "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                      "image": {
+                          "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                          "url": "https://static.wixstatic.com/media/370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                          "height": 1200,
+                          "width": 1200
+                      },
+                      "uploadId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  },
+                  "itemsInfo" : {
+                      "items": [
+                          {
+                              "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                              "image": {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "url": "https://static.wixstatic.com/media/370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "height": 1200,
+                                  "width": 1200
+                              },
+                              "uploadId": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                          },
+                          {
+                              "url": "https://example.jpeg",
+                              "uploadId": "44682905-395a-4c18-8fab-e050725ba3f6"
+                          }
+                      ]
+                  }
+              },
+              "options": [
+                  {
+                      "id": "85bb0544-63c7-431b-9659-f81b18a7dd9f",
+                      "name": "Size",
+                      "optionRenderType": "TEXT_CHOICES",
+                      "choicesSettings": {
+                          "choices": [
+                              {
+                                  "choiceId": "4498b805-2aed-43fb-b478-989c906c19cd",
+                                  "linkedMedia": [],
+                                  "choiceType": "CHOICE_TEXT",
+                                  "key": "S",
+                                  "name": "S",
+                                  "inStock": true
+                              },
+                              {
+                                  "choiceId": "26394ab0-d81a-422f-a8c9-562f49a6b595",
+                                  "linkedMedia": [],
+                                  "choiceType": "CHOICE_TEXT",
+                                  "key": "L",
+                                  "name": "L",
+                                  "inStock": false
+                              }
+                          ]
+                      },
+                      "key": "Size"
+                  },
+                  {
+                      "id": "1938d364-126d-4304-b706-9e9e9f6d376f",
+                      "name": "Box color",
+                      "optionRenderType": "SWATCH_CHOICES",
+                      "choicesSettings": {
+                          "choices": [
+                              {
+                                  "choiceId": "2e98f13b-ae65-4d30-96c5-ac3a6cf99d60",
+                                  "linkedMedia": [],
+                                  "choiceType": "ONE_COLOR",
+                                  "key": "red",
+                                  "name": "red",
+                                  "colorCode": "#FF0000",
+                                  "inStock": true
+                              },
+                              {
+                                  "choiceId": "4876dcc7-817e-4c10-a6b2-4a4cc2e241e6",
+                                  "linkedMedia": [],
+                                  "choiceType": "ONE_COLOR",
+                                  "key": "blue",
+                                  "name": "blue",
+                                  "colorCode": "#0000FF",
+                                  "inStock": false
+                              }
+                          ]
+                      },
+                      "key": "Box color"
+                  }
+              ],
+              "modifiers": [
+                  {
+                      "id": "1d628610-6963-43c0-862a-f823142b00a0",
+                      "name": "Engraving",
+                      "modifierRenderType": "FREE_TEXT",
+                      "mandatory": false,
+                      "freeTextSettings": {
+                          "minCharCount": 0,
+                          "maxCharCount": 499,
+                          "title": "Would you like to engrave something on the box?",
+                          "key": "Would you like to engrave something on the box?"
+                      },
+                      "key": "Engraving"
+                  },
+                  {
+                      "id": "a3d249f0-a8da-425d-9ec1-3c51c795d927",
+                      "name": "Remove price tag",
+                      "modifierRenderType": "TEXT_CHOICES",
+                      "mandatory": false,
+                      "choicesSettings": {
+                          "choices": [
+                              {
+                                  "choiceId": "3050481e-e177-4031-bbe9-be9b00af14b5",
+                                  "linkedMedia": [],
+                                  "choiceType": "CHOICE_TEXT",
+                                  "key": "yes",
+                                  "name": "yes"
+                              },
+                              {
+                                  "choiceId": "ee729b74-d500-4594-aae5-b5a2e75bf5e7",
+                                  "linkedMedia": [],
+                                  "choiceType": "CHOICE_TEXT",
+                                  "key": "no",
+                                  "name": "no"
+                              }
+                          ]
+                      },
+                      "key": "Remove price tag"
+                  }
+              ],
+              "brand": {
+                  "id": "4a16d28d-1736-41f0-87d8-995f6d9a5bdd",
+                  "name": "EcoCoffee"
+              },
+              "infoSections": [
+                  {
+                      "id": "59954f23-fbcd-42e5-ba61-7c8cf9d8b409",
+                      "uniqueName": "Coffee refund",
+                      "title": "Refund policy",
+                      "description": {
+                          "nodes": [
+                              {
+                                  "type": "PARAGRAPH",
+                                  "id": "xjkk51429",
+                                  "nodes": [
+                                      {
+                                          "type": "TEXT",
+                                          "id": "",
+                                          "nodes": [],
+                                          "textData": {
+                                              "text": "2 weeks full refund unless you asked for engraving ",
+                                              "decorations": []
+                                          }
+                                      }
+                                  ],
+                                  "paragraphData": {}
+                              }
+                          ],
+                          "metadata": {
+                              "version": 1
+                          },
+                          "documentStyle": {}
+                      }
+                  }
+              ],
+              "ribbon": {
+                  "id": "826aec2a-771b-45a6-9f72-392da18fd3bf",
+                  "name": "best seller"
+              },
+              "compareAtPriceRange": {
+                  "minValue": {
+                      "amount": "10",
+                      "formattedAmount": "$10.00"
+                  },
+                  "maxValue": {
+                      "amount": "15",
+                      "formattedAmount": "$15.00"
+                  }
+              },
+              "actualPriceRange": {
+                  "minValue": {
+                      "amount": "9",
+                      "formattedAmount": "$9.00"
+                  },
+                  "maxValue": {
+                      "amount": "15",
+                      "formattedAmount": "$15.00"
+                  }
+              },
+              "costRange": {
+                  "minValue": {
+                      "amount": "0.0",
+                      "formattedAmount": "$0.00"
+                  },
+                  "maxValue": {
+                      "amount": "10",
+                      "formattedAmount": "$10.00"
+                  }
+              },
+              "inventory": {
+                  "availabilityStatus": "OUT_OF_STOCK",
+                  "preorderAvailability": "NO_VARIANTS",
+                  "preorderStatus": "DISABLED"
+              },
+              "productType": "PHYSICAL",
+              "physicalProperties": {
+                  "pricePerUnit": {
+                      "quantity": 1.0,
+                      "measurementUnit": "KG"
+                  },
+                  "shippingWeightRange": {
+                      "minValue": 0.2,
+                      "maxValue": 0.4
+                  },
+                  "weightMeasurementUnitInfo": {
+                      "weightMeasurementUnit": "KG"
+                  }
+              },
+              "currency": "USD",
+              "variantsInfo": {
+                  "variants": [
+                      {
+                          "id": "0a186a72-d289-446a-aa51-adf125d30dc6",
+                          "visible": true,
+                          "sku": "c-s-r-1111",
+                          "barcode": "111111111",
+                          "choices": [
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "85bb0544-63c7-431b-9659-f81b18a7dd9f",
+                                      "choiceId": "4498b805-2aed-43fb-b478-989c906c19cd"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Size",
+                                      "choiceName": "S",
+                                      "renderType": "TEXT_CHOICES"
+                                  }
+                              },
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "1938d364-126d-4304-b706-9e9e9f6d376f",
+                                      "choiceId": "2e98f13b-ae65-4d30-96c5-ac3a6cf99d60"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Box color",
+                                      "choiceName": "red",
+                                      "renderType": "SWATCH_CHOICES"
+                                  }
+                              }
+                          ],
+                          "price": {
+                              "compareAtPrice": {
+                                  "amount": "10",
+                                  "formattedAmount": "$10.00"
+                              },
+                              "actualPrice": {
+                                  "amount": "9",
+                                  "formattedAmount": "$9.00"
+                              }
+                          },
+                          "revenueDetails": {
+                              "cost": {
+                                  "amount": "8",
+                                  "formattedAmount": "$8.00"
+                              },
+                              "profit": {
+                                  "amount": "1",
+                                  "formattedAmount": "$1.00"
+                              },
+                              "profitMargin": 0.1111
+                          },
+                          "media": {
+                              "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                              "image": {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "url": "https://static.wixstatic.com/media/370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "height": 1200,
+                                  "width": 1200
+                              },
+                              "uploadId": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+                          },
+                          "physicalProperties": {
+                              "weight": 0.2,
+                              "pricePerUnit": {
+                                  "settings": {
+                                      "quantity": 150.0,
+                                      "measurementUnit": "G"
+                                  },
+                                  "value": "60.00",
+                                  "description": "$60.00/1 kg"
+                              }
+                          }
+                      },
+                      {
+                          "id": "5aace0e6-4bab-4d0e-a595-1bcaa01d2377",
+                          "visible": true,
+                          "barcode": "111111112",
+                          "choices": [
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "85bb0544-63c7-431b-9659-f81b18a7dd9f",
+                                      "choiceId": "4498b805-2aed-43fb-b478-989c906c19cd"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Size",
+                                      "choiceName": "S",
+                                      "renderType": "TEXT_CHOICES"
+                                  }
+                              },
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "1938d364-126d-4304-b706-9e9e9f6d376f",
+                                      "choiceId": "4876dcc7-817e-4c10-a6b2-4a4cc2e241e6"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Box color",
+                                      "choiceName": "blue",
+                                      "renderType": "SWATCH_CHOICES"
+                                  }
+                              }
+                          ],
+                          "price": {
+                              "compareAtPrice": {
+                                  "amount": "10",
+                                  "formattedAmount": "$10.00"
+                              },
+                              "actualPrice": {
+                                  "amount": "9.5",
+                                  "formattedAmount": "$9.50"
+                              }
+                          },
+                          "revenueDetails": {
+                              "cost": {
+                                  "amount": "8",
+                                  "formattedAmount": "$8.00"
+                              },
+                              "profit": {
+                                  "amount": "1.5",
+                                  "formattedAmount": "$1.50"
+                              },
+                              "profitMargin": 0.1579
+                          },
+                          "media": {
+                              "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                              "image": {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "url": "https://static.wixstatic.com/media/370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "height": 1200,
+                                  "width": 1200
+                              },
+                              "uploadId": "d4e5f6a7-b8c9-0123-defa-234567890123"
+                          },
+                          "physicalProperties": {
+                              "weight": 0.2,
+                              "pricePerUnit": {
+                                  "settings": {
+                                      "quantity": 150.0,
+                                      "measurementUnit": "G"
+                                  },
+                                  "value": "63.33",
+                                  "description": "$63.33/1 kg"
+                              }
+                          }
+                      },
+                      {
+                          "id": "1d2acec3-5294-4521-a648-6f2ed5f58c43",
+                          "visible": false,
+                          "barcode": "111111113",
+                          "choices": [
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "85bb0544-63c7-431b-9659-f81b18a7dd9f",
+                                      "choiceId": "26394ab0-d81a-422f-a8c9-562f49a6b595"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Size",
+                                      "choiceName": "L",
+                                      "renderType": "TEXT_CHOICES"
+                                  }
+                              },
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "1938d364-126d-4304-b706-9e9e9f6d376f",
+                                      "choiceId": "2e98f13b-ae65-4d30-96c5-ac3a6cf99d60"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Box color",
+                                      "choiceName": "red",
+                                      "renderType": "SWATCH_CHOICES"
+                                  }
+                              }
+                          ],
+                          "price": {
+                              "compareAtPrice": {
+                                  "amount": "15",
+                                  "formattedAmount": "$15.00"
+                              },
+                              "actualPrice": {
+                                  "amount": "14",
+                                  "formattedAmount": "$14.00"
+                              }
+                          },
+                          "revenueDetails": {
+                              "cost": {
+                                  "amount": "10",
+                                  "formattedAmount": "$10.00"
+                              },
+                              "profit": {
+                                  "amount": "4",
+                                  "formattedAmount": "$4.00"
+                              },
+                              "profitMargin": 0.2857
+                          },
+                          "media": {
+                              "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                              "image": {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "url": "https://static.wixstatic.com/media/370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "height": 1200,
+                                  "width": 1200
+                              },
+                              "uploadId": "e5f6a7b8-c9d0-1234-efab-345678901234"
+                          },
+                          "physicalProperties": {
+                              "weight": 0.4,
+                              "pricePerUnit": {
+                                  "settings": {
+                                      "quantity": 300.0,
+                                      "measurementUnit": "G"
+                                  },
+                                  "value": "46.67",
+                                  "description": "$46.67/1 kg"
+                              }
+                          }
+                      },
+                      {
+                          "id": "5c390d11-8d35-48e3-8037-428812e0426c",
+                          "visible": true,
+                          "barcode": "111111114",
+                          "choices": [
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "85bb0544-63c7-431b-9659-f81b18a7dd9f",
+                                      "choiceId": "26394ab0-d81a-422f-a8c9-562f49a6b595"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Size",
+                                      "choiceName": "L",
+                                      "renderType": "TEXT_CHOICES"
+                                  }
+                              },
+                              {
+                                  "optionChoiceIds": {
+                                      "optionId": "1938d364-126d-4304-b706-9e9e9f6d376f",
+                                      "choiceId": "4876dcc7-817e-4c10-a6b2-4a4cc2e241e6"
+                                  },
+                                  "optionChoiceNames": {
+                                      "optionName": "Box color",
+                                      "choiceName": "blue",
+                                      "renderType": "SWATCH_CHOICES"
+                                  }
+                              }
+                          ],
+                          "price": {
+                              "actualPrice": {
+                                  "amount": "15",
+                                  "formattedAmount": "$15.00"
+                              }
+                          },
+                          "media": {
+                              "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                              "image": {
+                                  "id": "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "url": "https://static.wixstatic.com/media/370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg",
+                                  "height": 1200,
+                                  "width": 1200
+                              },
+                              "uploadId": "f6a7b8c9-d0e1-2345-fabc-456789012345"
+                          },
+                          "physicalProperties": {
+                              "weight": 0.4,
+                              "pricePerUnit": {
+                                  "settings": {
+                                      "quantity": 300.0,
+                                      "measurementUnit": "G"
+                                  },
+                                  "value": "50.00",
+                                  "description": "$50.00/1 kg"
+                              }
+                          }
+                      }
+                  ]
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/products?fields=CURRENCY' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "product": {
+              "name": "JavaScript Mastery Course",
+              "visible": true,
+              "productType": "DIGITAL",
+              "variantsInfo": {
+                  "variants": [
+                      {
+                          "visible": true,
+                          "sku": "COURSE-JS-2024",
+                          "price": {
+                              "actualPrice": {
+                                  "amount": "49.99"
+                              },
+                              "compareAtPrice": {
+                                  "amount": "79.99"
+                              }
+                          },
+                          "revenueDetails": {
+                              "cost": {
+                                  "amount": "0"
+                              }
+                          }
+                      }
+                  ]
+              }
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+          "product": {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "revision": "1",
+              "createdDate": "2024-03-15T10:00:00.000Z",
+              "updatedDate": "2024-03-15T10:00:00.000Z",
+              "name": "JavaScript Mastery Course",
+              "slug": "javascript-mastery-course",
+              "visible": true,
+              "productType": "DIGITAL",
+              "currency": "USD",
+              "variantsInfo": {
+                  "variants": [
+                      {
+                          "id": "f1e2d3c4-b5a6-7890-abcd-ef1234567891",
+                          "visible": true,
+                          "sku": "COURSE-JS-2024",
+                          "price": {
+                              "actualPrice": {
+                                  "amount": "49.99",
+                                  "formattedAmount": "$49.99"
+                              },
+                              "compareAtPrice": {
+                                  "amount": "79.99",
+                                  "formattedAmount": "$79.99"
+                              }
+                          },
+                          "revenueDetails": {
+                              "cost": {
+                                  "amount": "0"
+                              }
+                          },
+                          "inventoryStatus": {
+                              "inStock": true,
+                              "preorderEnabled": false
+                          }
+                      }
+                  ]
+              },
+              "inventory": {
+                  "availabilityStatus": "IN_STOCK"
+              },
+              "actualPriceRange": {
+                  "minValue": {
+                      "amount": "49.99",
+                      "formattedAmount": "$49.99"
+                  },
+                  "maxValue": {
+                      "amount": "49.99",
+                      "formattedAmount": "$49.99"
+                  }
+              },
+              "compareAtPriceRange": {
+                  "minValue": {
+                      "amount": "79.99",
+                      "formattedAmount": "$79.99"
+                  },
+                  "maxValue": {
+                      "amount": "79.99",
+                      "formattedAmount": "$79.99"
+                  }
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/products?fields=CURRENCY&fields=WEIGHT_MEASUREMENT_UNIT_INFO' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "product": {
+              "name": "Organic Green Tea",
+              "visible": true,
+              "productType": "PHYSICAL",
+              "physicalProperties": {
+                  "pricePerUnit": {
+                      "quantity": 100,
+                      "measurementUnit": "G"
+                  }
+              },
+              "variantsInfo": {
+                  "variants": [
+                      {
+                          "visible": true,
+                          "sku": "TEA-GREEN-100G",
+                          "barcode": "8901234567890",
+                          "price": {
+                              "actualPrice": {
+                                  "amount": "12.99"
+                              },
+                              "compareAtPrice": {
+                                  "amount": "15.99"
+                              }
+                          },
+                          "revenueDetails": {
+                              "cost": {
+                                  "amount": "5.50"
+                              }
+                          },
+                          "physicalProperties": {
+                              "weight": 0.12,
+                              "pricePerUnit": {
+                                  "settings": {
+                                      "quantity": 100,
+                                      "measurementUnit": "G"
+                                  }
+                              }
+                          }
+                      }
+                  ]
+              }
+          }
+      }'
+      ```
+
+      ```json Response
+      {
+          "product": {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "revision": "1",
+              "createdDate": "2024-03-15T10:30:00.000Z",
+              "updatedDate": "2024-03-15T10:30:00.000Z",
+              "name": "Organic Green Tea",
+              "slug": "organic-green-tea",
+              "visible": true,
+              "productType": "PHYSICAL",
+              "handle": "organic-green-tea",
+              "currency": "USD",
+              "physicalProperties": {
+                  "pricePerUnit": {
+                      "quantity": 100,
+                      "measurementUnit": "G"
+                  },
+                  "shippingWeightRange": {
+                      "minValue": 0.12,
+                      "maxValue": 0.12
+                  },
+                  "weightMeasurementUnitInfo": {
+                      "weightMeasurementUnit": "KG"
+                  }
+              },
+              "variantsInfo": {
+                  "variants": [
+                      {
+                          "id": "f1e2d3c4-b5a6-7890-abcd-ef0987654321",
+                          "visible": true,
+                          "sku": "TEA-GREEN-100G",
+                          "barcode": "8901234567890",
+                          "choices": [],
+                          "price": {
+                              "actualPrice": {
+                                  "amount": "12.99",
+                                  "formattedAmount": "$12.99"
+                              },
+                              "compareAtPrice": {
+                                  "amount": "15.99",
+                                  "formattedAmount": "$15.99"
+                              }
+                          },
+                          "physicalProperties": {
+                              "weight": 0.12,
+                              "pricePerUnit": {
+                                  "settings": {
+                                      "quantity": 100,
+                                      "measurementUnit": "G"
+                                  },
+                                  "value": "12.99"
+                              }
+                          },
+                          "inventoryStatus": {
+                              "inStock": true,
+                              "preorderEnabled": false
+                          }
+                      }
+                  ]
+              },
+              "inventory": {
+                  "availabilityStatus": "IN_STOCK"
+              },
+              "actualPriceRange": {
+                  "minValue": {
+                      "amount": "12.99",
+                      "formattedAmount": "$12.99"
+                  },
+                  "maxValue": {
+                      "amount": "12.99",
+                      "formattedAmount": "$12.99"
+                  }
+              },
+              "compareAtPriceRange": {
+                  "minValue": {
+                      "amount": "15.99",
+                      "formattedAmount": "$15.99"
+                  },
+                  "maxValue": {
+                      "amount": "15.99",
+                      "formattedAmount": "$15.99"
+                  }
+              },
+              "variantSummary": {
+                  "variantCount": 1
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/stores/v3/products' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+              "fields": [
+                  "PLAIN_DESCRIPTION"
+              ],
+              "product": {
+                  "name": "Coffee",
+                  "plainDescription": "<p>Eco friendly, in a <b>beautiful</b> gift box.</p>",
+                  "productType": "PHYSICAL",
+                  "physicalProperties": {},
+                  "variantsInfo": {
+                      "variants": [
+                          {
+                              "price": {
+                                  "actualPrice": {
+                                      "amount": "15.00"
+                                  }
+                              },
+                              "physicalProperties": {}
+                          }
+                      ]
+                  }
+              }
+          }'
+      ```
+
+      ```json Response
+      {
+        "product": {
+          "id": "0f232415-fa49-4ee1-b93f-4f13047114e2",
+          "revision": "1",
+          "createdDate": "2025-07-09T14:49:05.609Z",
+          "updatedDate": "2025-07-09T14:49:05.609Z",
+          "name": "Coffee",
+          "slug": "coffee-3",
+          "plainDescription": "<p>Eco friendly, in a <span style=\"font-weight: 700\">beautiful</span> gift box.</p>",
+          "visible": true,
+          "visibleInPos": true,
+          "media": {},
+          "options": [],
+          "modifiers": [],
+          "infoSections": [],
+          "inventory": {
+            "availabilityStatus": "OUT_OF_STOCK",
+            "preorderStatus": "DISABLED",
+            "preorderAvailability": "NO_VARIANTS"
+          },
+          "productType": "PHYSICAL",
+          "physicalProperties": {},
+          "handle": "Product_bfd0f8f5-a798-47b8-b907-a50aade37be3",
+          "actualPriceRange": {
+            "minValue": {
+              "amount": "15"
+            },
+            "maxValue": {
+              "amount": "15"
+            }
+          },
+          "compareAtPriceRange": {
+            "minValue": {
+              "amount": "0"
+            },
+            "maxValue": {
+              "amount": "0"
+            }
+          },
+          "variantsInfo": {
+            "variants": [
+              {
+                "id": "df935834-4caa-46dd-882e-f2e379757596",
+                "visible": true,
+                "choices": [],
+                "price": {
+                  "actualPrice": {
+                    "amount": "15"
+                  }
+                },
+                "physicalProperties": {},
+                "inventoryStatus": {
+                  "inStock": false,
+                  "preorderEnabled": false
+                }
+              }
+            ]
+          },
+          "variantSummary": {
+            "variantCount": 1
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/products' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+              "fields": [
+                  "SUBSCRIPTION_PRICES_INFO",
+                  "CURRENCY",
+                  "WEIGHT_MEASUREMENT_UNIT_INFO"
+              ],
+              "product": {
+                  "name": "Chocolate bar",
+                  "productType": "PHYSICAL",
+                  "physicalProperties": {},
+                  "variantsInfo": {
+                      "variants": [
+                          {
+                              "price": {
+                                  "actualPrice": {
+                                      "amount": "15"
+                                  }
+                              },
+                              "physicalProperties": {
+                                  "weight": 0.3
+                              }
+                          }
+                      ]
+                  },
+                  "subscriptionDetails": {
+                      "allowOneTimePurchases": true,
+                      "subscriptions": [
+                          {
+                              "title": "Weekly subscription",
+                              "description": "Get a chocolate bar every week and save 20%!",
+                              "visible": true,
+                              "frequency": "WEEK",
+                              "interval": 1,
+                              "autoRenewal": true,
+                              "discount": {
+                                  "type": "PERCENT",
+                                  "percentOff": 20
+                              }
+                          },
+                          {
+                              "title": "Monthly subscription",
+                              "description": "Get a chocolate bar and save 1.5$ every month!",
+                              "visible": true,
+                              "frequency": "MONTH",
+                              "interval": 1,
+                              "billingCycles": 12,
+                              "discount": {
+                                  "type": "AMOUNT",
+                                  "amountOff": "1.5"
+                              }
+                          },
+                          {
+                              "title": "Diet subscription",
+                              "description": "At least once in a quarter, you deserve a chocolate bar!",
+                              "visible": true,
+                              "frequency": "MONTH",
+                              "interval": 3,
+                              "autoRenewal": true
+                          }
+                      ]
+                  }
+              }
+          }'
+      ```
+
+      ```json Response
+      {
+        "product": {
+          "id": "a81b20f4-e4a1-4133-a0c5-80c2fdfaf1b6",
+          "revision": "1",
+          "createdDate": "2025-01-01T10:15:49.327Z",
+          "updatedDate": "2025-01-01T10:15:49.327Z",
+          "name": "Chocolate bar",
+          "slug": "chocolate-bar-2",
+          "url": null,
+          "description": null,
+          "plainDescription": null,
+          "visible": true,
+          "visibleInPos": true,
+          "media": {
+            "main": null,
+            "itemsInfo": null
+          },
+          "seoData": null,
+          "taxGroupId": null,
+          "options": [],
+          "modifiers": [],
+          "brand": null,
+          "infoSections": [],
+          "ribbon": null,
+          "directCategoriesInfo": null,
+          "allCategoriesInfo": null,
+          "mainCategoryId": null,
+          "costRange": null,
+          "inventory": {
+            "preorderAvailability": "NO_VARIANTS",
+            "availabilityStatus": "OUT_OF_STOCK",
+            "preorderStatus": "DISABLED"
+          },
+          "productType": "PHYSICAL",
+          "physicalProperties": {
+            "pricePerUnit": null,
+            "fulfillerId": null,
+            "shippingWeightRange": {
+              "minValue": 0.3,
+              "maxValue": 0.3
+            },
+            "pricePerUnitRange": null,
+            "weightMeasurementUnitInfo": null,
+            "deliveryProfileId": null
+          },
+          "handle": "Product_bf658c08-d7de-4c6f-bb6e-c55c10a2026e",
+          "currency": null,
+          "breadcrumbsInfo": null,
+          "actualPriceRange": {
+            "minValue": {
+              "amount": "15.00",
+              "formattedAmount": "$15.00"
+            },
+            "maxValue": {
+              "amount": "15.00",
+              "formattedAmount": "$15.00"
+            }
+          },
+          "compareAtPriceRange": {
+            "minValue": {
+              "amount": "15.00",
+              "formattedAmount": "$15.00"
+            },
+            "maxValue": {
+              "amount": "15.00",
+              "formattedAmount": "$15.00"
+            }
+          },
+          "variantsInfo": {
+            "variants": [
+              {
+                "id": "89945d4a-5ceb-4611-8bab-97f57f594169",
+                "visible": true,
+                "sku": null,
+                "barcode": null,
+                "choices": [],
+                "price": {
+                  "actualPrice": {
+                    "amount": "15.00",
+                    "formattedAmount": "$15.00"
+                  },
+                  "compareAtPrice": null
+                },
+                "revenueDetails": null,
+                "media": null,
+                "subscriptionPricesInfo": null,
+                "inventoryStatus": {
+                  "inStock": false,
+                  "preorderEnabled": false
+                },
+                "physicalProperties": {
+                  "weight": 0.3,
+                  "pricePerUnit": null
+                }
+              }
+            ]
+          },
+          "subscriptionDetails": {
+            "subscriptions": [
+              {
+                "id": "b40e2c2e-5f54-4bac-b835-9ded61b6369c",
+                "title": "Weekly subscription",
+                "description": "Get a chocolate bar every week and save 20%!",
+                "visible": true,
+                "frequency": "WEEK",
+                "interval": 1,
+                "autoRenewal": true,
+                "discount": {
+                  "percentOff": 20,
+                  "type": "PERCENT"
+                }
+              },
+              {
+                "id": "e4fb0557-4ac9-49eb-8de5-cfa5b781211b",
+                "title": "Monthly subscription",
+                "description": "Get a chocolate bar and save 1.5$ every month!",
+                "visible": true,
+                "frequency": "MONTH",
+                "interval": 1,
+                "billingCycles": 12,
+                "discount": {
+                  "amountOff": "1.5",
+                  "type": "AMOUNT"
+                }
+              },
+              {
+                "id": "ca75b678-0d68-4992-a7d7-414e37aca31a",
+                "title": "Diet subscription",
+                "description": "At least once in a quarter, you deserve a chocolate bar!",
+                "visible": true,
+                "frequency": "MONTH",
+                "interval": 3,
+                "autoRenewal": true,
+                "discount": null
+              }
+            ],
+            "allowOneTimePurchases": true
+          },
+          "extendedFields": null,
+          "variantSummary": {
+            "variantCount": 1
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/products' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+          "product": {
+              "name": "Shopping bag",
+              "productType": "PHYSICAL",
+              "physicalProperties": {},
+              "variantsInfo": {
+                  "variants": [
+                      {
+                          "price": {
+                              "actualPrice": {
+                                  "amount": "0.5"
+                              }
+                          },
+                          "physicalProperties": {}
+                      }
+                  ]
+              }
+         }
+      }'
+      ```
+
+      ```json Response
+      {
+        "product": {
+          "id": "9e8924aa-c3f2-4fe6-bc98-ace47295c52d",
+          "revision": "1",
+          "createdDate": "2025-01-01T10:13:14.540Z",
+          "updatedDate": "2025-01-01T10:13:14.540Z",
+          "name": "Shopping bag",
+          "slug": "shopping-bag",
+          "visible": true,
+          "visibleInPos": true,
+          "media": {
+            "main": null,
+            "itemsInfo": null
+          },
+          "options": [],
+          "modifiers": [],
+          "infoSections": [],
+          "inventory": {
+            "preorderAvailability": "NO_VARIANTS",
+            "availabilityStatus": "OUT_OF_STOCK",
+            "preorderStatus": "DISABLED"
+          },
+          "productType": "PHYSICAL",
+          "physicalProperties": {
+            "pricePerUnit": null,
+            "fulfillerId": null,
+            "shippingWeightRange": null,
+            "pricePerUnitRange": null,
+            "weightMeasurementUnitInfo": null,
+            "deliveryProfileId": null
+          },
+          "handle": "Product_a7daf3a2-2a31-49b3-8a64-8264cd1006c7",
+          "actualPriceRange": {
+            "minValue": {
+              "amount": "0.5",
+              "formattedAmount": null
+            },
+            "maxValue": {
+              "amount": "0.5",
+              "formattedAmount": null
+            }
+          },
+          "compareAtPriceRange": {
+            "minValue": {
+              "amount": "0.5",
+              "formattedAmount": null
+            },
+            "maxValue": {
+              "amount": "0.5",
+              "formattedAmount": null
+            }
+          },
+          "variantsInfo": {
+            "variants": [
+              {
+                "id": "75ba03bc-e56f-4b6d-be52-691eb2ed5fd7",
+                "visible": true,
+                "choices": [],
+                "price": {
+                  "actualPrice": {
+                    "amount": "0.5",
+                    "formattedAmount": null
+                  },
+                  "compareAtPrice": null
+                },
+                "inventoryStatus": {
+                  "inStock": false,
+                  "preorderEnabled": false
+                },
+                "physicalProperties": {
+                  "weight": null,
+                  "pricePerUnit": null
+                }
+              }
+            ]
+          },
+          "variantSummary": {
+            "variantCount": 1
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a new product.
+
+    You can also add a ribbon, brand, info sections, options, and modifiers in the same request.
+
+    <Note>
+
+    + This method doesn't create inventory items. Use [Create Product With Inventory](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/create-product-with-inventory) to create a product with inventory in a single call, or create inventory items separately using the [Inventory Items API](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/introduction).
+    + When you create a product with inline options or modifiers (without referencing existing customization IDs), new standalone [Customization](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/customizations-v3/introduction) entities are automatically created. These can be reused across other products.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_WRITE">Product write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { productsV3 } from '@wix/stores';
+
+    productsV3.createProduct(product, options): Promise<V3Product>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="product" type="Product" required>
+
+      Product to create.
+
+      At least 1 variant must be provided, and each variant must have an item in the `choices` field for every item in `options`.
+      If `options` is empty, 1 default variant must be provided with an empty `choices` list.
+
+      See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateProductOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fields" type="string[]">
+
+          Fields to include in the response.
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `URL` — The product's public storefront URL, including both relative path and full URL with base domain.
+          - `CURRENCY` — Currency information including the currency code and formatted price amounts for storefront display.
+          - `INFO_SECTION` — Returns basic info section metadata including IDs, unique names, and titles. Use with `INFO_SECTION_DESCRIPTION` or `INFO_SECTION_PLAIN_DESCRIPTION` to include content.
+          - `MERCHANT_DATA` — Returns merchant-related financial data including cost ranges and variant revenue details like cost, profit, and profit margin.
+          Requires the `SCOPE.STORES.PRODUCT_READ_ADMIN` permission scope.
+          - `PLAIN_DESCRIPTION` — Provides product description as plain HTML text.
+          - `INFO_SECTION_PLAIN_DESCRIPTION` — Returns info section descriptions as HTML content. Use with `INFO_SECTION` for complete metadata.
+          - `SUBSCRIPTION_PRICES_INFO` — Details subscription pricing options, empty for non-subscription products.
+          - `BREADCRUMBS_INFO` — Returns the category breadcrumb navigation path from root categories down to the product's main category, including category IDs, names, and slugs.
+          - `WEIGHT_MEASUREMENT_UNIT_INFO` — Returns the weight measurement unit (KG, LB) for the product.
+          - `VARIANT_OPTION_CHOICE_NAMES` — Enriches variant choices with human-readable option and choice names alongside render types.
+          - `MEDIA_ITEMS_INFO` — Returns all media items associated with the product, including detailed metadata (URLs, alt-text, dimensions, filenames, file sizes).
+          - `DESCRIPTION` — Returns the product description as rich content with complete node structure, metadata, and styling information.
+          - `DIRECT_CATEGORIES_INFO` — Provides the IDs and indexes of categories the product is directly assigned to.
+          - `ALL_CATEGORIES_INFO` — Provides IDs and indexes for all categories including inherited parent categories.
+          - `INFO_SECTION_DESCRIPTION` — Returns info section descriptions as rich content with complete node structure, metadata, and styling information. Use with `INFO_SECTION` for complete metadata.
+          - `THUMBNAIL` — Returns an optimized thumbnail image with standard dimensions, suitable for listings or previews.
+          - `PRODUCT_CHOICES_MEDIA_REFERENCES` — Returns media references associated with product option and modifier choices instead of the deprecated `linked_media` field.
+
+          When requested, choice objects will populate `media_references` with lightweight `MediaReference` objects containing only media IDs,
+          while the `linked_media` field will be returned empty to avoid duplication and reduce response payload size.
+
+          To get full media metadata (dimensions, alt text, filenames, etc.), request `MEDIA_ITEMS_INFO` on the product and correlate by media ID.
+
+          > **Note:** The `media_references` field is available on `ConnectedOptionChoice` and `ConnectedModifierChoice` objects.
+          - `PRODUCT_CHOICES_DISPLAY_IMAGE` — Returns display images for product option and modifier choices.
+          When requested, choice objects will populate `display_image` with a lightweight image containing only ID, URL, and alt text.
+          - `DISCOUNT_INFO` — Returns automatic discount info for product get/query/search responses and populates product-level `discountInfo.discountRuleNames`.
+
+          To receive discounted variant prices in get/query/search responses, request this together with `MIN_PRICE_VARIANT` (returned in `variantSummary.minPriceVariant.price.priceAfterDiscount`).
+          Formatted money amounts are returned only when `CURRENCY` is also requested.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<V3Product>`.
+
+    See the [Product Object](/api-reference/business-solutions/stores/catalog-v3/products-v3/product-object) for this object's fields.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_VARIANT_OPTION_CHOICE` | Variant's choice references a non-existent option. Every variant choice must reference an existing option in `options.id`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_VARIANT_OPTION_CHOICE` | Multiple variants have identical choices in `variantsInfo.variants.choices`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_PRODUCT_OPTIONS` | Multiple options have identical `name` and `optionRenderType`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_DEFAULT_VARIANT` | Product with multiple variants has a variant with empty `choices`. Only single-variant products can have empty choices. |
+    | `428` | `FAILED_PRECONDITION` | `VARIANTS_ARE_NOT_ALIGNED_WITH_PRODUCT` | Variants aren't aligned with the product. The variant `typedProperties` must match the `productType`, measurement units must align, and each variant must have exactly 1 choice for every option. |
+    | `409` | `ALREADY_EXISTS` | `DUPLICATE_SLUG_ERROR` | There is already a product with this `slug`. |
+    | `404` | `NOT_FOUND` | `DIGITAL_FILE_NOT_FOUND_ERROR` | Couldn't find the digital file referenced in `variantsInfo.variants.digitalProperties`. |
+    | `409` | `ALREADY_EXISTS` | `BARCODE_ALREADY_EXIST_ERROR` | There is already a variant with this `barcode`. |
+    | `428` | `FAILED_PRECONDITION` | `DUPLICATE_BARCODE_ERROR` | Multiple variants have identical `barcode` in the request. |
+    | `409` | `ALREADY_EXISTS` | `SKU_ALREADY_EXIST_ERROR` | There is already a variant with this `sku`. |
+    | `409` | `ALREADY_EXISTS` | `VARIANT_ID_ALREADY_EXISTS` | Multiple variants have identical `id`. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PRODUCT_TYPE_FOR_SUBSCRIPTION` | Subscription added to a digital product. Digital products can't have subscriptions. |
+    | `428` | `FAILED_PRECONDITION` | `ERROR_ALL_SUBSCRIPTIONS_HIDDEN_FOR_SUBSCRIPTION_ONLY_PRODUCT` | All subscriptions are hidden for a subscription-only product. At least 1 subscription must be visible when `allowOneTimePurchases` is false. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_SUBSCRIPTION_DISCOUNT_AMOUNT` | Subscription discount `amountOff` exceeds the minimum variant price. |
+    | `409` | `ALREADY_EXISTS` | `SUBSCRIPTION_ID_ALREADY_EXISTS` | There is already a subscription with this `id`. |
+    | `428` | `FAILED_PRECONDITION` | `PRODUCTS_LIMIT_EXCEEDED` | Number of products exceeds the server's limit of 50000. |
+    | `404` | `NOT_FOUND` | `PRODUCT_MEDIA_NOT_EXIST` | Couldn't find the media referenced in `options.choiceSettings.choices.media`. The media must exist in the product's `media` field. |
+    | `428` | `FAILED_PRECONDITION` | `ONLY_SPACES_STRING_ERROR` | Product `name` field contains only spaces. |
+    | `500` | `INTERNAL` | `BRAND_CREATION_FAILED` | Brand creation failed. |
+    | `404` | `NOT_FOUND` | `RIBBON_NOT_FOUND` | Couldn't find the ribbon. |
+    | `500` | `INTERNAL` | `RIBBON_CREATION_FAILED` | Ribbon creation failed. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_ADDITIONAL` | Same ribbon appears more than once in `additionalRibbons`. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_RIBBON_IN_PRIMARY_AND_ADDITIONAL` | Same ribbon used as both primary ribbon and additional ribbon. |
+    | `400` | `INVALID_ARGUMENT` | `INFO_SECTION_CREATION_FAILED` | Info section creation failed. |
+    | `404` | `NOT_FOUND` | `CUSTOMIZATION_NOT_EXIST` | Couldn't find the customization. |
+    | `500` | `INTERNAL` | `CUSTOMIZATIONS_CREATION_FAILED` | Customization creation failed. |
+    | `500` | `INTERNAL` | `ADD_CUSTOMIZATION_CHOICES_FAILED` | Failed to add customization choices. |
+    | `404` | `NOT_FOUND` | `CHOICE_NOT_EXIST` | Couldn't find the choice. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_NAME_AND_TYPE_REQUIRED` | Option is missing `name` or `type`. Options without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `PRODUCT_OPTION_CHOICE_NAME_AND_TYPE_REQUIRED` | Option choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_NAME_AND_TYPE_REQUIRED` | Modifier is missing `name` or `type`. Modifiers without an `id` must include both. |
+    | `400` | `INVALID_ARGUMENT` | `MODIFIER_CHOICE_NAME_AND_TYPE_REQUIRED` | Modifier choice is missing `name` or `type`. Choices without an `id` must include both. |
+    | `428` | `FAILED_PRECONDITION` | `TOO_MANY_OPTIONS_IN_REQUEST` | Number of options exceeds the server's limit. |
+    | `428` | `FAILED_PRECONDITION` | `COMPARE_AT_PRICE_LOWER_THAN_ACTUAL_PRICE` | The `compareAtPrice` is lower than the `actualPrice`. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SLUG_FORMAT` | The `slug` provided is not a valid URL slug. |
+    | `400` | `INVALID_ARGUMENT` | `VARIANTS_TYPED_PROPERTIES_ARE_NOT_ALIGNED` | Variants have different `typedProperties` types. All variants must have the same type. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION_CHOICE` | Variant choice doesn't exist in the product's option choices. |
+    | `400` | `INVALID_ARGUMENT` | `MISSING_VARIANT_OPTION` | Variant option doesn't exist in the product's options. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_INVALID_AUTO_RENEWAL` | The `autoRenewal` field is set to false. Set the number of billing cycles in `billingCycles` to prevent automatic renewal instead. |
+    | `400` | `INVALID_ARGUMENT` | `DIGITAL_PRODUCT_CANNOT_BE_VISIBLE_IN_POS` | Digital product is marked as visible in POS. Digital products can't be visible in POS. |
+    | `400` | `INVALID_ARGUMENT` | `DESCRIPTION_SIZE_TOO_BIG` | Product `description` field exceeds the maximum size of 32000 bytes. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_MEDIA_ERROR` | Multiple media items have identical IDs. Each media ID must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `BRAND_MISSING_ID` | Brand is missing an `id`. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_PER_UNIT_NOT_ALIGNED` | Price per unit isn't aligned between product and variants. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Product Created | `wix.stores.catalog.v3.product_created` | Triggered when a product is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-product" id="ex-sdk-create-product-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-product" id="ex-sdk-create-product-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-product" id="ex-sdk-create-product-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-product" id="ex-sdk-create-product-3" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-product" id="ex-sdk-create-product-4" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-product" id="ex-sdk-create-product-5" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-product-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-product-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a basic product</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a product with subscriptions</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a product with options, modifiers, and variants</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a physical product with shipping details</span><span className="wix-picker-desc">Create a physical product with weight, price per unit, and fulfiller settings</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a digital product</span><span className="wix-picker-desc">Create a digital product like an ebook or online course</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createProduct (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-product-0"><span className="wix-picker-name">Create a basic product</span></label>
+    <label htmlFor="ex-sdk-create-product-1"><span className="wix-picker-name">Create a product with subscriptions</span></label>
+    <label htmlFor="ex-sdk-create-product-2"><span className="wix-picker-name">Create a product with options, modifiers, and variants</span></label>
+    <label htmlFor="ex-sdk-create-product-3"><span className="wix-picker-name">Create a physical product with shipping details</span><span className="wix-picker-desc">Create a physical product with weight, price per unit, and fulfiller settings</span></label>
+    <label htmlFor="ex-sdk-create-product-4"><span className="wix-picker-name">Create a digital product</span><span className="wix-picker-desc">Create a digital product like an ebook or online course</span></label>
+    <label htmlFor="ex-sdk-create-product-5"><span className="wix-picker-name">createProduct (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a basic product
+    import { productsV3 } from "@wix/stores";
+
+    const product = {
+      name: "Shopping bag",
+      productType: productsV3.ProductType.PHYSICAL,
+      physicalProperties: {},
+      variantsInfo: {
+        variants: [
+          {
+            price: {
+              actualPrice: {
+                amount: "0.5"
+              }
+            },
+            physicalProperties: {}
+          }
+        ]
+      }
+    };
+
+    async function createProduct() {
+      const response = await productsV3.createProduct(product);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a product with subscriptions
+    import { productsV3 } from "@wix/stores";
+
+    const product = {
+      name: "Chocolate bar",
+      productType: productsV3.ProductType.PHYSICAL,
+      physicalProperties: {},
+      variantsInfo: {
+        variants: [
+          {
+            price: {
+              actualPrice: {
+                amount: "15"
+              }
+            },
+            physicalProperties: {
+              weight: 0.3
+            }
+          }
+        ]
+      },
+      subscriptionDetails: {
+        allowOneTimePurchases: true,
+        subscriptions: [
+          {
+            title: "Weekly subscription",
+            description: "Get a chocolate bar every week and save 20%!",
+            visible: true,
+            frequency: productsV3.SubscriptionFrequency.WEEK,
+            interval: 1,
+            autoRenewal: true,
+            discount: {
+              type: productsV3.DiscountType.PERCENT,
+              percentOff: 20
+            }
+          },
+          {
+            title: "Monthly subscription",
+            description: "Get a chocolate bar and save 1.5$ every month!",
+            visible: true,
+            frequency: productsV3.SubscriptionFrequency.MONTH,
+            interval: 1,
+            billingCycles: 12,
+            discount: {
+              type: productsV3.DiscountType.AMOUNT,
+              amountOff: "1.5"
+            }
+          },
+          {
+            title: "Diet subscription",
+            description: "At least once in a quarter, you deserve a chocolate bar!",
+            visible: true,
+            frequency: productsV3.SubscriptionFrequency.MONTH,
+            interval: 3,
+            autoRenewal: true
+          }
+        ]
+      }
+    };
+
+    const options = {
+      fields: [
+        productsV3.SingleEntityOpsRequestedFields.SUBSCRIPTION_PRICES_INFO,
+        productsV3.SingleEntityOpsRequestedFields.CURRENCY,
+        productsV3.SingleEntityOpsRequestedFields.WEIGHT_MEASUREMENT_UNIT_INFO
+      ]
+    };
+
+    async function createProduct() {
+      const response = await productsV3.createProduct(product, options);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a product with options, modifiers, and variants
+    import { productsV3 } from "@wix/stores";
+
+    const product = {
+      name: "Coffee",
+      description: {
+        nodes: [
+          {
+            type: productsV3.NodeType.PARAGRAPH,
+            id: "foo",
+            nodes: [
+              {
+                type: productsV3.NodeType.TEXT,
+                textData: {
+                  text: "Tasty and eco friendly, in a beautiful gift box."
+                }
+              }
+            ],
+            paragraphData: {
+              textStyle: {
+                textAlignment: productsV3.TextAlignment.AUTO
+              }
+            }
+          }
+        ],
+        metadata: {
+          version: 1,
+          _id: "fb97b2c1-a3ff-4319-be5f-bbb7fdf0776c"
+        }
+      },
+      visible: true,
+      visibleInPos: true,
+      media: {
+        itemsInfo: {
+          items: [
+            {
+              _id: "370e1a_c65292a0c0584c26aa32d9d921302af9~mv2.jpeg"
+            },
+            {
+              url: "https://example.jpeg"
+            }
+          ]
+        }
+      },
+      options: [
+        {
+          name: "Size",
+          optionRenderType: productsV3.ProductOptionRenderType.TEXT_CHOICES,
+          choicesSettings: {
+            choices: [
+              {
+                choiceType: productsV3.ChoiceType.CHOICE_TEXT,
+                name: "S"
+              },
+              {
+                choiceType: productsV3.ChoiceType.CHOICE_TEXT,
+                name: "L"
+              }
+            ]
+          }
+        },
+        {
+          name: "Box color",
+          optionRenderType: productsV3.ProductOptionRenderType.SWATCH_CHOICES,
+          choicesSettings: {
+            choices: [
+              {
+                choiceType: productsV3.ChoiceType.ONE_COLOR,
+                name: "red",
+                colorCode: "#FF0000"
+              },
+              {
+                choiceType: productsV3.ChoiceType.ONE_COLOR,
+                name: "blue",
+                colorCode: "#0000FF"
+              }
+            ]
+          }
+        }
+      ],
+      modifiers: [
+        {
+          name: "Engraving",
+          modifierRenderType: productsV3.ModifierRenderType.FREE_TEXT,
+          mandatory: false,
+          freeTextSettings: {
+            minCharCount: 0,
+            maxCharCount: 499,
+            title: "Would you like to engrave something on the box?"
+          }
+        },
+        {
+          name: "Remove price tag",
+          modifierRenderType: productsV3.ModifierRenderType.TEXT_CHOICES,
+          mandatory: false,
+          choicesSettings: {
+            choices: [
+              {
+                choiceType: productsV3.ChoiceType.CHOICE_TEXT,
+                name: "yes"
+              },
+              {
+                choiceType: productsV3.ChoiceType.CHOICE_TEXT,
+                name: "no"
+              }
+            ]
+          }
+        }
+      ],
+      brand: {
+        name: "EcoCoffee"
+      },
+      infoSections: [
+        {
+          uniqueName: "Coffee refund",
+          title: "Refund policy",
+          description: {
+            nodes: [
+              {
+                type: productsV3.NodeType.PARAGRAPH,
+                id: "xjkk51429",
+                nodes: [
+                  {
+                    type: productsV3.NodeType.TEXT,
+                    textData: {
+                      text: "2 weeks full refund unless you asked for engraving "
+                    }
+                  }
+                ]
+              }
+            ],
+            metadata: {
+              version: 1
+            }
+          }
+        }
+      ],
+      ribbon: {
+        name: "best seller"
+      },
+      productType: productsV3.ProductType.PHYSICAL,
+      physicalProperties: {
+        pricePerUnit: {
+          quantity: 1.0,
+          measurementUnit: productsV3.MeasurementUnit.KG
+        }
+      },
+      variantsInfo: {
+        variants: [
+          {
+            visible: true,
+            sku: "c-s-r-1111",
+            barcode: "111111111",
+            choices: [
+              {
+                optionChoiceNames: {
+                  optionName: "Size",
+                  choiceName: "S",
+                  renderType: productsV3.ProductOptionRenderType.TEXT_CHOICES
+                }
+              },
+              {
+                optionChoiceNames: {
+                  optionName: "Box color",
+                  choiceName: "red",
+                  renderType: productsV3.ProductOptionRenderType.SWATCH_CHOICES
+                }
+              }
+            ],
+            price: {
+              compareAtPrice: {
+                amount: "10"
+              },
+              actualPrice: {
+                amount: "9"
+              }
+            },
+            revenueDetails: {
+              cost: {
+                amount: "8"
+              }
+            },
+            physicalProperties: {
+              weight: 0.2,
+              pricePerUnit: {
+                settings: {
+                  quantity: 150.0,
+                  measurementUnit: productsV3.MeasurementUnit.G
+                }
+              }
+            }
+          },
+          {
+            visible: true,
+            barcode: "111111112",
+            choices: [
+              {
+                optionChoiceNames: {
+                  optionName: "Size",
+                  choiceName: "S",
+                  renderType: productsV3.ProductOptionRenderType.TEXT_CHOICES
+                }
+              },
+              {
+                optionChoiceNames: {
+                  optionName: "Box color",
+                  choiceName: "blue",
+                  renderType: productsV3.ProductOptionRenderType.SWATCH_CHOICES
+                }
+              }
+            ],
+            price: {
+              compareAtPrice: {
+                amount: "10"
+              },
+              actualPrice: {
+                amount: "9.5"
+              }
+            },
+            revenueDetails: {
+              cost: {
+                amount: "8"
+              }
+            },
+            physicalProperties: {
+              weight: 0.2,
+              pricePerUnit: {
+                settings: {
+                  quantity: 150.0,
+                  measurementUnit: productsV3.MeasurementUnit.G
+                }
+              }
+            }
+          },
+          {
+            visible: false,
+            barcode: "111111113",
+            choices: [
+              {
+                optionChoiceNames: {
+                  optionName: "Size",
+                  choiceName: "L",
+                  renderType: productsV3.ProductOptionRenderType.TEXT_CHOICES
+                }
+              },
+              {
+                optionChoiceNames: {
+                  optionName: "Box color",
+                  choiceName: "red",
+                  renderType: productsV3.ProductOptionRenderType.SWATCH_CHOICES
+                }
+              }
+            ],
+            price: {
+              compareAtPrice: {
+                amount: "15"
+              },
+              actualPrice: {
+                amount: "14"
+              }
+            },
+            revenueDetails: {
+              cost: {
+                amount: "10"
+              }
+            },
+            physicalProperties: {
+              weight: 0.4,
+              pricePerUnit: {
+                settings: {
+                  quantity: 300.0,
+                  measurementUnit: productsV3.MeasurementUnit.G
+                }
+              }
+            }
+          },
+          {
+            visible: true,
+            barcode: "111111114",
+            choices: [
+              {
+                optionChoiceNames: {
+                  optionName: "Size",
+                  choiceName: "L",
+                  renderType: productsV3.ProductOptionRenderType.TEXT_CHOICES
+                }
+              },
+              {
+                optionChoiceNames: {
+                  optionName: "Box color",
+                  choiceName: "blue",
+                  renderType: productsV3.ProductOptionRenderType.SWATCH_CHOICES
+                }
+              }
+            ],
+            price: {
+              actualPrice: {
+                amount: "15"
+              }
+            },
+            physicalProperties: {
+              weight: 0.4,
+              pricePerUnit: {
+                settings: {
+                  quantity: 300.0,
+                  measurementUnit: productsV3.MeasurementUnit.G
+                }
+              }
+            }
+          }
+        ]
+      }
+    };
+
+    const options = {
+      fields: [
+        productsV3.SingleEntityOpsRequestedFields.VARIANT_OPTION_CHOICE_NAMES,
+        productsV3.SingleEntityOpsRequestedFields.MERCHANT_DATA,
+        productsV3.SingleEntityOpsRequestedFields.INFO_SECTION,
+        productsV3.SingleEntityOpsRequestedFields.MEDIA_ITEMS_INFO,
+        productsV3.SingleEntityOpsRequestedFields.DESCRIPTION,
+        productsV3.SingleEntityOpsRequestedFields.URL,
+        productsV3.SingleEntityOpsRequestedFields.CURRENCY,
+        productsV3.SingleEntityOpsRequestedFields.WEIGHT_MEASUREMENT_UNIT_INFO
+      ]
+    };
+
+    async function createProduct() {
+      const response = await productsV3.createProduct(product, options);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a physical product with shipping details
+    import { productsV3 } from "@wix/stores";
+
+    const product = {
+      name: "Organic Green Tea",
+      visible: true,
+      productType: productsV3.ProductType.PHYSICAL,
+      physicalProperties: {
+        pricePerUnit: {
+          quantity: 100,
+          measurementUnit: productsV3.MeasurementUnit.G
+        }
+      },
+      variantsInfo: {
+        variants: [
+          {
+            visible: true,
+            sku: "TEA-GREEN-100G",
+            barcode: "8901234567890",
+            price: {
+              actualPrice: {
+                amount: "12.99"
+              },
+              compareAtPrice: {
+                amount: "15.99"
+              }
+            },
+            revenueDetails: {
+              cost: {
+                amount: "5.50"
+              }
+            },
+            physicalProperties: {
+              weight: 0.12,
+              pricePerUnit: {
+                settings: {
+                  quantity: 100,
+                  measurementUnit: productsV3.MeasurementUnit.G
+                }
+              }
+            }
+          }
+        ]
+      }
+    };
+
+    const options = {
+      fields: [productsV3.SingleEntityOpsRequestedFields.CURRENCY, productsV3.SingleEntityOpsRequestedFields.WEIGHT_MEASUREMENT_UNIT_INFO]
+    };
+
+    async function createProduct() {
+      const response = await productsV3.createProduct(product, options);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create a digital product
+    import { productsV3 } from "@wix/stores";
+
+    const product = {
+      name: "JavaScript Mastery Course",
+      visible: true,
+      productType: productsV3.ProductType.DIGITAL,
+      variantsInfo: {
+        variants: [
+          {
+            visible: true,
+            sku: "COURSE-JS-2024",
+            price: {
+              actualPrice: {
+                amount: "49.99"
+              },
+              compareAtPrice: {
+                amount: "79.99"
+              }
+            },
+            revenueDetails: {
+              cost: {
+                amount: "0"
+              }
+            }
+          }
+        ]
+      }
+    };
+
+    const options = {
+      fields: [productsV3.SingleEntityOpsRequestedFields.CURRENCY]
+    };
+
+    async function createProduct() {
+      const response = await productsV3.createProduct(product, options);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createProduct (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { productsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { productsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createProduct(product,options) {
+      const response = await myWixClient.productsV3.createProduct(product,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

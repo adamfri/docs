@@ -1,0 +1,58 @@
+---
+title: "Introduction"
+description: "The Sending Domains API allows you to authenticate custom domains for sending emails from a site."
+icon: "file-lines"
+---
+
+The Sending Domains API allows you to authenticate custom domains for sending emails from a site. While it's possible to send emails without authenticating a domain, unauthenticated emails will either show the Wix domain to recipients or use the Wix domain as the **From** address with the Wix user's email as the **Reply-To** address. Authenticating a sending domain allows emails to use a custom domain in the **From** field, improving email deliverability, helping establish domain reputation, and helping email providers trust emails sent from a site.
+
+With the Sending Domains API, you can:
+
++ Retrieve information about sending domains.
++ Authenticate domains by verifying DNS records.
++ Track the authentication status of domains.
+
+The Sending Domains API is used to authenticate custom domains that have already been added to a site. Authentication requires adding DNS records to verify domain ownership. Once authenticated, the domain can be used in the **From** field for email campaigns and transactional emails sent from a site.
+
+## Domain authentication states
+
+A sending domain progresses through these states during authentication:
+
+1. `INITIALIZING`: The domain enters this state automatically when a Wix user verifies a sender email address and creates sender details. DNS records are being generated and are not yet available. This process typically takes a few minutes. 
+   - To check status: Wait for the status to change to `NOT_AUTHENTICATED`. Call [`Get Sending Domain`](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/get-sending-domain) or [`Query Sending Domains`](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/query-sending-domains) to check the status.
+
+2. `NOT_AUTHENTICATED`: DNS records are available in the `dnsRecords` field and ready to be configured.
+   - To configure DNS records: If Wix manages DNS for the domain (domain purchased from Wix or connected via nameservers), Wix adds DNS records automatically. Otherwise, follow these steps:
+     1. Log in to the DNS provider (such as GoDaddy, Cloudflare, or Namecheap).
+     2. Navigate to the **DNS management settings**.
+     3. Create CNAME records using the `hostName` and `value` from each record in the `dnsRecords` array.
+   
+   After adding records, DNS changes take time to propagate across the internet (typically a few hours, up to 48 hours). Then call [`Authenticate Sending Domain`](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/authenticate-sending-domain).
+
+3. `AUTHENTICATED`: The domain is verified and ready for sending emails. Emails from addresses using this domain have improved deliverability. 
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
++ Authenticating a sending domain allows you to send emails from custom domain addresses. Without authentication, emails will either show the Wix domain to recipients or use the Wix domain as the **From** address with the Wix user's email as the **Reply-To** address. Only domains with `AUTHENTICATED` status can use custom domain addresses in the **From** field for email campaigns and transactional emails.
+
++ Before using the Sending Domains API, you must configure sender details for a site. Without completed sender details, all Sending Domains API methods return a `SENDER_DETAILS_DO_NOT_EXIST` error.
+
++ Configuring sender details requires creating and verifying a sender email, then creating sender details with that verified email. When you create sender details with a verified email address (for example, `info@example.com`), a sending domain for that email's domain (for example, `example.com`) becomes available for authentication. For a complete walkthrough of the setup process, see the [Email Domain Setup Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-domain-setup-flow).
+
++ For domains purchased from Wix or connected via nameservers, DNS records are added automatically. For other domains, you need access to the domain's DNS configuration at the DNS provider (such as GoDaddy, Cloudflare, or Namecheap).
+
++ After adding DNS records at the DNS provider, it can take up to 48 hours for DNS changes to propagate globally. However, most changes typically propagate within a few hours.
+
+## Use cases
+
++ [Authenticate a custom domain for email sending](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/sending-domains/sample-flows#authenticate-a-custom-domain-for-email-sending).
+
+## Terminology
+
+- Sending domain: A custom domain that's authenticated for sending emails. For example, if you own `example.com`, you can authenticate it as a sending domain to send emails from addresses like `info@example.com` or `support@example.com`.
+- DNS authentication: The process of verifying domain ownership by adding specific DNS records to the domain's configuration at the DNS provider.
+- Authentication status: Indicates whether the domain is ready for sending emails. A domain progresses from `INITIALIZING` to `NOT_AUTHENTICATED` to `AUTHENTICATED`.
+
+@sdk_package_setup

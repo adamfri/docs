@@ -1,0 +1,72 @@
+---
+title: "Introduction"
+description: "Note for app developers: Wix Data APIs require the site's code editor to be enabled."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+> **Note for app developers:** Wix Data APIs require the site's [code editor](##code-editor*fallback::https://dev.wix.com/docs/develop-websites/articles/getting-started/development-environments#code-editor) to be enabled. If you are building a Wix app, add a [data collections extension](fallback::https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/data-collections/about-data-collections-extensions) to automatically enable the code editor and create data collections when your app is installed on a site.
+
+The Data Items API allows you to access and manage items in a Wix site's data collections.
+
+With the Data Items API, you can:
+
+- Create and manage data items in a site's collections.
+- Publish and unpublish data items through an editorial draft lifecycle.
+- Retrieve data items from a collection individually or with filtering and sorting queries.
+- Create and manage reference fields.
+- Update or remove many items asynchronously by filter.
+- Perform aggregations and calculations on data in collections.
+- Run advanced aggregation pipelines for complex data transformations.
+- Truncate a data collection, removing all its contents.
+
+The Data Items API only works with existing collections. To create and manage data collections, use the [Data Collections API](https://dev.wix.com/api/rest/wix-data/wix-data/data-collections).
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The maximum size of an item you can save to a collection is 500 kb.
+- We don't recommend updating a data item more than once per second.
+- When using data retrieval endpoints such as [Query Data Items](https://dev.wix.com/api/rest/wix-data/wix-data/data-items/query-data-items) or [Get Data Item](https://dev.wix.com/api/rest/wix-data/wix-data/data-items/get-data-item) following an update to a collection's data, the data retrieved may not yet contain the most recent changes. See [Wix Data and Eventual Consistency](https://dev.wix.com/api/rest/wix-data/wix-data/eventual-consistency) for more information and instructions for overriding this.
+- When querying [Wix app collections](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/wix-app-collections/introduction), check which fields can be filtered in the relevant collection field article.
+- Updating a data item replaces the existing item entirely. If the existing item had fields with values and those fields aren't included in the updated item, the values in those properties are lost.
+- Aggregations can't be performed on [Wix app collections](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/collection-management/wix-app-collections/introduction).
+- After connecting external database collections to a Wix site using the [External Database Connections API](https://dev.wix.com/api/rest/wix-data/wix-data/external-database-connections), you can use the Data Items API to manage and retrieve data from those collections as if they were Wix Data collections.
+
+## Choose the right write method
+
+Choose the write method that matches the change you want to make:
+
+- Call [Save Data Item](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/save-data-item) for rerunnable imports or sync jobs that should create a new item when it doesn't exist and update it when it does.
+- Call [Patch Data Item](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/patch-data-item) or [Bulk Patch Data Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/bulk-patch-data-items) when you want to change only specific fields, keep the rest of the payload unchanged, or apply arithmetic actions such as incrementing a numeric field.
+- Call [Update Data Item](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/update-data-item) or [Bulk Update Data Items](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/bulk-update-data-items) only when you intend to replace the existing payload with the values you send.
+
+## Drafts and the publish lifecycle
+
+Collections with the draft-items plugin enabled support an editorial workflow: each published item can have at most one pending draft revision. Drafts live in a **drafts shadow collection** whose ID is the published collection ID with a `__drafts` suffix. For example, when the published collection ID is `tutorials`, the drafts shadow collection ID is `tutorials__drafts`.
+
+Use the drafts shadow collection ID when you create, query, update, or patch draft items directly. Use the **published** collection ID when you call lifecycle methods:
+
+- [Create Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/create-data-item-draft) — creates a draft copy of a published item in the drafts shadow collection while the published item stays live. Returns `ALREADY_EXISTS` if a draft already exists for that item.
+- [Publish Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft) — replaces the published item with a pending draft and deletes the draft.
+- [Unpublish Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/unpublish-data-item) — removes the published item and creates (or overwrites) a draft seeded with the previously-published data.
+
+To list pending drafts, call [Query Data Items](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/query-data-items) with `dataCollectionId` set to the drafts shadow collection ID.
+
+[Publish Data Item Draft](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/publish-data-item-draft) always triggers domain events on both collections: a [Data Item Created](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-created) or [Data Item Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event on the published collection, and a [Data Item Deleted](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-deleted) event on the drafts shadow collection.
+
+[Unpublish Data Item](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/unpublish-data-item) always triggers a [Data Item Deleted](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-deleted) event on the published collection. When `copyToDraft` is `true` (the default), it also triggers a [Data Item Created](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-created) or [Data Item Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event on the drafts shadow collection. When `copyToDraft` is `false`, no draft is created and no events fire on the drafts shadow collection.
+
+## Collection IDs and field IDs
+
+You need collection IDs and field IDs when working with the Data Items API to interact with a site's data. Collection IDs identify which specific collection your API calls should target. Field IDs specify which fields to include in queries or which fields to update when modifying collection items.
+
+A collection ID is the user-defined identifier set when the collection is created, not a GUID. For example, a Wix user may set a collection ID to `EvalCustomers` or `EvalSystemLogs`. Item IDs (`dataItem.id`) are auto-assigned if you don't pass one, though you can also supply your own stable string when inserting an item.
+
+## Use cases
++ [Populate a collection with content.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/sample-flows)
++ [Publish content through the editorial draft lifecycle.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/sample-flows)
++ [Query data items by category.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/sample-flows)
++ [Get statistics for data item by category.](fallback::https://dev.wix.com/docs/api-reference/business-solutions/cms/data-items/sample-flows)

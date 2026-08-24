@@ -1,0 +1,401 @@
+---
+title: "Payout Object"
+description: "A payout is an outgoing transfer of funds from a Wix Payments account to the merchant's bank account."
+icon: "cube"
+---
+
+A payout is an outgoing transfer of funds from a Wix Payments account to the
+merchant's bank account. Each payout has an amount, a lifecycle status, an
+estimated arrival date, and (when applicable) a failure reason.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Payout ID.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      ID of the Wix Payments account that owns the payout. Retrieve account IDs
+      from the Accounts API.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="accountProfileId" type="string">
+
+      ID of the Wix Payments account profile that owns the payout.
+
+      A Wix Payments account has 1 or more profiles. Each profile has its own
+      balance and its own payouts. Most merchants have 1 profile. Retrieve
+      profile IDs from the Accounts API.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the payout was created.
+
+      The payout is created before the underlying transfer is initiated at the
+      bank. Once initiated, the funds typically reach the merchant's bank account
+      within 3 to 5 business days, depending on the receiving bank.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="Money">
+
+      Amount of the transfer to the merchant's bank account.
+
+      <Expandable title="amount properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Lifecycle status of the payout.
+
+      `SENT` means the bank rail accepted the transfer for delivery. `FAILED` means
+      the receiving bank rejected the transfer.
+
+      A `SENT` status doesn't guarantee that the funds were delivered to the
+      merchant. The bank rail doesn't provide a delivery acknowledgement, and a
+      payout in `SENT` can later transition to `FAILED` if the receiving bank
+      rejects the transfer. See the per-value documentation on `PayoutStatus` for
+      details.
+
+      **Supported values:**
+
+      - `SENT` — The bank rail accepted the transfer. Funds are en route to the merchant's
+      bank account.
+
+      Acceptance isn't the same as delivery. A `SENT` payout can still
+      transition to `FAILED` if the receiving bank rejects the transfer. The
+      bank rail's return window is up to 60 days for ACH and up to 13 months
+      for SEPA.
+      - `FAILED` — The bank rail rejected the transfer. See `failureReason` for the cause.
+      The funds remain in the merchant's Wix Payments balance.
+
+    </ResponseField>
+
+    <ResponseField name="estimatedArrivalDateV2" type="string">
+
+      Estimated date for when the funds should arrive at the merchant's bank
+      account, in `YYYY-MM-DD` format.
+
+      The estimated arrival date is a prediction, not a guarantee. Actual arrival
+      depends on the receiving bank's processing and may be later.
+
+    </ResponseField>
+
+    <ResponseField name="failureReason" type="PayoutFailureReason">
+
+      Reason the bank rail rejected the transfer.
+
+      Returned only when `status` is `FAILED`.
+
+      <Expandable title="failureReason properties">
+
+        <ResponseField name="code" type="string">
+
+          Why the bank rail rejected the transfer.
+
+          **Supported values:**
+
+          - `GENERIC_PAYOUT_FAILURE` — Generic failure with no more specific reason available from the bank
+          rail. This value is also returned when no failure reason is known.
+          Clients can't distinguish "unknown" from "generic" using this code alone.
+          - `ACCOUNT_CLOSED` — The merchant's bank account is closed. The merchant must provide new
+          bank account details before further payouts can succeed.
+          - `ACCOUNT_FROZEN` — The merchant's bank account is frozen, for example due to a hold placed
+          by the bank. The merchant must resolve the hold with their bank before
+          further payouts can succeed.
+          - `BANK_ACCOUNT_RESTRICTED` — The merchant's bank account is restricted from receiving the transfer.
+          For example, the account type or status doesn't permit incoming credits.
+          - `BANK_OWNERSHIP_CHANGED` — Ownership of the merchant's bank account changed and the rail no longer
+          recognises the previously-recorded owner. New bank details are required.
+          - `COULD_NOT_PROCESS` — The receiving bank couldn't process the transfer for an unspecified
+          reason. A subsequent payout attempt may succeed.
+          - `DEBIT_NOT_AUTHORIZED` — The merchant's bank declined the debit authorisation associated with the
+          transfer. The merchant must contact their bank to authorise Wix Payments
+          payouts.
+          - `INCORRECT_ACCOUNT_HOLDER_NAME` — The account holder name on file doesn't match the name the receiving
+          bank has on record. The merchant must correct the account holder name.
+          - `INVALID_ACCOUNT_DETAILS_CITY` — The city in the bank account details is invalid for the receiving bank.
+          - `INVALID_ACCOUNT_NUMBER` — The bank account number is invalid. The format is wrong or the account
+          doesn't exist.
+          - `INVALID_CURRENCY` — The payout currency isn't supported by the receiving bank account.
+          - `INVALID_ROUTING_NUMBER` — The routing number (US) is invalid or doesn't match the receiving bank.
+          - `INVALID_SORT_CODE` — The sort code (UK) is invalid or doesn't match the receiving bank.
+          - `NO_ACCOUNT` — No bank account is on file for the merchant. The merchant must add bank
+          details before payouts can succeed.
+          - `TECHNICAL_ERROR` — A technical error at the bank rail prevented the transfer. A subsequent
+          payout attempt may succeed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bankTransferReference" type="string">
+
+      Reference returned by the bank rail once the transfer is initiated. For
+      example, an ACH trace number or a SEPA reference. Use this value to
+      reconcile against the merchant's bank statement.
+
+      Empty until the bank rail returns a reference.
+
+    </ResponseField>
+
+    <ResponseField name="cashAdvanceIncluded" type="boolean">
+
+      Whether the payout `amount` includes funds from a Wix Capital cash advance
+      taken out by the merchant. If `false`, the amount comes only from the
+      merchant's sales proceeds.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "payout": {
+          "id": "f381e42d-ae6f-4abb-b7c7-e8f7e3eea0db",
+          "accountId": "e4280592-0121-44d7-ad1c-5ac57a0fb36d",
+          "accountProfileId": "444d5860-2e05-42bd-8743-b544c237657f",
+          "createdDate": "2020-10-07T11:32:34.314Z",
+          "amount": {
+            "value": "4024.16",
+            "currency": "USD"
+          },
+          "status": "FAILED",
+          "estimatedArrivalDateV2": "2020-10-08",
+          "failureReason": {
+            "code": "INVALID_ACCOUNT_NUMBER"
+          },
+          "bankTransferReference": "091000019992111",
+          "cashAdvanceIncluded": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Payout ID.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      ID of the Wix Payments account that owns the payout. Retrieve account IDs
+      from the Accounts API.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="accountProfileId" type="string">
+
+      ID of the Wix Payments account profile that owns the payout.
+
+      A Wix Payments account has 1 or more profiles. Each profile has its own
+      balance and its own payouts. Most merchants have 1 profile. Retrieve
+      profile IDs from the Accounts API.
+
+      Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the payout was created.
+
+      The payout is created before the underlying transfer is initiated at the
+      bank. Once initiated, the funds typically reach the merchant's bank account
+      within 3 to 5 business days, depending on the receiving bank.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="Money">
+
+      Amount of the transfer to the merchant's bank account.
+
+      <Expandable title="amount properties">
+
+        <ResponseField name="value" type="string">
+
+          Monetary amount. Decimal string with a period as a decimal separator (e.g., 3.99). Optionally, a single (-), to indicate that the amount is negative.
+
+          Constraints: `format DECIMAL_VALUE`.
+
+        </ResponseField>
+
+        <ResponseField name="currency" type="string">
+
+          Currency code. Must be valid ISO 4217 currency code (e.g., USD).
+
+          Constraints: `format CURRENCY`.
+
+        </ResponseField>
+
+        <ResponseField name="formattedValue" type="string">
+
+          Monetary amount. Decimal string in local format (e.g., 1 000,30). Optionally, a single (-), to indicate that the amount is negative.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Lifecycle status of the payout.
+
+      `SENT` means the bank rail accepted the transfer for delivery. `FAILED` means
+      the receiving bank rejected the transfer.
+
+      A `SENT` status doesn't guarantee that the funds were delivered to the
+      merchant. The bank rail doesn't provide a delivery acknowledgement, and a
+      payout in `SENT` can later transition to `FAILED` if the receiving bank
+      rejects the transfer. See the per-value documentation on `PayoutStatus` for
+      details.
+
+      **Supported values:**
+
+      - `SENT` — The bank rail accepted the transfer. Funds are en route to the merchant's
+      bank account.
+
+      Acceptance isn't the same as delivery. A `SENT` payout can still
+      transition to `FAILED` if the receiving bank rejects the transfer. The
+      bank rail's return window is up to 60 days for ACH and up to 13 months
+      for SEPA.
+      - `FAILED` — The bank rail rejected the transfer. See `failureReason` for the cause.
+      The funds remain in the merchant's Wix Payments balance.
+
+    </ResponseField>
+
+    <ResponseField name="estimatedArrivalDateV2" type="string">
+
+      Estimated date for when the funds should arrive at the merchant's bank
+      account, in `YYYY-MM-DD` format.
+
+      The estimated arrival date is a prediction, not a guarantee. Actual arrival
+      depends on the receiving bank's processing and may be later.
+
+    </ResponseField>
+
+    <ResponseField name="failureReason" type="PayoutFailureReason">
+
+      Reason the bank rail rejected the transfer.
+
+      Returned only when `status` is `FAILED`.
+
+      <Expandable title="failureReason properties">
+
+        <ResponseField name="code" type="string">
+
+          Why the bank rail rejected the transfer.
+
+          **Supported values:**
+
+          - `GENERIC_PAYOUT_FAILURE` — Generic failure with no more specific reason available from the bank
+          rail. This value is also returned when no failure reason is known.
+          Clients can't distinguish "unknown" from "generic" using this code alone.
+          - `ACCOUNT_CLOSED` — The merchant's bank account is closed. The merchant must provide new
+          bank account details before further payouts can succeed.
+          - `ACCOUNT_FROZEN` — The merchant's bank account is frozen, for example due to a hold placed
+          by the bank. The merchant must resolve the hold with their bank before
+          further payouts can succeed.
+          - `BANK_ACCOUNT_RESTRICTED` — The merchant's bank account is restricted from receiving the transfer.
+          For example, the account type or status doesn't permit incoming credits.
+          - `BANK_OWNERSHIP_CHANGED` — Ownership of the merchant's bank account changed and the rail no longer
+          recognises the previously-recorded owner. New bank details are required.
+          - `COULD_NOT_PROCESS` — The receiving bank couldn't process the transfer for an unspecified
+          reason. A subsequent payout attempt may succeed.
+          - `DEBIT_NOT_AUTHORIZED` — The merchant's bank declined the debit authorisation associated with the
+          transfer. The merchant must contact their bank to authorise Wix Payments
+          payouts.
+          - `INCORRECT_ACCOUNT_HOLDER_NAME` — The account holder name on file doesn't match the name the receiving
+          bank has on record. The merchant must correct the account holder name.
+          - `INVALID_ACCOUNT_DETAILS_CITY` — The city in the bank account details is invalid for the receiving bank.
+          - `INVALID_ACCOUNT_NUMBER` — The bank account number is invalid. The format is wrong or the account
+          doesn't exist.
+          - `INVALID_CURRENCY` — The payout currency isn't supported by the receiving bank account.
+          - `INVALID_ROUTING_NUMBER` — The routing number (US) is invalid or doesn't match the receiving bank.
+          - `INVALID_SORT_CODE` — The sort code (UK) is invalid or doesn't match the receiving bank.
+          - `NO_ACCOUNT` — No bank account is on file for the merchant. The merchant must add bank
+          details before payouts can succeed.
+          - `TECHNICAL_ERROR` — A technical error at the bank rail prevented the transfer. A subsequent
+          payout attempt may succeed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bankTransferReference" type="string">
+
+      Reference returned by the bank rail once the transfer is initiated. For
+      example, an ACH trace number or a SEPA reference. Use this value to
+      reconcile against the merchant's bank statement.
+
+      Empty until the bank rail returns a reference.
+
+    </ResponseField>
+
+    <ResponseField name="cashAdvanceIncluded" type="boolean">
+
+      Whether the payout `amount` includes funds from a Wix Capital cash advance
+      taken out by the merchant. If `false`, the amount comes only from the
+      merchant's sales proceeds.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,2234 @@
+---
+title: "Create Order"
+description: "Creates an order."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an order.
+
+    Use this method to create manual orders for phone or email sales or to add orders from external systems (such as POS, marketplaces, or legacy platforms). For standard online purchases, orders are created automatically through the checkout flow.
+
+    To record payment information for the order, pass the order ID to [Add Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-transactions/add-payments).
+
+    For apps that aren't yet published in the Wix App Market, Create Order is limited to 5 calls per hour per site.
+
+    <Note>
+
+    + Inventory is automatically reduced when the order is placed (default) or when the order is paid. This can be configured per order creation in the `settings.orderApprovalStrategy` field in the body params. To configure this behavior for all orders, use the [Orders Settings API](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders-settings/introduction).
+    + A confirmation email is sent when the order is approved.
+    + If an item is digital - `lineItems[i].itemType.preset: DIGITAL` - then `lineItems[i].digitalFile` must be provided.
+    + If `lineItems[i].id` is passed, it must be either a valid GUID, or empty.
+    + Each line item must include either `taxDetails` or `taxInfo`.
+    + If `currency`, `weightUnit`, or `buyerLanguage` aren't passed, they default to the site's settings.
+    + `status` and `paymentStatus` may be adjusted during creation. For example, an order with a total of `0` is automatically created with `status: "APPROVED"` and `paymentStatus: "PAID"`.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/orders
+    ```
+
+    ## Body Params
+
+    <ParamField body="order" type="Order" required>
+
+      Order info.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="settings" type="OrderCreationSettings">
+
+      Determine order lifecycle
+
+      **Developer Preview.**
+
+      <Expandable title="settings properties">
+
+        <ParamField body="orderApprovalStrategy" type="string">
+
+          Condition for the order to be approved.
+          Default: `DEFAULT`
+
+          **Developer Preview.**
+
+          **Supported values:**
+
+          - `DEFAULT` — Order is automatically approved when `order.priceSummary.total = 0`, **or** after receiving payment.
+          - `PAYMENT_RECEIVED` — Order is automatically approved **only** after receiving payment.
+          - `PAYMENT_METHOD_SAVED` — Order is automatically approved when payment method is saved for it.
+
+        </ParamField>
+
+        <ParamField body="notifications" type="OrderCreateNotifications">
+
+          Notification settings to be applied on order creation
+
+          **Developer Preview.**
+
+          <Expandable title="notifications properties">
+
+            <ParamField body="sendNotificationToBuyer" type="boolean">
+
+              Whether to send notification to the buyer.
+
+              Default: `true`
+
+            </ParamField>
+
+            <ParamField body="sendNotificationsToBusiness" type="boolean">
+
+              Whether to send notifications to the business.
+
+              Default: `true`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="order" type="Order">
+
+      Newly created order.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PURCHASED_DATE_CANNOT_BE_IN_FUTURE` | The `purchasedDate` can't be in the future. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order Created | `wix.ecom.v1.order_created` | Triggered when an order is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-order" id="ex-rest-create-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-order" id="ex-rest-create-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Order with a populated purchasedDate field</span><span className="wix-picker-desc">Creates an order with a custom purchasedDate, for example when migrating orders created on another platform</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create Order</span><span className="wix-picker-desc">Creates an order with Wix Stores and Wix Bookings items</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-order-0"><span className="wix-picker-name">Create Order with a populated purchasedDate field</span><span className="wix-picker-desc">Creates an order with a custom purchasedDate, for example when migrating orders created on another platform</span></label>
+    <label htmlFor="ex-rest-create-order-1"><span className="wix-picker-name">Create Order</span><span className="wix-picker-desc">Creates an order with Wix Stores and Wix Bookings items</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/orders' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization:  <AUTH>' \
+        -d '{
+      	  "order": {
+      	    "purchasedDate": "2019-05-06T12:15:34Z",
+      	    "buyerInfo": {
+      	      "contactId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+      	      "email": "johndoe@gmail.com",
+      	      "memberId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+      	    },
+      	    "priceSummary": {
+      	      "subtotal": {
+      	        "amount": "28.00",
+      	        "formattedAmount": "$28.00"
+      	      },
+      	      "shipping": {
+      	        "amount": "5",
+      	        "formattedAmount": "$5.00"
+      	      },
+      	      "tax": {
+      	        "amount": "0",
+      	        "formattedAmount": "$0.00"
+      	      },
+      	      "discount": {
+      	        "amount": "1",
+      	        "formattedAmount": "$1.00"
+      	      },
+      	      "total": {
+      	        "amount": "32.00",
+      	        "formattedAmount": "$32.00"
+      	      }
+      	    },
+      	    "billingInfo": {
+      	      "address": {
+                "country": "US",
+                "subdivision": "US-NY",
+                "city": "New York",
+                "postalCode": "10173",
+                "addressLine": "525 5th Ave",
+                "countryFullname": "United States",
+                "subdivisionFullname": "New York"
+              },
+      	      "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "0555555555",
+                "company": ""
+              }
+      	    },
+      	    "shippingInfo": {
+      	      "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+      	      "code": "4a43a709-d4a0-e07e-33e6-9c8618796577",
+      	      "title": "Standard shipping",
+      	      "logistics": {
+      	        "deliveryTime": "3 - 5 business days",
+      	        "shippingDestination": {
+      	          "address": {
+                    "country": "US",
+                    "subdivision": "US-NY",
+                    "city": "New York",
+                    "postalCode": "10173",
+                    "addressLine": "525 5th Ave",
+                    "countryFullname": "United States",
+                    "subdivisionFullname": "New York"
+                  },
+                  "contactDetails": {
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "phone": "0555555555",
+                    "company": ""
+                  }
+      	        }
+      	      },
+      	      "cost": {
+      	        "price": {
+      	          "amount": "5",
+      	          "formattedAmount": "$5.00"
+      	        },
+      	        "totalPriceBeforeTax": {
+      	          "amount": "5",
+      	          "formattedAmount": "$5.00"
+      	        },
+      	        "totalPriceAfterTax": {
+      	          "amount": "5",
+      	          "formattedAmount": "$5.00"
+      	        }
+      	      },
+      	      "region": {
+      	        "name": "Region 4"
+      	      }
+      	    },
+      	    "status": "APPROVED",
+      	    "lineItems": [
+      	      {
+      	        "id": "da4004fd-2ee3-48fa-bb7d-7624f1005348",
+      	        "productName": {
+      	          "original": "Ethiopian Yirgacheffe"
+      	        },
+      	        "catalogReference": {
+      	          "catalogItemId": "93162737-1553-9cd6-6581-b1555bc150bf",
+      	          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+      	          "options": {
+      	            "variantId": "3051f244-bb16-40c3-bd91-64fe27fbfbd1"
+      	          }
+      	        },
+      	        "quantity": 1,
+      	        "totalDiscount": {
+      	          "amount": "0",
+      	          "formattedAmount": "$0.00"
+      	        },
+      	        "descriptionLines": [
+      	          {
+      	            "name": {
+      	              "original": "Weight",
+      	              "translated": "Weight"
+      	            },
+      	            "plainText": {
+      	              "original": "500g",
+      	              "translated": "500g"
+      	            }
+      	          },
+      	          {
+      	            "name": {
+      	              "original": "Ground for",
+      	              "translated": "Ground for"
+      	            },
+      	            "plainText": {
+      	              "original": "Stovetop",
+      	              "translated": "Stovetop"
+      	            }
+      	          },
+      	          {
+      	            "name": {
+      	              "original": "What would you like us to print on the custom label?",
+      	              "translated": "What would you like us to print on the custom label?"
+      	            },
+      	            "plainText": {
+      	              "original": "",
+      	              "translated": ""
+      	            }
+      	          }
+      	        ],
+      	        "image": {
+      	          "id": "4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg",
+      	          "url": "https://static.wixstatic.com/media/4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg/v1/fit/w_1500,h_1000,q_90/file.jpg",
+      	          "height": 1000,
+      	          "width": 1500
+      	        },
+      	        "physicalProperties": {
+      	          "sku": "",
+      	          "shippable": true
+      	        },
+      	        "itemType": {
+      	          "preset": "PHYSICAL"
+      	        },
+      	        "price": {
+      	          "amount": "18.00",
+      	          "formattedAmount": "$18.00"
+      	        },
+      	        "taxDetails": {
+      	          "taxRate": "0",
+      	          "totalTax": {
+      	            "amount": "0",
+      	            "formattedAmount": "$0.00"
+      	          }
+      	        },
+      	        "totalPriceBeforeTax": {
+      	          "amount": "18.00",
+      	          "formattedAmount": "$18.00"
+      	        },
+      	        "totalPriceAfterTax": {
+      	          "amount": "18.00",
+      	          "formattedAmount": "$18.00"
+      	        },
+      	        "paymentOption": "FULL_PAYMENT_ONLINE"
+      	      },
+      	      {
+      	        "id": "99479044-23e6-4dbb-9644-9104e4d99ee2",
+      	        "productName": {
+      	          "original": "Barista masterclass"
+      	        },
+      	        "catalogReference": {
+      	          "catalogItemId": "8c449785-80ab-48ba-8d35-5d123a7a25b8",
+      	          "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+      	          "options": {}
+      	        },
+      	        "quantity": 1,
+      	        "totalDiscount": {
+      	          "amount": "0",
+      	          "formattedAmount": "$0.00"
+      	        },
+      	        "descriptionLines": [],
+      	        "itemType": {
+      	          "preset": "SERVICE"
+      	        },
+      	        "price": {
+      	          "amount": "10",
+      	          "formattedAmount": "$10.00"
+      	        },
+      	        "taxDetails": {
+      	          "taxRate": "0",
+      	          "totalTax": {
+      	            "amount": "0",
+      	            "formattedAmount": "$0.00"
+      	          }
+      	        },
+      	        "totalPriceBeforeTax": {
+      	          "amount": "10",
+      	          "formattedAmount": "$10.00"
+      	        },
+      	        "totalPriceAfterTax": {
+      	          "amount": "10",
+      	          "formattedAmount": "$10.00"
+      	        },
+      	        "paymentOption": "FULL_PAYMENT_OFFLINE",
+      	        "locations": []
+      	      }
+      	    ],
+      	    "archived": false,
+      	    "appliedDiscounts": [
+      	      {
+      	        "discountType": "GLOBAL",
+      	        "lineItemIds": [],
+      	        "merchantDiscount": {
+      	          "amount": {
+      	            "amount": "1",
+      	            "formattedAmount": "$1.00"
+      	          },
+      	          "description": "Nice customer"
+      	        },
+      	        "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b"
+      	      }
+      	    ],
+      	    "createdBy": {
+      	      "userId": "4a5954f0-8c60-4975-8210-c995c00f6077"
+      	    },
+      	    "channelInfo": {
+      	      "type": "BACKOFFICE_MERCHANT"
+      	    },
+      	    "paymentStatus": "NOT_PAID",
+      	    "seenByAHuman": true,
+      	    "balanceSummary": {
+      	      "balance": {
+      	        "amount": "32.00",
+      	        "formattedAmount": "$32.00"
+      	      }
+      	    },
+      	    "weightUnit": "LB",
+      	    "currency": "USD",
+      	    "taxIncludedInPrices": false,
+      	    "buyerLanguage": "en"
+      	  }
+      	}'
+      ```
+
+      ```json Response
+      {
+        "order": {
+          "id": "d0a2299c-7bc3-4a44-82cf-374668de58d0",
+          "number": "10043",
+          "createdDate": "2024-11-13T08:05:57.342Z",
+          "updatedDate": "2024-11-13T08:05:57.342Z",
+          "lineItems": [
+            {
+              "id": "da4004fd-2ee3-48fa-bb7d-7624f1005348",
+              "productName": {
+                "original": "Ethiopian Yirgacheffe"
+              },
+              "catalogReference": {
+                "catalogItemId": "93162737-1553-9cd6-6581-b1555bc150bf",
+                "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+                "options": {
+                  "variantId": "3051f244-bb16-40c3-bd91-64fe27fbfbd1"
+                }
+              },
+              "quantity": 1,
+              "totalDiscount": {
+                "amount": "0",
+                "formattedAmount": "$0.00"
+              },
+              "descriptionLines": [
+                {
+                  "name": {
+                    "original": "Weight",
+                    "translated": "Weight"
+                  },
+                  "plainText": {
+                    "original": "500g",
+                    "translated": "500g"
+                  }
+                },
+                {
+                  "name": {
+                    "original": "Ground for",
+                    "translated": "Ground for"
+                  },
+                  "plainText": {
+                    "original": "Stovetop",
+                    "translated": "Stovetop"
+                  }
+                },
+                {
+                  "name": {
+                    "original": "What would you like us to print on the custom label?",
+                    "translated": "What would you like us to print on the custom label?"
+                  },
+                  "plainText": {
+                    "original": "",
+                    "translated": ""
+                  }
+                }
+              ],
+              "image": {
+                "id": "4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg",
+                "url": "https://static.wixstatic.com/media/4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg/v1/fit/w_1500,h_1000,q_90/file.jpg",
+                "height": 1000,
+                "width": 1500
+              },
+              "physicalProperties": {
+                "sku": "",
+                "shippable": true
+              },
+              "itemType": {
+                "preset": "PHYSICAL"
+              },
+              "price": {
+                "amount": "18.00",
+                "formattedAmount": "$18.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "18.00",
+                "formattedAmount": "$18.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "18.00",
+                "formattedAmount": "$18.00"
+              },
+              "paymentOption": "FULL_PAYMENT_ONLINE",
+              "taxDetails": {
+                "taxRate": "0",
+                "totalTax": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "taxInfo": {
+                "taxAmount": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0",
+                "taxIncludedInPrice": false,
+                "taxBreakdown": []
+              },
+              "locations": [],
+              "priceUndetermined": false
+            },
+            {
+              "id": "99479044-23e6-4dbb-9644-9104e4d99ee2",
+              "productName": {
+                "original": "Barista masterclass"
+              },
+              "catalogReference": {
+                "catalogItemId": "8c449785-80ab-48ba-8d35-5d123a7a25b8",
+                "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+                "options": {}
+              },
+              "quantity": 1,
+              "totalDiscount": {
+                "amount": "0",
+                "formattedAmount": "$0.00"
+              },
+              "descriptionLines": [],
+              "itemType": {
+                "preset": "SERVICE"
+              },
+              "price": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "paymentOption": "FULL_PAYMENT_OFFLINE",
+              "taxDetails": {
+                "taxRate": "0",
+                "totalTax": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "taxInfo": {
+                "taxAmount": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                },
+                "taxRate": "0",
+                "taxIncludedInPrice": false,
+                "taxBreakdown": []
+              },
+              "locations": [],
+              "priceUndetermined": false
+            }
+          ],
+          "buyerInfo": {
+            "contactId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+            "email": "johndoe@gmail.com",
+            "memberId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+          },
+          "paymentStatus": "NOT_PAID",
+          "fulfillmentStatus": "PARTIALLY_FULFILLED",
+          "buyerLanguage": "en",
+          "weightUnit": "LB",
+          "currency": "USD",
+          "taxIncludedInPrices": false,
+          "priceSummary": {
+            "subtotal": {
+              "amount": "28.00",
+              "formattedAmount": "$28.00"
+            },
+            "shipping": {
+              "amount": "5",
+              "formattedAmount": "$5.00"
+            },
+            "tax": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "discount": {
+              "amount": "1",
+              "formattedAmount": "$1.00"
+            },
+            "total": {
+              "amount": "32.00",
+              "formattedAmount": "$32.00"
+            }
+          },
+          "billingInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Ave",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "phone": "0555555555",
+              "company": ""
+            }
+          },
+          "shippingInfo": {
+            "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+            "code": "4a43a709-d4a0-e07e-33e6-9c8618796577",
+            "title": "Standard shipping",
+            "logistics": {
+              "deliveryTime": "3 - 5 business days",
+              "shippingDestination": {
+                "address": {
+                  "country": "US",
+                  "subdivision": "US-NY",
+                  "city": "New York",
+                  "postalCode": "10173",
+                  "addressLine": "525 5th Ave",
+                  "countryFullname": "United States",
+                  "subdivisionFullname": "New York"
+                },
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "phone": "0555555555",
+                  "company": ""
+                }
+              }
+            },
+            "cost": {
+              "price": {
+                "amount": "5",
+                "formattedAmount": "$5.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "5",
+                "formattedAmount": "$5.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "5",
+                "formattedAmount": "$5.00"
+              }
+            },
+            "region": {
+              "name": "Region 4"
+            }
+          },
+          "status": "APPROVED",
+          "archived": false,
+          "taxInfo": {
+            "totalTax": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "taxBreakdown": []
+          },
+          "appliedDiscounts": [
+            {
+              "discountType": "GLOBAL",
+              "lineItemIds": [],
+              "merchantDiscount": {
+                "amount": {
+                  "amount": "1",
+                  "formattedAmount": "$1.00"
+                },
+                "description": "Nice customer"
+              },
+              "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b"
+            }
+          ],
+          "activities": [
+            {
+              "id": "4d5ca45f-c7cc-4866-9eaf-0c357fe00014",
+              "createdDate": "2024-11-13T08:05:57.248Z",
+              "type": "ORDER_PLACED"
+            }
+          ],
+          "attributionSource": "UNSPECIFIED",
+          "createdBy": {
+            "userId": "4a5954f0-8c60-4975-8210-c995c00f6077"
+          },
+          "channelInfo": {
+            "type": "BACKOFFICE_MERCHANT"
+          },
+          "seenByAHuman": true,
+          "customFields": [],
+          "balanceSummary": {
+            "balance": {
+              "amount": "32.00",
+              "formattedAmount": "$32.00"
+            },
+            "paid": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "refunded": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            },
+            "authorized": {
+              "amount": "0.00",
+              "formattedAmount": "$0.00"
+            }
+          },
+          "additionalFees": [],
+          "recipientInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Ave",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "phone": "0555555555",
+              "company": ""
+            }
+          },
+          "purchasedDate": "2019-05-06T12:15:34Z"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/orders' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization:  <AUTH>' \
+        -d '{
+      	  "order": {
+      	    "buyerInfo": {
+      	      "contactId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+      	      "email": "johndoe@gmail.com",
+      	      "memberId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+      	    },
+      	    "priceSummary": {
+      	      "subtotal": {
+      	        "amount": "28.00",
+      	        "formattedAmount": "$28.00"
+      	      },
+      	      "shipping": {
+      	        "amount": "5",
+      	        "formattedAmount": "$5.00"
+      	      },
+      	      "tax": {
+      	        "amount": "0",
+      	        "formattedAmount": "$0.00"
+      	      },
+      	      "discount": {
+      	        "amount": "1",
+      	        "formattedAmount": "$1.00"
+      	      },
+      	      "total": {
+      	        "amount": "32.00",
+      	        "formattedAmount": "$32.00"
+      	      }
+      	    },
+      	    "billingInfo": {
+      	      "address": {
+                "country": "US",
+                "subdivision": "US-NY",
+                "city": "New York",
+                "postalCode": "10173",
+                "addressLine": "525 5th Ave",
+                "countryFullname": "United States",
+                "subdivisionFullname": "New York"
+              },
+      	      "contactDetails": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "0555555555",
+                "company": ""
+              }
+      	    },
+      	    "shippingInfo": {
+      	      "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+      	      "code": "4a43a709-d4a0-e07e-33e6-9c8618796577",
+      	      "title": "Standard shipping",
+      	      "logistics": {
+      	        "deliveryTime": "3 - 5 business days",
+      	        "shippingDestination": {
+      	          "address": {
+                    "country": "US",
+                    "subdivision": "US-NY",
+                    "city": "New York",
+                    "postalCode": "10173",
+                    "addressLine": "525 5th Ave",
+                    "countryFullname": "United States",
+                    "subdivisionFullname": "New York"
+                  },
+                  "contactDetails": {
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "phone": "0555555555",
+                    "company": ""
+                  }
+      	        }
+      	      },
+      	      "cost": {
+      	        "price": {
+      	          "amount": "5",
+      	          "formattedAmount": "$5.00"
+      	        },
+      	        "totalPriceBeforeTax": {
+      	          "amount": "5",
+      	          "formattedAmount": "$5.00"
+      	        },
+      	        "totalPriceAfterTax": {
+      	          "amount": "5",
+      	          "formattedAmount": "$5.00"
+      	        }
+      	      },
+      	      "region": {
+      	        "name": "Region 4"
+      	      }
+      	    },
+      	    "status": "APPROVED",
+      	    "lineItems": [
+      	      {
+      	        "id": "da4004fd-2ee3-48fa-bb7d-7624f1005348",
+      	        "productName": {
+      	          "original": "Ethiopian Yirgacheffe"
+      	        },
+      	        "catalogReference": {
+      	          "catalogItemId": "93162737-1553-9cd6-6581-b1555bc150bf",
+      	          "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+      	          "options": {
+      	            "variantId": "3051f244-bb16-40c3-bd91-64fe27fbfbd1"
+      	          }
+      	        },
+      	        "quantity": 1,
+      	        "totalDiscount": {
+      	          "amount": "0",
+      	          "formattedAmount": "$0.00"
+      	        },
+      	        "descriptionLines": [
+      	          {
+      	            "name": {
+      	              "original": "Weight",
+      	              "translated": "Weight"
+      	            },
+      	            "plainText": {
+      	              "original": "500g",
+      	              "translated": "500g"
+      	            }
+      	          },
+      	          {
+      	            "name": {
+      	              "original": "Ground for",
+      	              "translated": "Ground for"
+      	            },
+      	            "plainText": {
+      	              "original": "Stovetop",
+      	              "translated": "Stovetop"
+      	            }
+      	          },
+      	          {
+      	            "name": {
+      	              "original": "What would you like us to print on the custom label?",
+      	              "translated": "What would you like us to print on the custom label?"
+      	            },
+      	            "plainText": {
+      	              "original": "",
+      	              "translated": ""
+      	            }
+      	          }
+      	        ],
+      	        "image": {
+      	          "id": "4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg",
+      	          "url": "https://static.wixstatic.com/media/4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg/v1/fit/w_1500,h_1000,q_90/file.jpg",
+      	          "height": 1000,
+      	          "width": 1500
+      	        },
+      	        "physicalProperties": {
+      	          "sku": "",
+      	          "shippable": true
+      	        },
+      	        "itemType": {
+      	          "preset": "PHYSICAL"
+      	        },
+      	        "price": {
+      	          "amount": "18.00",
+      	          "formattedAmount": "$18.00"
+      	        },
+      	        "taxDetails": {
+      	          "taxRate": "0",
+      	          "totalTax": {
+      	            "amount": "0",
+      	            "formattedAmount": "$0.00"
+      	          }
+      	        },
+      	        "totalPriceBeforeTax": {
+      	          "amount": "18.00",
+      	          "formattedAmount": "$18.00"
+      	        },
+      	        "totalPriceAfterTax": {
+      	          "amount": "18.00",
+      	          "formattedAmount": "$18.00"
+      	        },
+      	        "paymentOption": "FULL_PAYMENT_ONLINE"
+      	      },
+      	      {
+      	        "id": "99479044-23e6-4dbb-9644-9104e4d99ee2",
+      	        "productName": {
+      	          "original": "Barista masterclass"
+      	        },
+      	        "catalogReference": {
+      	          "catalogItemId": "8c449785-80ab-48ba-8d35-5d123a7a25b8",
+      	          "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+      	          "options": {}
+      	        },
+      	        "quantity": 1,
+      	        "totalDiscount": {
+      	          "amount": "0",
+      	          "formattedAmount": "$0.00"
+      	        },
+      	        "descriptionLines": [],
+      	        "itemType": {
+      	          "preset": "SERVICE"
+      	        },
+      	        "price": {
+      	          "amount": "10",
+      	          "formattedAmount": "$10.00"
+      	        },
+      	        "taxDetails": {
+      	          "taxRate": "0",
+      	          "totalTax": {
+      	            "amount": "0",
+      	            "formattedAmount": "$0.00"
+      	          }
+      	        },
+      	        "totalPriceBeforeTax": {
+      	          "amount": "10",
+      	          "formattedAmount": "$10.00"
+      	        },
+      	        "totalPriceAfterTax": {
+      	          "amount": "10",
+      	          "formattedAmount": "$10.00"
+      	        },
+      	        "paymentOption": "FULL_PAYMENT_OFFLINE",
+      	        "locations": []
+      	      }
+      	    ],
+      	    "archived": false,
+      	    "appliedDiscounts": [
+      	      {
+      	        "discountType": "GLOBAL",
+      	        "lineItemIds": [],
+      	        "merchantDiscount": {
+      	          "amount": {
+      	            "amount": "1",
+      	            "formattedAmount": "$1.00"
+      	          },
+      	          "description": "Nice customer"
+      	        },
+      	        "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b"
+      	      }
+      	    ],
+      	    "createdBy": {
+      	      "userId": "4a5954f0-8c60-4975-8210-c995c00f6077"
+      	    },
+      	    "channelInfo": {
+      	      "type": "BACKOFFICE_MERCHANT"
+      	    },
+      	    "paymentStatus": "NOT_PAID",
+      	    "seenByAHuman": true,
+      	    "balanceSummary": {
+      	      "balance": {
+      	        "amount": "32.00",
+      	        "formattedAmount": "$32.00"
+      	      }
+      	    },
+      	    "weightUnit": "LB",
+      	    "currency": "USD",
+      	    "taxIncludedInPrices": false,
+      	    "buyerLanguage": "en"
+      	  }
+      	}'
+      ```
+
+      ```json Response
+      {
+        "order": {
+          "id": "6da768ad-3c9f-444a-9465-7ae0b89fd305",
+          "number": "10107",
+          "createdDate": "2024-01-04T13:57:09.968Z",
+          "updatedDate": "2024-01-04T13:57:09.968Z",
+          "lineItems": [
+            {
+              "id": "da4004fd-2ee3-48fa-bb7d-7624f1005348",
+              "productName": {
+                "original": "Ethiopian Yirgacheffe"
+              },
+              "catalogReference": {
+                "catalogItemId": "93162737-1553-9cd6-6581-b1555bc150bf",
+                "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+                "options": {
+                  "variantId": "3051f244-bb16-40c3-bd91-64fe27fbfbd1"
+                }
+              },
+              "quantity": 1,
+              "totalDiscount": {
+                "amount": "0",
+                "formattedAmount": "$0.00"
+              },
+              "descriptionLines": [
+                {
+                  "name": {
+                    "original": "Weight",
+                    "translated": "Weight"
+                  },
+                  "plainText": {
+                    "original": "500g",
+                    "translated": "500g"
+                  }
+                },
+                {
+                  "name": {
+                    "original": "Ground for",
+                    "translated": "Ground for"
+                  }
+                },
+                {
+                  "name": {
+                    "original": "What would you like us to print on the custom label?",
+                    "translated": "What would you like us to print on the custom label?"
+                  },
+                  "plainText": {
+                    "original": "",
+                    "translated": ""
+                  }
+                }
+              ],
+              "image": {
+                "id": "4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg",
+                "url": "https://static.wixstatic.com/media/4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg/v1/fit/w_1500,h_1000,q_90/file.jpg",
+                "height": 1000,
+                "width": 1500
+              },
+              "physicalProperties": {
+                "sku": "",
+                "shippable": true
+              },
+              "itemType": {
+                "preset": "PHYSICAL"
+              },
+              "price": {
+                "amount": "18.00",
+                "formattedAmount": "$18.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "18.00",
+                "formattedAmount": "$18.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "18.00",
+                "formattedAmount": "$18.00"
+              },
+              "paymentOption": "FULL_PAYMENT_ONLINE",
+              "taxDetails": {
+                "taxRate": "0",
+                "totalTax": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "locations": []
+            },
+            {
+              "id": "99479044-23e6-4dbb-9644-9104e4d99ee2",
+              "productName": {
+                "original": "Barista masterclass"
+              },
+              "catalogReference": {
+                "catalogItemId": "8c449785-80ab-48ba-8d35-5d123a7a25b8",
+                "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+                "options": {}
+              },
+              "quantity": 1,
+              "totalDiscount": {
+                "amount": "0",
+                "formattedAmount": "$0.00"
+              },
+              "descriptionLines": [],
+              "itemType": {
+                "preset": "SERVICE"
+              },
+              "price": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "10",
+                "formattedAmount": "$10.00"
+              },
+              "paymentOption": "FULL_PAYMENT_OFFLINE",
+              "taxDetails": {
+                "taxRate": "0",
+                "totalTax": {
+                  "amount": "0",
+                  "formattedAmount": "$0.00"
+                }
+              },
+              "locations": []
+            }
+          ],
+          "buyerInfo": {
+            "contactId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+            "email": "johndoe@gmail.com",
+            "memberId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+          },
+          "paymentStatus": "NOT_PAID",
+          "fulfillmentStatus": "PARTIALLY_FULFILLED",
+          "buyerLanguage": "en",
+          "weightUnit": "LB",
+          "currency": "USD",
+          "taxIncludedInPrices": false,
+          "priceSummary": {
+            "subtotal": {
+              "amount": "28.00",
+              "formattedAmount": "$28.00"
+            },
+            "shipping": {
+              "amount": "5",
+              "formattedAmount": "$5.00"
+            },
+            "tax": {
+              "amount": "0",
+              "formattedAmount": "$0.00"
+            },
+            "discount": {
+              "amount": "1",
+              "formattedAmount": "$1.00"
+            },
+            "total": {
+              "amount": "32.00",
+              "formattedAmount": "$32.00"
+            }
+          },
+          "billingInfo": {
+            "address": {
+              "country": "US",
+              "subdivision": "US-NY",
+              "city": "New York",
+              "postalCode": "10173",
+              "addressLine": "525 5th Ave",
+              "countryFullname": "United States",
+              "subdivisionFullname": "New York"
+            },
+            "contactDetails": {
+              "firstName": "John",
+              "lastName": "Doe",
+              "phone": "0555555555",
+              "company": ""
+            }
+          },
+          "shippingInfo": {
+            "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+            "code": "4a43a709-d4a0-e07e-33e6-9c8618796577",
+            "title": "Standard shipping",
+            "logistics": {
+              "deliveryTime": "3 - 5 business days",
+              "shippingDestination": {
+                "address": {
+                  "country": "US",
+                  "subdivision": "US-NY",
+                  "city": "New York",
+                  "postalCode": "10173",
+                  "addressLine": "525 5th Ave",
+                  "countryFullname": "United States",
+                  "subdivisionFullname": "New York"
+                },
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "phone": "0555555555",
+                  "company": ""
+                }
+              }
+            },
+            "cost": {
+              "price": {
+                "amount": "5",
+                "formattedAmount": "$5.00"
+              },
+              "totalPriceBeforeTax": {
+                "amount": "5",
+                "formattedAmount": "$5.00"
+              },
+              "totalPriceAfterTax": {
+                "amount": "5",
+                "formattedAmount": "$5.00"
+              }
+            },
+            "region": {
+              "name": "Region 4"
+            }
+          },
+          "status": "APPROVED",
+          "archived": false,
+          "appliedDiscounts": [
+            {
+              "discountType": "GLOBAL",
+              "lineItemIds": [],
+              "merchantDiscount": {
+                "amount": {
+                  "amount": "1",
+                  "formattedAmount": "$1.00"
+                },
+                "description": "Nice customer"
+              },
+              "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b"
+            }
+          ],
+          "activities": [
+            {
+              "id": "8b010b96-5272-4d40-862a-ad579a90a074",
+              "createdDate": "2024-01-04T12:02:10.501Z",
+              "type": "ORDER_PLACED"
+            }
+          ],
+          "attributionSource": "UNSPECIFIED",
+          "createdBy": {
+            "userId": "4a5954f0-8c60-4975-8210-c995c00f6077"
+          },
+          "channelInfo": {
+            "type": "BACKOFFICE_MERCHANT"
+          },
+          "seenByAHuman": true,
+          "customFields": [],
+          "balanceSummary": {
+            "balance": {
+              "amount": "32.00",
+              "formattedAmount": "$32.00"
+            }
+          },
+          "additionalFees": []
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an order.
+
+    Use this method to create manual orders for phone or email sales or to add orders from external systems (such as POS, marketplaces, or legacy platforms). For standard online purchases, orders are created automatically through the checkout flow.
+
+    To record payment information for the order, pass the order ID to [Add Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-transactions/add-payments).
+
+    For apps that aren't yet published in the Wix App Market, Create Order is limited to 5 calls per hour per site.
+
+    <Note>
+
+    + Inventory is automatically reduced when the order is placed (default) or when the order is paid. This can be configured per order creation in the `settings.orderApprovalStrategy` field in the body params. To configure this behavior for all orders, use the [Orders Settings API](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/orders-settings/introduction).
+    + A confirmation email is sent when the order is approved.
+    + If an item is digital - `lineItems[i].itemType.preset: DIGITAL` - then `lineItems[i].digitalFile` must be provided.
+    + If `lineItems[i].id` is passed, it must be either a valid GUID, or empty.
+    + Each line item must include either `taxDetails` or `taxInfo`.
+    + If `currency`, `weightUnit`, or `buyerLanguage` aren't passed, they default to the site's settings.
+    + `status` and `paymentStatus` may be adjusted during creation. For example, an order with a total of `0` is automatically created with `status: "APPROVED"` and `paymentStatus: "PAID"`.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orders } from '@wix/ecom';
+
+    orders.createOrder(order, options): Promise<Order>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="order" type="Order" required>
+
+      Order info.
+
+      See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateOrderOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="settings" type="OrderCreationSettings">
+
+          Determine order lifecycle
+
+          **Developer Preview.**
+
+          <Expandable title="settings properties">
+
+            <ParamField body="orderApprovalStrategy" type="string">
+
+              Condition for the order to be approved.
+              Default: `DEFAULT`
+
+              **Developer Preview.**
+
+              **Supported values:**
+
+              - `DEFAULT` — Order is automatically approved when `order.priceSummary.total = 0`, **or** after receiving payment.
+              - `PAYMENT_RECEIVED` — Order is automatically approved **only** after receiving payment.
+              - `PAYMENT_METHOD_SAVED` — Order is automatically approved when payment method is saved for it.
+
+            </ParamField>
+
+            <ParamField body="notifications" type="OrderCreateNotifications">
+
+              Notification settings to be applied on order creation
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `OrderCreateNotifications` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<Order>`.
+
+    See the [Order Object](/api-reference/business-solutions/e-commerce/orders/orders/order-object) for this object's fields.
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PURCHASED_DATE_CANNOT_BE_IN_FUTURE` | The `purchasedDate` can't be in the future. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order Created | `wix.ecom.v1.order_created` | Triggered when an order is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-order" id="ex-sdk-create-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-order" id="ex-sdk-create-order-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-create-order" id="ex-sdk-create-order-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an order with Wix Stores and Wix Bookings items</span><span className="wix-picker-desc">Creates an order with physical products and service items</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an order with a populated purchasedDate field</span><span className="wix-picker-desc">Creates a simple order demonstrating the purchasedDate field</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-order-0"><span className="wix-picker-name">Create an order with Wix Stores and Wix Bookings items</span><span className="wix-picker-desc">Creates an order with physical products and service items</span></label>
+    <label htmlFor="ex-sdk-create-order-1"><span className="wix-picker-name">Create an order with a populated purchasedDate field</span><span className="wix-picker-desc">Creates a simple order demonstrating the purchasedDate field</span></label>
+    <label htmlFor="ex-sdk-create-order-2"><span className="wix-picker-name">createOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an order with Wix Stores and Wix Bookings items
+    import { orders } from "@wix/ecom";
+
+    const order = {
+      buyerInfo: {
+        contactId: "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+        email: "johndoe@gmail.com",
+        memberId: "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+      },
+      priceSummary: {
+        subtotal: {
+          amount: "28.00",
+          formattedAmount: "$28.00"
+        },
+        shipping: {
+          amount: "5",
+          formattedAmount: "$5.00"
+        },
+        tax: {
+          amount: "0",
+          formattedAmount: "$0.00"
+        },
+        discount: {
+          amount: "1",
+          formattedAmount: "$1.00"
+        },
+        total: {
+          amount: "32.00",
+          formattedAmount: "$32.00"
+        }
+      },
+      billingInfo: {
+        address: {
+          country: "US",
+          subdivision: "US-NY",
+          city: "New York",
+          postalCode: "10173",
+          addressLine: "525 5th Ave",
+          countryFullname: "United States",
+          subdivisionFullname: "New York"
+        },
+        contactDetails: {
+          firstName: "John",
+          lastName: "Doe",
+          phone: "0555555555",
+          company: ""
+        }
+      },
+      shippingInfo: {
+        carrierId: "c8a08776-c095-4dec-8553-8f9698d86adc",
+        code: "4a43a709-d4a0-e07e-33e6-9c8618796577",
+        title: "Standard shipping",
+        logistics: {
+          deliveryTime: "3 - 5 business days",
+          shippingDestination: {
+            address: {
+              country: "US",
+              subdivision: "US-NY",
+              city: "New York",
+              postalCode: "10173",
+              addressLine: "525 5th Ave",
+              countryFullname: "United States",
+              subdivisionFullname: "New York"
+            },
+            contactDetails: {
+              firstName: "John",
+              lastName: "Doe",
+              phone: "0555555555",
+              company: ""
+            }
+          }
+        },
+        cost: {
+          price: {
+            amount: "5",
+            formattedAmount: "$5.00"
+          },
+          totalPriceBeforeTax: {
+            amount: "5",
+            formattedAmount: "$5.00"
+          },
+          totalPriceAfterTax: {
+            amount: "5",
+            formattedAmount: "$5.00"
+          }
+        },
+        region: {
+          name: "Region 4"
+        }
+      },
+      status: "APPROVED",
+      lineItems: [
+        {
+          id: "da4004fd-2ee3-48fa-bb7d-7624f1005348",
+          productName: {
+            original: "Ethiopian Yirgacheffe"
+          },
+          catalogReference: {
+            catalogItemId: "93162737-1553-9cd6-6581-b1555bc150bf",
+            appId: "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+            options: {
+              variantId: "3051f244-bb16-40c3-bd91-64fe27fbfbd1"
+            }
+          },
+          quantity: 1,
+          totalDiscount: {
+            amount: "0",
+            formattedAmount: "$0.00"
+          },
+          descriptionLines: [
+            {
+              name: {
+                original: "Weight",
+                translated: "Weight"
+              },
+              plainText: {
+                original: "500g",
+                translated: "500g"
+              }
+            },
+            {
+              name: {
+                original: "Ground for",
+                translated: "Ground for"
+              },
+              plainText: {
+                original: "Stovetop",
+                translated: "Stovetop"
+              }
+            },
+            {
+              name: {
+                original: "What would you like us to print on the custom label?",
+                translated: "What would you like us to print on the custom label?"
+              },
+              plainText: {
+                original: "",
+                translated: ""
+              }
+            }
+          ],
+          image: {
+            id: "4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg",
+            url: "https://static.wixstatic.com/media/4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg/v1/fit/w_1500,h_1000,q_90/file.jpg",
+            height: 1000,
+            width: 1500
+          },
+          physicalProperties: {
+            sku: "",
+            shippable: true
+          },
+          itemType: {
+            preset: "PHYSICAL"
+          },
+          price: {
+            amount: "18.00",
+            formattedAmount: "$18.00"
+          },
+          taxDetails: {
+            taxRate: "0",
+            totalTax: {
+              amount: "0",
+              formattedAmount: "$0.00"
+            }
+          },
+          totalPriceBeforeTax: {
+            amount: "18.00",
+            formattedAmount: "$18.00"
+          },
+          totalPriceAfterTax: {
+            amount: "18.00",
+            formattedAmount: "$18.00"
+          },
+          paymentOption: "FULL_PAYMENT_ONLINE"
+        },
+        {
+          id: "99479044-23e6-4dbb-9644-9104e4d99ee2",
+          productName: {
+            original: "Barista masterclass"
+          },
+          catalogReference: {
+            catalogItemId: "8c449785-80ab-48ba-8d35-5d123a7a25b8",
+            appId: "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+            options: {}
+          },
+          quantity: 1,
+          totalDiscount: {
+            amount: "0",
+            formattedAmount: "$0.00"
+          },
+          descriptionLines: [],
+          itemType: {
+            preset: "SERVICE"
+          },
+          price: {
+            amount: "10",
+            formattedAmount: "$10.00"
+          },
+          taxDetails: {
+            taxRate: "0",
+            totalTax: {
+              amount: "0",
+              formattedAmount: "$0.00"
+            }
+          },
+          totalPriceBeforeTax: {
+            amount: "10",
+            formattedAmount: "$10.00"
+          },
+          totalPriceAfterTax: {
+            amount: "10",
+            formattedAmount: "$10.00"
+          },
+          paymentOption: "FULL_PAYMENT_OFFLINE"
+        }
+      ],
+      archived: false,
+      appliedDiscounts: [
+        {
+          discountType: "GLOBAL",
+          lineItemIds: [],
+          merchantDiscount: {
+            amount: {
+              amount: "1",
+              formattedAmount: "$1.00"
+            },
+            description: "Nice customer"
+          },
+          id: "7dcf2c6d-7fda-4733-b997-fe83b087083b"
+        }
+      ],
+      createdBy: {
+        userId: "4a5954f0-8c60-4975-8210-c995c00f6077"
+      },
+      channelInfo: {
+        type: "BACKOFFICE_MERCHANT"
+      },
+      paymentStatus: "NOT_PAID",
+      seenByAHuman: true,
+      balanceSummary: {
+        balance: {
+          amount: "32.00",
+          formattedAmount: "$32.00"
+        }
+      },
+      weightUnit: "LB",
+      currency: "USD",
+      taxIncludedInPrices: false,
+      buyerLanguage: "en"
+    };
+
+    async function createOrder() {
+      const response = await orders.createOrder(order);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "_id": "6da768ad-3c9f-444a-9465-7ae0b89fd305",
+     *   "number": "10107",
+     *   "_createdDate": "2024-01-04T13:57:09.968Z",
+     *   "_updatedDate": "2024-01-04T13:57:09.968Z",
+     *   "lineItems": [
+     *     {
+     *       "id": "da4004fd-2ee3-48fa-bb7d-7624f1005348",
+     *       "productName": {
+     *         "original": "Ethiopian Yirgacheffe"
+     *       },
+     *       "catalogReference": {
+     *         "catalogItemId": "93162737-1553-9cd6-6581-b1555bc150bf",
+     *         "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+     *         "options": {
+     *           "variantId": "3051f244-bb16-40c3-bd91-64fe27fbfbd1"
+     *         }
+     *       },
+     *       "quantity": 1,
+     *       "totalDiscount": {
+     *         "amount": "0",
+     *         "formattedAmount": "$0.00"
+     *       },
+     *       "descriptionLines": [
+     *         {
+     *           "name": {
+     *             "original": "Weight",
+     *             "translated": "Weight"
+     *           },
+     *           "plainText": {
+     *             "original": "500g",
+     *             "translated": "500g"
+     *           }
+     *         },
+     *         {
+     *           "name": {
+     *             "original": "Ground for",
+     *             "translated": "Ground for"
+     *           }
+     *         },
+     *         {
+     *           "name": {
+     *             "original": "What would you like us to print on the custom label?",
+     *             "translated": "What would you like us to print on the custom label?"
+     *           },
+     *           "plainText": {
+     *             "original": "",
+     *             "translated": ""
+     *           }
+     *         }
+     *       ],
+     *       "image": {
+     *         "id": "4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg",
+     *         "url": "https://static.wixstatic.com/media/4a5954_4da1a00418774f1bac924194b516155b~mv2.jpg/v1/fit/w_1500,h_1000,q_90/file.jpg",
+     *         "height": 1000,
+     *         "width": 1500
+     *       },
+     *       "physicalProperties": {
+     *         "sku": "",
+     *         "shippable": true
+     *       },
+     *       "itemType": {
+     *         "preset": "PHYSICAL"
+     *       },
+     *       "price": {
+     *         "amount": "18.00",
+     *         "formattedAmount": "$18.00"
+     *       },
+     *       "totalPriceBeforeTax": {
+     *         "amount": "18.00",
+     *         "formattedAmount": "$18.00"
+     *       },
+     *       "totalPriceAfterTax": {
+     *         "amount": "18.00",
+     *         "formattedAmount": "$18.00"
+     *       },
+     *       "paymentOption": "FULL_PAYMENT_ONLINE",
+     *       "taxDetails": {
+     *         "taxRate": "0",
+     *         "totalTax": {
+     *           "amount": "0",
+     *           "formattedAmount": "$0.00"
+     *         }
+     *       },
+     *       "locations": []
+     *     },
+     *     {
+     *       "id": "99479044-23e6-4dbb-9644-9104e4d99ee2",
+     *       "productName": {
+     *         "original": "Barista masterclass"
+     *       },
+     *       "catalogReference": {
+     *         "catalogItemId": "8c449785-80ab-48ba-8d35-5d123a7a25b8",
+     *         "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+     *         "options": {}
+     *       },
+     *       "quantity": 1,
+     *       "totalDiscount": {
+     *         "amount": "0",
+     *         "formattedAmount": "$0.00"
+     *       },
+     *       "descriptionLines": [],
+     *       "itemType": {
+     *         "preset": "SERVICE"
+     *       },
+     *       "price": {
+     *         "amount": "10",
+     *         "formattedAmount": "$10.00"
+     *       },
+     *       "totalPriceBeforeTax": {
+     *         "amount": "10",
+     *         "formattedAmount": "$10.00"
+     *       },
+     *       "totalPriceAfterTax": {
+     *         "amount": "10",
+     *         "formattedAmount": "$10.00"
+     *       },
+     *       "paymentOption": "FULL_PAYMENT_OFFLINE",
+     *       "taxDetails": {
+     *         "taxRate": "0",
+     *         "totalTax": {
+     *           "amount": "0",
+     *           "formattedAmount": "$0.00"
+     *         }
+     *       },
+     *       "locations": []
+     *     }
+     *   ],
+     *   "buyerInfo": {
+     *     "contactId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+     *     "email": "johndoe@gmail.com",
+     *     "memberId": "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+     *   },
+     *   "paymentStatus": "NOT_PAID",
+     *   "fulfillmentStatus": "PARTIALLY_FULFILLED",
+     *   "buyerLanguage": "en",
+     *   "weightUnit": "LB",
+     *   "currency": "USD",
+     *   "taxIncludedInPrices": false,
+     *   "priceSummary": {
+     *     "subtotal": {
+     *       "amount": "28.00",
+     *       "formattedAmount": "$28.00"
+     *     },
+     *     "shipping": {
+     *       "amount": "5",
+     *       "formattedAmount": "$5.00"
+     *     },
+     *     "tax": {
+     *       "amount": "0",
+     *       "formattedAmount": "$0.00"
+     *     },
+     *     "discount": {
+     *       "amount": "1",
+     *       "formattedAmount": "$1.00"
+     *     },
+     *     "total": {
+     *       "amount": "32.00",
+     *       "formattedAmount": "$32.00"
+     *     }
+     *   },
+     *   "billingInfo": {
+     *     "address": {
+     *       "country": "US",
+     *       "subdivision": "US-NY",
+     *       "city": "New York",
+     *       "postalCode": "10173",
+     *       "addressLine": "525 5th Ave",
+     *       "countryFullname": "United States",
+     *       "subdivisionFullname": "New York"
+     *     },
+     *     "contactDetails": {
+     *       "firstName": "John",
+     *       "lastName": "Doe",
+     *       "phone": "0555555555",
+     *       "company": ""
+     *     }
+     *   },
+     *   "shippingInfo": {
+     *     "carrierId": "c8a08776-c095-4dec-8553-8f9698d86adc",
+     *     "code": "4a43a709-d4a0-e07e-33e6-9c8618796577",
+     *     "title": "Standard shipping",
+     *     "logistics": {
+     *       "deliveryTime": "3 - 5 business days",
+     *       "shippingDestination": {
+     *         "address": {
+     *           "country": "US",
+     *           "subdivision": "US-NY",
+     *           "city": "New York",
+     *           "postalCode": "10173",
+     *           "addressLine": "525 5th Ave",
+     *           "countryFullname": "United States",
+     *           "subdivisionFullname": "New York"
+     *         },
+     *         "contactDetails": {
+     *           "firstName": "John",
+     *           "lastName": "Doe",
+     *           "phone": "0555555555",
+     *           "company": ""
+     *         }
+     *       }
+     *     },
+     *     "cost": {
+     *       "price": {
+     *         "amount": "5",
+     *         "formattedAmount": "$5.00"
+     *       },
+     *       "totalPriceBeforeTax": {
+     *         "amount": "5",
+     *         "formattedAmount": "$5.00"
+     *       },
+     *       "totalPriceAfterTax": {
+     *         "amount": "5",
+     *         "formattedAmount": "$5.00"
+     *       }
+     *     },
+     *     "region": {
+     *       "name": "Region 4"
+     *     }
+     *   },
+     *   "status": "APPROVED",
+     *   "archived": false,
+     *   "appliedDiscounts": [
+     *     {
+     *       "discountType": "GLOBAL",
+     *       "lineItemIds": [],
+     *       "merchantDiscount": {
+     *         "amount": {
+     *           "amount": "1",
+     *           "formattedAmount": "$1.00"
+     *         },
+     *         "description": "Nice customer"
+     *       },
+     *       "id": "7dcf2c6d-7fda-4733-b997-fe83b087083b"
+     *     }
+     *   ],
+     *   "activities": [
+     *     {
+     *       "id": "8b010b96-5272-4d40-862a-ad579a90a074",
+     *       "_createdDate": "2024-01-04T12:02:10.501Z",
+     *       "type": "ORDER_PLACED"
+     *     }
+     *   ],
+     *   "attributionSource": "UNSPECIFIED",
+     *   "createdBy": {
+     *     "userId": "4a5954f0-8c60-4975-8210-c995c00f6077"
+     *   },
+     *   "channelInfo": {
+     *     "type": "BACKOFFICE_MERCHANT"
+     *   },
+     *   "seenByAHuman": true,
+     *   "customFields": [],
+     *   "balanceSummary": {
+     *     "balance": {
+     *       "amount": "32.00",
+     *       "formattedAmount": "$32.00"
+     *     }
+     *   },
+     *   "additionalFees": []
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an order with a populated purchasedDate field
+    import { orders } from "@wix/ecom";
+
+    const order = {
+      purchasedDate: new Date("2019-05-06T12:15:34Z"),
+      buyerInfo: {
+        contactId: "02b9675a-c6f0-4392-837f-3bde1d4b5e7c",
+        email: "test-customer-123@example.com",
+        memberId: "02b9675a-c6f0-4392-837f-3bde1d4b5e7c"
+      },
+      lineItems: [
+        {
+          productName: {
+            original: "Test Product 2"
+          },
+          quantity: 1,
+          price: {
+            amount: "15.00",
+            formattedAmount: "$15.00"
+          },
+          itemType: {
+            preset: orders.ItemTypePreset.PHYSICAL
+          },
+          taxDetails: {
+            taxRate: "0.0",
+            totalTax: {
+              amount: "0.0",
+              formattedAmount: "$0.0"
+            }
+          }
+        }
+      ],
+      priceSummary: {
+        subtotal: {
+          amount: "15.00",
+          formattedAmount: "$15.00"
+        },
+        shipping: {
+          amount: "0",
+          formattedAmount: "$0.00"
+        },
+        tax: {
+          amount: "0",
+          formattedAmount: "$0.00"
+        },
+        discount: {
+          amount: "0",
+          formattedAmount: "$0.00"
+        },
+        total: {
+          amount: "15.00",
+          formattedAmount: "$15.00"
+        }
+      },
+      billingInfo: {
+        address: {
+          country: "US",
+          subdivision: "US-NY",
+          city: "New York",
+          postalCode: "10001",
+          addressLine: "123 Test St",
+          countryFullname: "United States",
+          subdivisionFullname: "New York"
+        },
+        contactDetails: {
+          firstName: "Test",
+          lastName: "Customer",
+          phone: "555-0123"
+        }
+      },
+      shippingInfo: {
+        logistics: {
+          shippingDestination: {
+            address: {
+              country: "US",
+              subdivision: "US-NY",
+              city: "New York",
+              postalCode: "10001",
+              addressLine: "123 Test St",
+              countryFullname: "United States",
+              subdivisionFullname: "New York"
+            },
+            contactDetails: {
+              firstName: "Test",
+              lastName: "Customer",
+              phone: "555-0123"
+            }
+          }
+        },
+        cost: {
+          price: {
+            amount: "0",
+            formattedAmount: "$0.00"
+          }
+        }
+      },
+      currency: "USD",
+      channelInfo: {
+        type: orders.ChannelType.WEB
+      },
+      status: orders.OrderStatus.APPROVED
+    };
+
+    async function createOrder() {
+      const response = await orders.createOrder(order);
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "_id": "4e2d7990-5e27-4a4d-984d-bdad846dba43",
+     *   "_createdDate": "2025-01-04T20:37:28.000Z",
+     *   "purchasedDate": "2019-05-06T12:15:34.000Z",
+     *   "lineItems": [
+     *     {
+     *       "id": "00000000-0000-0000-0000-000000000001",
+     *       "productName": {
+     *         "original": "Test Product 2",
+     *         "translated": "Test Product 2"
+     *       },
+     *       "quantity": 1,
+     *       "price": {
+     *         "amount": "15.00",
+     *         "formattedAmount": "$15.00"
+     *       },
+     *       "itemType": {
+     *         "preset": "PHYSICAL"
+     *       },
+     *       "taxDetails": {
+     *         "taxRate": "0.0",
+     *         "totalTax": {
+     *           "amount": "0.0",
+     *           "formattedAmount": "$0.0"
+     *         }
+     *       },
+     *       "totalPriceBeforeTax": {
+     *         "amount": "15.00",
+     *         "formattedAmount": "$15.00"
+     *       },
+     *       "totalPriceAfterTax": {
+     *         "amount": "15.00",
+     *         "formattedAmount": "$15.00"
+     *       },
+     *       "paymentOption": "FULL_PAYMENT_ONLINE"
+     *     }
+     *   ],
+     *   "buyerInfo": {
+     *     "email": "test-customer-123@example.com"
+     *   },
+     *   "priceSummary": {
+     *     "subtotal": {
+     *       "amount": "15.00",
+     *       "formattedAmount": "$15.00"
+     *     },
+     *     "total": {
+     *       "amount": "15.00",
+     *       "formattedAmount": "$15.00"
+     *     }
+     *   },
+     *   "currency": "USD",
+     *   "channelInfo": {
+     *     "type": "WEB"
+     *   },
+     *   "status": "DRAFT",
+     *   "activities": [
+     *     {
+     *       "id": "auto-generated-id",
+     *       "_createdDate": "2025-01-04T20:37:28.000Z",
+     *       "type": "ORDER_PLACED"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orders } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orders },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createOrder(order,options) {
+      const response = await myWixClient.orders.createOrder(order,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

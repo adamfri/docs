@@ -1,0 +1,931 @@
+---
+title: "Bulk Create Invoices"
+description: "Creates multiple invoices."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates multiple invoices.
+
+    To create a single invoice, call [Create Invoice](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/create-invoice).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INVOICES.MANAGE">Manage Invoices</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/invoices/v4/bulk/invoices/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="invoices" type="Invoice[]" required>
+
+      Invoices to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the created entities in the response.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkInvoiceResult[]">
+
+      Results of the bulk create operation.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Invoice">
+
+          Created invoice. Only returned if `returnEntity` was set to `true` in the request.
+
+          See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NO_META_SITE` | Couldn't resolve the site. Make sure authentication includes a valid site ID. |
+    | `500` | `INTERNAL` | `APP_INSTALLATION_FAILED` | The required apps couldn't be installed. |
+    | `500` | `INTERNAL` | `SITE_PROPERTIES_FAILED` | Couldn't retrieve business details from the site properties service. |
+    | `400` | `INVALID_ARGUMENT` | `ORDER_TOTAL_EXCEEDS_LIMIT` | Invoice total must be less than 10^13. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_IDS_MUST_BE_UNIQUE` | Invoices contain duplicate invoice IDs. |
+    | `400` | `INVALID_ARGUMENT` | `DUE_DATE_BEFORE_ISSUE_DATE` | Invoice `dueDate` is before `issueDate`. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_DATE_OUT_OF_RANGE` | Invoice `issueDate` is more than 100 years before the current time, or `dueDate` is more than 100 years after the current time. |
+    | `400` | `INVALID_ARGUMENT` | `TIME_ZONE_INVALID` | Invoice `regionalProperties.timeZone` must be a valid time zone. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_MUST_EXIST` | Invoice must have at least one line item. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_IDS_MUST_BE_UNIQUE` | Line item IDs must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEM_QUANTITY_MUST_BE_INTEGER` | Line item quantity must be whole number. |
+    | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_TOO_LARGE` | Rich content object exceeds the maximum allowed size. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Invoice Created | `wix.invoices.invoices.v4.invoice_created` | Triggered when an invoice is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates multiple invoices in a single request.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/invoices/v4/bulk/invoices/create' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "invoices": [
+            {
+              "sourceReference": {
+                "appId": "13ee94c1-b635-8505-3391-97919052c16f"
+              },
+              "reference": {
+                "referenceType": "STANDALONE",
+                "standaloneReference": {}
+              },
+              "regionalProperties": {
+                "locale": {
+                  "languageCode": "en",
+                  "country": "US"
+                },
+                "language": "en",
+                "timeZone": "America/New_York"
+              },
+              "issueDate": "2024-01-15T10:00:00.000Z",
+              "dueDate": "2024-02-15T10:00:00.000Z",
+              "title": "Invoice for Flowers Order",
+              "currency": "USD",
+              "customerInfo": {
+                "contactId": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "billingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Billing Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "shippingInfo": {
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "shippingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Delivery Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "lineItems": [
+                {
+                  "lineItemType": "CUSTOM",
+                  "customItem": {
+                    "id": "34b8bd02-64fa-4383-9b0c-a1751577fbb8",
+                    "name": "Red flower",
+                    "quantity": "10",
+                    "price": "3.00",
+                    "catalogReference": {
+                      "catalogItemId": "375e9672-ec24-41cd-b5b0-bbcf8ef57a87",
+                      "appId": "7554778a-4c25-4562-a0c2-cd506e70d9d3"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "sourceReference": {
+                "appId": "13ee94c1-b635-8505-3391-97919052c16f",
+                "externalReferenceId": "02c830d2-265c-4c01-9d59-889c77c2d886"
+              },
+              "reference": {
+                "referenceType": "STANDALONE",
+                "standaloneReference": {}
+              },
+              "regionalProperties": {
+                "locale": {
+                  "languageCode": "en",
+                  "country": "US"
+                },
+                "language": "en",
+                "timeZone": "America/New_York"
+              },
+              "issueDate": "2024-01-15T10:00:00.000Z",
+              "dueDate": "2024-02-15T10:00:00.000Z",
+              "title": "Invoice for Flowers Order",
+              "currency": "USD",
+              "customerInfo": {
+                "contactId": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "billingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Billing Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "shippingInfo": {
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "shippingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Delivery Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "lineItems": [
+                {
+                  "lineItemType": "CUSTOM",
+                  "customItem": {
+                    "id": "34b8bd02-64fa-4383-9b0c-a1751577fbb8",
+                    "name": "Blue flower",
+                    "quantity": "10",
+                    "price": "4.00",
+                    "catalogReference": {
+                      "catalogItemId": "77948197-2f29-4a2f-af58-9e5530c62b98",
+                      "appId": "021f5c89-05fc-4607-be69-24c38af72f38"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "returnEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "1885f88d-84dd-429c-a871-68a670665de7",
+              "success": true
+            },
+            "item": {
+              "id": "1885f88d-84dd-429c-a871-68a670665de7",
+              "revision": "1",
+              "createdDate": "2024-01-15T10:05:23.299Z",
+              "updatedDate": "2024-01-15T10:05:23.299Z",
+              "status": "DRAFT",
+              "statusQualifiers": [],
+              "availableActions": ["DELETE", "UPDATE", "PUBLISH", "GENERATE_PDF_DOCUMENT"],
+              "sourceReference": {
+                "appId": "13ee94c1-b635-8505-3391-97919052c16f"
+              },
+              "reference": {
+                "referenceType": "STANDALONE",
+                "standaloneReference": {}
+              },
+              "regionalProperties": {
+                "locale": {
+                  "languageCode": "en",
+                  "country": "US"
+                },
+                "language": "en",
+                "timeZone": "America/New_York"
+              },
+              "issueDate": "2024-01-15T10:00:00.000Z",
+              "dueDate": "2024-02-15T10:00:00.000Z",
+              "title": "Invoice for Flowers Order",
+              "currency": "USD",
+              "customerInfo": {
+                "contactId": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "billingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Billing Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "shippingInfo": {
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "shippingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Delivery Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "businessDetails": {
+                "companyName": "Flowers Business",
+                "email": "flowers@example.com",
+                "phone": "+1-555-555-5555",
+                "address": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Business Street"
+                  },
+                  "city": "San Francisco",
+                  "subdivision": "CA",
+                  "country": "US",
+                  "postalCode": "12345"
+                }
+              },
+              "lineItems": [
+                {
+                  "lineItemType": "CUSTOM",
+                  "customItem": {
+                    "id": "34b8bd02-64fa-4383-9b0c-a1751577fbb8",
+                    "name": "Red flower",
+                    "quantity": "10",
+                    "price": "3.00",
+                    "catalogReference": {
+                      "catalogItemId": "375e9672-ec24-41cd-b5b0-bbcf8ef57a87",
+                      "appId": "7554778a-4c25-4562-a0c2-cd506e70d9d3"
+                    }
+                  }
+                }
+              ],
+              "totals": {
+                "subtotal": "30.00",
+                "discount": "0.00",
+                "shipping": "0.00",
+                "tax": "0.00",
+                "total": "30.00",
+                "paidAmount": "0.00",
+                "balance": "30.00"
+              },
+              "archived": false
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "02b176ae-356f-4680-b768-29fb88b6e118",
+              "success": true
+            },
+            "item": {
+              "id": "02b176ae-356f-4680-b768-29fb88b6e118",
+              "revision": "1",
+              "createdDate": "2024-01-15T10:05:23.299Z",
+              "updatedDate": "2024-01-15T10:05:23.299Z",
+              "status": "DRAFT",
+              "statusQualifiers": [],
+              "availableActions": ["DELETE", "UPDATE", "PUBLISH", "GENERATE_PDF_DOCUMENT"],
+              "sourceReference": {
+                "appId": "13ee94c1-b635-8505-3391-97919052c16f",
+                "externalReferenceId": "e8b6776d-9efc-4452-b528-a93f651f99a7"
+              },
+              "reference": {
+                "referenceType": "STANDALONE",
+                "standaloneReference": {}
+              },
+              "regionalProperties": {
+                "locale": {
+                  "languageCode": "en",
+                  "country": "US"
+                },
+                "language": "en",
+                "timeZone": "America/New_York"
+              },
+              "issueDate": "2024-01-15T10:00:00.000Z",
+              "dueDate": "2024-02-15T10:00:00.000Z",
+              "title": "Invoice for Flowers Order",
+              "currency": "USD",
+              "customerInfo": {
+                "contactId": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "billingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Billing Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "shippingInfo": {
+                "contactDetails": {
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "phone": "+1-555-555-5555",
+                  "company": "Johns Company",
+                  "vatId": {
+                    "id": "123-45-6789",
+                    "type": "CPF"
+                  }
+                },
+                "shippingAddress": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Delivery Street"
+                  },
+                  "city": "Boston",
+                  "country": "US"
+                }
+              },
+              "businessDetails": {
+                "companyName": "Flowers Business",
+                "email": "flowers@example.com",
+                "phone": "+1-555-555-5555",
+                "address": {
+                  "streetAddress": {
+                    "number": "123",
+                    "name": "Business Street"
+                  },
+                  "city": "San Francisco",
+                  "subdivision": "CA",
+                  "country": "US",
+                  "postalCode": "12345"
+                }
+              },
+              "lineItems": [
+                {
+                  "lineItemType": "CUSTOM",
+                  "customItem": {
+                    "id": "34b8bd02-64fa-4383-9b0c-a1751577fbb8",
+                    "name": "Blue flower",
+                    "quantity": "10",
+                    "price": "4.00",
+                    "catalogReference": {
+                      "catalogItemId": "77948197-2f29-4a2f-af58-9e5530c62b98",
+                      "appId": "021f5c89-05fc-4607-be69-24c38af72f38"
+                    }
+                  }
+                }
+              ],
+              "totals": {
+                "subtotal": "40.00",
+                "discount": "0.00",
+                "shipping": "0.00",
+                "tax": "0.00",
+                "total": "40.00",
+                "paidAmount": "0.00",
+                "balance": "40.00"
+              },
+              "archived": false
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates multiple invoices.
+
+    To create a single invoice, call [Create Invoice](https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/create-invoice).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.INVOICES.MANAGE">Manage Invoices</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { invoices } from '@wix/get-paid';
+
+    invoices.bulkCreateInvoices(invoices, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="invoices" type="Invoice[]" required>
+
+      Invoices to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateInvoicesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the created entities in the response.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkInvoiceResult[]">
+
+      Results of the bulk create operation.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Invoice">
+
+          Created invoice. Only returned if `returnEntity` was set to `true` in the request.
+
+          See the [Invoice Object](/api-reference/business-management/get-paid/invoices/invoices/invoice-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NO_META_SITE` | Couldn't resolve the site. Make sure authentication includes a valid site ID. |
+    | `500` | `INTERNAL` | `APP_INSTALLATION_FAILED` | The required apps couldn't be installed. |
+    | `500` | `INTERNAL` | `SITE_PROPERTIES_FAILED` | Couldn't retrieve business details from the site properties service. |
+    | `400` | `INVALID_ARGUMENT` | `ORDER_TOTAL_EXCEEDS_LIMIT` | Invoice total must be less than 10^13. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_IDS_MUST_BE_UNIQUE` | Invoices contain duplicate invoice IDs. |
+    | `400` | `INVALID_ARGUMENT` | `DUE_DATE_BEFORE_ISSUE_DATE` | Invoice `dueDate` is before `issueDate`. |
+    | `400` | `INVALID_ARGUMENT` | `INVOICE_DATE_OUT_OF_RANGE` | Invoice `issueDate` is more than 100 years before the current time, or `dueDate` is more than 100 years after the current time. |
+    | `400` | `INVALID_ARGUMENT` | `TIME_ZONE_INVALID` | Invoice `regionalProperties.timeZone` must be a valid time zone. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_MUST_EXIST` | Invoice must have at least one line item. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_IDS_MUST_BE_UNIQUE` | Line item IDs must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEM_QUANTITY_MUST_BE_INTEGER` | Line item quantity must be whole number. |
+    | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_TOO_LARGE` | Rich content object exceeds the maximum allowed size. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Invoice Created | `wix.invoices.invoices.v4.invoice_created` | Triggered when an invoice is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-invoices" id="ex-sdk-bulk-create-invoices-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-invoices" id="ex-sdk-bulk-create-invoices-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-create-invoices" id="ex-sdk-bulk-create-invoices-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-invoices-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-invoices-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateInvoices</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateInvoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateInvoices (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-invoices-0"><span className="wix-picker-name">bulkCreateInvoices</span></label>
+    <label htmlFor="ex-sdk-bulk-create-invoices-1"><span className="wix-picker-name">bulkCreateInvoices (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-create-invoices-2"><span className="wix-picker-name">bulkCreateInvoices (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateInvoices
+    import { invoices } from '@wix/get-paid';
+
+    async function bulkCreateInvoices(invoices,options) {
+      const response = await invoices.bulkCreateInvoices(invoices,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateInvoices (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { invoices } from '@wix/get-paid';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { invoices },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateInvoices(invoices,options) {
+      const response = await myWixClient.invoices.bulkCreateInvoices(invoices,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateInvoices (with elevated permissions)
+    import { invoices } from '@wix/get-paid';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkCreateInvoicesMethod(invoices,options) {
+      const elevatedBulkCreateInvoices = auth.elevate(invoices.bulkCreateInvoices);
+      const response = await elevatedBulkCreateInvoices(invoices,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

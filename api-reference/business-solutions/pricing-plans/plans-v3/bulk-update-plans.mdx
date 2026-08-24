@@ -1,0 +1,703 @@
+---
+title: "Bulk Update Plans"
+description: "Updates multiple plans at once."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple plans at once.
+
+    You can't change plan names with this method.
+
+    To update a single plan, call Update Plan.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-PAIDPLANS.MANAGE-PLANS">Manage Pricing Plans</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/pricing-plans/v3/bulk/plans/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="plans" type="MaskedPlan[]" required>
+
+      Plans to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="plans properties">
+
+        <ParamField body="plan" type="Plan" required>
+
+          Plan to update.
+
+          See the [Plan Object](/api-reference/business-solutions/pricing-plans/plans-v3/plan-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Set the value to `true` to receive details of the updated plans.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkPlanResult[]">
+
+      Updated plans.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for a specific updated item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Plan">
+
+          Updated plan details. Only returned if the `returnEntity` field was set to `true`.
+
+          See the [Plan Object](/api-reference/business-solutions/pricing-plans/plans-v3/plan-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NAME_NOT_BLANK` | Plan or fee `name` can't be blank. |
+    | `400` | `INVALID_ARGUMENT` | `VALID_BILLING_CYCLE` | Billing cycle must be at least 7 days and can't exceed 10 years. |
+    | `400` | `INVALID_ARGUMENT` | `VALID_PLAN_DURATION` | Plan duration can't exceed 10 years. |
+    | `400` | `INVALID_ARGUMENT` | `FREE_PRICING_VARIANT_IS_NOT_RECURRING` | Recurring plans can't be free. |
+    | `400` | `INVALID_ARGUMENT` | `FREE_TRIAL_IS_APPLICABLE` | Only recurring paid plans can have a free trial. |
+    | `400` | `INVALID_ARGUMENT` | `CYCLES_COMPLETED_END_OPTION_IS_APPLICABLE` | Plans with `endType` set to `CYCLES_COMPLETED` must specify the number of billing cycles. |
+    | `400` | `INVALID_ARGUMENT` | `PRICING_VARIANT_IDS_UNIQUE` | All pricing variant IDs in the plan must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_IDS_UNIQUE` | All fee IDs in the plan must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_OVERRIDE_IDS_UNIQUE` | All price override IDs within a pricing variant must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_OVERRIDE_IDS_UNIQUE` | All fee override IDs within a pricing variant must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_OVERRIDE_FEE_EXISTS` | Fee overrides must reference a fee on the same pricing variant. |
+    | `400` | `INVALID_ARGUMENT` | `VALID_DATE_RANGE` | Configured date ranges must have valid boundaries. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Monetary amounts can't have more decimal places than the plan currency supports. |
+    | `400` | `INVALID_ARGUMENT` | `PERK_IDS_UNIQUE` | All perk IDs in the plan must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `AT_LEAST_ONE_ACTIVE_VARIANT` | At least one pricing variant must be active. |
+    | `400` | `INVALID_ARGUMENT` | `REQUIRED_FIELD` | The `slug` field can't be empty. |
+    | `400` | `INVALID_ARGUMENT` | `BULK_UPDATE_NOT_SUPPORTED` | Bulk update doesn't support updating plan names. Use Update Plan instead. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Plan Updated | `wix.pricing_plans.v3.plan_updated` | Triggered when a plan is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/pricing-plans/v3/bulk/plans/update' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "plans": [
+          {
+            "plan": {
+              "id": "5d1c47f5-0ec7-4c9c-9f9c-a87be388e3f9",
+              "revision": "1",
+              "pricingVariants": [
+                {
+                  "id": "6304bd66-128e-454e-8c95-e389b78cc7e1",
+                  "name": "Monthly",
+                  "billingTerms": {
+                      "startType": "ON_PURCHASE",
+                      "endType": "UNTIL_CANCELLED"
+                  },
+                  "pricingStrategies": [
+                    {
+                      "flatRate": {
+                        "amount": "2.99"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "plan": {
+              "id": "bece39da-e515-4e31-8fc1-79edcbb3b57e",
+              "revision": "1",
+              "pricingVariants": [
+                {
+                  "id": "30f9715d-7e02-420f-a13a-087cbf5f5790",
+                  "name": "Single",
+                  "billingTerms": {
+                      "startType": "ON_PURCHASE",
+                      "endType": "UNTIL_CANCELLED"
+                  },
+                  "pricingStrategies": [
+                    {
+                      "flatRate": {
+                        "amount": "8.99"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "5d1c47f5-0ec7-4c9c-9f9c-a87be388e3f9",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "5d1c47f5-0ec7-4c9c-9f9c-a87be388e3f9",
+              "revision": "2",
+              "createdDate": "2024-09-17T10:38:38.609Z",
+              "updatedDate": "2024-09-17T10:38:38.609Z",
+              "name": "Professional Studio",
+              "slug": "professional-studio",
+              "maxPurchasesPerBuyer": 0,
+              "pricingVariants": [
+                {
+                  "id": "6304bd66-128e-454e-8c95-e389b78cc7e1",
+                  "name": "Monthly",
+                  "freeTrialDays": 0,
+                  "fees": [],
+                  "billingTerms": {
+                    "billingCycle": {
+                      "period": "MONTH",
+                      "count": "1"
+                    },
+                    "startType": "ON_PURCHASE",
+                    "endType": "UNTIL_CANCELLED"
+                  },
+                  "pricingStrategies": [
+                    {
+                      "flatRate": {
+                        "amount": "2.99"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "perks": [
+                {
+                  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "description": "24/7 priority customer support"
+                },
+                {
+                  "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+                  "description": "Unlimited API calls and data storage"
+                },
+                {
+                  "id": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+                  "description": "Advanced analytics and reporting dashboard"
+                }
+              ],
+              "visibility": "PUBLIC",
+              "buyable": true,
+              "buyerCanCancel": true,
+              "currency": "EUR"
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "bece39da-e515-4e31-8fc1-79edcbb3b57e",
+              "originalIndex": 2,
+              "success": true
+            },
+            "item": {
+              "id": "bece39da-e515-4e31-8fc1-79edcbb3b57e",
+              "revision": "2",
+              "createdDate": "2024-09-17T10:42:02.125Z",
+              "updatedDate": "2024-09-17T10:42:02.125Z",
+              "name": "Enterprise Analytics",
+              "slug": "enterprise-analytics",
+              "maxPurchasesPerBuyer": 0,
+              "pricingVariants": [
+                {
+                  "id": "30f9715d-7e02-420f-a13a-087cbf5f5790",
+                  "name": "Single",
+                  "freeTrialDays": 0,
+                  "fees": [],
+                  "billingTerms": {
+                    "startType": "ON_PURCHASE",
+                    "endType": "UNTIL_CANCELLED"
+                  },
+                  "pricingStrategies": [
+                    {
+                      "flatRate": {
+                        "amount": "8.99"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "perks": [
+                {
+                  "id": "e1f2a3b4-c5d6-7890-efab-123456789abc",
+                  "description": "Advanced data visualization and custom dashboards"
+                },
+                {
+                  "id": "f2a3b4c5-d6e7-8901-fabc-234567890bcd",
+                  "description": "Real-time analytics with automated reporting"
+                },
+                {
+                  "id": "a3b4c5d6-e7f8-9012-abcd-345678901cde",
+                  "description": "Enterprise-grade security and compliance"
+                },
+                {
+                  "id": "b4c5d6e7-f8a9-0123-bcde-456789012def",
+                  "description": "Unlimited data retention and export capabilities"
+                }
+              ],
+              "visibility": "PUBLIC",
+              "buyable": true,
+              "buyerCanCancel": true,
+              "currency": "EUR"
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple plans at once.
+
+    You can't change plan names with this method.
+
+    To update a single plan, call Update Plan.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-PAIDPLANS.MANAGE-PLANS">Manage Pricing Plans</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { plansV3 } from '@wix/pricing-plans';
+
+    plansV3.bulkUpdatePlans(plans, options): Promise<BulkUpdatePlansResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="plans" type="MaskedPlan[]" required>
+
+      Plans to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="plans properties">
+
+        <ParamField body="plan" type="Plan" required>
+
+          Plan to update.
+
+          See the [Plan Object](/api-reference/business-solutions/pricing-plans/plans-v3/plan-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdatePlansOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Set the value to `true` to receive details of the updated plans.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkUpdatePlansResponse>`.
+
+    <ResponseField name="results" type="BulkPlanResult[]">
+
+      Updated plans.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for a specific updated item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Plan">
+
+          Updated plan details. Only returned if the `returnEntity` field was set to `true`.
+
+          See the [Plan Object](/api-reference/business-solutions/pricing-plans/plans-v3/plan-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NAME_NOT_BLANK` | Plan or fee `name` can't be blank. |
+    | `400` | `INVALID_ARGUMENT` | `VALID_BILLING_CYCLE` | Billing cycle must be at least 7 days and can't exceed 10 years. |
+    | `400` | `INVALID_ARGUMENT` | `VALID_PLAN_DURATION` | Plan duration can't exceed 10 years. |
+    | `400` | `INVALID_ARGUMENT` | `FREE_PRICING_VARIANT_IS_NOT_RECURRING` | Recurring plans can't be free. |
+    | `400` | `INVALID_ARGUMENT` | `FREE_TRIAL_IS_APPLICABLE` | Only recurring paid plans can have a free trial. |
+    | `400` | `INVALID_ARGUMENT` | `CYCLES_COMPLETED_END_OPTION_IS_APPLICABLE` | Plans with `endType` set to `CYCLES_COMPLETED` must specify the number of billing cycles. |
+    | `400` | `INVALID_ARGUMENT` | `PRICING_VARIANT_IDS_UNIQUE` | All pricing variant IDs in the plan must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_IDS_UNIQUE` | All fee IDs in the plan must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `PRICE_OVERRIDE_IDS_UNIQUE` | All price override IDs within a pricing variant must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_OVERRIDE_IDS_UNIQUE` | All fee override IDs within a pricing variant must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `FEE_OVERRIDE_FEE_EXISTS` | Fee overrides must reference a fee on the same pricing variant. |
+    | `400` | `INVALID_ARGUMENT` | `VALID_DATE_RANGE` | Configured date ranges must have valid boundaries. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Monetary amounts can't have more decimal places than the plan currency supports. |
+    | `400` | `INVALID_ARGUMENT` | `PERK_IDS_UNIQUE` | All perk IDs in the plan must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `AT_LEAST_ONE_ACTIVE_VARIANT` | At least one pricing variant must be active. |
+    | `400` | `INVALID_ARGUMENT` | `REQUIRED_FIELD` | The `slug` field can't be empty. |
+    | `400` | `INVALID_ARGUMENT` | `BULK_UPDATE_NOT_SUPPORTED` | Bulk update doesn't support updating plan names. Use Update Plan instead. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Plan Updated | `wix.pricing_plans.v3.plan_updated` | Triggered when a plan is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-plans" id="ex-sdk-bulk-update-plans-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-plans" id="ex-sdk-bulk-update-plans-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-plans" id="ex-sdk-bulk-update-plans-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-plans-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-plans-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdatePlans</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdatePlans (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdatePlans (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-plans-0"><span className="wix-picker-name">bulkUpdatePlans</span></label>
+    <label htmlFor="ex-sdk-bulk-update-plans-1"><span className="wix-picker-name">bulkUpdatePlans (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-update-plans-2"><span className="wix-picker-name">bulkUpdatePlans (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdatePlans
+    import { plansV3 } from '@wix/pricing-plans';
+
+    async function bulkUpdatePlans(plans,options) {
+      const response = await plansV3.bulkUpdatePlans(plans,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdatePlans (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { plansV3 } from '@wix/pricing-plans';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { plansV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdatePlans(plans,options) {
+      const response = await myWixClient.plansV3.bulkUpdatePlans(plans,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdatePlans (with elevated permissions)
+    import { plansV3 } from '@wix/pricing-plans';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkUpdatePlansMethod(plans,options) {
+      const elevatedBulkUpdatePlans = auth.elevate(plansV3.bulkUpdatePlans);
+      const response = await elevatedBulkUpdatePlans(plans,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,626 @@
+---
+title: "Bulk Update Promotions"
+description: "Updates multiple promotions."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates multiple promotions. Works synchronously.
+
+    To update a single promotion, call [Update Promotion](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/promotions-v3/update-promotion).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CATALOG_WRITE">Manage v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/promotions/update
+    ```
+
+    ## Body Params
+
+    <ParamField body="promotions" type="MaskedPromotion[]" required>
+
+      List of promotions to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="promotions properties">
+
+        <ParamField body="promotion" type="Promotion">
+
+          Promotion to update, may be partial.
+
+          See the [Promotion Object](/api-reference/business-solutions/stores/catalog-v3/promotions-v3/promotion-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the updated promotions in the response.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkPromotionResult[]">
+
+      Results of the bulk update operation.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for this specific update operation.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Promotion">
+
+          Updated promotion. Returned only when `returnEntity` is `true` in the request.
+
+          See the [Promotion Object](/api-reference/business-solutions/stores/catalog-v3/promotions-v3/promotion-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk update operation.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MEDIA_NOT_FOUND` | Couldn't find the media in Media Manager. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_CATEGORY_ASSIGNMENT` | A category is assigned to the same promotion more than once. |
+    | `400` | `INVALID_ARGUMENT` | `MEDIA_REMOVAL_NOT_ALLOWED` | Media can't be removed from a promotion. It can only be replaced. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Promotion Updated | `wix.stores.catalog.v3.promotion_updated` | Triggered when a promotion is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Updates the destination URL of one promotion and enables another, returning the updated entities.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/stores/v3/bulk/promotions/update' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "promotions": [
+            {
+              "promotion": {
+                "id": "27ba9dfc-71b2-4172-a2c5-32ce56f4a021",
+                "revision": "1",
+                "destinationUrl": "https://www.example.com/winter-sale-2026"
+              }
+            },
+            {
+              "promotion": {
+                "id": "5e8a91b3-4c6d-42fa-9f37-b16482d5c0da",
+                "revision": "1",
+                "enabled": true
+              }
+            }
+          ],
+          "returnEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "27ba9dfc-71b2-4172-a2c5-32ce56f4a021",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "27ba9dfc-71b2-4172-a2c5-32ce56f4a021",
+              "revision": "2",
+              "createdDate": "2026-07-08T19:31:53.039Z",
+              "updatedDate": "2026-07-08T19:32:18.737Z",
+              "name": "Winter Sale",
+              "media": {
+                "id": "b7a91c_3d5f8e2a41c6497f8b219d0e6c53a7f2~mv2.png",
+                "altText": "Winter sale banner",
+                "image": {
+                  "id": "b7a91c_3d5f8e2a41c6497f8b219d0e6c53a7f2~mv2.png",
+                  "url": "https://static.wixstatic.com/media/b7a91c_3d5f8e2a41c6497f8b219d0e6c53a7f2~mv2.png",
+                  "height": 184,
+                  "width": 544,
+                  "altText": "Winter sale banner",
+                  "filename": "winter-sale-banner.png",
+                  "sizeInBytes": "7108"
+                },
+                "displayName": "winter-sale-banner.png",
+                "mediaType": "IMAGE"
+              },
+              "destinationUrl": "https://www.example.com/winter-sale-2026",
+              "categories": [
+                {
+                  "id": "f6c2e4a1-8b3d-4e5f-9a1b-2c3d4e5f6a7b",
+                  "position": 2,
+                  "appliedToSubcategories": false
+                }
+              ],
+              "enabled": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "5e8a91b3-4c6d-42fa-9f37-b16482d5c0da",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "5e8a91b3-4c6d-42fa-9f37-b16482d5c0da",
+              "revision": "2",
+              "createdDate": "2026-07-08T19:31:53.039Z",
+              "updatedDate": "2026-07-08T19:32:18.741Z",
+              "name": "Spring Clearance",
+              "media": {
+                "id": "c53f08_9a4b7d1e5f28436c8e02b6a91d47c5e3~mv2.png",
+                "altText": "Spring clearance banner",
+                "image": {
+                  "id": "c53f08_9a4b7d1e5f28436c8e02b6a91d47c5e3~mv2.png",
+                  "url": "https://static.wixstatic.com/media/c53f08_9a4b7d1e5f28436c8e02b6a91d47c5e3~mv2.png",
+                  "height": 184,
+                  "width": 544,
+                  "altText": "Spring clearance banner",
+                  "filename": "spring-clearance-banner.png",
+                  "sizeInBytes": "7108"
+                },
+                "displayName": "spring-clearance-banner.png",
+                "mediaType": "IMAGE"
+              },
+              "categories": [
+                {
+                  "id": "9b1d2f3e-6a5c-4d7b-8e9f-0a1b2c3d4e5f",
+                  "position": 1,
+                  "appliedToSubcategories": true
+                }
+              ],
+              "enabled": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates multiple promotions. Works synchronously.
+
+    To update a single promotion, call [Update Promotion](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/promotions-v3/update-promotion).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.CATALOG_WRITE">Manage v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { promotionsV3 } from '@wix/stores';
+
+    promotionsV3.bulkUpdatePromotions(promotions, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="promotions" type="MaskedPromotion[]" required>
+
+      List of promotions to update.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="promotions properties">
+
+        <ParamField body="promotion" type="Promotion">
+
+          Promotion to update, may be partial.
+
+          See the [Promotion Object](/api-reference/business-solutions/stores/catalog-v3/promotions-v3/promotion-object) for this object's fields.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdatePromotionsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the updated promotions in the response.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkPromotionResult[]">
+
+      Results of the bulk update operation.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for this specific update operation.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Promotion">
+
+          Updated promotion. Returned only when `returnEntity` is `true` in the request.
+
+          See the [Promotion Object](/api-reference/business-solutions/stores/catalog-v3/promotions-v3/promotion-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk update operation.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MEDIA_NOT_FOUND` | Couldn't find the media in Media Manager. |
+    | `400` | `INVALID_ARGUMENT` | `DUPLICATE_CATEGORY_ASSIGNMENT` | A category is assigned to the same promotion more than once. |
+    | `400` | `INVALID_ARGUMENT` | `MEDIA_REMOVAL_NOT_ALLOWED` | Media can't be removed from a promotion. It can only be replaced. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Promotion Updated | `wix.stores.catalog.v3.promotion_updated` | Triggered when a promotion is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-promotions" id="ex-sdk-bulk-update-promotions-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-promotions" id="ex-sdk-bulk-update-promotions-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-promotions-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-promotions-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Update multiple promotions in one call</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdatePromotions (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-promotions-0"><span className="wix-picker-name">Update multiple promotions in one call</span></label>
+    <label htmlFor="ex-sdk-bulk-update-promotions-1"><span className="wix-picker-name">bulkUpdatePromotions (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Update multiple promotions in one call
+    import { promotionsV3 } from "@wix/stores";
+
+    const promotions = [
+      { promotion: { _id: "0aeeee8a-7039-4d01-975c-5786d4238222", revision: "1", name: "Spring Sale 2026" } },
+    ];
+
+    async function bulkUpdatePromotions() {
+      const response = await promotionsV3.bulkUpdatePromotions(promotions, { returnEntity: false });
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     { "itemMetadata": { "originalIndex": 0, "success": true, "_id": "0aeeee8a-7039-4d01-975c-5786d4238222" } }
+     *   ],
+     *   "bulkActionMetadata": { "totalSuccesses": 1, "totalFailures": 0, "undetailedFailures": 0 }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdatePromotions (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { promotionsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { promotionsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdatePromotions(promotions,options) {
+      const response = await myWixClient.promotionsV3.bulkUpdatePromotions(promotions,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

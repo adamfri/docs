@@ -1,0 +1,39 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Fully exempt a customer with the global exemption group
+
+Wix provides a predefined global full-exemption group on every site, so you don't need to create a group or configure rates to fully exempt a customer.
+
+To fully exempt a customer:
+
+1. Call [List Default Tax Exempt Groups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-exempt-groups/list-default-tax-exempt-groups) to retrieve the site's default groups, and save the `id` of the global full-exemption group.
+1. Associate the customer with the group by calling [Upsert Contact Tax Details](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/contact-tax-details/upsert-contact-tax-details) with the customer's contact ID and the group `id` as `taxExemptGroupId`.
+1. On the customer's next checkout, no tax is charged, and the full tax amount appears as the exempt amount in the tax breakdown.
+
+## Create a custom exempt group with reduced rates
+
+To apply reduced (partial) rates rather than full exemption, or different rates per tax category or region, create your own tax exempt group and define its override rates.
+
+To create a custom exempt group with reduced rates:
+
+1. Call [Create Tax Exempt Group](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-exempt-groups/create-tax-exempt-group) with a `name`, such as `Resellers`, and save the returned `taxExemptGroup.id`.
+1. For each tax group and tax region, assign the group's reduced rate with [Bulk Assign Exempt Overrides](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/manual-tax-mappings/bulk-assign-exempt-overrides), referencing the `taxExemptGroupId`. For example, override a standard rate with `0.05` for a 5% reduced rate.
+1. Associate a customer with the group by calling [Upsert Contact Tax Details](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/contact-tax-details/upsert-contact-tax-details) with the customer's contact ID and the `taxExemptGroupId`.
+1. On the customer's next checkout, tax is calculated at the reduced rate, and the difference from the standard rate appears as the exempt amount in the tax breakdown.
+
+## Keep an external system in sync with a site's tax exempt groups
+
+To mirror a site's tax exempt groups in an external system, do an initial load and then keep it up to date with webhooks.
+
+To keep an external system in sync:
+
+1. Call [Query Tax Exempt Groups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-exempt-groups/query-tax-exempt-groups) with `paging.limit` set to `100` (the maximum), and page through all results using the returned cursor.
+1. Store the returned tax exempt groups in your external system.
+1. Subscribe to the [Tax Exempt Group Created](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-exempt-groups/tax-exempt-group-created), [Tax Exempt Group Updated](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-exempt-groups/tax-exempt-group-updated), and [Tax Exempt Group Deleted](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/extensions/tax/tax-exempt-groups/tax-exempt-group-deleted) webhooks.
+1. When you receive an event, apply the corresponding create, update, or delete to your external system.

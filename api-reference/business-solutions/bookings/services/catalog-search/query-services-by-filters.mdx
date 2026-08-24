@@ -1,0 +1,1583 @@
+---
+title: "Query Services By Filters"
+description: "Retrieves services from the catalog that match the given filters, each enriched with availability data."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves services from the catalog that match the given filters, each enriched with availability data.
+
+    Applies location, resource type, and attribute filters, then narrows the catalog using the provided
+    WQL query. When a date range is specified in `serviceFilters`, only services with bookable slots in
+    that window are returned. Without a date range, all filtered services are returned, each marked as
+    available.
+
+    To get complete result pages when filtering by availability, specify `query.cursorPaging`. Without it,
+    a single page of filtered results is returned without backfilling to the requested page size.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/catalog-search/v1/catalog/search/services/query
+    ```
+
+    ## Body Params
+
+    <ParamField body="query" type="CursorQuery">
+
+      Query against the service catalog: WQL filter, sort, and cursor paging.
+
+      Default: `query.cursorPaging.limit` is `10`.
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+              Constraints: `maxLength 512`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="serviceFilters" type="ServiceFilters">
+
+      Availability and resource constraints applied on top of the service query.
+      When absent, no availability check is performed and all pre-filtered services are returned.
+
+      <Expandable title="serviceFilters properties">
+
+        <ParamField body="localStartDate" type="string">
+
+          Start of the availability window (ISO local date-time, e.g. `2024-03-25T09:00:00`).
+          Must be provided together with `localEndDate`, and must be strictly before it.
+
+        </ParamField>
+
+        <ParamField body="localEndDate" type="string">
+
+          End of the availability window (ISO local date-time, e.g. `2024-03-25T17:00:00`).
+          Must be provided together with `localStartDate`.
+          A whole-day end may be expressed as the next day's `00:00:00` (exclusive) or as any time at or
+          after `23:59:00` on the same day (inclusive); both mean "through the end of that day".
+          A window is treated as whole days only when it starts at `00:00:00` and ends on a day boundary;
+          any other window is an hour window and is matched as such, even when it crosses midnight
+          (such as `09:00` one day to `09:00` the next).
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          IANA time zone identifier (e.g. "America/New_York") used to interpret the availability window.
+          Optional; when omitted, the site's business time zone is used.
+
+        </ParamField>
+
+        <ParamField body="exactMatch" type="boolean">
+
+          Controls how strictly the availability window must be satisfied. Interpreted by window shape:
+          - Sub-day hour window, true: bookable for the exact hour range, matched to the minute.
+          - Sub-day hour window, false (default): at least one bookable slot within the window.
+          - A single full day: bookable that day (any slot).
+          - Multiple days, true: bookable on every day in the range.
+          - Multiple days, false (default): at least one bookable slot anywhere in the range.
+          Hour-based and day-based services (those configured with a booking duration range) refine this:
+          a single day is matched as a whole (any slot counts), sub-day hour windows still respect `exactMatch`,
+          and an exact multi-day window returns no results for hour-based services.
+
+        </ParamField>
+
+        <ParamField body="locationIds" type="string[]">
+
+          Filters services to those whose resources are available at these business locations.
+          If empty, no location-based resource filtering is applied.
+
+          A resource configured as available at all locations always matches, regardless of the
+          locations specified here.
+
+          Note: at most 200 matching resources are scanned for the `locationIds`/`resourceTypes`
+          pre-filter; beyond that the filtered set is truncated and results may be imprecise.
+
+          Constraints: `format GUID`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="attributes" type="Attribute[]">
+
+          Filters services to those that have a resource matching the requested attributes. Values given
+          for the same attribute are OR'd (match any); values for different attributes are AND'd (match all).
+          If empty, no attribute filtering is applied.
+
+          Combined with `locationIds` and `resourceTypes` using AND: a service's resource must match
+          this filter and the location/resource type filter to be included.
+
+          Note: at most 1,000 matching attribute values are scanned across all conditions; beyond that the
+          set is truncated and results may be imprecise.
+
+          Constraints: `maxItems 10`.
+
+          <Expandable title="attributes properties">
+
+            <ParamField body="attributeId" type="string">
+
+              ID of the attribute definition to filter by.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="resourceTypes" type="string[]">
+
+          Filters services to those that use resources of the given types (e.g. "STAFF", "ROOM").
+          If empty, all resource types are included.
+          Note: see `locationIds` for the 200-resource pre-filter scan limit.
+
+          Constraints: `maxLength 100`, `maxItems 10`.
+
+        </ParamField>
+
+        <ParamField body="includeUnavailable" type="boolean">
+
+          When true, unavailable services are included in the response with `available` set to `false`.
+          When absent or false, only available services are returned.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="ServiceWithAvailability[]">
+
+      Services matching the query, each enriched with availability data.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="service" type="Service">
+
+          The service entity.
+
+          <Expandable title="service properties">
+
+            <ResponseField name="id" type="string">
+
+              Service ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="appId" type="string">
+
+              ID of the app associated with the service. You can't update `appId`.
+              Services are displayed in Wix Bookings only if they are associated with the Wix Bookings appId or have no associated app ID.
+              Default: `13d21c63-b5ec-5912-8397-c3a5ddb27a97` (Wix Bookings app ID)
+              For services from Wix apps, the following values apply:
+              - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+              - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`.&lt;!-- [Scheduling Form Fields](https://dev.wix.com/docs/api-reference/business-solutions/bookings/about-scheduling-form-fields) services also use this app ID. Use `createdByAppId` to distinguish between Wix Meetings and Scheduling Form Fields services.-->
+              [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+              &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+            </ResponseField>
+
+            <ResponseField name="createdByAppId" type="string">
+
+              ID of the app that created the service. This field is used for analytics, auditing, and tracking creation sources.
+              This read-only field is automatically populated during service creation by checking these sources in order:
+              1. The caller's App ID from the request identity context.
+              2. The service's `appId` field.
+              3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+              &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="type" type="string">
+
+              Service type.
+              Learn more about [service types](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-types).
+
+              **Supported values:**
+
+              - `APPOINTMENT` — Appointment-based service.
+              - `CLASS` — Class service.
+              - `COURSE` — Course service.
+
+            </ResponseField>
+
+            <ResponseField name="sortOrder" type="integer">
+
+              Order of the service within a [category](https://dev.wix.com/docs/rest/business-solutions/bookings/services/categories-v1/category-object).
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Service name.
+
+            </ResponseField>
+
+            <ResponseField name="description" type="string">
+
+              Service description. For example, `High-class hair styling, cuts, straightening and color`.
+
+            </ResponseField>
+
+            <ResponseField name="tagLine" type="string">
+
+              Short service description, such as `Hair styling`.
+
+            </ResponseField>
+
+            <ResponseField name="defaultCapacity" type="integer">
+
+              Default maximum number of customers that can book the service. The service cannot be booked beyond this capacity.
+
+            </ResponseField>
+
+            <ResponseField name="media" type="Media">
+
+              Media associated with the service.
+
+              _Nested structure omitted for brevity — see the `Media` object._
+
+            </ResponseField>
+
+            <ResponseField name="hidden" type="boolean">
+
+              Whether the service is hidden from Wix Bookings pages and widgets.
+
+            </ResponseField>
+
+            <ResponseField name="category" type="Category">
+
+              [Category](https://dev.wix.com/docs/rest/business-solutions/bookings/services/categories-v2/introduction)
+              the service is associated with. Services aren't automatically assigned to a category.
+              Without an associated category, the service isn't visible on the live site.
+
+              _Nested structure omitted for brevity — see the `Category` object._
+
+            </ResponseField>
+
+            <ResponseField name="form" type="Form">
+
+              Form the customer filled out when booking the service.
+
+              _Nested structure omitted for brevity — see the `Form` object._
+
+            </ResponseField>
+
+            <ResponseField name="payment" type="Payment">
+
+              Payment options for booking the service.
+              Learn more about [service payments](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-payments).
+
+              _Nested structure omitted for brevity — see the `Payment` object._
+
+            </ResponseField>
+
+            <ResponseField name="onlineBooking" type="OnlineBooking">
+
+              Online booking settings.
+
+              _Nested structure omitted for brevity — see the `OnlineBooking` object._
+
+            </ResponseField>
+
+            <ResponseField name="conferencing" type="Conferencing">
+
+              Conferencing options for the service.
+
+              _Nested structure omitted for brevity — see the `Conferencing` object._
+
+            </ResponseField>
+
+            <ResponseField name="locations" type="Location[]">
+
+              The locations this service is offered at. Read more about [service locations](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-locations).
+
+              Constraints: `maxItems 500`, `immutable`.
+
+              _Nested structure omitted for brevity — see the `Location[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="bookingPolicy" type="BookingPolicy">
+
+              [Policy](https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policies/introduction)
+              determining under what conditions this service can be booked. For example, whether the service can only be booked up to 30 minutes before it begins.
+
+              _Nested structure omitted for brevity — see the `BookingPolicy` object._
+
+            </ResponseField>
+
+            <ResponseField name="schedule" type="Schedule">
+
+              The service's [schedule](https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/introduction),
+              which can be used to manage the service's [events](https://dev.wix.com/docs/rest/business-management/calendar/events-v3/introduction).
+
+              _Nested structure omitted for brevity — see the `Schedule` object._
+
+            </ResponseField>
+
+            <ResponseField name="staffMemberIds" type="string[]">
+
+              IDs of the [resources](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) associated with the [staff members](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction) providing the service.
+              Note that these are the resource IDs, not the staff member IDs.
+
+              For appointment-based services, set this field when creating or updating the service.
+              For classes and courses, this field is read-only and is automatically derived from staff assigned to the service's recurring scheduled sessions.
+              Staff assigned only to single, non-recurring events are not included.
+              Once all of a staff member's upcoming recurring sessions have ended, their ID is removed from this field.
+              To retrieve the full list of staff for classes or courses, query the service's calendar events instead.
+              Learn more about [retrieving staff for classes and courses](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/sample-flows#retrieve-staff-members-for-a-class-or-course).
+
+              Constraints: `format GUID`, `maxItems 220`.
+
+            </ResponseField>
+
+            <ResponseField name="staffMemberDetails" type="StaffMemberDetails">
+
+              Staff members details. Returned only if `STAFF_MEMBER_DETAILS` conditional field was specified.
+
+              _Nested structure omitted for brevity — see the `StaffMemberDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="serviceResources" type="ServiceResource[]">
+
+              Information about which resources must be available so customers can book the service.
+              For example, a meeting room or equipment.
+              Some nested fields are only returned when specific conditional fields are requested:
+              pass `RESOURCE_TYPE_DETAILS` to retrieve `resourceType.name`, and `RESOURCE_DETAILS` to retrieve `resourceDetails.resources`.
+
+              Constraints: `maxItems 8`.
+
+              _Nested structure omitted for brevity — see the `ServiceResource[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="supportedSlugs" type="Slug[]">
+
+              A slug is the last part of the URL address that serves as a unique identifier of the service.
+              The list of supported slugs includes past service names for backwards compatibility, and a custom slug if one was set by the business owner.
+
+              **Read-only.** Constraints: `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `Slug[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="mainSlug" type="Slug">
+
+              Active slug for the service.
+              Learn more about [service slugs](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-slugs).
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Slug` object._
+
+            </ResponseField>
+
+            <ResponseField name="urls" type="URLs">
+
+              URLs to various service-related pages, such as the calendar page and the booking page.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `URLs` object._
+
+            </ResponseField>
+
+            <ResponseField name="extendedFields" type="ExtendedFields">
+
+              Extensions enabling users to save custom data related to the service.
+
+              _Nested structure omitted for brevity — see the `ExtendedFields` object._
+
+            </ResponseField>
+
+            <ResponseField name="seoData" type="SeoSchema">
+
+              Custom SEO data for the service.
+
+              _Nested structure omitted for brevity — see the `SeoSchema` object._
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the service was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the service was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="revision" type="integer">
+
+              Revision number, which increments by 1 each time the service is updated. To
+              prevent conflicting changes, the existing revision must be used when updating
+              a service.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="addOnGroups" type="AddOnGroup[]">
+
+              Information about the [add-on groups](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-add-on-groups) associated with the service.
+
+              Constraints: `maxItems 3`.
+
+              _Nested structure omitted for brevity — see the `AddOnGroup[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="addOnDetails" type="AddOnDetails[]">
+
+              Details about all [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) customers can choose when booking the service.
+
+              **Read-only.** Constraints: `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `AddOnDetails[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Taxable address used to calculate tax
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+            <ResponseField name="primaryResourceType" type="string">
+
+              ID of the [resource type](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction)
+              that serves as the primary resource for this appointment service. The primary resource type
+              determines which resources drive slot assignment and availability resolution.
+
+              For example, when set to a "Meeting Rooms" resource type, availability is calculated
+              based on the rooms' schedules rather than staff schedules.
+
+              Default: The staff resource type.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="available" type="boolean">
+
+          Whether the service has available slots in the requested window.
+          Always true when no date range was provided.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata. The cursor in `pagingMetadata.cursors.next` is an opaque token owned by CatalogSearch.
+      Pass it unchanged in the next request's `query.cursorPaging.cursor`.
+      Do not assume any relationship between this cursor and the internal cursors of services-2 or other upstream services.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursor strings that point to the next page, previous page, or both.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to the previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Whether there are more pages to retrieve following the current page.
+
+          + `true`: Another page of results can be retrieved.
+          + `false`: This is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Retrieve services with at least one bookable slot in the given date range, sorted by name.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/bookings/catalog-search/v1/catalog/search/services/query' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "query": {
+          "sort": [
+            {
+              "fieldName": "name",
+              "order": "ASC"
+            }
+          ],
+          "cursorPaging": {
+            "limit": 10
+          }
+        },
+        "serviceFilters": {
+          "localStartDate": "2026-07-13T00:00:00",
+          "localEndDate": "2026-07-19T23:59:59",
+          "timeZone": "America/New_York"
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "service": {
+              "id": "0ebaeea4-a710-420c-9a88-9135e1a3c071",
+              "type": "APPOINTMENT",
+              "name": "30-Min Follow-Up",
+              "description": "A 30-minute follow-up session",
+              "defaultCapacity": 1,
+              "hidden": false,
+              "payment": {
+                "rateType": "FIXED",
+                "fixed": {
+                  "price": {
+                    "value": "25.00",
+                    "currency": "USD"
+                  }
+                },
+                "options": {
+                  "online": false,
+                  "inPerson": true
+                }
+              },
+              "onlineBooking": {
+                "enabled": true,
+                "requireManualApproval": false
+              },
+              "locations": [
+                {
+                  "type": "BUSINESS",
+                  "id": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              ],
+              "schedule": {
+                "id": "3752ffe8-2d58-4541-91ec-cd981c4ccb28",
+                "availabilityConstraints": {
+                  "sessionDurations": [
+                    30
+                  ]
+                }
+              },
+              "mainSlug": {
+                "name": "consult-slug-1781510044653"
+              },
+              "revision": "7",
+              "primaryResourceType": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155"
+            },
+            "available": true
+          },
+          {
+            "service": {
+              "id": "47d0180e-b9a9-44bb-bd24-92f5bfcab50b",
+              "type": "APPOINTMENT",
+              "name": "1-Hour Consultation",
+              "description": "A one-hour personal consultation session",
+              "defaultCapacity": 1,
+              "hidden": false,
+              "payment": {
+                "rateType": "FIXED",
+                "fixed": {
+                  "price": {
+                    "value": "50.00",
+                    "currency": "USD"
+                  }
+                },
+                "options": {
+                  "online": false,
+                  "inPerson": true
+                }
+              },
+              "onlineBooking": {
+                "enabled": true,
+                "requireManualApproval": false
+              },
+              "locations": [
+                {
+                  "type": "BUSINESS",
+                  "id": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              ],
+              "schedule": {
+                "id": "ba5d6474-1376-4558-a7af-dc7fddbd42dd",
+                "availabilityConstraints": {
+                  "sessionDurations": [
+                    60
+                  ]
+                }
+              },
+              "mainSlug": {
+                "name": "1-hour-consultation"
+              },
+              "revision": "1",
+              "primaryResourceType": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155"
+            },
+            "available": true
+          }
+        ],
+        "pagingMetadata": {
+          "count": 2,
+          "cursors": {},
+          "hasNext": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves services from the catalog that match the given filters, each enriched with availability data.
+
+    Applies location, resource type, and attribute filters, then narrows the catalog using the provided
+    WQL query. When a date range is specified in `serviceFilters`, only services with bookable slots in
+    that window are returned. Without a date range, all filtered services are returned, each marked as
+    available.
+
+    To get complete result pages when filtering by availability, specify `query.cursorPaging`. Without it,
+    a single page of filtered results is returned without backfilling to the requested page size.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { catalogSearch } from '@wix/bookings';
+
+    catalogSearch.queryServicesByFilters(options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="QueryServicesByFiltersOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="query" type="CursorQuery">
+
+          Query against the service catalog: WQL filter, sort, and cursor paging.
+
+          Default: `query.cursorPaging.limit` is `10`.
+
+          <Expandable title="query properties">
+
+            <ParamField body="filter" type="object">
+
+              Filter object in the following format:
+              `"filter" : {`
+              "fieldName1": "value1",
+              "fieldName2":&#123;"$operator":"value2"&#125;
+              &#125;``
+              Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+            </ParamField>
+
+            <ParamField body="sort" type="Sorting[]">
+
+              Sort object in the following format:
+              `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+              Constraints: `maxItems 5`.
+
+              _Nested structure omitted for brevity — see the `Sorting[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="pagingMethod" type="pagingMethod">
+
+              pagingMethod
+
+              _Nested structure omitted for brevity — see the `pagingMethod` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="serviceFilters" type="ServiceFilters">
+
+          Availability and resource constraints applied on top of the service query.
+          When absent, no availability check is performed and all pre-filtered services are returned.
+
+          <Expandable title="serviceFilters properties">
+
+            <ParamField body="localStartDate" type="string">
+
+              Start of the availability window (ISO local date-time, e.g. `2024-03-25T09:00:00`).
+              Must be provided together with `localEndDate`, and must be strictly before it.
+
+            </ParamField>
+
+            <ParamField body="localEndDate" type="string">
+
+              End of the availability window (ISO local date-time, e.g. `2024-03-25T17:00:00`).
+              Must be provided together with `localStartDate`.
+              A whole-day end may be expressed as the next day's `00:00:00` (exclusive) or as any time at or
+              after `23:59:00` on the same day (inclusive); both mean "through the end of that day".
+              A window is treated as whole days only when it starts at `00:00:00` and ends on a day boundary;
+              any other window is an hour window and is matched as such, even when it crosses midnight
+              (such as `09:00` one day to `09:00` the next).
+
+            </ParamField>
+
+            <ParamField body="timeZone" type="string">
+
+              IANA time zone identifier (e.g. "America/New_York") used to interpret the availability window.
+              Optional; when omitted, the site's business time zone is used.
+
+            </ParamField>
+
+            <ParamField body="exactMatch" type="boolean">
+
+              Controls how strictly the availability window must be satisfied. Interpreted by window shape:
+              - Sub-day hour window, true: bookable for the exact hour range, matched to the minute.
+              - Sub-day hour window, false (default): at least one bookable slot within the window.
+              - A single full day: bookable that day (any slot).
+              - Multiple days, true: bookable on every day in the range.
+              - Multiple days, false (default): at least one bookable slot anywhere in the range.
+              Hour-based and day-based services (those configured with a booking duration range) refine this:
+              a single day is matched as a whole (any slot counts), sub-day hour windows still respect `exactMatch`,
+              and an exact multi-day window returns no results for hour-based services.
+
+            </ParamField>
+
+            <ParamField body="locationIds" type="string[]">
+
+              Filters services to those whose resources are available at these business locations.
+              If empty, no location-based resource filtering is applied.
+
+              A resource configured as available at all locations always matches, regardless of the
+              locations specified here.
+
+              Note: at most 200 matching resources are scanned for the `locationIds`/`resourceTypes`
+              pre-filter; beyond that the filtered set is truncated and results may be imprecise.
+
+              Constraints: `format GUID`, `maxItems 100`.
+
+            </ParamField>
+
+            <ParamField body="attributes" type="Attribute[]">
+
+              Filters services to those that have a resource matching the requested attributes. Values given
+              for the same attribute are OR'd (match any); values for different attributes are AND'd (match all).
+              If empty, no attribute filtering is applied.
+
+              Combined with `locationIds` and `resourceTypes` using AND: a service's resource must match
+              this filter and the location/resource type filter to be included.
+
+              Note: at most 1,000 matching attribute values are scanned across all conditions; beyond that the
+              set is truncated and results may be imprecise.
+
+              Constraints: `maxItems 10`.
+
+              _Nested structure omitted for brevity — see the `Attribute[]` object._
+
+            </ParamField>
+
+            <ParamField body="resourceTypes" type="string[]">
+
+              Filters services to those that use resources of the given types (e.g. "STAFF", "ROOM").
+              If empty, all resource types are included.
+              Note: see `locationIds` for the 200-resource pre-filter scan limit.
+
+              Constraints: `maxLength 100`, `maxItems 10`.
+
+            </ParamField>
+
+            <ParamField body="includeUnavailable" type="boolean">
+
+              When true, unavailable services are included in the response with `available` set to `false`.
+              When absent or false, only available services are returned.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="ServiceWithAvailability[]">
+
+      Services matching the query, each enriched with availability data.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="service" type="Service">
+
+          The service entity.
+
+          <Expandable title="service properties">
+
+            <ResponseField name="_id" type="string">
+
+              Service ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="appId" type="string">
+
+              ID of the app associated with the service. You can't update `appId`.
+              Services are displayed in Wix Bookings only if they are associated with the Wix Bookings appId or have no associated app ID.
+              Default: `13d21c63-b5ec-5912-8397-c3a5ddb27a97` (Wix Bookings app ID)
+              For services from Wix apps, the following values apply:
+              - Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              - Wix Services: `"cc552162-24a4-45e0-9695-230c4931ef40"`
+              - Wix Meetings: `"6646a75c-2027-4f49-976c-58f3d713ed0f"`.&lt;!-- [Scheduling Form Fields](https://dev.wix.com/docs/api-reference/business-solutions/bookings/about-scheduling-form-fields) services also use this app ID. Use `createdByAppId` to distinguish between Wix Meetings and Scheduling Form Fields services.-->
+              [Full list of apps created by Wix](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/platform/about-apps-created-by-wix).
+              &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+            </ResponseField>
+
+            <ResponseField name="createdByAppId" type="string">
+
+              ID of the app that created the service. This field is used for analytics, auditing, and tracking creation sources.
+              This read-only field is automatically populated during service creation by checking these sources in order:
+              1. The caller's App ID from the request identity context.
+              2. The service's `appId` field.
+              3. The Wix Bookings App ID (`13d21c63-b5ec-5912-8397-c3a5ddb27a97`) as the final fallback.
+              &lt;!-- TODO: Uncomment when Platform docs are published - Learn more about [app identity in the Bookings Platform](https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings-platform/app-identity-in-the-bookings-platform). -->
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="type" type="string">
+
+              Service type.
+              Learn more about [service types](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-types).
+
+              **Supported values:**
+
+              - `APPOINTMENT` — Appointment-based service.
+              - `CLASS` — Class service.
+              - `COURSE` — Course service.
+
+            </ResponseField>
+
+            <ResponseField name="sortOrder" type="integer">
+
+              Order of the service within a [category](https://dev.wix.com/docs/rest/business-solutions/bookings/services/categories-v1/category-object).
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Service name.
+
+            </ResponseField>
+
+            <ResponseField name="description" type="string">
+
+              Service description. For example, `High-class hair styling, cuts, straightening and color`.
+
+            </ResponseField>
+
+            <ResponseField name="tagLine" type="string">
+
+              Short service description, such as `Hair styling`.
+
+            </ResponseField>
+
+            <ResponseField name="defaultCapacity" type="integer">
+
+              Default maximum number of customers that can book the service. The service cannot be booked beyond this capacity.
+
+            </ResponseField>
+
+            <ResponseField name="media" type="Media">
+
+              Media associated with the service.
+
+              _Nested structure omitted for brevity — see the `Media` object._
+
+            </ResponseField>
+
+            <ResponseField name="hidden" type="boolean">
+
+              Whether the service is hidden from Wix Bookings pages and widgets.
+
+            </ResponseField>
+
+            <ResponseField name="category" type="Category">
+
+              [Category](https://dev.wix.com/docs/rest/business-solutions/bookings/services/categories-v2/introduction)
+              the service is associated with. Services aren't automatically assigned to a category.
+              Without an associated category, the service isn't visible on the live site.
+
+              _Nested structure omitted for brevity — see the `Category` object._
+
+            </ResponseField>
+
+            <ResponseField name="form" type="Form">
+
+              Form the customer filled out when booking the service.
+
+              _Nested structure omitted for brevity — see the `Form` object._
+
+            </ResponseField>
+
+            <ResponseField name="payment" type="Payment">
+
+              Payment options for booking the service.
+              Learn more about [service payments](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-payments).
+
+              _Nested structure omitted for brevity — see the `Payment` object._
+
+            </ResponseField>
+
+            <ResponseField name="onlineBooking" type="OnlineBooking">
+
+              Online booking settings.
+
+              _Nested structure omitted for brevity — see the `OnlineBooking` object._
+
+            </ResponseField>
+
+            <ResponseField name="conferencing" type="Conferencing">
+
+              Conferencing options for the service.
+
+              _Nested structure omitted for brevity — see the `Conferencing` object._
+
+            </ResponseField>
+
+            <ResponseField name="locations" type="Location[]">
+
+              The locations this service is offered at. Read more about [service locations](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-locations).
+
+              Constraints: `maxItems 500`, `immutable`.
+
+              _Nested structure omitted for brevity — see the `Location[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="bookingPolicy" type="BookingPolicy">
+
+              [Policy](https://dev.wix.com/docs/rest/business-solutions/bookings/policies/booking-policies/introduction)
+              determining under what conditions this service can be booked. For example, whether the service can only be booked up to 30 minutes before it begins.
+
+              _Nested structure omitted for brevity — see the `BookingPolicy` object._
+
+            </ResponseField>
+
+            <ResponseField name="schedule" type="Schedule">
+
+              The service's [schedule](https://dev.wix.com/docs/rest/business-management/calendar/schedules-v3/introduction),
+              which can be used to manage the service's [events](https://dev.wix.com/docs/rest/business-management/calendar/events-v3/introduction).
+
+              _Nested structure omitted for brevity — see the `Schedule` object._
+
+            </ResponseField>
+
+            <ResponseField name="staffMemberIds" type="string[]">
+
+              IDs of the [resources](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) associated with the [staff members](https://dev.wix.com/docs/api-reference/business-solutions/bookings/staff-members/staff-members/introduction) providing the service.
+              Note that these are the resource IDs, not the staff member IDs.
+
+              For appointment-based services, set this field when creating or updating the service.
+              For classes and courses, this field is read-only and is automatically derived from staff assigned to the service's recurring scheduled sessions.
+              Staff assigned only to single, non-recurring events are not included.
+              Once all of a staff member's upcoming recurring sessions have ended, their ID is removed from this field.
+              To retrieve the full list of staff for classes or courses, query the service's calendar events instead.
+              Learn more about [retrieving staff for classes and courses](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/sample-flows#retrieve-staff-members-for-a-class-or-course).
+
+              Constraints: `format GUID`, `maxItems 220`.
+
+            </ResponseField>
+
+            <ResponseField name="staffMemberDetails" type="StaffMemberDetails">
+
+              Staff members details. Returned only if `STAFF_MEMBER_DETAILS` conditional field was specified.
+
+              _Nested structure omitted for brevity — see the `StaffMemberDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="serviceResources" type="ServiceResource[]">
+
+              Information about which resources must be available so customers can book the service.
+              For example, a meeting room or equipment.
+              Some nested fields are only returned when specific conditional fields are requested:
+              pass `RESOURCE_TYPE_DETAILS` to retrieve `resourceType.name`, and `RESOURCE_DETAILS` to retrieve `resourceDetails.resources`.
+
+              Constraints: `maxItems 8`.
+
+              _Nested structure omitted for brevity — see the `ServiceResource[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="supportedSlugs" type="Slug[]">
+
+              A slug is the last part of the URL address that serves as a unique identifier of the service.
+              The list of supported slugs includes past service names for backwards compatibility, and a custom slug if one was set by the business owner.
+
+              **Read-only.** Constraints: `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `Slug[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="mainSlug" type="Slug">
+
+              Active slug for the service.
+              Learn more about [service slugs](https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/about-service-slugs).
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Slug` object._
+
+            </ResponseField>
+
+            <ResponseField name="urls" type="URLs">
+
+              URLs to various service-related pages, such as the calendar page and the booking page.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `URLs` object._
+
+            </ResponseField>
+
+            <ResponseField name="extendedFields" type="ExtendedFields">
+
+              Extensions enabling users to save custom data related to the service.
+
+              _Nested structure omitted for brevity — see the `ExtendedFields` object._
+
+            </ResponseField>
+
+            <ResponseField name="seoData" type="SeoSchema">
+
+              Custom SEO data for the service.
+
+              _Nested structure omitted for brevity — see the `SeoSchema` object._
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the service was created in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the service was updated in `YYYY-MM-DDThh:mm:ss.sssZ` format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="revision" type="integer">
+
+              Revision number, which increments by 1 each time the service is updated. To
+              prevent conflicting changes, the existing revision must be used when updating
+              a service.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="addOnGroups" type="AddOnGroup[]">
+
+              Information about the [add-on groups](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/about-add-on-groups) associated with the service.
+
+              Constraints: `maxItems 3`.
+
+              _Nested structure omitted for brevity — see the `AddOnGroup[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="addOnDetails" type="AddOnDetails[]">
+
+              Details about all [add-ons](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) customers can choose when booking the service.
+
+              **Read-only.** Constraints: `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `AddOnDetails[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="taxableAddress" type="TaxableAddress">
+
+              Taxable address used to calculate tax
+
+              _Nested structure omitted for brevity — see the `TaxableAddress` object._
+
+            </ResponseField>
+
+            <ResponseField name="primaryResourceType" type="string">
+
+              ID of the [resource type](https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resource-types-v2/introduction)
+              that serves as the primary resource for this appointment service. The primary resource type
+              determines which resources drive slot assignment and availability resolution.
+
+              For example, when set to a "Meeting Rooms" resource type, availability is calculated
+              based on the rooms' schedules rather than staff schedules.
+
+              Default: The staff resource type.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="available" type="boolean">
+
+          Whether the service has available slots in the requested window.
+          Always true when no date range was provided.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata. The cursor in `pagingMetadata.cursors.next` is an opaque token owned by CatalogSearch.
+      Pass it unchanged in the next request's `query.cursorPaging.cursor`.
+      Do not assume any relationship between this cursor and the internal cursors of services-2 or other upstream services.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursor strings that point to the next page, previous page, or both.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to the previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Whether there are more pages to retrieve following the current page.
+
+          + `true`: Another page of results can be retrieved.
+          + `false`: This is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-services-by-filters" id="ex-sdk-query-services-by-filters-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-services-by-filters" id="ex-sdk-query-services-by-filters-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-services-by-filters-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-services-by-filters-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Query services bookable within a date range</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryServicesByFilters (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-services-by-filters-0"><span className="wix-picker-name">Query services bookable within a date range</span></label>
+    <label htmlFor="ex-sdk-query-services-by-filters-1"><span className="wix-picker-name">queryServicesByFilters (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Query services bookable within a date range
+    import { catalogSearch } from "@wix/bookings";
+
+    const query = {
+      sort: [{ fieldName: "name", order: "ASC" }],
+      cursorPaging: { limit: 10 },
+    };
+
+    const serviceFilters = {
+      localStartDate: "2026-07-13T00:00:00",
+      localEndDate: "2026-07-19T23:59:59",
+      timeZone: "America/New_York",
+    };
+
+    async function queryServicesByFilters() {
+      const response = await catalogSearch.queryServicesByFilters({ query, serviceFilters });
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "service": {
+     *         "id": "0ebaeea4-a710-420c-9a88-9135e1a3c071",
+     *         "type": "APPOINTMENT",
+     *         "name": "30-Min Follow-Up",
+     *         "description": "A 30-minute follow-up session",
+     *         "defaultCapacity": 1,
+     *         "hidden": false,
+     *         "payment": {
+     *           "rateType": "FIXED",
+     *           "fixed": {
+     *             "price": {
+     *               "value": "25.00",
+     *               "currency": "USD"
+     *             }
+     *           },
+     *           "options": {
+     *             "online": false,
+     *             "inPerson": true
+     *           }
+     *         },
+     *         "onlineBooking": {
+     *           "enabled": true,
+     *           "requireManualApproval": false
+     *         },
+     *         "locations": [
+     *           {
+     *             "type": "BUSINESS",
+     *             "id": "123e4567-e89b-12d3-a456-426614174000"
+     *           }
+     *         ],
+     *         "schedule": {
+     *           "id": "3752ffe8-2d58-4541-91ec-cd981c4ccb28",
+     *           "availabilityConstraints": {
+     *             "sessionDurations": [30]
+     *           }
+     *         },
+     *         "revision": "7",
+     *         "primaryResourceType": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155"
+     *       },
+     *       "available": true
+     *     },
+     *     {
+     *       "service": {
+     *         "id": "47d0180e-b9a9-44bb-bd24-92f5bfcab50b",
+     *         "type": "APPOINTMENT",
+     *         "name": "1-Hour Consultation",
+     *         "description": "A one-hour personal consultation session",
+     *         "defaultCapacity": 1,
+     *         "hidden": false,
+     *         "payment": {
+     *           "rateType": "FIXED",
+     *           "fixed": {
+     *             "price": {
+     *               "value": "50.00",
+     *               "currency": "USD"
+     *             }
+     *           },
+     *           "options": {
+     *             "online": false,
+     *             "inPerson": true
+     *           }
+     *         },
+     *         "onlineBooking": {
+     *           "enabled": true,
+     *           "requireManualApproval": false
+     *         },
+     *         "locations": [
+     *           {
+     *             "type": "BUSINESS",
+     *             "id": "123e4567-e89b-12d3-a456-426614174000"
+     *           }
+     *         ],
+     *         "schedule": {
+     *           "id": "ba5d6474-1376-4558-a7af-dc7fddbd42dd",
+     *           "availabilityConstraints": {
+     *             "sessionDurations": [60]
+     *           }
+     *         },
+     *         "revision": "1",
+     *         "primaryResourceType": "1cd44cf8-756f-41c3-bd90-3e2ffcaf1155"
+     *       },
+     *       "available": true
+     *     }
+     *   ],
+     *   "pagingMetadata": {
+     *     "count": 2,
+     *     "cursors": {},
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryServicesByFilters (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { catalogSearch } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { catalogSearch },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function queryServicesByFilters(options) {
+      const response = await myWixClient.catalogSearch.queryServicesByFilters(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

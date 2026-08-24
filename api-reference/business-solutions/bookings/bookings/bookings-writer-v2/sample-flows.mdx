@@ -1,0 +1,202 @@
+---
+title: "Sample Flows"
+description: "This article provides sample flows focusing on the technical details of creating appointment, class session, and course bookings using Create Booking."
+icon: "file-lines"
+---
+
+<Note>This article applies to the JavaScript SDK only.</Note>
+
+ This article provides sample flows focusing on the technical details of creating appointment, class session, and course bookings using [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking). It also shows how to create and reschedule multi-service bookings, perform anonymous booking actions, and handle payments and double booking conflicts. For a complete step-by-step overview of the full booking process including service selection, availability checks, and payment, see [end-to-end booking flow](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/flow-single-service-booking).
+
+## Book an appointment
+
+To create a booking for an appointment:
+
+1. Identify the business time zone and relevant service ID. For example, as described in [End-to-End Booking Flows](##book-an-appointment*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-an-appointment).
+1. Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, and `toLocalDate` as filters. Display the time slots and let the customer select one.
+1. Call Wix Forms' [Get Form Summary](fallback::https://dev.wix.com/docs/rest/crm/forms/form-schemas/get-form-summary), specifying the service's `form.id`, to retrieve the booking form fields. Display the form to the customer and collect their input. Construct a JSON object using the exact values from `formSummary.fields.target` as keys. Learn more about [How Bookings Integrates with Wix Forms](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration).
+1. Call [Get Availability Time Slot](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot), specifying the selected slot's `localStartDate` and `localEndDate`, to validate the slot is still available.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking). Specify the slot's `startDate`, `endDate`, `resource` and `location` in `booking.bookedEntity.slot`, and pass the constructed JSON object as `formSubmission`. The call succeeds if the slot hasn't been booked by another customer since calling Get Availability Time Slot, and the booking status is `CREATED`.
+
+## Book a class session
+
+To create a booking for a class session:
+
+1. Identify the business time zone and relevant service ID. For example, as described in [End-to-End Booking Flows](##book-a-class-session*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-a-class-session).
+1. Call [List Event Time Slots](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-event-time-slots) specifying `serviceId`, `timeZone`, `fromLocalDate`, `toLocalDate`, and the number of `openSpots` the customer intends to book as filters. Display the time slots and let the customer select one. Save the `eventId` from the selected time slot.
+1. Call Wix Forms' [Get Form Summary](fallback::https://dev.wix.com/docs/rest/crm/forms/form-schemas/get-form-summary), specifying the service's `form.id`, to retrieve the booking form fields. Display the form to the customer and collect their input. Construct a JSON object using the exact values from `formSummary.fields.target` as keys. Learn more about [How Bookings Integrates with Wix Forms](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration).
+1. Call [Get Event Time Slot](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/get-event-time-slot), specifying `eventId`, to validate the class session is still available.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) specifying the event ID in `booking.bookedEntity.slot.eventId`, and pass the constructed JSON object as `formSubmission`. The call succeeds if the class session hasn't filled up since calling Get Event Time Slot, and the booking status is `CREATED`.
+
+## Book a course
+
+To create a booking for a course:
+
+1. Identify the relevant business time zone, service ID, service default capacity, and service schedule ID. For example, as described in [End-to-End Booking Flows](##book-a-course*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-a-course).
+1. Call [Query Extended Bookings](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings) to retrieve all bookings for this service and calculate how many people are already booked. Make sure the intended `numberOfParticipants` doesn't exceed the remaining places.
+1. Call Wix Forms' [Get Form Summary](fallback::https://dev.wix.com/docs/rest/crm/forms/form-schemas/get-form-summary), specifying the service's `form.id`, to retrieve the booking form fields. Display the form to the customer and collect their input. Construct a JSON object using the exact values from `formSummary.fields.target` as keys. Learn more about [How Bookings Integrates with Wix Forms](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/wix-forms-integration).
+1. Recheck availability by comparing against the service's `defaultCapacity` to ensure spots are still available.
+1. Call [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) specifying the relevant schedule ID as `booking.bookedEntity.scheduleId`, and pass the constructed JSON object as `formSubmission`. The call succeeds if the course hasn't filled up since the availability check, and the booking status is `CREATED`.
+
+<Note>
+
+Calling [Create Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking) can fail if the service is no longer available.
+To ensure success, for example if you want to create a booking on behalf of the business owner, call Create Booking with `options.flowControlSettings.skipAvailabilityValidation` set to `true`.
+Using other `flowControlSettings` lets you override the maximum number of participants per session, or allow payment methods that aren't supported for the service.
+
+</Note>
+
+## Multi-service bookings
+
+### Create a multi-service booking
+
+To create a multi-service booking (for example, a spa package with massage, facial, and manicure):
+
+1. Identify the business time zone and relevant service IDs for each service in the package. For example, as described in the [single-service appointment end-to-end booking flow](##book-an-appointment*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-an-appointment).
+1. Call [List Multi Service Availability Time Slots](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-multi-service-availability-time-slots) specifying `services` with `serviceId` for each service, `fromLocalDate`, `toLocalDate`, `timeZone`, and `location` with `locationType`.
+1. Call [Create Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-multi-service-booking) with an array of `bookings` (minimum 2, maximum 8) and `multiServiceBookingType` set to `SEQUENTIAL_BOOKINGS`. You must specify individual slot timing for each service with no gaps between bookings. If availability hasn't changed, the call succeeds and each single-service booking has a status of `CREATED`.
+1. To handle payment, pass each single-service booking's `bookings[].bookingId` from the response to the eCommerce checkout. Don't use `multiServiceBooking.id`, the top-level multi-service booking ID isn't supported for checkout. For step-by-step instructions for payment processing, see the [End-to-End Booking Flows article](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/flow-single-service-booking#handle-payments).
+
+### Reschedule a multi-service booking and add a single-service booking
+
+To reschedule a multi-service booking and then add an additional single-service booking (for example, moving a spa package to a different time and adding a pedicure that couldn't be scheduled at the original end time):
+
+1. Call [Get Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/get-multi-service-booking) to retrieve the current multi-service booking details, including all single-service booking IDs and their current revision numbers.
+1. For each service you want to reschedule, identify the new slot details (`scheduleId`, `startDate`, `endDate`, `resource`, and `location`).
+   For example, as described in the [single-service appointment end-to-end booking flow](##book-an-appointment*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-an-appointment).
+1. Call [List Multi Service Availability Time Slots](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/list-multi-service-availability-time-slots) specifying `services` with `serviceId` for each service, `fromLocalDate`, `toLocalDate`, `timeZone`, and `location` with `locationType` to verify availability for the new timing, ensuring all services can still be scheduled sequentially.
+1. To obtain the selected multi-service slot's full capacity and booking-policy status, call [Get Multi Service Availability Time Slot](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/time-slots-v2/get-multi-service-availability-time-slot). Specify the exact `localStartDate` and `localEndDate` values from the selected slot.
+1. Call [Reschedule Multi Service Booking](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-multi-service-booking) specifying the ID of the multi-service booking and an array of `rescheduleBookingsInfo`. For each single-service booking to reschedule, include the `bookingId`, current `revision` number, and new slot details with exact timing to maintain sequential scheduling with all services back-to-back and no gaps or overlaps.
+1. Make sure you have an independent single-service booking to add to the package. For example, by following the [single-service appointment end-to-end booking flow](##book-an-appointment*fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/end-to-end-booking-flows#book-an-appointment). Ensure the booking timing is compatible with the multi-service booking's sequential schedule and the booking has a compatible status.
+1. Call [Add Bookings to Multi Service Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/add-bookings-to-multi-service-booking) specifying the `multiServiceBookingId` and an array of `bookings` containing the `bookingId` and `revision` number.
+   The existing timing of the added booking must be compatible with the multi-service booking's sequential schedule for successful integration.
+
+## Anonymous booking actions
+
+### Generate an anonymous booking link
+
+After creating a booking for a service whose booking policy has `cancellationPolicy.allowAnonymous`, `reschedulePolicy.allowAnonymous`, or both set to `true`, you can generate an anonymous action token from your authenticated backend and share a customer-facing link through your own messaging channel.
+
+To generate an anonymous booking link:
+
+1. Call [Get Anonymous Action Token](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/get-anonymous-action-token) with the booking ID and extract the returned `token`. This is the only anonymous booking actions method that requires authentication.
+1. Include the token in the URL you send to the customer. Send the link by email, SMS, or another messaging channel.
+1. When the customer opens the link, call [Get Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-get-booking-anonymously) to display the current booking state. Check `allowedAnonymousActions.cancel` and `allowedAnonymousActions.reschedule` in the response to determine which actions to present in your UI.
+
+### Cancel a booking anonymously
+
+A customer can cancel a booking without authentication, provided the service's booking policy has `cancellationPolicy.allowAnonymous` set to `true`.
+
+To cancel a booking anonymously:
+
+1. Call [Get Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-get-booking-anonymously) with the token to present the current booking details.
+1. Check that `allowedAnonymousActions.cancel` is `true` in the response. If `false`, inform the customer that cancellation isn't available for this booking.
+1. Call [Cancel Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-cancel-booking-anonymously) with the token and the booking's current `revision`.
+1. If the call fails with a `BOOKING_CANNOT_BE_CANCELLED` error, display an appropriate message.
+
+### Reschedule a booking anonymously
+
+A customer can pick a new slot and reschedule their booking without authentication, provided the service's booking policy has `reschedulePolicy.allowAnonymous` set to `true`. Anonymous rescheduling supports appointments and classes. Course bookings can't be rescheduled.
+
+To reschedule a booking anonymously:
+
+1. Call [Get Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-get-booking-anonymously) with the token to present the current booking details.
+1. Check that `allowedAnonymousActions.reschedule` is `true` in the response. If `false`, inform the customer that rescheduling isn't available for this booking.
+1. Find available slots for the customer to choose from:
+   - For appointments: Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots) specifying the `serviceId` from the booking, along with `timeZone`, `fromLocalDate`, and `toLocalDate`.
+   - For classes: Call [List Event Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-event-time-slots) specifying the `serviceId`, `timeZone`, `fromLocalDate`, and `toLocalDate`.
+1. After the customer selects a slot, verify it's still available:
+   - For appointments: Call [Get Availability Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot) specifying the selected slot's `localStartDate` and `localEndDate`.
+   - For classes: Call [Get Event Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-event-time-slot) specifying the `eventId`.
+1. Call [Reschedule Booking Anonymously](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/anonymous-booking-actions-service-reschedule-booking-anonymously) with the token, the new `slot` (including `serviceId`, `scheduleId`, `startDate`, `endDate`, and `eventId`), and the booking's current `revision`. Rescheduling always sends a notification to participants.
+
+## Payments and conflict resolution
+
+### Handle payments
+
+Once you've created a booking, handle payments using [Wix eCommerce](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/introduction) or your own custom checkout flow. For step-by-step instructions for payment processing, see the [End-to-End Booking Flows article](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/flow-single-service-booking#handle-payments).
+
+### Handle double booking conflicts
+
+When scheduling conflicts occur and a booking's `doubleBooked` flag is set to `true`, you can follow this flow to resolve the conflict and handle necessary refunds.
+
+To detect and resolve double booking conflicts:
+
+1. Detect conflicts by listening for these events:
+   + [Booking Confirmed](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-confirmed): Check if `booking.doubleBooked` is `true`.
+   + [Booking Marked as Pending](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-marked-as-pending): Check if `booking.doubleBooked` is `true`.
+   
+   <Note>
+
+   Only start conflict resolution for events where `booking.flowControlSettings.skipAvailabilityValidation` is `false` or `undefined`. Events with `skipAvailabilityValidation: true` indicate that force resolution was already applied, so processing them again would create an infinite loop.
+
+   </Note>
+1. Determine resolution options by calling [Bulk Calculate Allowed Actions](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/bulk-calculate-allowed-actions), specifying the relevant booking ID.
+   If both `cancel` and `reschedule` flags are `false`, standard resolution isn't available and you'll need to force resolution.
+1. Choose a resolution approach:
+   - [Standard reschedule](fallback::#standard-reschedule).
+   - [Standard cancel](fallback::#standard-cancel).
+   - [Force resolution](fallback::#force-resolution).
+1. Notify the customer and business about the conflict resolution.
+
+#### Standard reschedule
+
+Move an appointment or class booking to a different available time slot that works for the customer.
+Course bookings can't be rescheduled.
+
+1. Identify alternative time slots using the Time Slots V2 API:
+   - For appointments: Call [List Availability Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-availability-time-slots).
+   - For class events: Call [List Event Time Slots](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/list-event-time-slots).
+1. Show alternatives to the customer and let them choose.
+1. After customer selection, verify the chosen slot is still available:
+   - For appointments: Call [Get Availability Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-availability-time-slot).
+   - For classes: Call [Get Event Time Slot](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/get-event-time-slot).
+1. [Reschedule the booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-booking) to the new time slot.
+1. If the booking was `PENDING` and used a custom checkout, call [Confirm Or Decline Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking) to finalize the booking status after rescheduling.
+
+#### Standard cancel
+
+Cancel the conflicted booking and process any necessary refunds.
+   
+1. Call [Cancel Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/cancel-booking).
+   Use flow control settings to protect the customer from penalties due to the conflict:
+   - `withRefund: true` to ensure customers receive refunds for [pricing plans](https://dev.wix.com/docs/api-reference/business-solutions/pricing-plans/plans/plans-v3/introduction) payments since the conflict wasn't their fault.
+   - `waiveCancellationFee: true` to waive the [cancellation fee](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/pricing/booking-fees/introduction) as the customer shouldn't be penalized for a booking conflict.
+1. Handle refunds based on the payment method used:
+   - **Wix eCommerce checkouts**: Issue a refund using the [eCommerce Orders API](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction). For step-by-step instructions, see the [Order Billing sample flows](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/sample-flows). Wix Bookings automatically updates the booking's `status` to `REFUNDED`.
+   - **Custom checkouts**: Process the refund through your external payment system, then update the [eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction) to reflect the refund.
+
+#### Force resolution
+
+Override availability validation to confirm or decline the booking when standard options aren't available.
+Force resolution options differ significantly between checkout types:
+
+##### For eCommerce checkouts
+
+- **Confirmation option**: Call [Reschedule Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-booking), specifying the existing `slot` and `flowControlSettings: { skipAvailabilityValidation: true }`.
+  If the service requires manual approval, also specify `skipBusinessConfirmation: true`.
+- **Decline option**: 
+  - Pricing plan payments: We recommend implementing the standard Cancel Booking call described above with `withRefund: true` instead of force declining. Use `ignoreCancellationPolicy: true` if you need to override timing restrictions.
+  - Other payment methods: Manually issue a refund using the [eCommerce Orders API](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction).
+  For step-by-step instruction, you can refer to these [sample flows](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/sample-flows).
+  Then, Wix Bookings automatically updates the booking's `status` to `REFUNDED`.
+  
+##### For custom checkouts
+
+- **Confirmation option**: Call [Confirm Or Decline Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking), specifying `flowControlSettings: { skipAvailabilityValidation: true }` to confirm regardless of conflicts.
+- **Decline option**:
+  1. Process any necessary refunds through the external payment system.
+  2. Update the [eCommerce order](https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction) to reflect the refund.
+     For step-by-step instructions, you can refer to these [sample flows](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/sample-flows).
+     Then, Wix Bookings automatically updates the booking status to `REFUNDED`.
+
+## Monitor subscription payment status
+
+After a customer books a course with subscription payments, you can track the subscription's progress and identify bookings with payment issues.
+
+To monitor subscription payments:
+
+1. Call [Query Extended Bookings](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings) with `withEcomOrder` set to `true`. The response includes `subscriptionInfo` for course bookings with subscription pricing.
+1. For each booking, check `subscriptionInfo.status` to determine the subscription's current state. Active subscriptions have a status of `ACTIVE`.
+1. Compare `subscriptionInfo.currentCycle` with `subscriptionInfo.totalCycles` to determine payment progress. For example, if `currentCycle` is `3` and `totalCycles` is `12`, the customer has paid 3 out of 12 monthly payments.
+1. To identify bookings with payment issues, filter for bookings where `paymentStatus` is `FAILED`. This indicates the most recent subscription payment was unsuccessful.

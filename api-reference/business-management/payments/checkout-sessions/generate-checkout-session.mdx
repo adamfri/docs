@@ -1,0 +1,554 @@
+---
+title: "Generate Checkout Session"
+description: "Creates a Wix-hosted checkout session for the supplied line items and returns its redirect URL and session ID."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a Wix-hosted checkout session for the supplied line items and returns its redirect URL
+    and session ID.
+
+    Each call creates a new, independent session. The method isn't idempotent, so a retry produces
+    an additional session rather than recovering the prior one.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-PAYMENTS.CHECKOUT-SESSION-GENERATE">Generate checkout sessions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/payments/platform/v1/checkout-sessions/generate
+    ```
+
+    ## Body Params
+
+    <ParamField body="cart" type="Cart" required>
+
+      Items, quantities, and prices the buyer is paying for, plus optional pre-fill customer details.
+
+      <Expandable title="cart properties">
+
+        <ParamField body="items" type="LineItem[]" required>
+
+          Line items the buyer is paying for in this checkout session.
+
+          At most 1 subscription line item (an item with `subscriptionInfo` set) is allowed per request.
+          Wix rejects requests with 2 or more subscription items. Non-recurring items can be combined with a
+          single subscription item. In that case the buyer is charged once at checkout for the non-recurring
+          items and, if applicable, the first cycle of the subscription. Wix bills any subsequent cycles on
+          the subscription's own schedule.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="items properties">
+
+            <ParamField body="name" type="string" required>
+
+              Name of the item, shown on the checkout page.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer" required>
+
+              Quantity of this item to charge for.
+
+            </ParamField>
+
+            <ParamField body="price" type="string" required>
+
+              Per-unit price as a decimal string in the merchant account currency. For example, `"19.99"`.
+
+            </ParamField>
+
+            <ParamField body="subscriptionInfo" type="SubscriptionInfo">
+
+              Subscription configuration. When set, the line item follows a scheduled-billing model defined by
+              `subscriptionSettings` instead of a single immediate charge. The recurring charge each billing
+              cycle is `price × quantity`, and `quantity` is locked at session creation.
+
+              At most 1 line item per request may set `subscriptionInfo`. Wix rejects requests with 2 or more
+              subscription line items with `MULTIPLE_SUBSCRIPTION_ITEMS`.
+
+              _Nested structure omitted for brevity — see the `SubscriptionInfo` object._
+
+            </ParamField>
+
+            <ParamField body="physicalProperties" type="PhysicalProperties">
+
+              Optional. Physical properties of the item, used when the item requires shipping.
+
+              _Nested structure omitted for brevity — see the `PhysicalProperties` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="customerInfo" type="CustomerInfo">
+
+          Buyer details used to pre-fill the checkout form. The buyer can edit any of these fields on the
+          Wix checkout page.
+
+          <Expandable title="customerInfo properties">
+
+            <ParamField body="firstName" type="string">
+
+              Buyer's first name.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              Buyer's last name.
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Buyer's phone number.
+
+            </ParamField>
+
+            <ParamField body="email" type="string">
+
+              Buyer's email address.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="callbackUrls" type="CallbackUrls" required>
+
+      URLs the buyer is redirected to after completing or leaving the checkout flow.
+
+      <Expandable title="callbackUrls properties">
+
+        <ParamField body="postFlowUrl" type="string">
+
+          URL the buyer is redirected to from the Wix checkout page when they choose to leave without
+          completing payment, either when they click **Continue browsing** or when they navigate back to
+          a cart-style page.
+
+          Deprecated. Use `continueBrowsingUrl` instead.
+
+        </ParamField>
+
+        <ParamField body="thankYouPageUrl" type="string" required>
+
+          URL the buyer is redirected to after a successful payment.
+
+        </ParamField>
+
+        <ParamField body="continueBrowsingUrl" type="string">
+
+          URL the buyer is redirected to from the Wix checkout page when they choose to leave without
+          completing payment, either when they click **Continue browsing** or when they navigate back to
+          a cart-style page.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="checkoutSession" type="CheckoutSession">
+
+      The created checkout session.
+
+      See the [Checkout Session Object](/api-reference/business-management/payments/checkout-sessions/checkout-session-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_SUBSCRIPTION_ITEMS` | Returned when `cart.items` contains more than 1 subscription line item. At most 1 subscription line item is allowed per request. |
+    | `400` | `INVALID_ARGUMENT` | `AUTO_RENEWAL_AND_BILLING_CYCLES_CONFLICT` | Returned when a subscription line item sets both `subscriptionSettings.autoRenewal = true` and `subscriptionSettings.billingCycles`. The 2 values are mutually exclusive. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates a Wix-hosted checkout session for a single one-time line item
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/payments/platform/v1/checkout-sessions/generate' \
+        -H 'Authorization: <AUTH>' \
+        -H 'wix-site-id: <SITE_ID>' \
+        -H 'Content-Type: application/json' \
+        --data-binary '{
+          "cart": {
+            "items": [
+              {
+                "name": "Donation",
+                "quantity": 1,
+                "price": "3.00"
+              }
+            ]
+          },
+          "callbackUrls": {
+            "continueBrowsingUrl": "https://www.example.com/",
+            "thankYouPageUrl": "https://www.example.com/thank-you"
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "checkoutSession": {
+          "id": "8046df3c-7575-4098-a5ab-c91ad8f33c47",
+          "redirectUrl": "https://www.wix.com/_serverless/payments-checkout-server/redirect/8046df3c-7575-4098-a5ab-c91ad8f33c47?hideLoginLogoutBar=true&successUrl=https%3A%2F%2Fwww.example.com%2Fthank-you"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates a Wix-hosted checkout session for the supplied line items and returns its redirect URL
+    and session ID.
+
+    Each call creates a new, independent session. The method isn't idempotent, so a retry produces
+    an additional session rather than recovering the prior one.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-PAYMENTS.CHECKOUT-SESSION-GENERATE">Generate checkout sessions</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { checkoutSessions } from '@wix/payments';
+
+    checkoutSessions.generateCheckoutSession(cart, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="cart" type="Cart" required>
+
+      Items, quantities, and prices the buyer is paying for, plus optional pre-fill customer details.
+
+      <Expandable title="cart properties">
+
+        <ParamField body="items" type="LineItem[]" required>
+
+          Line items the buyer is paying for in this checkout session.
+
+          At most 1 subscription line item (an item with `subscriptionInfo` set) is allowed per request.
+          Wix rejects requests with 2 or more subscription items. Non-recurring items can be combined with a
+          single subscription item. In that case the buyer is charged once at checkout for the non-recurring
+          items and, if applicable, the first cycle of the subscription. Wix bills any subsequent cycles on
+          the subscription's own schedule.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="items properties">
+
+            <ParamField body="name" type="string" required>
+
+              Name of the item, shown on the checkout page.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer" required>
+
+              Quantity of this item to charge for.
+
+            </ParamField>
+
+            <ParamField body="price" type="string" required>
+
+              Per-unit price as a decimal string in the merchant account currency. For example, `"19.99"`.
+
+            </ParamField>
+
+            <ParamField body="subscriptionInfo" type="SubscriptionInfo">
+
+              Subscription configuration. When set, the line item follows a scheduled-billing model defined by
+              `subscriptionSettings` instead of a single immediate charge. The recurring charge each billing
+              cycle is `price × quantity`, and `quantity` is locked at session creation.
+
+              At most 1 line item per request may set `subscriptionInfo`. Wix rejects requests with 2 or more
+              subscription line items with `MULTIPLE_SUBSCRIPTION_ITEMS`.
+
+              _Nested structure omitted for brevity — see the `SubscriptionInfo` object._
+
+            </ParamField>
+
+            <ParamField body="physicalProperties" type="PhysicalProperties">
+
+              Optional. Physical properties of the item, used when the item requires shipping.
+
+              _Nested structure omitted for brevity — see the `PhysicalProperties` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="customerInfo" type="CustomerInfo">
+
+          Buyer details used to pre-fill the checkout form. The buyer can edit any of these fields on the
+          Wix checkout page.
+
+          <Expandable title="customerInfo properties">
+
+            <ParamField body="firstName" type="string">
+
+              Buyer's first name.
+
+            </ParamField>
+
+            <ParamField body="lastName" type="string">
+
+              Buyer's last name.
+
+            </ParamField>
+
+            <ParamField body="phone" type="string">
+
+              Buyer's phone number.
+
+            </ParamField>
+
+            <ParamField body="email" type="string">
+
+              Buyer's email address.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="GenerateCheckoutSessionOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="callbackUrls" type="CallbackUrls" required>
+
+          URLs the buyer is redirected to after completing or leaving the checkout flow.
+
+          <Expandable title="callbackUrls properties">
+
+            <ParamField body="postFlowUrl" type="string">
+
+              URL the buyer is redirected to from the Wix checkout page when they choose to leave without
+              completing payment, either when they click **Continue browsing** or when they navigate back to
+              a cart-style page.
+
+              Deprecated. Use `continueBrowsingUrl` instead.
+
+            </ParamField>
+
+            <ParamField body="thankYouPageUrl" type="string" required>
+
+              URL the buyer is redirected to after a successful payment.
+
+            </ParamField>
+
+            <ParamField body="continueBrowsingUrl" type="string">
+
+              URL the buyer is redirected to from the Wix checkout page when they choose to leave without
+              completing payment, either when they click **Continue browsing** or when they navigate back to
+              a cart-style page.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="checkoutSession" type="CheckoutSession">
+
+      The created checkout session.
+
+      See the [Checkout Session Object](/api-reference/business-management/payments/checkout-sessions/checkout-session-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MULTIPLE_SUBSCRIPTION_ITEMS` | Returned when `cart.items` contains more than 1 subscription line item. At most 1 subscription line item is allowed per request. |
+    | `400` | `INVALID_ARGUMENT` | `AUTO_RENEWAL_AND_BILLING_CYCLES_CONFLICT` | Returned when a subscription line item sets both `subscriptionSettings.autoRenewal = true` and `subscriptionSettings.billingCycles`. The 2 values are mutually exclusive. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-generate-checkout-session" id="ex-sdk-generate-checkout-session-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-generate-checkout-session" id="ex-sdk-generate-checkout-session-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-generate-checkout-session" id="ex-sdk-generate-checkout-session-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-generate-checkout-session-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-generate-checkout-session-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">generateCheckoutSession</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">generateCheckoutSession (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">generateCheckoutSession (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-generate-checkout-session-0"><span className="wix-picker-name">generateCheckoutSession</span></label>
+    <label htmlFor="ex-sdk-generate-checkout-session-1"><span className="wix-picker-name">generateCheckoutSession (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-generate-checkout-session-2"><span className="wix-picker-name">generateCheckoutSession (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateCheckoutSession
+    import { checkoutSessions } from '@wix/payments';
+
+    async function generateCheckoutSession(cart,options) {
+      const response = await checkoutSessions.generateCheckoutSession(cart,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateCheckoutSession (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { checkoutSessions } from '@wix/payments';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { checkoutSessions },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function generateCheckoutSession(cart,options) {
+      const response = await myWixClient.checkoutSessions.generateCheckoutSession(cart,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateCheckoutSession (with elevated permissions)
+    import { checkoutSessions } from '@wix/payments';
+    import { auth } from '@wix/essentials';
+
+    async function myGenerateCheckoutSessionMethod(cart,options) {
+      const elevatedGenerateCheckoutSession = auth.elevate(checkoutSessions.generateCheckoutSession);
+      const response = await elevatedGenerateCheckoutSession(cart,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

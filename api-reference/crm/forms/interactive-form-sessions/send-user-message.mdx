@@ -1,0 +1,469 @@
+---
+title: "Send User Message"
+description: "Submits a user message to an existing interactive form session and processes the conversational input."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Submits a user message to an existing interactive form session and processes the conversational input.
+    User messages support up to 10,000 characters.
+
+    For implementations that require real-time streaming, call [Send User Message Streamed](https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/send-user-message-streamed) instead.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/forms/ai/v1/interactive-form-sessions/{interactiveFormSessionId}/send-user-message
+    ```
+
+    ## Path Params
+
+    <ParamField path="interactiveFormSessionId" type="string" required>
+
+      Interactive form session ID to send the message to.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="input" type="string">
+
+      User's natural language input.
+      The AI assistant analyzes this text to extract form field data and determine the next conversation step.
+      Maximum length: 10,000 characters.
+
+    </ParamField>
+
+    <ParamField body="currentValues" type="object">
+
+      Form field values to apply to the session.
+      Use this to update form data from other sources while the conversation is ongoing.
+      These values override any existing data for the same field keys.
+      For example: `{"lastName": "Smith", "phoneNumber": "+1234567890"}`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="interactiveFormSession" type="InteractiveFormSession">
+
+      Updated interactive form session after the user input is processed.
+
+      See the [Interactive Form Session Object](/api-reference/crm/forms/interactive-form-sessions/interactive-form-session-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="responseChunks" type="InteractiveFormSessionResponseChunk[]">
+
+      AI assistant response chunks generated from processing the user's message.
+      These can include extracted data, follow-up questions, input selectors, or submission confirmation.
+
+      <Expandable title="responseChunks properties">
+
+        <ResponseField name="chunkType" type="string">
+
+          Response chunk type, that determines how the content should be processed and displayed.
+
+          **Supported values:**
+
+          - `TEXT` — Text message for display to the user.
+          - `TEXT_DATA` — Structured data extracted from user input and mapped to form fields.
+          - `MULTI_SELECT_INPUT` — Selector for selecting multiple options from a list.
+          - `NUMBER_INPUT` — Selector for numeric input with optional validation.
+          - `SEPARATOR` — Visual separator element such as paragraph breaks.
+          - `SINGLE_SELECT_INPUT` — Selector for selecting one option from a list.
+          - `ERROR` — Error message when processing fails or validation errors occur.
+          - `SUBMISSION` — Form submission confirmation including a submission ID.
+          - `IMPORTANT_TEXT` — Highlighted information that may influence form data extraction.
+          - `DEBUG` — Diagnostic information for troubleshooting and development.
+          - `END_OF_RESPONSE` — Signals the completion of a response stream.
+          - `FILE_UPLOAD` — Input for file upload. Not supported.
+          - `SIGNATURE` — Input for digital signature capture. Not supported.
+
+        </ResponseField>
+
+        <ResponseField name="meaningfulInput" type="MeaningfulInput">
+
+          Indicates which portion of the original user input was meaningful for data extraction.
+          Can be used to highlight relevant parts of the user's message in the UI.
+
+          <Expandable title="meaningfulInput properties">
+
+            <ResponseField name="startOffset" type="integer">
+
+              Character position (0-indexed) where the meaningful portion of user input begins.
+
+              Constraints: `min 0`, `max 10000`.
+
+            </ResponseField>
+
+            <ResponseField name="length" type="integer">
+
+              Length in characters of the meaningful portion of user input.
+              Use this with `startOffset` to highlight the relevant text that was processed for data extraction.
+
+              Constraints: `min 0`, `max 10000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `EMPTY_REQUEST` | Request message was empty or session ID is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST "https://www.wixapis.com/forms/ai/v1/interactive-form-sessions/12345678-1234-1234-1234-123456789abc/send-user-message" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer <ACCESS_TOKEN>" \
+        -d '{
+          "input": "My name is Jane Smith and I work as a software engineer at Tech Corp.",
+          "currentValues": {
+            "name": "Jane Smith",
+            "occupation": "Software Engineer"
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "interactiveFormSession": {
+          "id": "12345678-1234-1234-1234-123456789abc",
+          "formId": "12345678-1234-1234-1234-123456789abc"
+        },
+        "responseChunks": [
+          {
+            "chunkType": "TEXT_DATA",
+            "textDataDetails": {
+              "fieldTarget": "name",
+              "text": "Great! I've recorded your name as Jane Smith.",
+              "value": "Jane Smith",
+              "displayValue": "Jane Smith"
+            },
+            "meaningfulInput": {
+              "startOffset": 11,
+              "length": 10
+            }
+          },
+          {
+            "chunkType": "TEXT_DATA",
+            "textDataDetails": {
+              "fieldTarget": "occupation",
+              "text": "And your occupation as Software Engineer.",
+              "value": "Software Engineer",
+              "displayValue": "Software Engineer"
+            },
+            "meaningfulInput": {
+              "startOffset": 45,
+              "length": 17
+            }
+          },
+          {
+            "chunkType": "TEXT",
+            "textDetails": {
+              "text": "Now, could you please provide your email address?",
+              "style": "NORMAL"
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Submits a user message to an existing interactive form session and processes the conversational input.
+    User messages support up to 10,000 characters.
+
+    For implementations that require real-time streaming, call [Send User Message Streamed](https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/send-user-message-streamed) instead.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { interactiveFormSessions } from '@wix/forms';
+
+    interactiveFormSessions.sendUserMessage(interactiveFormSessionId, options): Promise<SendUserMessageResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="interactiveFormSessionId" type="string" required>
+
+      Interactive form session ID to send the message to.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="SendUserMessageOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="input" type="string">
+
+          User's natural language input.
+          The AI assistant analyzes this text to extract form field data and determine the next conversation step.
+          Maximum length: 10,000 characters.
+
+        </ParamField>
+
+        <ParamField body="currentValues" type="object">
+
+          Form field values to apply to the session.
+          Use this to update form data from other sources while the conversation is ongoing.
+          These values override any existing data for the same field keys.
+          For example: `{"lastName": "Smith", "phoneNumber": "+1234567890"}`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<SendUserMessageResponse>`.
+
+    <ResponseField name="interactiveFormSession" type="InteractiveFormSession">
+
+      Updated interactive form session after the user input is processed.
+
+      See the [Interactive Form Session Object](/api-reference/crm/forms/interactive-form-sessions/interactive-form-session-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="responseChunks" type="InteractiveFormSessionResponseChunk[]">
+
+      AI assistant response chunks generated from processing the user's message.
+      These can include extracted data, follow-up questions, input selectors, or submission confirmation.
+
+      <Expandable title="responseChunks properties">
+
+        <ResponseField name="chunkType" type="string">
+
+          Response chunk type, that determines how the content should be processed and displayed.
+
+          **Supported values:**
+
+          - `TEXT` — Text message for display to the user.
+          - `TEXT_DATA` — Structured data extracted from user input and mapped to form fields.
+          - `MULTI_SELECT_INPUT` — Selector for selecting multiple options from a list.
+          - `NUMBER_INPUT` — Selector for numeric input with optional validation.
+          - `SEPARATOR` — Visual separator element such as paragraph breaks.
+          - `SINGLE_SELECT_INPUT` — Selector for selecting one option from a list.
+          - `ERROR` — Error message when processing fails or validation errors occur.
+          - `SUBMISSION` — Form submission confirmation including a submission ID.
+          - `IMPORTANT_TEXT` — Highlighted information that may influence form data extraction.
+          - `DEBUG` — Diagnostic information for troubleshooting and development.
+          - `END_OF_RESPONSE` — Signals the completion of a response stream.
+          - `FILE_UPLOAD` — Input for file upload. Not supported.
+          - `SIGNATURE` — Input for digital signature capture. Not supported.
+
+        </ResponseField>
+
+        <ResponseField name="meaningfulInput" type="MeaningfulInput">
+
+          Indicates which portion of the original user input was meaningful for data extraction.
+          Can be used to highlight relevant parts of the user's message in the UI.
+
+          <Expandable title="meaningfulInput properties">
+
+            <ResponseField name="startOffset" type="integer">
+
+              Character position (0-indexed) where the meaningful portion of user input begins.
+
+              Constraints: `min 0`, `max 10000`.
+
+            </ResponseField>
+
+            <ResponseField name="length" type="integer">
+
+              Length in characters of the meaningful portion of user input.
+              Use this with `startOffset` to highlight the relevant text that was processed for data extraction.
+
+              Constraints: `min 0`, `max 10000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `EMPTY_REQUEST` | Request message was empty or session ID is invalid. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-send-user-message" id="ex-sdk-send-user-message-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-send-user-message" id="ex-sdk-send-user-message-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-send-user-message-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-send-user-message-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Send user message to interactive form session</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">sendUserMessage (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-send-user-message-0"><span className="wix-picker-name">Send user message to interactive form session</span></label>
+    <label htmlFor="ex-sdk-send-user-message-1"><span className="wix-picker-name">sendUserMessage (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Send user message to interactive form session
+    import { interactiveFormSessions } from "@wix/forms";
+
+    const currentValues = {
+      name: "Jane Smith",
+      occupation: "Software Engineer",
+    };
+
+    async function sendUserMessage() {
+      const response = await interactiveFormSessions.sendUserMessage(
+        "session-12345678-1234-1234-1234-123456789abc",
+        {
+          input: "My name is Jane Smith and I work as a software engineer at Tech Corp.",
+          currentValues,
+        }
+      );
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript sendUserMessage (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { interactiveFormSessions } from '@wix/forms';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { interactiveFormSessions },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function sendUserMessage(interactiveFormSessionId,options) {
+      const response = await myWixClient.interactiveFormSessions.sendUserMessage(interactiveFormSessionId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

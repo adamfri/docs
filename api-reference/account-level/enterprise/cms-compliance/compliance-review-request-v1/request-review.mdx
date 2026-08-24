@@ -1,0 +1,456 @@
+---
+title: "Request Review"
+description: "Submits a CMS compliance action on a data item for review."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Submits a CMS compliance action on a data item for review.
+
+    Call this method when a user requests to publish or unpublish a CMS data item. The service
+    fetches the relevant data item version(s) from CMS and emits a `ReviewRequested` domain event
+    carrying the action, fetched content, and submitting identity. For `UNPUBLISH_CHANGED`, the
+    caller can also specify which version to preserve as a draft. Nothing is emitted if a fetch fails.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix user or by using an account level API key.
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.ENTERPRISE.CMS-COMPLIANCE-MANAGE">Enterprise CMS compliance flow </span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    <Note>This is an account-level method.</Note>
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/cms-compliance/v1/request-review
+    ```
+
+    ## Body Params
+
+    <ParamField body="action" type="string" required>
+
+      Compliance action performed on the data item.
+
+      **Supported values:**
+
+      - `PUBLISH_DRAFT` — Publish an item that currently exists only as a draft.
+      - `PUBLISH_CHANGED` — Publish a draft containing changes to an existing published item.
+      - `UNPUBLISH_PUBLISHED` — Unpublish an item that has no pending draft changes.
+      - `PUBLISH_PUBLISHED` — Submit an already-published item for review without content changes.
+      - `UNPUBLISH_CHANGED` — Unpublish an item that also has pending draft changes.
+
+    </ParamField>
+
+    <ParamField body="dataItemId" type="string" required>
+
+      ID of the CMS data item the action was performed on. Matches the item's `_id` in CMS.
+
+      Constraints: `maxLength 128`.
+
+    </ParamField>
+
+    <ParamField body="collectionId" type="string" required>
+
+      ID of the CMS collection the data item belongs to.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="versionOnUnpublish" type="string">
+
+      Version to preserve as a draft after `UNPUBLISH_CHANGED`.
+      Ignored for all other actions. If omitted, the review request is still submitted.
+
+      **Supported values:**
+
+      - `KEEP_LATEST_DRAFT_VERSION` — Preserve the item's latest draft edits.
+      - `KEEP_LIVE_PUBLISHED_VERSION` — Preserve the item's current live version.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="complianceReviewRequest" type="ComplianceReviewRequest">
+
+      Submitted compliance review request, also emitted as a `ReviewRequested` event.
+
+      See the [Compliance Review Request Object](/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/compliance-review-request-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `401` | `UNAUTHENTICATED` | `MISSING_IDENTITY` | The request identity doesn't include the required account ID. |
+    | `428` | `FAILED_PRECONDITION` | `CMS_METASITE_NOT_RESOLVED` | Couldn't resolve the account's CMS metasite. Exactly one `ACCOUNT_MASTER_CMS` metasite must exist for the account. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ACTION` | The `action` is missing or isn't a recognized review action. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Compliance Review Request Review Requested | `wix.ctoo.broadridge.v1.compliance_review_request_review_requested` |  |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Submits UNPUBLISH_CHANGED and preserves the latest draft version.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/cms-compliance/v1/request-review' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "action": "UNPUBLISH_CHANGED",
+        "dataItemId": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+        "collectionId": "Announcements",
+        "versionOnUnpublish": "KEEP_LATEST_DRAFT_VERSION"
+      }'
+      ```
+
+      ```json Response
+      {
+        "complianceReviewRequest": {
+          "id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+          "action": "UNPUBLISH_CHANGED",
+          "currentDataItem": {
+            "id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+            "dataCollectionId": "Announcements",
+            "data": {
+              "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+              "title": "Q3 disclosure",
+              "status": "published"
+            }
+          },
+          "proposedDataItem": {
+            "id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+            "dataCollectionId": "Announcements__drafts",
+            "data": {
+              "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+              "title": "Q3 disclosure (revised)",
+              "status": "draft"
+            }
+          },
+          "versionOnUnpublish": "KEEP_LATEST_DRAFT_VERSION",
+          "submittedAt": "2024-01-15T10:30:00.000Z",
+          "submittedByUserId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+          "submittedByAccountId": "4f907f5d-bb05-4d99-90a4-7f55d34e9fe8"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Submits a CMS compliance action on a data item for review.
+
+    Call this method when a user requests to publish or unpublish a CMS data item. The service
+    fetches the relevant data item version(s) from CMS and emits a `ReviewRequested` domain event
+    carrying the action, fetched content, and submitting identity. For `UNPUBLISH_CHANGED`, the
+    caller can also specify which version to preserve as a draft. Nothing is emitted if a fetch fails.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.ENTERPRISE.CMS-COMPLIANCE-MANAGE">Enterprise CMS compliance flow </span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    <Note>This is an account-level method.</Note>
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { enterpriseCmsCompliance } from '@wix/enterprise-cms-compliance';
+
+    enterpriseCmsCompliance.requestReview(action, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="action" type="string" required>
+
+      Compliance action performed on the data item.
+
+      **Supported values:**
+
+      - `PUBLISH_DRAFT` — Publish an item that currently exists only as a draft.
+      - `PUBLISH_CHANGED` — Publish a draft containing changes to an existing published item.
+      - `UNPUBLISH_PUBLISHED` — Unpublish an item that has no pending draft changes.
+      - `PUBLISH_PUBLISHED` — Submit an already-published item for review without content changes.
+      - `UNPUBLISH_CHANGED` — Unpublish an item that also has pending draft changes.
+
+    </ParamField>
+
+    <ParamField body="options" type="RequestReviewOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="dataItemId" type="string" required>
+
+          ID of the CMS data item the action was performed on. Matches the item's `_id` in CMS.
+
+          Constraints: `maxLength 128`.
+
+        </ParamField>
+
+        <ParamField body="collectionId" type="string" required>
+
+          ID of the CMS collection the data item belongs to.
+
+          Constraints: `maxLength 256`.
+
+        </ParamField>
+
+        <ParamField body="versionOnUnpublish" type="string">
+
+          Version to preserve as a draft after `UNPUBLISH_CHANGED`.
+          Ignored for all other actions. If omitted, the review request is still submitted.
+
+          **Supported values:**
+
+          - `KEEP_LATEST_DRAFT_VERSION` — Preserve the item's latest draft edits.
+          - `KEEP_LIVE_PUBLISHED_VERSION` — Preserve the item's current live version.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="complianceReviewRequest" type="ComplianceReviewRequest">
+
+      Submitted compliance review request, also emitted as a `ReviewRequested` event.
+
+      See the [Compliance Review Request Object](/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/compliance-review-request-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `401` | `UNAUTHENTICATED` | `MISSING_IDENTITY` | The request identity doesn't include the required account ID. |
+    | `428` | `FAILED_PRECONDITION` | `CMS_METASITE_NOT_RESOLVED` | Couldn't resolve the account's CMS metasite. Exactly one `ACCOUNT_MASTER_CMS` metasite must exist for the account. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ACTION` | The `action` is missing or isn't a recognized review action. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Compliance Review Request Review Requested | `wix.ctoo.broadridge.v1.compliance_review_request_review_requested` |  |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-request-review" id="ex-sdk-request-review-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-request-review" id="ex-sdk-request-review-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-request-review-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-request-review-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Request review before unpublishing a changed data item</span><span className="wix-picker-desc">Submits UNPUBLISH_CHANGED and preserves the latest draft version</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">requestReview (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-request-review-0"><span className="wix-picker-name">Request review before unpublishing a changed data item</span><span className="wix-picker-desc">Submits UNPUBLISH_CHANGED and preserves the latest draft version</span></label>
+    <label htmlFor="ex-sdk-request-review-1"><span className="wix-picker-name">requestReview (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Request review before unpublishing a changed data item
+    import { enterpriseCmsCompliance } from "@wix/enterprise-cms-compliance";
+
+    const action = "UNPUBLISH_CHANGED";
+
+    const options = {
+      dataItemId: "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+      collectionId: "Announcements",
+      versionOnUnpublish: "KEEP_LATEST_DRAFT_VERSION",
+    };
+
+    async function requestReview() {
+      const response = await enterpriseCmsCompliance.requestReview(action, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "complianceReviewRequest": {
+     *     "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *     "action": "UNPUBLISH_CHANGED",
+     *     "currentDataItem": {
+     *       "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *       "dataCollectionId": "Announcements",
+     *       "data": {
+     *         "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *         "title": "Q3 disclosure",
+     *         "status": "published"
+     *       }
+     *     },
+     *     "proposedDataItem": {
+     *       "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *       "dataCollectionId": "Announcements__drafts",
+     *       "data": {
+     *         "_id": "d7a341c4-196b-46e7-813c-2b0fc1847ec6",
+     *         "title": "Q3 disclosure (revised)",
+     *         "status": "draft"
+     *       }
+     *     },
+     *     "versionOnUnpublish": "KEEP_LATEST_DRAFT_VERSION",
+     *     "submittedAt": "2024-01-15T10:30:00.000Z",
+     *     "submittedByUserId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+     *     "submittedByAccountId": "4f907f5d-bb05-4d99-90a4-7f55d34e9fe8"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript requestReview (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { enterpriseCmsCompliance } from '@wix/enterprise-cms-compliance';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { enterpriseCmsCompliance },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function requestReview(action,options) {
+      const response = await myWixClient.enterpriseCmsCompliance.requestReview(action,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

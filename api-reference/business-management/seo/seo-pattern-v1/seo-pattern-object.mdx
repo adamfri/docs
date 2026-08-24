@@ -1,0 +1,582 @@
+---
+title: "Seo Pattern Object"
+description: "An SEO pattern is a template of SEO tags defined for one page type, such as every blog post or every store product."
+icon: "cube"
+---
+
+An SEO pattern is a template of SEO tags defined for one page type, such as every blog
+post or every store product. A pattern's tags may contain variables, written as
+`{{variable}}`, that are filled in with each item's own values when its page renders,
+so a Wix user sets the tags for a whole page type once instead of item by item.
+
+Every page type always has a pattern in effect. When a site has no pattern of its own
+for a page type, the built-in Wix default applies, and `source` reports which of the
+two is in effect.
+
+A change to a pattern reaches the live site without a site publish, and applies to
+every page of that type that has no SEO tags set for the item itself.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      SEO pattern ID, in the format `{pageType}`.
+
+      For a pattern that applies to a single page built from a Wix Data collection, the
+      format is `{pageType}:{pageId}`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="pageType" type="string">
+
+      Page type the pattern applies to. For example, `STATIC_PAGE`, `BLOG_POST`, or
+      `STORES_PRODUCT`.
+
+      **Read-only.** Constraints: `maxLength 100`.
+
+    </ResponseField>
+
+    <ResponseField name="pageId" type="string">
+
+      ID of a single page built from a Wix Data collection, when the pattern applies to
+      that page alone rather than to the whole page type.
+
+      Supported only for the `WIX_DATA_PAGE_ITEM` page type.
+
+    </ResponseField>
+
+    <ResponseField name="pattern" type="SeoPatternBlob">
+
+      The site's own pattern for the page type, which takes precedence over the Wix
+      default.
+
+      Empty when the site has no pattern of its own, in which case `defaultPattern`
+      applies.
+
+      <Expandable title="pattern properties">
+
+        <ResponseField name="tags" type="Tag[]">
+
+          The pattern's SEO tag templates.
+
+          A tag may reference only the variables the page type offers. Call [List SEO Pattern
+          Variables](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables)
+          for the page type to retrieve them.
+
+          A tag whose `disabled` or `custom` value is itself a variable is returned with that
+          value unset, because those fields are booleans. The behavior still applies when the
+          page renders.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="defaultPattern" type="SeoPatternBlob">
+
+      The pattern Wix provides for the page type, which applies whenever the site has no
+      pattern of its own.
+
+      Always returned, so you can see what a reset would restore.
+
+      **Read-only.**
+
+      <Expandable title="defaultPattern properties">
+
+        <ResponseField name="tags" type="Tag[]">
+
+          The pattern's SEO tag templates.
+
+          A tag may reference only the variables the page type offers. Call [List SEO Pattern
+          Variables](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables)
+          for the page type to retrieve them.
+
+          A tag whose `disabled` or `custom` value is itself a variable is returned with that
+          value unset, because those fields are booleans. The behavior still applies when the
+          page renders.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="source" type="string">
+
+      Which pattern is in effect for the page type: the site's own, or the Wix default.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `PATTERN_SOURCE_USER` — The site has a pattern of its own for the page type, returned in `pattern`.
+      - `PATTERN_SOURCE_DEFAULT` — The site has no pattern of its own for the page type, so the Wix default in
+      `defaultPattern` applies.
+
+    </ResponseField>
+
+    <ResponseField name="language" type="string">
+
+      Language the pattern applies to, as an IETF BCP 47 language tag. For example,
+      `en-US` for U.S. English.
+
+      A page type has a single pattern, so this reports the site's primary language.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="origin" type="string">
+
+      What made the most recent change to the pattern, for example a Wix user or the site
+      migration flow. Derived from the caller, not from the request.
+
+      Reported only on the response to a write, and on the event the write emits. It isn't
+      stored with the pattern, so Get SEO Pattern and List SEO Patterns always report
+      `ORIGIN_UNSPECIFIED`, as does a write by a caller Wix doesn't identify as a specific
+      origin.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `ORIGIN_USER` — A user, working in the dashboard or editor, or calling the API on their own behalf.
+      - `ORIGIN_MIGRATION` — The flow that imports an existing site into Wix.
+      - `ORIGIN_AI` — An AI agent or an automated suggestion flow.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "seoPattern": {
+          "id": "WIX_DATA_PAGE_ITEM:tqk0y",
+          "pageType": "WIX_DATA_PAGE_ITEM",
+          "pageId": "tqk0y",
+          "pattern": {
+            "tags": [
+              {
+                "type": "title",
+                "children": "{{wix-data-page-item.main-collection-primary-field}} | {{site.name}}",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "meta",
+                "props": {
+                  "name": "description",
+                  "content": "{{wix-data-page-item.main-collection-primary-field}} from {{wix-data-page-item.main-collection-name}}."
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              }
+            ]
+          },
+          "defaultPattern": {
+            "tags": [
+              {
+                "type": "title",
+                "children": "{{wix-data-page-item.main-collection-primary-field}} | {{site.name}}",
+                "custom": false,
+                "disabled": false
+              },
+              {
+                "type": "link",
+                "props": {
+                  "rel": "canonical",
+                  "href": "{{wix-data-page-item.page-url}}"
+                },
+                "children": "",
+                "custom": false,
+                "disabled": false
+              }
+            ]
+          },
+          "source": "PATTERN_SOURCE_USER",
+          "language": "en",
+          "origin": "ORIGIN_UNSPECIFIED"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      SEO pattern ID, in the format `{pageType}`.
+
+      For a pattern that applies to a single page built from a Wix Data collection, the
+      format is `{pageType}:{pageId}`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="pageType" type="string">
+
+      Page type the pattern applies to. For example, `STATIC_PAGE`, `BLOG_POST`, or
+      `STORES_PRODUCT`.
+
+      **Read-only.** Constraints: `maxLength 100`.
+
+    </ResponseField>
+
+    <ResponseField name="pageId" type="string">
+
+      ID of a single page built from a Wix Data collection, when the pattern applies to
+      that page alone rather than to the whole page type.
+
+      Supported only for the `WIX_DATA_PAGE_ITEM` page type.
+
+    </ResponseField>
+
+    <ResponseField name="pattern" type="SeoPatternBlob">
+
+      The site's own pattern for the page type, which takes precedence over the Wix
+      default.
+
+      Empty when the site has no pattern of its own, in which case `defaultPattern`
+      applies.
+
+      <Expandable title="pattern properties">
+
+        <ResponseField name="tags" type="Tag[]">
+
+          The pattern's SEO tag templates.
+
+          A tag may reference only the variables the page type offers. Call [List SEO Pattern
+          Variables](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables)
+          for the page type to retrieve them.
+
+          A tag whose `disabled` or `custom` value is itself a variable is returned with that
+          value unset, because those fields are booleans. The behavior still applies when the
+          page renders.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="defaultPattern" type="SeoPatternBlob">
+
+      The pattern Wix provides for the page type, which applies whenever the site has no
+      pattern of its own.
+
+      Always returned, so you can see what a reset would restore.
+
+      **Read-only.**
+
+      <Expandable title="defaultPattern properties">
+
+        <ResponseField name="tags" type="Tag[]">
+
+          The pattern's SEO tag templates.
+
+          A tag may reference only the variables the page type offers. Call [List SEO Pattern
+          Variables](https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables)
+          for the page type to retrieve them.
+
+          A tag whose `disabled` or `custom` value is itself a variable is returned with that
+          value unset, because those fields are booleans. The behavior still applies when the
+          page renders.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="tags properties">
+
+            <ResponseField name="type" type="string">
+
+              SEO tag type.
+
+              Supported values: `title`, `meta`, `script`, `link`.
+
+            </ResponseField>
+
+            <ResponseField name="props" type="object">
+
+              A `{"key": "value"}` pair object where each SEO tag property (`"name"`, `"content"`, `"rel"`, `"href"`) contains a value.
+              For example: `{"name": "description", "content": "the description itself"}`.
+
+            </ResponseField>
+
+            <ResponseField name="meta" type="object">
+
+              SEO tag metadata. For example, `{"height": 300, "width": 240}`.
+
+            </ResponseField>
+
+            <ResponseField name="children" type="string">
+
+              SEO tag inner content. For example, `<title> inner content </title>`.
+
+            </ResponseField>
+
+            <ResponseField name="custom" type="boolean">
+
+              Whether the tag is a [custom tag](https://support.wix.com/en/article/adding-additional-meta-tags-to-your-sites-pages) —
+              i.e. an entry from the site's Advanced/Custom Tags list.
+
+              This flag is scoped to that feature only. It is NOT an indicator of whether a standard tag
+              (`title`, `description`, Open Graph, etc.) reflects a manually configured value versus a computed
+              default/pattern — standard tags always resolve with `custom: false`, even when their content comes
+              from a page's manually saved SEO title/description override. Don't use this field to verify whether
+              a live page reflects a manual per-page SEO edit.
+
+              Limitation: when `ResolveStaticPageSeoTags` is called without `seoData`, the per-page SEO data is read
+              only from the Vibe/Wix-managed-headless override store. That store holds nothing for classic Wix Editor
+              or Wix Studio pages, so even genuine Advanced/Custom Tags saved on those pages are missing from the
+              response entirely — there, `false` means this API could not tell, not that no custom tag exists.
+              Pass `seoData` explicitly to resolve against a known set of tags.
+
+            </ResponseField>
+
+            <ResponseField name="disabled" type="boolean">
+
+              Whether the tag is disabled. If the tag is disabled, people can't find your page when searching for this phrase in search engines.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="source" type="string">
+
+      Which pattern is in effect for the page type: the site's own, or the Wix default.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `PATTERN_SOURCE_USER` — The site has a pattern of its own for the page type, returned in `pattern`.
+      - `PATTERN_SOURCE_DEFAULT` — The site has no pattern of its own for the page type, so the Wix default in
+      `defaultPattern` applies.
+
+    </ResponseField>
+
+    <ResponseField name="language" type="string">
+
+      Language the pattern applies to, as an IETF BCP 47 language tag. For example,
+      `en-US` for U.S. English.
+
+      A page type has a single pattern, so this reports the site's primary language.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="origin" type="string">
+
+      What made the most recent change to the pattern, for example a Wix user or the site
+      migration flow. Derived from the caller, not from the request.
+
+      Reported only on the response to a write, and on the event the write emits. It isn't
+      stored with the pattern, so Get SEO Pattern and List SEO Patterns always report
+      `ORIGIN_UNSPECIFIED`, as does a write by a caller Wix doesn't identify as a specific
+      origin.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `ORIGIN_USER` — A user, working in the dashboard or editor, or calling the API on their own behalf.
+      - `ORIGIN_MIGRATION` — The flow that imports an existing site into Wix.
+      - `ORIGIN_AI` — An AI agent or an automated suggestion flow.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

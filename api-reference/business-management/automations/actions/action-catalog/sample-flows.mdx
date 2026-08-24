@@ -1,0 +1,157 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. These can be helpful jumping-off points as you plan your implementation.
+
+## Retrieve the actions provided by a specific app on a site
+
+To view the available actions for the Wix Inbox app installed on a site, call [Resolve Actions](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-catalog/resolve-actions) and specify the [Wix Inbox app ID](https://dev.wix.com/docs/rest/articles/getting-started/apps-created-by-wix) as a filter:
+
+```json
+{
+  "query": {
+    "filter": {
+      "appId": "141fbfae-511e-6817-c9f0-48993a7547d1"
+    }
+  }
+}
+```
+
+Resolve Actions returns an array of actions available on the site for the specified app. Here's an example of a possible response:
+
+```json
+{
+  "actions": [
+    {
+      "appId": "141fbfae-511e-6817-c9f0-48993a7547d1",
+      "actionKey": "send-message",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "examples": ["Hello, thanks for reaching out!"]
+          },
+          "contactId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Contact ID",
+            "identityType": "contact"
+          }
+        }
+      },
+      "displayName": "Send a chat message",
+      "description": "Chat live with visitors on your site with Wix Chat.",
+      "implementedMethods": {
+        "validateConfiguration": false,
+        "getDynamicInputSchema": false,
+        "getDynamicOutputSchema": false
+      },
+      "interfaceConfiguration": {
+        "type": "GENERIC"
+      }
+    }
+  ],
+  "paging": {
+    "count": 1,
+    "offset": 0,
+    "total": 1,
+    "hasNext": false
+  }
+}
+```
+
+For each retrieved action, use the `appId` and `actionKey` pair to reference the action when creating or updating an automation through the [Automations API](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/automations).
+
+## Create an action for an app
+
+To add a new action to your app, call [Create Action](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/action-catalog/create-action). You must provide your app's ID, a unique action key, and the action's [input schema](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/actions/the-action-input-schema).
+
+For example, to create a "Send gift card" action:
+
+```json
+{
+  "action": {
+    "appId": "e4c3e640-0b63-4bd9-8574-53f8c14e0236",
+    "actionKey": "send-gift-card",
+    "displayName": "Send a gift card",
+    "description": "Send a gift card to a contact via email.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema",
+      "required": ["contactId", "amount"],
+      "properties": {
+        "contactId": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Contact ID",
+          "identityType": "contact"
+        },
+        "amount": {
+          "type": "number",
+          "title": "Gift card amount"
+        },
+        "message": {
+          "type": "string",
+          "title": "Personal message"
+        }
+      }
+    },
+    "interfaceConfiguration": {
+      "type": "GENERIC"
+    }
+  }
+}
+```
+
+Create Action returns the created action with its generated ID:
+
+```json
+{
+  "action": {
+    "id": "a3d2f8e1-7c4b-4a9e-b6d5-1e8f3c2a9b7d",
+    "appId": "e4c3e640-0b63-4bd9-8574-53f8c14e0236",
+    "actionKey": "send-gift-card",
+    "displayName": "Send a gift card",
+    "description": "Send a gift card to a contact via email.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema",
+      "required": ["contactId", "amount"],
+      "properties": {
+        "contactId": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Contact ID",
+          "identityType": "contact"
+        },
+        "amount": {
+          "type": "number",
+          "title": "Gift card amount"
+        },
+        "message": {
+          "type": "string",
+          "title": "Personal message"
+        }
+      }
+    },
+    "implementedMethods": {
+      "validateConfiguration": false,
+      "getDynamicInputSchema": false,
+      "getDynamicOutputSchema": false
+    },
+    "interfaceConfiguration": {
+      "type": "GENERIC"
+    },
+    "createdDate": "2024-11-15T10:30:00Z",
+    "updatedDate": "2024-11-15T10:30:00Z"
+  }
+}
+```
+
+After you create the action and publish your app, Wix users can add the action as a step in their automations.

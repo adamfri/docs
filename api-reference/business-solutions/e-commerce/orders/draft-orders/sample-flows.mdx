@@ -1,0 +1,57 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Edit an existing order
+
+The ability to edit existing orders is crucial for merchants across various industries. In many cases, buyers change their mind, forget items, or want to change a delivery method.
+In these cases you can use the Draft Orders API to save tentative modifications to an existing order and then finalize them. To do this, follow these steps:
+
+1. Pass the order ID to [Get Order Draftability Status](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/get-order-draftability-status) to check whether the order can be used to create a draft order.
+   * If `orderDraftable` returns as `true`, continue to step 2.
+   * If `orderDraftable` returns as `false`, refer to `nonDraftableReasons` in the response to understand why the order isn’t draftable.
+2. Pass the order ID to [Create Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-draft-order). Save the newly created draft order’s ID from the response: `calculatedDraftOrder.draftOrder.id`.
+3. Modify the draft order by passing the draft order ID and other relevant information to any of the editing methods. For example, [Add Line Items To Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/add-line-items-to-draft-order), [Update Line Items](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/update-line-items), [Set Discounts](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/set-discounts), and [Set Shipping Info](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/set-shipping-info).
+4. After editing the draft order, retrieve and review the final version by passing the draft order ID to [Get Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/get-draft-order). Confirm all changes are there, and that the response doesn’t include calculation errors.
+5. To finalize the changes and update the original order, pass the draft order ID to [Commit Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/commit-draft-order). The updated order is now ready for processing, charging, or refunding.
+
+![Draft an existing order](https://wixmp-833713b177cebf373f611808.wixmp.com/images/d0372bd126c3875a7de24c7901448e86.png)
+
+## Create a new order from scratch
+
+Use the Draft Orders API when you need flexibility in managing customers’ orders that don’t follow the standard online checkout process.
+Draft orders are ideal for handling sales made over the phone, in person, via chat, or through other direct channels, as they allow you to manually create and process orders.
+
+The Draft Orders API allows you to add custom items for additional costs or non-inventory products, offer special pricing like discounts or wholesale rates, manage pre-orders, and re-create orders from other sales channels.
+And, unlike [Create Order](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/orders/create-order), you can save unfinished draft orders to complete later.
+To do this, follow these steps:
+
+1. Call [Create Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-draft-order), passing a `draftOrder` object with the initial line items and other details. Save the newly created draft order’s ID from the response: `calculatedDraftOrder.draftOrder.id`.
+2. Pass the draft order ID and relevant information to the [Add Line Items To Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/add-line-items-to-draft-order) method to add more products, services, or other items to the draft order.
+3. To add recipient information and a shipping method to the draft order:
+   1. Pass the draft order ID and relevant information to [Set Recipient Info](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/set-recipient-info). This data is used to calculate the available shipping methods.
+   2. Call [Set Shipping Info](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/set-shipping-info) with the draft order ID and other information to set the delivery method. If the shipping method is unavailable, the response includes `calculationErrors`.
+4. Create custom discounts and custom additional fees by calling [Create Custom Discounts](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-custom-discounts) and [Create Custom Additional Fees](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-custom-additional-fees) respectively. To apply them immediately to the draft order, specify `applyToDraftOrder: true`.
+5. After making all your changes to the draft order, retrieve and review the final version by passing the draft order ID to [Get Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/get-draft-order). Confirm all changes are there, and that the response doesn’t include calculation errors.
+6. To convert the draft order into a confirmed order, pass the draft order ID to [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft). The new order is now ready for processing, charging, or refunding.
+
+![Create a new order from scratch](https://wixmp-833713b177cebf373f611808.wixmp.com/images/2fb698143343cb38322660ebb4c12fcc.png)
+
+## Duplicate an existing order
+
+A merchant might want to duplicate an order to save time and reduce errors when creating a new order with similar details.
+This can be especially useful in cases such as recurring customer purchases, re-orders with slight modifications, or when processing multiple orders with the same products, shipping details, or special pricing.  
+Duplicating an order streamlines the workflow by eliminating the need to re-enter all the details manually, ensuring consistency and efficiency in managing customer transactions. To do this, follow these steps:
+
+1. Pass the order ID to [Get Order Draftability Status](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/get-order-draftability-status) to check whether the order can be used to create a draft order.
+   * If `orderDraftable` returns as `true`, continue to step 2.
+   * If `orderDraftable` returns as `false`, refer to `nonDraftableReasons` in the response to understand why the order isn't draftable.
+2. Pass the order ID to [Create Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-draft-order). Save the draft order ID from the response.
+3. Modify the draft order by passing the draft order ID and other relevant information to any of the editing methods. For example, [Add Line Items To Draft Order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/add-line-items-to-draft-order), [Set Discounts](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/set-discounts), and [Set Shipping Info](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/set-shipping-info).
+4. Call [Create Order From Draft](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/create-order-from-draft) to convert the draft order into a new order.
+
+![Duplicating an existing order](https://wixmp-833713b177cebf373f611808.wixmp.com/images/f3865ff420aa6110cbcfbd1406fd8f41.png)

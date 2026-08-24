@@ -1,0 +1,898 @@
+---
+title: "Bulk Update Payment Statuses"
+description: "Updates multiple order payments with a specified status."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple order payments with a specified status.
+
+    This method only updates the payment records. It doesn't interact with the payment provider or move any funds.
+
+    <Note>
+
+    + Payments that fail validation are reported in `results[i].itemMetadata.error`, while the remaining payments are updated.
+    + Gift card and membership payments only support the `APPROVED` and `VOIDED` statuses.
+
+    </Note>
+
+    To update the status of a single payment, call [Update Payment Status](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-transactions/update-payment-status).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/bulk/payments/update-payment-transaction-status
+    ```
+
+    ## Body Params
+
+    <ParamField body="paymentAndOrderIds" type="PaymentAndOrderId[]" required>
+
+      Order and payment IDs for which to update payment status.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="paymentAndOrderIds properties">
+
+        <ParamField body="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="paymentId" type="string">
+
+          Payment ID.
+          todo: remove comment once UI will use BulkMarkOrderAsPaid
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnFullEntity" type="boolean">
+
+      Whether to return the full payment entity (`results.item`) in the response.
+
+    </ParamField>
+
+    <ParamField body="status" type="string">
+
+      Payment status.
+
+      **Supported values:**
+
+      - `UNDEFINED`
+      - `APPROVED`
+      - `PENDING`
+      - `PENDING_MERCHANT`
+      - `CANCELED`
+      - `DECLINED`
+      - `REFUNDED`
+      - `PARTIALLY_REFUNDED`
+      - `AUTHORIZED`
+      - `VOIDED`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkPaymentResult[]">
+
+      Bulk operation results.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Payment">
+
+          Updated payment. Returned if `return_full_entity` set to `true`.
+
+          <Expandable title="item properties">
+
+            <ResponseField name="id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="paymentDetails" type="paymentDetails">
+
+              paymentDetails
+
+              _Nested structure omitted for brevity — see the `paymentDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk operation metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order Transactions Updated | `wix.ecom.v1.order_transactions_updated` | Triggered when a payment or refund is added to an order, or when an existing payment is updated. Contains the ID of the updated order and details of its associated transactions, as well as IDs of the updated payments and refunds. |
+    | Order Transactions Details Updated | `wix.ecom.v1.order_transactions_details_updated` | Triggered when a payment or refund is added to an order, or when an existing payment is updated. Contains the ID of the updated order and details of its associated transactions, as well as IDs of the updated payments and refunds. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-bulk-update-payment-statuses" id="ex-rest-bulk-update-payment-statuses-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-bulk-update-payment-statuses" id="ex-rest-bulk-update-payment-statuses-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-bulk-update-payment-statuses-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-bulk-update-payment-statuses-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk Update Payment Statuses</span><span className="wix-picker-desc">Update the statuses of multiple orders to APPROVED. Request full entity in response</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk Update Payment Statuses from multiple orders to CANCELED</span><span className="wix-picker-desc">Updates the status of payments from 2 different orders to CANCELED</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-bulk-update-payment-statuses-0"><span className="wix-picker-name">Bulk Update Payment Statuses</span><span className="wix-picker-desc">Update the statuses of multiple orders to APPROVED. Request full entity in response</span></label>
+    <label htmlFor="ex-rest-bulk-update-payment-statuses-1"><span className="wix-picker-name">Bulk Update Payment Statuses from multiple orders to CANCELED</span><span className="wix-picker-desc">Updates the status of payments from 2 different orders to CANCELED</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/bulk/payments/update-payment-transaction-status' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "paymentAndOrderIds": [
+            {
+              "orderId": "69c598e5-987f-4429-9b61-76aaf47efedc",
+              "paymentId": "770f8669-6ae7-47ed-a3fc-815ada5d86f9"
+            },
+      			{
+              "orderId": "4f0cc39e-bb17-44be-bdbd-8331a5138987",
+              "paymentId": "00000000-0000-0000-0000-000000000000"
+      			}
+          ],
+          "status": "APPROVED",
+          "returnFullEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "00000000-0000-0000-0000-000000000000",
+              "originalIndex": 1,
+              "success": false,
+              "error": {
+                "code": "PAYMENT_NOT_FOUND",
+                "description": "Payment is not found"
+              }
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "770f8669-6ae7-47ed-a3fc-815ada5d86f9",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "770f8669-6ae7-47ed-a3fc-815ada5d86f9",
+              "regularPaymentDetails": {
+                "gatewayTransactionId": "6a82ab27-feb1-44ea-98e3-217f1b9c8e89",
+                "paymentMethod": "In Person",
+                "providerTransactionId": "",
+                "offlinePayment": true,
+                "status": "APPROVED"
+              },
+              "createdDate": "2023-11-14T12:45:56.345Z",
+              "updatedDate": "2023-11-20T09:46:48.081Z",
+              "amount": {
+                "amount": "330.0",
+                "formattedAmount": "$330.00"
+              },
+              "refundDisabled": false
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/bulk/payments/update-payment-transaction-status' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "paymentAndOrderIds": [
+            {
+              "orderId": "69c598e5-987f-4429-9b61-76aaf47efedc",
+              "paymentId": "770f8669-6ae7-47ed-a3fc-815ada5d86f9"
+            },
+            {
+              "orderId": "4f0cc39e-bb17-44be-bdbd-8331a5138987",
+              "paymentId": "21cc0ff7-7ff5-4931-9ef8-1ee3d84a2215"
+            }
+          ],
+          "status": "CANCELED",
+          "returnFullEntity": false
+        }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "770f8669-6ae7-47ed-a3fc-815ada5d86f9",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "21cc0ff7-7ff5-4931-9ef8-1ee3d84a2215",
+              "originalIndex": 1,
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Updates multiple order payments with a specified status.
+
+    This method only updates the payment records. It doesn't interact with the payment provider or move any funds.
+
+    <Note>
+
+    + Payments that fail validation are reported in `results[i].itemMetadata.error`, while the remaining payments are updated.
+    + Gift card and membership payments only support the `APPROVED` and `VOIDED` statuses.
+
+    </Note>
+
+    To update the status of a single payment, call [Update Payment Status](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-transactions/update-payment-status).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderTransactions } from '@wix/ecom';
+
+    orderTransactions.bulkUpdatePaymentStatuses(paymentAndOrderIds, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="paymentAndOrderIds" type="PaymentAndOrderId[]" required>
+
+      Order and payment IDs for which to update payment status.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="paymentAndOrderIds properties">
+
+        <ParamField body="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="paymentId" type="string">
+
+          Payment ID.
+          todo: remove comment once UI will use BulkMarkOrderAsPaid
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkUpdatePaymentStatusesOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnFullEntity" type="boolean">
+
+          Whether to return the full payment entity (`results.item`) in the response.
+
+        </ParamField>
+
+        <ParamField body="status" type="string">
+
+          Payment status.
+
+          **Supported values:**
+
+          - `UNDEFINED`
+          - `APPROVED`
+          - `PENDING`
+          - `PENDING_MERCHANT`
+          - `CANCELED`
+          - `DECLINED`
+          - `REFUNDED`
+          - `PARTIALLY_REFUNDED`
+          - `AUTHORIZED`
+          - `VOIDED`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkPaymentResult[]">
+
+      Bulk operation results.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Payment">
+
+          Updated payment. Returned if `return_full_entity` set to `true`.
+
+          <Expandable title="item properties">
+
+            <ResponseField name="_id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ResponseField name="paymentDetails" type="paymentDetails">
+
+              paymentDetails
+
+              _Nested structure omitted for brevity — see the `paymentDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk operation metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Order Transactions Updated | `wix.ecom.v1.order_transactions_updated` | Triggered when a payment or refund is added to an order, or when an existing payment is updated. Contains the ID of the updated order and details of its associated transactions, as well as IDs of the updated payments and refunds. |
+    | Order Transactions Details Updated | `wix.ecom.v1.order_transactions_details_updated` | Triggered when a payment or refund is added to an order, or when an existing payment is updated. Contains the ID of the updated order and details of its associated transactions, as well as IDs of the updated payments and refunds. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-update-payment-statuses" id="ex-sdk-bulk-update-payment-statuses-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-update-payment-statuses" id="ex-sdk-bulk-update-payment-statuses-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-update-payment-statuses" id="ex-sdk-bulk-update-payment-statuses-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-update-payment-statuses-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-update-payment-statuses-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk update payment statuses to canceled</span><span className="wix-picker-desc">Cancel payments across multiple orders</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk update payment statuses</span><span className="wix-picker-desc">Update the statuses of multiple orders to approved and request full entity in response</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkUpdatePaymentStatuses (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-update-payment-statuses-0"><span className="wix-picker-name">Bulk update payment statuses to canceled</span><span className="wix-picker-desc">Cancel payments across multiple orders</span></label>
+    <label htmlFor="ex-sdk-bulk-update-payment-statuses-1"><span className="wix-picker-name">Bulk update payment statuses</span><span className="wix-picker-desc">Update the statuses of multiple orders to approved and request full entity in response</span></label>
+    <label htmlFor="ex-sdk-bulk-update-payment-statuses-2"><span className="wix-picker-name">bulkUpdatePaymentStatuses (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk update payment statuses to canceled
+    import { orderTransactions } from "@wix/ecom";
+
+    const paymentAndOrderIds = [
+      {
+        orderId: "958597c4-4996-4b7e-6a4e-ecb8c7d6a5f3",
+        paymentId: "7f696eb5-7daf-4c8a-1aad-69c5b4a3e2d1",
+      },
+      {
+        orderId: "fc3eb1a6-4ebb-4d7c-3153-97b8a7c6d5e4",
+        paymentId: "1cf77fb7-919f-4c8a-e38a-25c6b5d4e3f2",
+      },
+    ];
+
+    const options = {
+      status: orderTransactions.TransactionStatus.CANCELED,
+      returnFullEntity: false,
+    };
+
+    async function bulkUpdatePaymentStatuses() {
+      const response = await orderTransactions.bulkUpdatePaymentStatuses(
+        paymentAndOrderIds,
+        options,
+      );
+      return response;
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk update payment statuses
+    import { orderTransactions } from "@wix/ecom";
+
+    const paymentAndOrderIds = [
+      {
+        orderId: "958597c4-4996-4b7e-6a4e-ecb8c7d6a5f3",
+        paymentId: "7f696eb5-7daf-4c8a-1aad-69c5b4a3e2d1",
+      },
+      {
+        orderId: "fc3eb1a6-4ebb-4d7c-3153-97b8a7c6d5e4",
+        paymentId: "00000000-0000-0000-0000-000000000000",
+      },
+    ];
+
+    const options = {
+      status: orderTransactions.TransactionStatus.APPROVED,
+      returnFullEntity: true,
+    };
+
+    async function bulkUpdatePaymentStatuses() {
+      const response = await orderTransactions.bulkUpdatePaymentStatuses(
+        paymentAndOrderIds,
+        options,
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 0,
+     *         "success": true
+     *       },
+     *       "item": {
+     *         "_id": "7f696eb5-7daf-4c8a-1aad-69c5b4a3e2d1",
+     *         "regularPaymentDetails": {
+     *           "paymentMethod": "In Person",
+     *           "offlinePayment": true,
+     *           "status": "APPROVED"
+     *         },
+     *         "amount": {
+     *           "amount": "330.0",
+     *           "formattedAmount": "$330.00"
+     *         },
+     *         "refundDisabled": false
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "originalIndex": 1,
+     *         "success": false,
+     *         "error": {
+     *           "code": "PAYMENT_NOT_FOUND",
+     *           "description": "Payment is not found"
+     *         }
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 1,
+     *     "totalFailures": 1,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkUpdatePaymentStatuses (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderTransactions } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderTransactions },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkUpdatePaymentStatuses(paymentAndOrderIds,options) {
+      const response = await myWixClient.orderTransactions.bulkUpdatePaymentStatuses(paymentAndOrderIds,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

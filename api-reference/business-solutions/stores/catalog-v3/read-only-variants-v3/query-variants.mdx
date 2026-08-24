@@ -1,0 +1,743 @@
+---
+title: "Query Variants"
+description: "Retrieve product variants using structured queries with cursor-based pagination."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieve product variants using structured queries with cursor-based pagination.
+
+    Use this endpoint for simple filtering operations on `productData.productId` and variant identifiers.
+    The `id` field is deprecated and is not globally unique by itself. Use `productData.productId`
+    together with `variantId` as the unique variant key.
+    For complex queries with free-text search and aggregations, use Search Variants instead.
+
+    Up to 1,000 variants can be returned per request.
+
+    To learn about working with _Query_ endpoints, see
+    [API Query Language](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language),
+    and [Sorting and Paging](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-sorting-and-paging).
+
+    Learn more about the differences between [_Query_ and _Search_](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-search-query-and-list-methods) methods.
+
+    | Property | Filters | Sort |
+    | --- | --- | --- |
+    | `id` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `variantId` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `productData.productId` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte`, `$startsWith` | Sort: `ASC`, `DESC` |
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_READ">Read products in v3 catalog</span>
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_READ_ADMIN">Product v3 read admin</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/products/query-variants
+    ```
+
+    ## Body Params
+
+    <ParamField body="query" type="CursorQuery">
+
+      WQL expression for filtering variants.
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+              Constraints: `maxLength 512`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="fields" type="string[]">
+
+      List of additional fields to include in the response.
+      See VariantOps.RequestedFields for available options.
+
+      Constraints: `maxItems 100`.
+
+      **Supported values:**
+
+      - `CURRENCY` — Include currency information in product data.
+
+      Returns the currency code (ISO-4217 format) used for pricing this variant.
+      Defaults to the site's currency unless specified in request headers.
+      - `MERCHANT_DATA` — Include merchant-specific data such as cost and profit information.
+
+      Returns revenue details including cost, profit, and profit margin.
+      Requires `SCOPE.STORES.PRODUCT_READ_ADMIN` permission scope.
+      - `SUBSCRIPTION_PRICES_INFO` — Include subscription pricing information.
+
+      Returns calculated prices for different subscription plans with applied discounts.
+      Only relevant for variants that are part of subscription offerings.
+      - `WEIGHT_MEASUREMENT_UNIT_INFO` — Include weight measurement unit information.
+
+      Returns the weight measurement unit (kg, lb, etc.) used for the variant.
+      Useful for shipping calculations and product comparisons.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="variants" type="ReadOnlyVariant[]">
+
+      Variants matching the query criteria.
+
+      See the [Read Only Variant Object](/api-reference/business-solutions/stores/catalog-v3/read-only-variants-v3/read-only-variant-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Pagination information with cursors for next pages.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursor strings that point to the next page, previous page, or both.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to the previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Whether there are more pages to retrieve following the current page.
+
+          + `true`: Another page of results can be retrieved.
+          + `false`: This is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Retrieve product variants filtered by product ID and variant IDs.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/stores/v3/products/query-variants' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+            "fields": [],
+            "query": {
+              "filter": {
+                "productData.productId": {
+                  "$eq": "29e2639f-b945-4f63-b03d-2251aa306ed5"
+                },
+                "variantId": {
+                  "$in": [
+                    "acb1b5ef-ca5a-4a13-97fc-4a378f558be1",
+                    "d0906ff4-06ab-4fa3-9c34-b167dcd96403"
+                  ]
+                }
+              }
+            }
+          }'
+      ```
+
+      ```json Response
+      {
+        "variants": [
+          {
+            "variantId": "d0906ff4-06ab-4fa3-9c34-b167dcd96403",
+            "visible": true,
+            "sku": "HOODIE-S",
+            "barcode": null,
+            "optionChoices": [
+              {
+                "optionChoiceIds": {
+                  "optionId": "c4ced48a-4ced-47e1-a876-05f97a1e361b",
+                  "choiceId": "c73f73b6-ac0f-42b1-aad9-48bfb8a6afc3"
+                },
+                "optionChoiceNames": {
+                  "optionName": "Size",
+                  "choiceName": "Small",
+                  "renderType": "TEXT_CHOICES"
+                }
+              }
+            ],
+            "price": {
+              "actualPrice": {
+                "amount": "39.99",
+                "formattedAmount": null
+              },
+              "compareAtPrice": null
+            },
+            "revenueDetails": null,
+            "media": {
+              "altText": null,
+              "displayName": null,
+              "mediaType": "UNKNOWN_MEDIA_TYPE",
+              "thumbnail": null,
+              "uploadId": ""
+            },
+            "physicalProperties": {
+              "weight": null,
+              "pricePerUnit": null
+            },
+            "subscriptionPricesInfo": null,
+            "inventoryStatus": {
+              "inStock": false,
+              "preorderEnabled": false
+            },
+            "productData": {
+              "productId": "29e2639f-b945-4f63-b03d-2251aa306ed5",
+              "name": "Casual Hoodie",
+              "productType": "PHYSICAL",
+              "slug": "casual-hoodie",
+              "visible": true,
+              "visibleInPos": true,
+              "mainCategoryId": "e8a0796f-baf5-41a8-a0de-c62760ef380a",
+              "directCategoryIds": [
+                "e8a0796f-baf5-41a8-a0de-c62760ef380a"
+              ],
+              "currency": null,
+              "physicalProperties": {
+                "weightMeasurementUnitInfo": null
+              },
+              "revision": "2"
+            },
+            "internalMetadata": {
+              "rowState": "READY"
+            }
+          },
+          {
+            "variantId": "acb1b5ef-ca5a-4a13-97fc-4a378f558be1",
+            "visible": true,
+            "sku": "HOODIE-M",
+            "barcode": null,
+            "optionChoices": [
+              {
+                "optionChoiceIds": {
+                  "optionId": "c4ced48a-4ced-47e1-a876-05f97a1e361b",
+                  "choiceId": "804f3b49-c81e-43d0-8967-f691ac4e53d4"
+                },
+                "optionChoiceNames": {
+                  "optionName": "Size",
+                  "choiceName": "Medium",
+                  "renderType": "TEXT_CHOICES"
+                }
+              }
+            ],
+            "price": {
+              "actualPrice": {
+                "amount": "39.99",
+                "formattedAmount": null
+              },
+              "compareAtPrice": null
+            },
+            "revenueDetails": null,
+            "media": {
+              "altText": null,
+              "displayName": null,
+              "mediaType": "UNKNOWN_MEDIA_TYPE",
+              "thumbnail": null,
+              "uploadId": ""
+            },
+            "physicalProperties": {
+              "weight": null,
+              "pricePerUnit": null
+            },
+            "subscriptionPricesInfo": null,
+            "inventoryStatus": {
+              "inStock": false,
+              "preorderEnabled": false
+            },
+            "productData": {
+              "productId": "29e2639f-b945-4f63-b03d-2251aa306ed5",
+              "name": "Casual Hoodie",
+              "productType": "PHYSICAL",
+              "slug": "casual-hoodie",
+              "visible": true,
+              "visibleInPos": true,
+              "mainCategoryId": "e8a0796f-baf5-41a8-a0de-c62760ef380a",
+              "directCategoryIds": [
+                "e8a0796f-baf5-41a8-a0de-c62760ef380a"
+              ],
+              "currency": null,
+              "physicalProperties": {
+                "weightMeasurementUnitInfo": null
+              },
+              "revision": "2"
+            },
+            "internalMetadata": {
+              "rowState": "READY"
+            }
+          }
+        ],
+        "pagingMetadata": {
+          "count": 2,
+          "offset": 0,
+          "total": 2
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieve product variants using structured queries with cursor-based pagination.
+
+    Use this endpoint for simple filtering operations on `productData.productId` and variant identifiers.
+    The `id` field is deprecated and is not globally unique by itself. Use `productData.productId`
+    together with `variantId` as the unique variant key.
+    For complex queries with free-text search and aggregations, use Search Variants instead.
+
+    Up to 1,000 variants can be returned per request.
+
+    To learn about working with _Query_ endpoints, see
+    [API Query Language](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-the-wix-api-query-language),
+    and [Sorting and Paging](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-sorting-and-paging).
+
+    Learn more about the differences between [_Query_ and _Search_](https://dev.wix.com/docs/api-reference/articles/work-with-wix-apis/data-retrieval/about-search-query-and-list-methods) methods.
+
+    | Property | Filters | Sort |
+    | --- | --- | --- |
+    | `_id` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `variantId` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte`, `$startsWith` | Sort: `ASC`, `DESC` |
+    | `productData.productId` | `$eq`, `$ne`, `$in`, `$exists`, `$gt`, `$gte`, `$lt`, `$lte`, `$startsWith` | Sort: `ASC`, `DESC` |
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_READ">Read products in v3 catalog</span>
+    <span className="wix-scope" title="SCOPE.STORES.PRODUCT_READ_ADMIN">Product v3 read admin</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { readOnlyVariantsV3 } from '@wix/stores';
+
+    readOnlyVariantsV3.queryVariants(query, options): VariantsQueryBuilder
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="query" type="ReadOnlyVariantQuery" required>
+
+      WQL expression for filtering variants.
+
+      <Expandable title="query properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter object in the following format:
+          `"filter" : {`
+          "fieldName1": "value1",
+          "fieldName2":&#123;"$operator":"value2"&#125;
+          &#125;``
+          Example of operators: `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$hasSome`, `$hasAll`, `$startsWith`, `$contains`
+
+        </ParamField>
+
+        <ParamField body="sort" type="Sorting[]">
+
+          Sort object in the following format:
+          `[{"fieldName":"sortField1","order":"ASC"},{"fieldName":"sortField2","order":"DESC"}]`
+
+          Constraints: `maxItems 5`.
+
+          <Expandable title="sort properties">
+
+            <ParamField body="fieldName" type="string">
+
+              Name of the field to sort by.
+
+              Constraints: `maxLength 512`.
+
+            </ParamField>
+
+            <ParamField body="order" type="string">
+
+              Sort order.
+
+              **Supported values:**
+
+              - `ASC`
+              - `DESC`
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor token pointing to a page of results. Not used in the first request. Following requests use the cursor token and not `filter` or `sort`.
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="QueryVariantsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fields" type="string[]">
+
+          List of additional fields to include in the response.
+          See VariantOps.RequestedFields for available options.
+
+          Constraints: `maxItems 100`.
+
+          **Supported values:**
+
+          - `CURRENCY` — Include currency information in product data.
+
+          Returns the currency code (ISO-4217 format) used for pricing this variant.
+          Defaults to the site's currency unless specified in request headers.
+          - `MERCHANT_DATA` — Include merchant-specific data such as cost and profit information.
+
+          Returns revenue details including cost, profit, and profit margin.
+          Requires `SCOPE.STORES.PRODUCT_READ_ADMIN` permission scope.
+          - `SUBSCRIPTION_PRICES_INFO` — Include subscription pricing information.
+
+          Returns calculated prices for different subscription plans with applied discounts.
+          Only relevant for variants that are part of subscription offerings.
+          - `WEIGHT_MEASUREMENT_UNIT_INFO` — Include weight measurement unit information.
+
+          Returns the weight measurement unit (kg, lb, etc.) used for the variant.
+          Useful for shipping calculations and product comparisons.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `VariantsQueryBuilder`.
+
+    <ResponseField name="variants" type="ReadOnlyVariant[]">
+
+      Variants matching the query criteria.
+
+      See the [Read Only Variant Object](/api-reference/business-solutions/stores/catalog-v3/read-only-variants-v3/read-only-variant-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Pagination information with cursors for next pages.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in the response.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursor strings that point to the next page, previous page, or both.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to the previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Whether there are more pages to retrieve following the current page.
+
+          + `true`: Another page of results can be retrieved.
+          + `false`: This is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-variants" id="ex-sdk-query-variants-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-variants" id="ex-sdk-query-variants-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-variants-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-variants-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Query variants by product and variant IDs</span><span className="wix-picker-desc">Retrieve specific read-only variants by product ID and variant IDs</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryVariants (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-variants-0"><span className="wix-picker-name">Query variants by product and variant IDs</span><span className="wix-picker-desc">Retrieve specific read-only variants by product ID and variant IDs</span></label>
+    <label htmlFor="ex-sdk-query-variants-1"><span className="wix-picker-name">queryVariants (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Query variants by product and variant IDs
+    import { readOnlyVariantsV3 } from "@wix/stores";
+
+    async function queryVariants() {
+      const response = await readOnlyVariantsV3.queryVariants(
+        {
+          filter: {
+            "productData.productId": {
+              $eq: "9f4b9c8d-8e7f-4a6b-9c8d-1e2f3a4b5c6d",
+            },
+            variantId: {
+              $in: [
+                "a1b2c3d4-e5f6-7a8b-9c0d-e1f2a3b4c5d6",
+                "b2c3d4e5-f6a7-8b9c-0d1e-f2a3b4c5d6e7",
+              ],
+            },
+          },
+        },
+        { fields: [] },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "variants": [],
+     *   "pagingMetadata": {
+     *     "count": 0,
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryVariants (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { readOnlyVariantsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { readOnlyVariantsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function queryVariants(query,options) {
+      const response = await myWixClient.readOnlyVariantsV3.queryVariants(query,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,817 @@
+---
+title: "Set Service Locations"
+description: "Replaces the list of the locations where the business offers the service."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Replaces the list of the [locations](https://dev.wix.com/docs/api-reference/business-management/locations/introduction) where the business offers the service.
+
+    ### Consequences for customers
+
+    Removing a service location may impact existing sessions and their
+    participants. If you remove at least one service location, you must
+    specify `removedLocationSessionsAction` to indicate what happens to all
+    future sessions scheduled at this location.
+
+    - **Keep existing location**: If you want to retain future sessions at their
+    originally scheduled location, specify
+    `{"removedLocationSessionsAction.action": "KEEP_AT_CURRENT_LOCATION"}`.
+    This ensures nothing changes for the customer, but the business must be
+    able to provide access to the removed location in the future.
+    - **Update location**: If you want to update the location for future sessions
+    scheduled at the removed location, specify
+    `{"removedLocationSessionsAction.action": "MOVE_TO_LOCATION"}` and
+    `moveToLocationOptions.newLocation`.
+
+    You can't mix and match to keep some sessions at the previous location while
+    moving other sessions to an updated location.
+
+    Past session details aren't changed, no matter which option you choose for
+    future sessions.
+
+    Future sessions scheduled for a location defined by the customer are also not
+    updated.
+
+    ### Specify location details
+
+    Depending on whether the new or updated location is a business or custom location,
+    you need to specify different fields.
+
+    - **Business location**: Specify the relevant [location ID](https://dev.wix.com/docs/api-reference/business-management/locations/introduction) in `locations.business.id`.
+    - **Custom location**: Specify the complete address object as
+    `locations.custom.address`.
+
+    ### Participant notifications
+
+    You can specify a `participantNotification.message` that's immediately send
+    to all customers who had booked at a changed location. Ensure
+    `participantNotification.notifyParticipants` is set to `true` to send the
+    message.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/bookings/v2/services/{serviceId}/locations
+    ```
+
+    ## Path Params
+
+    <ParamField path="serviceId" type="string" required>
+
+      ID of the service.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="locations" type="Location[]">
+
+      List of locations replacing existing service locations. Omitting an existing location removes it from the service. Specify `removedLocationSessionsAction` to determine the handling of future sessions scheduled at that location.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="locations properties">
+
+        <ParamField body="id" type="string">
+
+          Location ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="type" type="string">
+
+          Location type.
+
+          Default: `CUSTOM`
+
+          **Supported values:**
+
+          - `CUSTOM` — Location set by the business that is not a standard business [location](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+          - `BUSINESS` — Business [location](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+          - `CUSTOMER` — The customer specifies any address when booking. Available only for
+          appointment-based services.
+
+        </ParamField>
+
+        <ParamField body="calculatedAddress" type="Address">
+
+          Location address. Empty for `{"type": "CUSTOMER"}`.
+
+          **Read-only.**
+
+          <Expandable title="calculatedAddress properties">
+
+            <ParamField body="country" type="string">
+
+              2-letter country code in an [ISO-3166 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) format.
+
+            </ParamField>
+
+            <ParamField body="subdivision" type="string">
+
+              Code for a subdivision (such as state, prefecture, or province) in [ISO 3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) format.
+
+            </ParamField>
+
+            <ParamField body="city" type="string">
+
+              City name.
+
+            </ParamField>
+
+            <ParamField body="postalCode" type="string">
+
+              Postal or zip code.
+
+            </ParamField>
+
+            <ParamField body="formattedAddress" type="string">
+
+              Full address of the location.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="street" type="street">
+
+              street
+
+              _Nested structure omitted for brevity — see the `street` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="removedLocationSessionsAction" type="RemovedLocationSessionsAction">
+
+      The action to perform on sessions currently set to a removed location. For
+      example, move existing sessions to a new specified location.
+      If not specified, sessions will not be moved to a new location.
+
+      <Expandable title="removedLocationSessionsAction properties">
+
+        <ParamField body="action" type="string">
+
+          Information about what to do with future events at the removed location.
+
+          **Supported values:**
+
+          - `KEEP_AT_CURRENT_LOCATION` — Retain all future sessions at their current location. This is the default.
+          - `MOVE_TO_LOCATION` — Move future events to a new location.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="actionOptions" type="actionOptions">
+
+          actionOptions
+
+          <Expandable title="actionOptions properties">
+
+            <ParamField body="moveToLocationOptions" type="MoveToNewLocationsOptions">
+
+              Details about the new location of future events that were scheduled to take
+              place at a removed location.
+
+              _Nested structure omitted for brevity — see the `MoveToNewLocationsOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Whether to notify participants about the change of location, and an
+      Optional custom message. The notification is sent only to participants of sessions that are affected by the change.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to send a message about the changes to the customer.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Custom message to send to the participants about the changes to the booking.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="service" type="Service">
+
+      The updated service with the newly set locations.
+
+      See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Service Updated | `wix.bookings.services.v2.service_updated` | Triggered when a service is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/bookings/v2/services/353aa3b7-00ef-42bd-86ff-720d7ef60443/locations' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "serviceId": "353aa3b7-00ef-42bd-86ff-720d7ef60443",
+        "locations": [{
+          "id": "e1ffe959-07a3-4000-be8c-79bf6d28cc2e",
+          "type": "BUSINESS"
+        }],
+        "participantNotification": {
+          "notifyParticipants": true,
+          "message": "Message to participants"
+        },
+        "removedLocationSessionsAction": {
+          "action": "MOVE_TO_LOCATION",
+          "moveToLocationOptions": {
+            "newLocation": {
+              "id": "e1ffe959-07a3-4000-be8c-79bf6d28cc2e"
+            }
+          }
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "service": {
+          "id": "353aa3b7-00ef-42bd-86ff-720d7ef60443",
+          "type": "CLASS",
+          "sortOrder": 0,
+          "name": "Dog Yoga",
+          "description": "Get ready to downward dog with your furry best friend! In this unique class, you and your pup will strike a pose and find your zen. With a mix of stretching, breathing exercises, and playtime, this class is sure to be a tail-waggin' good time. Whether you're a seasoned yogi or a pup-tastic beginner, this class is pawsitively perfect for all levels. Don't forget to bring your sense of humor, as there's sure to be a few doggy distractions and playful paw-terruptions along the way. Namaste!",
+          "tagLine": "Unleash your zen with downward dog and a wagging tail in our pup-poseful yoga class!",
+          "defaultCapacity": 50,
+          "media": {
+            "items": [],
+            "mainMedia": {
+              "image": {
+                "id": "nsplsh_4d7639686a6e4555485234~mv2_d_3024_4032_s_4_2.jpg",
+                "url": "nsplsh_4d7639686a6e4555485234~mv2_d_3024_4032_s_4_2.jpg",
+                "height": 4032,
+                "width": 3024,
+                "filename": "nsplsh_4d7639686a6e4555485234~mv2_d_3024_4032_s_4_2.jpg"
+              }
+            }
+          },
+          "hidden": false,
+          "category": {
+            "id": "7b5b9862-490f-491c-8477-d39baed078a1",
+            "name": "Best for fun dogs",
+            "sortOrder": 1
+          },
+          "form": {
+            "id": "00000000-0000-0000-0000-000000000000"
+          },
+          "payment": {
+            "rateType": "FIXED",
+            "fixed": {
+                "price": {
+                    "value": "15",
+                    "currency": "USD"
+                }
+            },
+            "pricingPlanIds": [],
+            "options": {
+                "online": true,
+                "inPerson": false,
+                "deposit": false,
+                "pricingPlan": false
+            }
+          },
+          "onlineBooking": {
+            "enabled": true,
+            "requireManualApproval": false,
+            "allowMultipleRequests": false
+          },
+          "staffMemberIds": [],
+          "conferencing": {
+            "enabled": true
+          },
+          "locations": [
+            {
+              "id": "e1ffe959-07a3-4000-be8c-79bf6d28cc2e",
+              "type": "BUSINESS",
+              "calculatedAddress": {
+                 "country": "US",
+                 "subdivision": "TX",
+                 "city": "Dallas",
+                 "postalCode": null,
+                 "formattedAddress": "Dallas, TX, USA"
+               },
+               "business": {
+                 "id": "2c6c4fb6-b4c2-46d3-916c-3a4c7a80fcc6",
+                 "name": "Dallas",
+                 "default": true,
+                 "address": {
+                   "country": "US",
+                   "subdivision": "TX",
+                   "city": "Dallas",
+                   "postalCode": null,
+                   "formattedAddress": "Dallas, TX, USA"
+                 },
+                 "email": "",
+                 "phone": ""
+               }
+            }
+          ],
+          "bookingPolicy": {
+                "id": "2a8cbc1b-7968-44e7-899a-d1df1ecbeefe",
+                "createdDate": "2023-04-11T08:51:43.025Z",
+                "updatedDate": "2023-05-19T11:32:27.930Z",
+                "name": "Default policy",
+                "customPolicyDescription": {
+                  "enabled": false,
+                  "description": ""
+                },
+                "default": true,
+                "limitEarlyBookingPolicy": {
+                  "enabled": false,
+                  "earliestBookingInMinutes": 604800
+                },
+                "limitLateBookingPolicy": {
+                  "enabled": false,
+                  "latestBookingInMinutes": 1440
+                },
+                "bookAfterStartPolicy": {
+                  "enabled": false
+                },
+                "cancellationPolicy": {
+                  "enabled": true,
+                  "limitLatestCancellation": false,
+                  "latestCancellationInMinutes": 1440
+                },
+                "reschedulePolicy": {
+                  "enabled": true,
+                  "limitLatestReschedule": false,
+                  "latestRescheduleInMinutes": 1440
+                },
+                "waitlistPolicy": {
+                  "enabled": false,
+                  "capacity": 10,
+                  "reservationTimeInMinutes": 10
+                },
+                "participantsPolicy": {
+                  "maxParticipantsPerBooking": 1
+                },
+                "resourcesPolicy": {
+                  "enabled": false,
+                  "autoAssignAllowed": false
+                }
+              },
+          "schedule": {
+            "id": "8acb939f-34d1-4ac9-8564-b24c29e11ef7",
+            "firstSessionStart": "2023-02-13T15:30:00Z"
+          },
+          "supportedSlugs": [
+            {
+              "name": "dog-yoga",
+              "custom": false,
+              "createdDate": "2023-02-09T16:40:45.267Z"
+            }
+          ],
+          "mainSlug": {
+            "name": "dog-yoga",
+            "custom": false,
+            "createdDate": "2023-02-09T16:40:45.267Z"
+          },
+          "urls": {
+            "servicePage": {
+              "relativePath": "/service-page/dog-yoga",
+              "url": "https://example.com/services-v2"
+            },
+            "bookingPage": {
+              "relativePath": "/book-online/dog-yoga/book",
+              "url": "https://example.com/services-v2"
+            },
+            "calendarPage": {
+              "relativePath": "/booking-calendar/dog-yoga",
+              "url": "https://example.com/services-v2"
+            }
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Replaces the list of the [locations](https://dev.wix.com/docs/api-reference/business-management/locations/introduction) where the business offers the service.
+
+    ### Consequences for customers
+
+    Removing a service location may impact existing sessions and their
+    participants. If you remove at least one service location, you must
+    specify `removedLocationSessionsAction` to indicate what happens to all
+    future sessions scheduled at this location.
+
+    - **Keep existing location**: If you want to retain future sessions at their
+    originally scheduled location, specify
+    `{"removedLocationSessionsAction.action": "KEEP_AT_CURRENT_LOCATION"}`.
+    This ensures nothing changes for the customer, but the business must be
+    able to provide access to the removed location in the future.
+    - **Update location**: If you want to update the location for future sessions
+    scheduled at the removed location, specify
+    `{"removedLocationSessionsAction.action": "MOVE_TO_LOCATION"}` and
+    `moveToLocationOptions.newLocation`.
+
+    You can't mix and match to keep some sessions at the previous location while
+    moving other sessions to an updated location.
+
+    Past session details aren't changed, no matter which option you choose for
+    future sessions.
+
+    Future sessions scheduled for a location defined by the customer are also not
+    updated.
+
+    ### Specify location details
+
+    Depending on whether the new or updated location is a business or custom location,
+    you need to specify different fields.
+
+    - **Business location**: Specify the relevant [location ID](https://dev.wix.com/docs/api-reference/business-management/locations/introduction) in `locations.business.id`.
+    - **Custom location**: Specify the complete address object as
+    `locations.custom.address`.
+
+    ### Participant notifications
+
+    You can specify a `participantNotification.message` that's immediately send
+    to all customers who had booked at a changed location. Ensure
+    `participantNotification.notifyParticipants` is set to `true` to send the
+    message.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { services } from '@wix/bookings';
+
+    services.setServiceLocations(serviceId, options): Promise<SetServiceLocationsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="serviceId" type="string" required>
+
+      ID of the service.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="SetServiceLocationsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="locations" type="Location[]">
+
+          List of locations replacing existing service locations. Omitting an existing location removes it from the service. Specify `removedLocationSessionsAction` to determine the handling of future sessions scheduled at that location.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="locations properties">
+
+            <ParamField body="_id" type="string">
+
+              Location ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="type" type="string">
+
+              Location type.
+
+              Default: `CUSTOM`
+
+              **Supported values:**
+
+              - `CUSTOM` — Location set by the business that is not a standard business [location](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+              - `BUSINESS` — Business [location](https://dev.wix.com/docs/api-reference/business-management/locations/introduction).
+              - `CUSTOMER` — The customer specifies any address when booking. Available only for
+              appointment-based services.
+
+            </ParamField>
+
+            <ParamField body="calculatedAddress" type="Address">
+
+              Location address. Empty for `{"type": "CUSTOMER"}`.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Address` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="removedLocationSessionsAction" type="RemovedLocationSessionsAction">
+
+          The action to perform on sessions currently set to a removed location. For
+          example, move existing sessions to a new specified location.
+          If not specified, sessions will not be moved to a new location.
+
+          <Expandable title="removedLocationSessionsAction properties">
+
+            <ParamField body="action" type="string">
+
+              Information about what to do with future events at the removed location.
+
+              **Supported values:**
+
+              - `KEEP_AT_CURRENT_LOCATION` — Retain all future sessions at their current location. This is the default.
+              - `MOVE_TO_LOCATION` — Move future events to a new location.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="actionOptions" type="actionOptions">
+
+              actionOptions
+
+              _Nested structure omitted for brevity — see the `actionOptions` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Whether to notify participants about the change of location, and an
+          Optional custom message. The notification is sent only to participants of sessions that are affected by the change.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to send a message about the changes to the customer.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Custom message to send to the participants about the changes to the booking.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<SetServiceLocationsResponse>`.
+
+    <ResponseField name="service" type="Service">
+
+      The updated service with the newly set locations.
+
+      See the [Service Object](/api-reference/business-solutions/bookings/services/services-v2/service-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Service Updated | `wix.bookings.services.v2.service_updated` | Triggered when a service is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-set-service-locations" id="ex-sdk-set-service-locations-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-set-service-locations" id="ex-sdk-set-service-locations-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-set-service-locations" id="ex-sdk-set-service-locations-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-set-service-locations-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-set-service-locations-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">setServiceLocations</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">setServiceLocations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">setServiceLocations (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-set-service-locations-0"><span className="wix-picker-name">setServiceLocations</span></label>
+    <label htmlFor="ex-sdk-set-service-locations-1"><span className="wix-picker-name">setServiceLocations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-set-service-locations-2"><span className="wix-picker-name">setServiceLocations (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript setServiceLocations
+    import { services } from '@wix/bookings';
+
+    async function setServiceLocations(serviceId,options) {
+      const response = await services.setServiceLocations(serviceId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript setServiceLocations (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { services } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { services },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function setServiceLocations(serviceId,options) {
+      const response = await myWixClient.services.setServiceLocations(serviceId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript setServiceLocations (with elevated permissions)
+    import { services } from '@wix/bookings';
+    import { auth } from '@wix/essentials';
+
+    async function mySetServiceLocationsMethod(serviceId,options) {
+      const elevatedSetServiceLocations = auth.elevate(services.setServiceLocations);
+      const response = await elevatedSetServiceLocations(serviceId,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,239 @@
+---
+title: "The Balance Record"
+description: "A balance record is 1 entry on a Wix Payments account ledger, representing 1 financial operation and its effect on the merchant's balance."
+icon: "file-lines"
+---
+
+A balance record is 1 entry on a Wix Payments account ledger, representing 1 financial operation and its effect on the merchant's balance. This article covers the record structure, the categories of financial operations that produce records, and the statuses and lifecycles records pass through as they settle and get paid out. Use it alongside the [tags](fallback::#tags) and [virtual records](fallback::#virtual-records) sections when you build filtering, reporting, or reconciliation features on top of the API.
+
+Records belong to an account profile, a sub-entity inside a Wix Payments account with its own balance and its own payouts. Most merchants have 1 profile, but some have several, and 1 profile's funds can't fund another.
+
+## Balance record structure
+
+Charges, refunds, chargebacks, reserves, top-ups, and [Wix Capital](fallback::https://www.wix.com/press-room/home/post/wix-launches-financial-services-suite-to-power-business-growth) movements are the financial operations that drive balance records. Each operation produces a balance record describing its effect on the account. Other services own the operations themselves. See [Balance record types](fallback::#balance-record-types) for the full list of record types.
+
+<Note>
+
+Payouts don't create balance records. A payout sends funds to the merchant's bank and stamps each settled record it includes with a `payoutId`. See [How records are included in a payout](fallback::#how-records-are-included-in-a-payout).
+
+</Note>
+
+Every record has a gross `amount`, a Wix Payments `fee`, and a `net` amount (`amount - fee`) that the merchant receives or loses. `amount` is signed: a positive value is a credit to the account, and a negative value is a deduction. The merchant's **available balance** is the net of all settled records that haven't been paid out and aren't in reserve.
+
+Records are immutable. `amount`, `fee`, and `net` never change after creation. An adjustment always appears as a new record instead of an edit to an existing record. For example, a `REFUND_REVERSAL` is a new record, not a change to the original `REFUND`.
+
+A balance record can also have 1 or more detail blocks: sub-fields populated based on the record's type and state.
+
+- `paymentInfo`: The underlying transaction details, such as transaction ID, customer name, external order ID, and payment method.
+- `reserveInfo`: Hold and release details for reserve records. `reserveInfo.hold.payoutId` identifies the payout that the hold was deducted from, `reserveInfo.release.payoutId` identifies the later payout that returned the funds, and `reserveInfo.reserveHistoryItems` lists the history of `payoutAvailabilityDate` changes.
+- `payoutInfo`: Populated once a payout includes the record.
+- `bookTransferInfo`: Populated when a [Wix Checking](fallback::https://www.wix.com/press-room/home/post/wix-launches-financial-services-suite-to-power-business-growth) Instant Access transfer funds the record instead of a payout.
+
+## The payout pipeline
+
+A balance record's place in the payout pipeline falls into 1 of 3 categories. These categories frame both the `recordStatus` values returned on records and the `tags` filter you pass to Query Balance Records:
+
+- **Pending**: Not yet ready for payout. The customer paid, but the funds are still in their pending period. They become available once the pending period elapses. Records at status `PENDING_CREDIT` fall into this category.
+- **Available**: Ready for the next payout. Records at status `CREDITED` that haven't yet been paid out and aren't part of a reserve fall into this category.
+- **Reserved**: Held back by Wix Payments. The hold can come from a rolling reserve policy, a recurring percentage withheld from each payment, or an explicit 1-time reserve, a manual hold for a specific event. A `RESERVE_HOLD` withholds the funds, and its matching `RESERVE_RELEASE` returns them to available once `payoutAvailabilityDate` arrives. Both records are at status `RESERVED`.
+
+## Balance record types
+
+Balance record types fall into 5 categories: sales, chargebacks, reserves, top-ups, and Wix Capital.
+
+A single financial operation can produce several records. For example, a chargeback creates a `CHARGEBACK` plus a separate `CHARGEBACK_FEE`. The Related records column shows these dependencies.
+
+In addition to the type-specific detail blocks listed below, any balance record that a payout has included also has `payoutInfo` populated. Balance records funded through Wix Checking Instant Access have `bookTransferInfo` populated instead.
+
+### Sales
+
+| Type | Related records | Detail block | Trigger |
+|---|---|---|---|
+| `CREDIT` | None | `paymentInfo` | A buyer's charge (a sale). |
+| `REFUND` | Reversed by a later `REFUND_REVERSAL` if the refund is undone | `paymentInfo` | The merchant issues a refund. |
+| `REFUND_REVERSAL` | Reverses an earlier `REFUND` | `paymentInfo` | A previously issued refund is undone. |
+| `CREDIT_FAILED` | Offsets an earlier `CREDIT` | `paymentInfo` | A previously credited charge later fails. |
+
+### Chargebacks
+
+| Type | Related records | Detail block | Trigger |
+|---|---|---|---|
+| `CHARGEBACK` | Always issued with a separate `CHARGEBACK_FEE` | `paymentInfo` | A buyer initiates a dispute through their bank. |
+| `CHARGEBACK_FEE` | Always issued with a `CHARGEBACK` | `paymentInfo` | Fee for processing the chargeback. |
+| `CHARGEBACK_REVERSAL` | Reverses a `CHARGEBACK`, issued with a `CHARGEBACK_FEE_REVERSAL` | `paymentInfo` | The dispute resolves in the merchant's favor. |
+| `CHARGEBACK_FEE_REVERSAL` | Reverses a `CHARGEBACK_FEE`, issued with a `CHARGEBACK_REVERSAL` | `paymentInfo` | Returns a previously charged chargeback fee. |
+
+### Reserves
+
+| Type | Related records | Detail block | Trigger |
+|---|---|---|---|
+| `RESERVE_HOLD` | Always paired with a `RESERVE_RELEASE` | `reserveInfo` | Wix Payments withholds funds from available into reserve. |
+| `RESERVE_RELEASE` | Always paired with a `RESERVE_HOLD` | `reserveInfo` | Wix Payments returns funds from reserve to available. |
+
+### Top-ups
+
+| Type | Related records | Detail block | Trigger |
+|---|---|---|---|
+| `TOPUP` | Pairs with a debit, either clearing a negative balance or funding a refund | `paymentInfo` | The merchant adds funds to the account. |
+
+### Wix Capital
+
+| Type | Related records | Detail block | Trigger |
+|---|---|---|---|
+| `CAPITAL_CASH_ADVANCE` | Repaid over time by `CAPITAL_AUTOMATIC_REMITTANCE` records | `paymentInfo` | Wix Capital disburses a cash advance. |
+| `CAPITAL_AUTOMATIC_REMITTANCE` | Repays an earlier `CAPITAL_CASH_ADVANCE` | `paymentInfo` | Sales auto-remit to repay a Wix Capital advance. |
+| `CAPITAL_ADJUSTMENT` | None | `paymentInfo` | Manual Wix Capital adjustment. |
+
+## Statuses
+
+The server computes the `recordStatus` field from the record's type, `payoutInfo.payoutId`, and `payoutAvailabilityDate`. It's response-only, so to filter records by their effect on the balance, pass a value to the `tags` field on List Balance Records or Query Balance Records instead. See [Tags](fallback::#tags).
+
+Statuses fall into 3 stages of a balance record's life: pre-settlement, settled, and post-payout.
+
+### Pre-settlement
+
+The balance record exists, but its underlying operation hasn't finalized yet. For credits, that means the pending period is still in progress. For debits, it means the operation that produced the deduction hasn't completed.
+
+| Status | Effect on the available balance | Which records have this status |
+|---|---|---|
+| `PENDING_CREDIT` | Not yet part of the balance. Moves to `CREDITED` once the funds settle. | Credits during their pending period: `CREDIT`, `TOPUP`, `REFUND_REVERSAL`, `CHARGEBACK_REVERSAL`, `CHARGEBACK_FEE_REVERSAL`, `CAPITAL_CASH_ADVANCE`. |
+| `PENDING_DEBIT` | Already deducted from the balance. Moves to `DEBITED` once the operation finalizes. | Debits immediately on creation: `REFUND`, `CHARGEBACK`, `CHARGEBACK_FEE`, `CREDIT_FAILED`, `CAPITAL_AUTOMATIC_REMITTANCE`. |
+
+### Settled
+
+The available balance reflects the balance record's eligible to join a payout.
+
+| Status | Effect on the available balance | Which records have this status |
+|---|---|---|
+| `CREDITED` | Part of the balance. | Credits after settlement. |
+| `DEBITED` | Deducted from the balance. | Debits after settlement. |
+| `RESERVED` | Held in reserve, not part of the balance. | `RESERVE_HOLD` records, and `RESERVE_RELEASE` records before their `payoutAvailabilityDate`. |
+
+### Post-payout
+
+A payout has bundled the balance record into a transfer.
+
+| Status | Effect on the available balance | Which records have this status |
+|---|---|---|
+| `PAID_OUT` | Out of the balance. | All records once they join a payout, except `RESERVE_HOLD`. |
+| `DEDUCTED_FROM_PAYOUT` | The payout total subtracts the held amount instead of sending it to the merchant. | `RESERVE_HOLD` records only. |
+| `PAYOUT_REVERSED` | The bank rejected the payout. Funds re-entered the balance. | Records whose payout failed. |
+
+<Note>
+
+`PAID_OUT` applies to both regular payouts and Wix Checking Instant Access transfers. Check the record's detail block to tell them apart:
+
+- `payoutInfo` means a regular payout sent the record. Bank settlement can take days, and if the bank rejects the payout, the record surfaces as `PAYOUT_REVERSED`.
+- `bookTransferInfo` means a Wix Checking Instant Access transfer funded the record. The funds are immediately available in the merchant's Wix Checking account.
+
+</Note>
+
+## Settlement
+
+A credit record's funds become spendable on the balance after a configurable pending period. This transition is called settlement: the record's `recordStatus` moves from `PENDING_CREDIT` to `CREDITED`. To find records that haven't settled yet, query with `tags: [PENDING]`. To find settled records that haven't been paid out yet, query with `tags: [AVAILABLE]`. The pending period is configured per account and surfaced on the balance summary as `processing.paymentPendingPeriod`.
+
+Debits don't go through a pending period. A debit, such as a refund, chargeback, or chargeback fee, is deducted from the available balance immediately on creation, with status `PENDING_DEBIT`. The `PENDING_DEBIT` to `DEBITED` transition only marks the underlying operation as finalized.
+
+A settled record, at `recordStatus` `CREDITED` or `DEBITED`, isn't the same as a paid-out record, at `recordStatus` `PAID_OUT` or `DEDUCTED_FROM_PAYOUT`. A settled record can sit on the available balance for a while: waiting for the next payout date, under the minimum payout threshold, held back by a reserve policy, or stuck because the account is blocked, in verification, or has a problematic bank.
+
+A rolling reserve hold and an estimated reserve projection are both calculated from the settled portion of the balance only. Records still in the pending period don't contribute to the reserve amount.
+
+## Tags
+
+A tag is a named filter shortcut you pass to the `tags` field on List Balance Records and Query Balance Records. Tags aren't stored on records, and you can't apply them yourself. Each tag expands, at query time, into a composite filter on `recordStatus`, type, `payoutAvailabilityDate`, and `payoutInfo.payoutId`. You can pass multiple tags in a single request.
+
+| Tag | Matches |
+|---|---|
+| `AVAILABLE` | Settled credits and debits not yet paid out, at `recordStatus` `CREDITED` or `DEBITED`. |
+| `PENDING` | Credits still in their pending period, at `recordStatus` `PENDING_CREDIT`. |
+| `RESERVE` | `RESERVE_HOLD` and `RESERVE_RELEASE` records currently at `recordStatus` `RESERVED`. |
+| `ESTIMATED_RESERVE_HOLD` | `RESERVE_HOLD` records, with a virtual record projecting the next hold as the first result. See [Virtual records](fallback::#virtual-records). |
+| `ESTIMATED_RESERVE_RELEASE` | `RESERVE_RELEASE` records, with a virtual record projecting the next release as the first result. See [Virtual records](fallback::#virtual-records). |
+| `RESERVE_RELEASED` | `RESERVE_RELEASE` records past their `payoutAvailabilityDate`. |
+| `PENDING_TOPUP` | `TOPUP` records at `recordStatus` `PENDING_CREDIT`. |
+| `PAID_OUT` | Any balance record already included in a payout, at `recordStatus` `PAID_OUT` or `DEDUCTED_FROM_PAYOUT`. |
+| `NOT_PAID_OUT` | Any balance record not yet included in a payout. |
+
+## Virtual records
+
+A virtual record is a projection of a future balance record. Wix Payments hasn't persisted it yet, but calculates it on the fly, from the current available balance and the account's active reserve policy, to show what it expects to happen next.
+
+Only the `ESTIMATED_RESERVE_HOLD` and `ESTIMATED_RESERVE_RELEASE` tags return a virtual record, and only ever as the first result. A virtual record differs from a real record in 2 ways: it has no `ID` and no `appliedDate`. Render it distinctly, for example as "projected," since it doesn't represent a real ledger entry yet. Every other record in these responses is a real, persisted `RESERVE_HOLD` or `RESERVE_RELEASE` record.
+
+## How records are included in a payout
+
+A payout bundles existing balance records that have settled and passed their `payoutAvailabilityDate`, linking them all to a single `payoutId`. When Wix Payments initiates the next payout, each eligible record changes in 2 ways:
+
+- The record's `payoutInfo.payoutId` takes the new payout's ID.
+- `recordStatus` moves to `PAID_OUT`, with 1 exception: `RESERVE_HOLD` records move to `DEDUCTED_FROM_PAYOUT`, because the payout total subtracts the held amount instead of sending it to the merchant.
+
+The amount transferred to the merchant equals the sum of credit records in the payout, minus the sum of debit records and reserve holds in the payout.
+
+### Payout reversal
+
+Initiating a payout starts a transfer to the merchant's bank. Some payment networks, notably the Automated Clearing House (ACH), take days to clear, and the bank can reject the transfer at any point during that window. If the bank rejects the payout:
+
+- Each affected balance record's `recordStatus` moves to `PAYOUT_REVERSED`.
+- The record loses its `payoutInfo.payoutId`, and the funds re-enter the available balance.
+- The record becomes eligible for a future payout.
+
+## Lifecycles
+
+A balance record follows 1 of 4 base lifecycles: credit, debit, reserve, or Instant Access. Each lifecycle defines the sequence of `recordStatus` values a record passes through, and lists the record types that follow it.
+
+### Credit lifecycle
+
+A credit record passes through 3 statuses:
+
+1. `PENDING_CREDIT`: The status Wix Payments assigns when it creates the record.
+2. `CREDITED`: The status after the pending period elapses, at settlement.
+3. `PAID_OUT`: The status once the record joins a payout.
+
+If the bank rejects the payout, the record's `recordStatus` moves to `PAYOUT_REVERSED` and the funds re-enter the available balance, making the record eligible for a future payout.
+
+Types that follow this lifecycle: `CREDIT`, `TOPUP`, `REFUND_REVERSAL`, `CHARGEBACK_REVERSAL`, `CHARGEBACK_FEE_REVERSAL`, `CAPITAL_CASH_ADVANCE`. `CAPITAL_ADJUSTMENT` follows this path when its `amount` is positive.
+
+### Debit lifecycle
+
+A debit record passes through 3 statuses:
+
+1. `PENDING_DEBIT`: The status Wix Payments assigns when it creates the record, immediately deducting the debit from the available balance.
+2. `DEBITED`: The status once the underlying operation finalizes.
+3. `PAID_OUT`: The status once the record joins a payout. The payout total subtracts the debit amount instead of sending it to the merchant.
+
+If the bank rejects the payout, the record's `recordStatus` moves to `PAYOUT_REVERSED` and the funds re-enter the available balance, making the record eligible for a future payout.
+
+Types that follow this lifecycle: `REFUND`, `CHARGEBACK`, `CHARGEBACK_FEE`, `CREDIT_FAILED`, `CAPITAL_AUTOMATIC_REMITTANCE`. `CAPITAL_ADJUSTMENT` follows this path when its `amount` is negative.
+
+### Reserve lifecycle (paired records)
+
+A reserve creates 2 records at the same time: a `RESERVE_HOLD` and a matching `RESERVE_RELEASE`. They follow separate paths.
+
+A `RESERVE_HOLD` passes through 2 statuses:
+
+1. `RESERVED`: The status Wix Payments assigns when it creates the record, immediately removing the held funds from the available balance.
+2. `DEDUCTED_FROM_PAYOUT`: The status once the record joins a payout. The payout total subtracts the held amount instead of sending it to the merchant.
+
+A `RESERVE_RELEASE` passes through 3 statuses:
+
+1. `RESERVED`: The status Wix Payments assigns when it creates the record. The release's `payoutAvailabilityDate` is in the future, so the funds stay in reserve.
+2. `CREDITED`: The status once `payoutAvailabilityDate` arrives and the funds return to the available balance.
+3. `PAID_OUT`: The status once the record joins a payout.
+
+Wix Payments can adjust a release's `payoutAvailabilityDate` over the reserve's life to extend or shorten the hold period. `reserveInfo.reserveHistoryItems` holds the history of these changes.
+
+If the payout containing either record fails, the record's `recordStatus` moves to `PAYOUT_REVERSED` and becomes eligible for a future payout.
+
+Together, the pair represents a temporary hold: the account removes funds from the available balance and returns them after a configured period.
+
+### Instant Access lifecycle (book transfer)
+
+Balance records funded through Wix Checking's Instant Access feature follow the credit or debit lifecycle above, with 2 key differences:
+
+- The record has `bookTransferInfo` populated instead of `payoutInfo`. A book transfer moves funds between accounts inside Wix Checking, not out to an external bank.
+- The merchant's Wix Checking account gets the funds immediately. There's no waiting for bank settlement, and the record never reaches `PAYOUT_REVERSED`.
+
+## See also
+
+- [About the Balance Records API](resourceId::cca13cfa-8a18-4f3c-9a96-a7ca9f3b6148*fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/intro.md*original::./intro.md)
+- [Balance Records: Sample Flows](resourceId::734d1a9b-cebb-4409-b0fe-2ebb0bf41a71*fallback::https://github.com/wix-private/cashier/blob/a9ba717edee2e8d662808ae4f8324b68b37f95a8/wixpay-services/api/balances/proto/docs/sample-flows.md*original::./sample-flows.md)

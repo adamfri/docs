@@ -1,0 +1,60 @@
+---
+title: "Introduction"
+description: "With Wix Form Submissions, site owners can manage individual form submissions from site visitors."
+icon: "file-lines"
+---
+
+With Wix Form Submissions, site owners can manage individual form submissions from site visitors.
+
+The Form Submissions API provides flexibility in managing form submission data and allows your app to:
+
+- Query and manage submissions for a specified form.
+- Retrieve the total number of submissions per form.
+- Support the ability to upload media files to a [media manager folder](https://dev.wix.com/docs/rest/api-reference/media/media-manager/introduction) when forms include "file upload" fields.
+
+Learn more about [Wix Forms](fallback::https://support.wix.com/en/article/wix-forms-an-overview). 
+
+## Before you begin
+
+- The Form Submission API only works with the Wix Forms app. Call [GetAppInstance](https://dev.wix.com/docs/rest/api-reference/app-management/apps/app-instance/get-app-instance) to confirm that the app named `wix_forms` is installed on the site.
+
+For which keys `submissions` accepts and the value each field type submits, see [About Submission Values](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/about-submission-values).
+
+## Validation errors
+
+When a submission fails validation, the error details carry 1 entry per failed value. Each entry has:
+
+- `errorPath`: which value failed. For a top-level field this is the field's `target`, such as `email`. For a value nested inside a field the path continues with `/`, such as `address/postal_code`, or `attachments/0/fileId` for an element of an array field.
+- `errorType`: what kind of failure it was, such as `REQUIRED_VALUE_ERROR`, `MAX_LENGTH_ERROR`, or `UNKNOWN_VALUE_ERROR`.
+- `errorMessage`: an English description from the schema validator, meant for debugging.
+- `params`: additional detail about the failure, such as the offending property name.
+
+Map errors back to your inputs on `errorPath`, and decide what to show from `errorType`. Don't parse `errorMessage` or show it to submitters: it's the validator's own wording, it isn't localized, and it can change.
+
+A single rejected value fails the whole submission. In particular, a key that isn't a field `target` in the schema is rejected as `UNKNOWN_VALUE_ERROR`, so a stray key fails a submission whose other values are all valid.
+
+## Submission status
+
+Creating a submission doesn't always record it. The status it starts in depends on the form's namespace and on whether the form collects payment, so read `status` from the response instead of assuming:
+
+| Status on creation | When |
+|---|---|
+| `CONFIRMED` | The submission is recorded and visible to the Wix user. Most namespaces, including Wix Forms, create submissions this way. |
+| `PAYMENT_WAITING` | The form collects payment and the submission includes products. |
+| `PENDING` | The namespace completes another step before recording the submission, such as taking payment for a pricing plan. |
+
+A `PENDING` submission isn't recorded yet and isn't shown to the Wix user. It becomes `CONFIRMED` through [Confirm Submission](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/confirm-submission), and is deleted automatically if it isn't confirmed in time. For a namespace that records submissions immediately, no confirmation call is needed.
+
+## Use cases
+
+- [Submit a form with media](##submit-a-form-with-media*fallback::https://dev.wix.com/docs/rest/api-reference/wix-forms/form-submissions/sample-flows#submit-a-form-with-media)
+- [Periodically sync with an external analysis and reporting tool](##periodically-sync-with-an-external-analysis-and-reporting-tool*fallback::https://dev.wix.com/docs/rest/api-reference/wix-forms/form-submissions/sample-flows#periodically-sync-with-an-external-analysis-and-reporting-tool)
+- [Sync with an external CRM for marketing purposes](##sync-with-an-external-crm-for-marketing-purposes*fallback::https://dev.wix.com/docs/rest/api-reference/wix-forms/form-submissions/sample-flows#sync-with-an-external-crm-for-marketing-purposes)
+
+## Terminology
+
+- **Submission:** Data received when a site visitor submits a form.
+- **Media Upload URL:** A URL used to upload a file to a form. 
+- **Namespace:** The app that a form belongs to. 
+
+@sdk_package_setup

@@ -1,0 +1,562 @@
+---
+title: "Charge Membership"
+description: "This method requests that a membership be charged by your app."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    This method requests that a membership be charged by your app.
+
+    ## Endpoint
+
+    ```http
+    POST /v1/charge-membership
+    ```
+
+    ## Body Params
+
+    <ParamField body="memberId" type="string" required>
+
+      Member ID.
+
+      Do not retrieve this from the request context. In some cases the caller is not a member, but a user who is using the membership on behalf of a member.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="membershipId" type="string">
+
+      Membership ID.
+
+      Constraints: `minLength 1`, `maxLength 200`.
+
+    </ParamField>
+
+    <ParamField body="idempotencyKey" type="string" required>
+
+      Idempotency key to avoid duplicate charge.
+      The value is typically `membershipId` + `orderId` + `rootCatalogItemId`.
+
+      Constraints: `minLength 1`, `maxLength 300`.
+
+    </ParamField>
+
+    <ParamField body="serviceProperties" type="ServiceProperties">
+
+      Service properties.
+
+      When relevant, this contains information such as date and number of participants.
+
+      <Expandable title="serviceProperties properties">
+
+        <ParamField body="scheduledDate" type="datetime">
+
+          Date and time the service is to be provided, in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+          For example, the start time of a class.
+
+        </ParamField>
+
+        <ParamField body="numberOfParticipants" type="integer">
+
+          The number of people participating in the service. For example, the number of people attending a class or the number of people per hotel room.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="catalogReference" type="CatalogReference" required>
+
+      Catalog and item reference info.
+
+      <Expandable title="catalogReference properties">
+
+        <ParamField body="catalogItemId" type="string">
+
+          ID of the item within the catalog it belongs to.
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string" required>
+
+          ID of the app providing the catalog.
+
+          You can get your app's ID from its page in the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+          For items from Wix catalogs, the following values always apply:
+          + Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"`
+          + Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+          + Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`
+
+          Constraints: `minLength 1`.
+
+        </ParamField>
+
+        <ParamField body="options" type="object">
+
+          Additional item details in `key:value` pairs.
+
+          Use this optional field for more specificity with item selection. The values of the `options` field differ depending on which catalog is providing the items.
+
+          For Wix Stores products, learn more about integrating with [Catalog V3](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration)
+          or [Catalog V1](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/e-commerce-integration), depending on [the version the site uses](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-versioning/introduction).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="rootCatalogItemId" type="string">
+
+      Root catalog item ID.
+
+      The value will usually be the same as `catalogReference.catalogItemId`.
+      In cases when these are not the same, this field will return the actual ID of the item in the catalog.
+      For example, for Wix bookings, the value of `catalogReference.catalogItemId` is the booking ID, but `rootCatalogItemId` is set to the service ID.
+
+    </ParamField>
+
+    <ParamField body="additionalData" type="object">
+
+      Additional data about this charge.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="transactionId" type="string">
+
+      The transaction ID for this charge.
+
+      Use this ID to void the charge.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MEMBERSHIP_DOES_NOT_APPLY_TO_ITEM` | The membership was found, but does not apply for the provided item |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERSHIP_CANNOT_BE_CHARGED` | The membership was found, applied to the provided item but cannot be charged. For example because a limited membership doesn't have enough credits |
+    | `409` | `ALREADY_EXISTS` | `MEMBERSHIP_ALREADY_CHARGED` | This charge was already done, per the idempotency key of membershipId + orderId + rootCatalogItemId |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://provider.example.com/v1/charge-membership' \
+        -H 'user-agent: Wix' \
+        -H 'accept-encoding: gzip, deflate' \
+        -H 'content-type: text/plain; charset=utf-8' \
+        --data-binary '{
+          "memberId": "79b755c4-2033-4a90-90ac-f5859474bb17",
+          "membershipId": "7c1ff545-95f8-3391-a110-9670f906190c/9bd72a2f-b7fa-4594-8c91-e362d5d279f0",
+      	  "catalogReference": {
+      	    "catalogItemId": "68f71a63-d406-49bd-942f-b70865e72d99",
+      	    "appId": "13d21c63-b5ec-5912-8397-c3a5ddb27a97"
+      	  },
+      	  "rootCatalogItemId": "8e02a329-893c-46d4-9d52-c45aed5ecf32",
+      	  "idempotencyKey": "7c1ff545-95f8-3391-a110-9670f906190c/9bd72a2f-b7fa-4594-8c91-e362d5d279f0",
+      	  "additionalData": {
+      	    "benefitId": "9bd72a2f-b7fa-4594-8c91-e362d5d279f0",
+      	    "orderId": "7c1ff545-95f8-3391-a110-9670f906190c"
+      	  }
+      	}'
+      ```
+
+      ```json Response
+      {
+        "transactionId": "a178aeb7-6687-4402-862f-411a8f899205"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    This method requests that a membership be charged by your app.
+
+    ## Method Declaration
+
+    ```typescript
+    import { memberships } from '@wix/ecom';
+
+    memberships.chargeMembership(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="ChargeMembershipRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="memberId" type="string">
+
+          Member ID.
+
+          Do not retrieve this from the request context. In some cases the caller is not a member, but a user who is using the membership on behalf of a member.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="membershipId" type="string">
+
+          Membership ID.
+
+          Constraints: `minLength 1`, `maxLength 200`.
+
+        </ParamField>
+
+        <ParamField body="idempotencyKey" type="string">
+
+          Idempotency key to avoid duplicate charge.
+          The value is typically `membershipId` + `orderId` + `rootCatalogItemId`.
+
+          Constraints: `minLength 1`, `maxLength 300`.
+
+        </ParamField>
+
+        <ParamField body="serviceProperties" type="ServiceProperties">
+
+          Service properties.
+
+          When relevant, this contains information such as date and number of participants.
+
+          <Expandable title="serviceProperties properties">
+
+            <ParamField body="scheduledDate" type="datetime">
+
+              Date and time the service is to be provided, in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+              For example, the start time of a class.
+
+            </ParamField>
+
+            <ParamField body="numberOfParticipants" type="integer">
+
+              The number of people participating in the service. For example, the number of people attending a class or the number of people per hotel room.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="catalogReference" type="CatalogReference">
+
+          Catalog and item reference info.
+
+          <Expandable title="catalogReference properties">
+
+            <ParamField body="catalogItemId" type="string">
+
+              ID of the item within the catalog it belongs to.
+
+              Constraints: `minLength 1`, `maxLength 36`.
+
+            </ParamField>
+
+            <ParamField body="appId" type="string">
+
+              ID of the app providing the catalog.
+
+              You can get your app's ID from its page in the [app dashboard](https://dev.wix.com/dc3/my-apps/).
+
+              For items from Wix catalogs, the following values always apply:
+              + Wix Stores: `"215238eb-22a5-4c36-9e7b-e7c08025e04e"`
+              + Wix Bookings: `"13d21c63-b5ec-5912-8397-c3a5ddb27a97"`
+              + Wix Restaurants: `"9a5d83fd-8570-482e-81ab-cfa88942ee60"`
+
+              Constraints: `minLength 1`.
+
+            </ParamField>
+
+            <ParamField body="options" type="object">
+
+              Additional item details in `key:value` pairs.
+
+              Use this optional field for more specificity with item selection. The values of the `options` field differ depending on which catalog is providing the items.
+
+              For Wix Stores products, learn more about integrating with [Catalog V3](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/e-commerce-integration)
+              or [Catalog V1](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v1/catalog/e-commerce-integration), depending on [the version the site uses](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-versioning/introduction).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="rootCatalogItemId" type="string">
+
+          Root catalog item ID.
+
+          The value will usually be the same as `catalogReference.catalogItemId`.
+          In cases when these are not the same, this field will return the actual ID of the item in the catalog.
+          For example, for Wix bookings, the value of `catalogReference.catalogItemId` is the booking ID, but `rootCatalogItemId` is set to the service ID.
+
+        </ParamField>
+
+        <ParamField body="additionalData" type="object">
+
+          Additional data about this charge.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="transactionId" type="string">
+
+      The transaction ID for this charge.
+
+      Use this ID to void the charge.
+
+      Constraints: `minLength 1`, `maxLength 100`.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `MEMBERSHIP_DOES_NOT_APPLY_TO_ITEM` | The membership was found, but does not apply for the provided item |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERSHIP_CANNOT_BE_CHARGED` | The membership was found, applied to the provided item but cannot be charged. For example because a limited membership doesn't have enough credits |
+    | `409` | `ALREADY_EXISTS` | `MEMBERSHIP_ALREADY_CHARGED` | This charge was already done, per the idempotency key of membershipId + orderId + rootCatalogItemId |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-charge-membership" id="ex-sdk-charge-membership-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-charge-membership" id="ex-sdk-charge-membership-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-charge-membership" id="ex-sdk-charge-membership-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-charge-membership-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-charge-membership-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">chargeMembership</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">chargeMembership (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">chargeMembership (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-charge-membership-0"><span className="wix-picker-name">chargeMembership</span></label>
+    <label htmlFor="ex-sdk-charge-membership-1"><span className="wix-picker-name">chargeMembership (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-charge-membership-2"><span className="wix-picker-name">chargeMembership (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript chargeMembership
+    import { memberships } from '@wix/ecom/service-plugins';
+
+    async function chargeMembership(request,metadata) {
+      const response = await memberships.chargeMembership(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript chargeMembership (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { memberships } from '@wix/ecom/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { memberships },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function chargeMembership(request,metadata) {
+      const response = await myWixClient.memberships.chargeMembership(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript chargeMembership (with elevated permissions)
+    import { memberships } from '@wix/ecom/service-plugins';
+    import { auth } from '@wix/essentials';
+
+    async function myChargeMembershipMethod(request,metadata) {
+      const elevatedChargeMembership = auth.elevate(memberships.chargeMembership);
+      const response = await elevatedChargeMembership(request,metadata);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

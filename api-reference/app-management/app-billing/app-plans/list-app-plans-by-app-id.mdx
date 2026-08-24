@@ -1,0 +1,476 @@
+---
+title: "List App Plans By App Id"
+description: "Retrieves plans for the given apps."
+icon: "download"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves plans for the given apps.
+
+    Also returns tax settings and currency details. Wix calculates this information
+    based on the 2-letter country code in [ISO-3166 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)
+    format that you pass in the call's header. If you don't pass a country code in
+    the header, Wix calculates the tax settings and currency details based on the
+    call's IP address. Note that the tax settings and currency details may not resolve
+    properly if you call through a VPN.
+
+    Prices for plans that are managed outside of Wix aren't returned.
+
+    Consumers must pay for yearly and multi-yearly plans of your app every month.
+    For these plans this method returns the price that the consumer must pay every
+    month and not the total price for the entire year.
+
+    <Note>
+
+    - The App Plans API doesn't follow any tenancy model. You don't need any permissions to call `List App Plans by App ID`.
+    - This method only returns app plans that have been activated.
+
+    </Note>
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/apps-plans/v1/apps-plans/{appIds}
+    ```
+
+    ## Path Params
+
+    <ParamField path="appIds" type="string" required>
+
+      List of app IDs to retrieve plans for.
+
+      Min: 1 app ID
+      Max: 100 app IDs
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="taxSettings" type="TaxSettings">
+
+      Tax settings. Wix calculates the tax settings based on the country code that
+      you pass in the call's header. If you don't pass a country code in the header,
+      Wix calculates the tax settings based on the caller's IP address. Note that the
+      tax settings may not resolve properly if you call through a VPN.
+
+      <Expandable title="taxSettings properties">
+
+        <ResponseField name="showPriceWithTax" type="boolean">
+
+          Whether you must display the total price including taxes in the given
+          country.
+
+        </ResponseField>
+
+        <ResponseField name="percentage" type="string">
+
+          Tax rate for the given country as percentage. Returned as `0` when
+          `{"showPriceWithTax": false}`.
+
+        </ResponseField>
+
+        <ResponseField name="taxType" type="string">
+
+          Type of tax required in the given country.
+
+          + `"NOT_APPLICABLE"`: The country doesn't require that you display the total price including taxes, or Wix failed to calculate the country based on the call's IP address.
+          + `"VAT"`: The given country requires that you display the total price including [value-added tax (VAT)](https://en.wikipedia.org/wiki/Value-added_tax).
+          + `"GST"`: The given country requires that you display the total price including [generation-skipping transfer tax (GST)](https://en.wikipedia.org/wiki/Generation-skipping_transfer_tax).
+
+          **Supported values:**
+
+          - `NOT_APPLICABLE`
+          - `VAT`
+          - `GST`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="currency" type="string">
+
+      3-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes)
+      format. Wix calculates the currency based on the country code that
+      you pass in the call's header. If you don't pass a country code in the header,
+      Wix calculates the currency based on the caller's IP address. Note that the
+      currency may not resolve properly if you call through a VPN.
+
+      Constraints: `format CURRENCY`.
+
+    </ResponseField>
+
+    <ResponseField name="currencySymbol" type="string">
+
+      Currency symbol in decimal HTML entity format. For example, `&#36;` for $
+      (United States Dollar). Wix calculates the currency symbol based on the
+      country code that you pass in the call's header. If you don't pass a country
+      code in the header, Wix calculates the tax settings based on the caller's IP
+      address. Note that the currency symbol may not resolve properly if you call
+      through a VPN.
+
+    </ResponseField>
+
+    <ResponseField name="appPlans" type="AppPlans[]">
+
+      Retrieved app plans.
+
+      Min: 0 plans
+      Max: 50 plans
+
+      If any plans aren't returned, it's likely because they haven't been activated yet.
+
+      Constraints: `minItems 0`, `maxItems 50`.
+
+      See the [App Plans Object](/api-reference/app-management/app-billing/app-plans/app-plans-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+      'https://manage.wix.com/api/apps-plans/v1/apps-plans/{appIds}' \
+      -H 'X-Wix-Country-Code: <COUNTRY_CODE>'
+      ```
+
+      ```json Response
+      {
+        "taxSettings": {
+          "showPriceWithTax": false,
+          "percentage": null,
+          "taxType": "NOT_APPLICABLE"
+        },
+        "currency": "USD",
+        "currencySymbol": "&#36;",
+        "appPlans": [
+          {
+            "id": "b847d4b2-fc75-4d93-af40-c0ea5feab43d",
+            "plans": [
+              {
+                "id": "2ca49f36-146b-4b4b-9a47-b330470b61b8",
+                "vendorId": "single-payment",
+                "name": "Single payment",
+                "benefits": [
+                  "First benefit",
+                  "Second benefit",
+                  "Third benefit",
+                  "Fourth benefit"
+                ],
+                "prices": [
+                  {
+                    "priceBeforeTax": "2.00",
+                    "totalPrice": "2.34",
+                    "billingCycle": {
+                      "cycleType": "ONE_TIME",
+                      "cycleDuration": null
+                    },
+                    "usageBaseOptions": null
+                  }
+                ]
+              },
+              {
+                "id": "9fdb4be4-1cbb-4e5d-9bb1-c9f37b2d5655",
+                "vendorId": "usage-based-no-base-fee",
+                "name": "Usage-based without base fee",
+                "benefits": [
+                  "First benefit",
+                  "Second benefit",
+                  "Third benefit",
+                  "Fourth benefit"
+                ],
+                "prices":[
+                  {
+                    "priceBeforeTax": "0.00",
+                    "totalPrice": "0.00",
+                    "billingCycle":{
+                      "cycleType": "RECURRING",
+                      "cycleDuration": {
+                        "unit": "MONTH",
+                        "count": 12
+                      }
+                    },
+                    "usageBaseOptions": {
+                      "minimumChargeIncrement": "0.00",
+                      "monthlyBaseFee": "0.00",
+                      "customChargeDescription": "Flexible monthly pricing based on usage"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Retrieves plans for the given apps.
+
+    Also returns tax settings and currency details. Wix calculates this information
+    based on the 2-letter country code in [ISO-3166 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)
+    format that you pass in the call's header. If you don't pass a country code in
+    the header, Wix calculates the tax settings and currency details based on the
+    call's IP address. Note that the tax settings and currency details may not resolve
+    properly if you call through a VPN.
+
+    Prices for plans that are managed outside of Wix aren't returned.
+
+    Consumers must pay for yearly and multi-yearly plans of your app every month.
+    For these plans this method returns the price that the consumer must pay every
+    month and not the total price for the entire year.
+
+    <Note>
+
+    - The App Plans API doesn't follow any tenancy model. You don't need any permissions to call `List App Plans by App ID`.
+    - This method only returns app plans that have been activated.
+
+    </Note>
+
+    ## Method Declaration
+
+    ```typescript
+    import { appPlans } from '@wix/app-management';
+
+    appPlans.listAppPlansByAppId(appIds): Promise<ListAppPlansByAppIdResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="appIds" type="string[]" required>
+
+      List of app IDs to retrieve plans for.
+
+      Min: 1 app ID
+      Max: 100 app IDs
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<ListAppPlansByAppIdResponse>`.
+
+    <ResponseField name="taxSettings" type="TaxSettings">
+
+      Tax settings. Wix calculates the tax settings based on the country code that
+      you pass in the call's header. If you don't pass a country code in the header,
+      Wix calculates the tax settings based on the caller's IP address. Note that the
+      tax settings may not resolve properly if you call through a VPN.
+
+      <Expandable title="taxSettings properties">
+
+        <ResponseField name="showPriceWithTax" type="boolean">
+
+          Whether you must display the total price including taxes in the given
+          country.
+
+        </ResponseField>
+
+        <ResponseField name="percentage" type="string">
+
+          Tax rate for the given country as percentage. Returned as `0` when
+          `{"showPriceWithTax": false}`.
+
+        </ResponseField>
+
+        <ResponseField name="taxType" type="string">
+
+          Type of tax required in the given country.
+
+          + `"NOT_APPLICABLE"`: The country doesn't require that you display the total price including taxes, or Wix failed to calculate the country based on the call's IP address.
+          + `"VAT"`: The given country requires that you display the total price including [value-added tax (VAT)](https://en.wikipedia.org/wiki/Value-added_tax).
+          + `"GST"`: The given country requires that you display the total price including [generation-skipping transfer tax (GST)](https://en.wikipedia.org/wiki/Generation-skipping_transfer_tax).
+
+          **Supported values:**
+
+          - `NOT_APPLICABLE`
+          - `VAT`
+          - `GST`
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="currency" type="string">
+
+      3-letter currency code in [ISO-4217 alphabetic](https://en.wikipedia.org/wiki/ISO_4217#Active_codes)
+      format. Wix calculates the currency based on the country code that
+      you pass in the call's header. If you don't pass a country code in the header,
+      Wix calculates the currency based on the caller's IP address. Note that the
+      currency may not resolve properly if you call through a VPN.
+
+      Constraints: `format CURRENCY`.
+
+    </ResponseField>
+
+    <ResponseField name="currencySymbol" type="string">
+
+      Currency symbol in decimal HTML entity format. For example, `&#36;` for $
+      (United States Dollar). Wix calculates the currency symbol based on the
+      country code that you pass in the call's header. If you don't pass a country
+      code in the header, Wix calculates the tax settings based on the caller's IP
+      address. Note that the currency symbol may not resolve properly if you call
+      through a VPN.
+
+    </ResponseField>
+
+    <ResponseField name="appPlans" type="AppPlans[]">
+
+      Retrieved app plans.
+
+      Min: 0 plans
+      Max: 50 plans
+
+      If any plans aren't returned, it's likely because they haven't been activated yet.
+
+      Constraints: `minItems 0`, `maxItems 50`.
+
+      See the [App Plans Object](/api-reference/app-management/app-billing/app-plans/app-plans-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-app-plans-by-app-id" id="ex-sdk-list-app-plans-by-app-id-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-app-plans-by-app-id" id="ex-sdk-list-app-plans-by-app-id-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-list-app-plans-by-app-id" id="ex-sdk-list-app-plans-by-app-id-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-app-plans-by-app-id-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-app-plans-by-app-id-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">listAppPlansByAppId</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listAppPlansByAppId (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listAppPlansByAppId (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-app-plans-by-app-id-0"><span className="wix-picker-name">listAppPlansByAppId</span></label>
+    <label htmlFor="ex-sdk-list-app-plans-by-app-id-1"><span className="wix-picker-name">listAppPlansByAppId (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-list-app-plans-by-app-id-2"><span className="wix-picker-name">listAppPlansByAppId (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAppPlansByAppId
+    import { appPlans } from '@wix/app-management';
+
+    async function listAppPlansByAppId(appIds) {
+      const response = await appPlans.listAppPlansByAppId(appIds);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAppPlansByAppId (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { appPlans } from '@wix/app-management';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { appPlans },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listAppPlansByAppId(appIds) {
+      const response = await myWixClient.appPlans.listAppPlansByAppId(appIds);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listAppPlansByAppId (with elevated permissions)
+    import { appPlans } from '@wix/app-management';
+    import { auth } from '@wix/essentials';
+
+    async function myListAppPlansByAppIdMethod(appIds) {
+      const elevatedListAppPlansByAppId = auth.elevate(appPlans.listAppPlansByAppId);
+      const response = await elevatedListAppPlansByAppId(appIds);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

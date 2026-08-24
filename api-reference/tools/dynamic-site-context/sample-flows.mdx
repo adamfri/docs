@@ -1,0 +1,71 @@
+---
+title: "Sample Flows"
+description: "This article describes common use cases and flows for the Dynamic Site Context API."
+icon: "file-lines"
+---
+
+This article describes common use cases and flows for the Dynamic Site Context API.
+
+## Get context for an AI agent
+
+To provide an AI agent with a comprehensive understanding of a user's Wix ecosystem:
+
+1. Call GetDynamicContext with no filter to retrieve all sites.
+2. The response includes account info and enriched site data (installed apps, editor type, Velo status).
+3. Use the structured data to inform the agent's recommendations, for example checking which apps are installed before suggesting app-specific actions.
+
+## Get context as markdown for an LLM prompt
+
+To inject site context directly into an LLM prompt without post-processing:
+
+1. Call GetDynamicContextMarkdown, optionally with `include_account_context` and `include_partner_context` set to `true`.
+2. The response contains a single `markdown` field with a ready-to-use report ("# My Wix Sites Context" with per-site sections).
+3. Pass the markdown string to the LLM as-is. The format is identical to the site context the Wix MCP injects via its `WixREADME` and `GetSiteContext` tools.
+
+## Get context with an app-instance token
+
+When calling as an installed app (OAuth `client_credentials` token) rather than a user:
+
+1. Mint an app-instance access token via `POST /oauth2/token` with `grant_type: client_credentials`, your app's `client_id`/`client_secret`, and the `instance_id` of the installation.
+2. Call GetDynamicContext (or GetDynamicContextMarkdown) with that token and no filter.
+3. The response contains exactly one site — the site the token is scoped to — with installed apps, site properties, and Stores catalog version. Account and partner sections are not available for app-instance tokens.
+
+## Look up a specific site by ID
+
+To retrieve context for a single known site:
+
+1. Call GetDynamicContext with `site_id` set to the target site's GUID.
+2. The response contains at most one site with full enrichment (installed apps, Velo status, Stores catalog version).
+3. Use this to verify site capabilities before performing site-specific operations.
+
+## Look up a site by display name
+
+To find a site when you only know its name:
+
+1. Call GetDynamicContext with `site_name` set to the exact display name.
+2. The response contains at most one matching site.
+
+## Paginate through all sites
+
+To fetch all sites for a user with many sites:
+
+1. Call GetDynamicContext with `query.paging.limit` set to your preferred page size (e.g., 50).
+2. Check the `paging_metadata.has_next` field in the response.
+3. If `has_next` is `true`, call GetDynamicContext again with `query.paging.cursor` set to the `paging_metadata.cursors.next` value from the previous response.
+4. Repeat until `has_next` is `false`.
+
+## Check if Velo is enabled on a site
+
+To determine whether a site has Velo (Wix Code) enabled:
+
+1. Call GetDynamicContext with the target `site_id`.
+2. Check the `velo_enabled` field on the returned site.
+3. If `velo_enabled` is `true`, the site supports custom Velo code. If absent, the status could not be determined.
+
+## Determine the Stores catalog version
+
+To check which Wix Stores catalog version a site uses:
+
+1. Call GetDynamicContext with the target `site_id`.
+2. Look through `installed_apps` for an entry with the Wix Stores app ID.
+3. The `catalog_version` field on that entry will be `"V1"` or `"V3"`.

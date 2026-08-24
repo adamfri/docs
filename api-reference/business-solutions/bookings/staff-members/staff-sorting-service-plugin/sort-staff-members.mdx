@@ -1,0 +1,618 @@
+---
+title: "Sort Staff Members"
+description: "Sorts staff members using custom business logic for assigning resources to a booking."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sorts staff members using custom business logic for assigning resources to a booking.
+
+    Wix calls this method in real time when multiple staff members are available and Wix needs to assign a staff member:
+
+    - **During booking creation**: When a customer completes a booking and multiple staff members are available for the selected time slot.
+    - **During booking modifications**: When an existing booking is modified (time change, service change) and staff reassignment is needed.
+    - **During availability checks**: In some cases, when displaying available time slots to customers, to optimize the staff assignment preview.
+
+    Your implementation must return the resources in your preferred assignment order.
+    Wix assigns the first resource to the booking and uses subsequent resources as fallbacks if the primary choice becomes unavailable before creating the booking.
+
+    ### Response validation
+
+    Your response must contain the exact same resource IDs provided in the request, in your preferred order.
+    Don't add, remove, or duplicate resources.
+    If the response is invalid, Wix falls back to random staff assignment.
+
+    ### Performance requirements
+
+    Your implementation must respond in under 5 seconds or Wix times out and falls back to random staff assignment.
+    For optimal user experience, we recommend responding in under 500 milliseconds.
+    You can use caching strategies and avoid synchronous external API calls during sorting.
+
+    ## Endpoint
+
+    ```http
+    POST /v1/sort-staff-members
+    ```
+
+    ## Body Params
+
+    <ParamField body="policyId" type="string">
+
+      ID of the service's [booking policy](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+    </ParamField>
+
+    <ParamField body="slot" type="Slot">
+
+      Booking slot context including time, service, and location details.
+      You can use this information to make informed sorting decisions based on factors like staff proximity to location, expertise with the specific service, or availability patterns.
+
+      <Expandable title="slot properties">
+
+        <ParamField body="startDate" type="string">
+
+          Local start time of the booking slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+          For example, `2026-01-30T13:30:00`.
+          Wix always provides this value when calling your service plugin.
+
+        </ParamField>
+
+        <ParamField body="endDate" type="string">
+
+          Local end time of the booking slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+          For example, `2026-01-30T14:00:00`.
+          Wix always provides this value when calling your service plugin.
+
+        </ParamField>
+
+        <ParamField body="serviceId" type="string">
+
+          ID of the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) being booked.
+          Wix always provides this value when calling your service plugin.
+
+        </ParamField>
+
+        <ParamField body="locationId" type="string">
+
+          ID of the [location](https://dev.wix.com/docs/api-reference/business-management/locations/introduction) where the business provides the service.
+          Consider this for proximity-based sorting or location-specific staff assignments.
+          Wix always provides this value when calling your service plugin.
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          Time zone for the slot. For example, `America/New_York` or `UTC`.
+          Wix always provides this value when calling your service plugin.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="availableResourceIds" type="string[]">
+
+      Array of resource IDs for staff members who are available for this time slot.
+      The field uses "resource" terminology for future extensibility, but currently all resources are staff members.
+      Your algorithm must return these same IDs in your preferred assignment order.
+      Don't add, remove, or duplicate resources.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 50`.
+
+    </ParamField>
+
+    <ParamField body="extendedFields" type="ExtendedFields">
+
+      Custom field data for the policy. [Extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) must be configured in the app dashboard before they can be accessed with API calls.
+
+      <Expandable title="extendedFields properties">
+
+        <ParamField body="namespaces" type="object">
+
+          Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+          The value of each key is structured according to the schema defined when the extended fields were configured.
+
+          You can only access fields for which you have the appropriate permissions.
+
+          Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+          Constraints: `format map`.
+
+          <Expandable title="namespaces properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="object" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="staff" type="Staff[]">
+
+      Array of staff members sorted according to your custom sorting algorithm, in order of assignment priority.
+      Wix assigns the first staff member to the booking.
+      Subsequent staff members serve as fallbacks if the primary choice becomes unavailable during the booking process.
+
+      Constraints: `maxItems 50`.
+
+      <Expandable title="staff properties">
+
+        <ResponseField name="resourceId" type="string">
+
+          Resource ID. This must match one of the IDs specified in the SortStaffMembersRequest.available_resource_ids array.
+          Currently, this service plugin only supports staff members as resources.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `SORTING_ERROR` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The data payload is sent as an encoded JWT. For the purposes of this example, we show the request and response objects decoded. In production, you must verify the JWT signature to ensure the request is from Wix.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \ 'https://provider.example.com/v1/sort-staff-members' \
+      -H 'user-agent: Wix' \
+      -H 'accept-encoding: gzip, deflate' \
+      -H 'content-type: text/plain; charset=utf-8' \
+      -d '{
+        "data": {
+          "request": {
+            "policyId": "9bf5cd2d-32fa-4ee7-952c-5e4b6de14714",
+            "slot": {
+              "startDate": "2026-01-30T13:30:00",
+              "endDate": "2026-01-30T14:00:00",
+              "serviceId": "7474452d-ab93-4d42-af61-b15e9f93981d",
+              "locationId": "bb2b1658-9855-4598-b1e0-48e8cdb7f98a",
+              "timeZone": "America/New_York"
+            },
+            "availableResourceIds": [
+              "c7808c1d-e6a5-49e5-bcbe-b3fcf2f72d28",
+              "044667f4-c13f-46c2-8506-de9e42293896",
+              "3467d501-9004-498d-9b5c-d50f6d4ede66"
+            ]
+          },
+          "metadata": {
+            "requestId": "1674480822.92546993606315181",
+            "identity": {
+              "identityType": "MEMBER",
+              "memberId": "a8119733-f872-4b0a-963b-09a95208474e"
+            },
+            "instanceId": "bb2b1658-9855-4598-b1e0-48e8cdb7f98a"
+          }
+        },
+        "aud": "13d21c63-b5ec-5912-8397-c3a5ddb27a97",
+        "iss": "wix.com",
+        "iat": 1674480823,
+        "exp": 1678080823
+      }'
+      ```
+
+      ```json Response
+      {
+        "staff": [
+          {
+            "resourceId": "3467d501-9004-498d-9b5c-d50f6d4ede66"
+          },
+          {
+            "resourceId": "c7808c1d-e6a5-49e5-bcbe-b3fcf2f72d28"
+          },
+          {
+            "resourceId": "044667f4-c13f-46c2-8506-de9e42293896"
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sorts staff members using custom business logic for assigning resources to a booking.
+
+    Wix calls this method in real time when multiple staff members are available and Wix needs to assign a staff member:
+
+    - **During booking creation**: When a customer completes a booking and multiple staff members are available for the selected time slot.
+    - **During booking modifications**: When an existing booking is modified (time change, service change) and staff reassignment is needed.
+    - **During availability checks**: In some cases, when displaying available time slots to customers, to optimize the staff assignment preview.
+
+    Your implementation must return the resources in your preferred assignment order.
+    Wix assigns the first resource to the booking and uses subsequent resources as fallbacks if the primary choice becomes unavailable before creating the booking.
+
+    ### Response validation
+
+    Your response must contain the exact same resource IDs provided in the request, in your preferred order.
+    Don't add, remove, or duplicate resources.
+    If the response is invalid, Wix falls back to random staff assignment.
+
+    ### Performance requirements
+
+    Your implementation must respond in under 5 seconds or Wix times out and falls back to random staff assignment.
+    For optimal user experience, we recommend responding in under 500 milliseconds.
+    You can use caching strategies and avoid synchronous external API calls during sorting.
+
+    ## Method Declaration
+
+    ```typescript
+    import { staffSorting } from '@wix/bookings';
+
+    staffSorting.sortStaffMembers(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="SortStaffMembersRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="policyId" type="string">
+
+          ID of the service's [booking policy](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+        </ParamField>
+
+        <ParamField body="slot" type="Slot">
+
+          Booking slot context including time, service, and location details.
+          You can use this information to make informed sorting decisions based on factors like staff proximity to location, expertise with the specific service, or availability patterns.
+
+          <Expandable title="slot properties">
+
+            <ParamField body="startDate" type="string">
+
+              Local start time of the booking slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+              For example, `2026-01-30T13:30:00`.
+              Wix always provides this value when calling your service plugin.
+
+            </ParamField>
+
+            <ParamField body="endDate" type="string">
+
+              Local end time of the booking slot in `YYYY-MM-DDThh:mm:ss` [ISO-8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+              For example, `2026-01-30T14:00:00`.
+              Wix always provides this value when calling your service plugin.
+
+            </ParamField>
+
+            <ParamField body="serviceId" type="string">
+
+              ID of the [service](https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) being booked.
+              Wix always provides this value when calling your service plugin.
+
+            </ParamField>
+
+            <ParamField body="locationId" type="string">
+
+              ID of the [location](https://dev.wix.com/docs/api-reference/business-management/locations/introduction) where the business provides the service.
+              Consider this for proximity-based sorting or location-specific staff assignments.
+              Wix always provides this value when calling your service plugin.
+
+            </ParamField>
+
+            <ParamField body="timeZone" type="string">
+
+              Time zone for the slot. For example, `America/New_York` or `UTC`.
+              Wix always provides this value when calling your service plugin.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="availableResourceIds" type="string[]">
+
+          Array of resource IDs for staff members who are available for this time slot.
+          The field uses "resource" terminology for future extensibility, but currently all resources are staff members.
+          Your algorithm must return these same IDs in your preferred assignment order.
+          Don't add, remove, or duplicate resources.
+
+          Constraints: `format GUID`, `minItems 1`, `maxItems 50`.
+
+        </ParamField>
+
+        <ParamField body="extendedFields" type="ExtendedFields">
+
+          Custom field data for the policy. [Extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields) must be configured in the app dashboard before they can be accessed with API calls.
+
+          <Expandable title="extendedFields properties">
+
+            <ParamField body="namespaces" type="object">
+
+              Extended field data. Each key corresponds to the namespace of the app that created the extended fields.
+              The value of each key is structured according to the schema defined when the extended fields were configured.
+
+              You can only access fields for which you have the appropriate permissions.
+
+              Learn more about [extended fields](https://dev.wix.com/docs/rest/articles/getting-started/extended-fields).
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="staff" type="Staff[]">
+
+      Array of staff members sorted according to your custom sorting algorithm, in order of assignment priority.
+      Wix assigns the first staff member to the booking.
+      Subsequent staff members serve as fallbacks if the primary choice becomes unavailable during the booking process.
+
+      Constraints: `maxItems 50`.
+
+      <Expandable title="staff properties">
+
+        <ResponseField name="resourceId" type="string">
+
+          Resource ID. This must match one of the IDs specified in the SortStaffMembersRequest.available_resource_ids array.
+          Currently, this service plugin only supports staff members as resources.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `SORTING_ERROR` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-sort-staff-members" id="ex-sdk-sort-staff-members-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-sort-staff-members" id="ex-sdk-sort-staff-members-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-sort-staff-members" id="ex-sdk-sort-staff-members-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-sort-staff-members-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-sort-staff-members-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">sortStaffMembers</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">sortStaffMembers (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">sortStaffMembers (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-sort-staff-members-0"><span className="wix-picker-name">sortStaffMembers</span></label>
+    <label htmlFor="ex-sdk-sort-staff-members-1"><span className="wix-picker-name">sortStaffMembers (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-sort-staff-members-2"><span className="wix-picker-name">sortStaffMembers (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript sortStaffMembers
+    import { staffSorting } from '@wix/bookings/service-plugins';
+
+    async function sortStaffMembers(request,metadata) {
+      const response = await staffSorting.sortStaffMembers(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript sortStaffMembers (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { staffSorting } from '@wix/bookings/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { staffSorting },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function sortStaffMembers(request,metadata) {
+      const response = await myWixClient.staffSorting.sortStaffMembers(request,metadata);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript sortStaffMembers (with elevated permissions)
+    import { staffSorting } from '@wix/bookings/service-plugins';
+    import { auth } from '@wix/essentials';
+
+    async function mySortStaffMembersMethod(request,metadata) {
+      const elevatedSortStaffMembers = auth.elevate(staffSorting.sortStaffMembers);
+      const response = await elevatedSortStaffMembers(request,metadata);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,625 @@
+---
+title: "Cancel Multi Service Booking"
+description: "Cancels a multi-service booking and all its associated single-service bookings."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Cancels a multi-service booking and all its associated single-service bookings.
+
+    Cancels the entire multi-service booking, updating the status of all single-service bookings to `CANCELED`.
+    The call fails if all single-service bookings are already canceled or declined.
+
+    See [Cancel Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/cancel-booking) for single-service booking cancellation details.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings/{multiServiceBookingId}/cancel
+    ```
+
+    ## Path Params
+
+    <ParamField path="multiServiceBookingId" type="string" required>
+
+      ID of the multi-service booking to cancel.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Information about whether to notify the customer and the message to send.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to send a message about the changes to the customer.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Custom message to send to the participants about the changes to the booking.
+
+        </ParamField>
+
+        <ParamField body="metadata" type="object">
+
+          Information about the delivery channels used to send the notification.
+          For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+          Constraints: `format map`.
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="flowControlSettings" type="CancelBookingFlowControlSettings">
+
+      Information about whether specific procedures of the standard Wix Bookings cancellation flow are changed.
+      For example, whether the customer can cancel the booking even though the service's cancellation policy doesn't allow it or whether to issue a refund upon cancellation.
+
+      <Expandable title="flowControlSettings properties">
+
+        <ParamField body="ignoreCancellationPolicy" type="boolean">
+
+          Whether the cancellation policy applies when canceling the booking.
+
+          When passing `false`, you can only cancel a booking if the cancellation policy allows it.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="withRefund" type="boolean">
+
+          Whether to issue a refund when canceling the booking.
+
+          The refund will be issued only if the booking is refundable.
+          Currently, a booking is considered refundable when it was paid by membership.
+          If you specify `true`, the booking flow control settings is set to include a refund.
+          If `false` is specified or the field remains empty,
+          the booking flow control settings are set without refund.
+
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="waiveCancellationFee" type="boolean">
+
+          Whether to waive the cancellation fee when canceling the booking.
+
+          - `true`: The customer doesn't have to pay a cancellation fee.
+          - `false`: The customer must pay the cancellation fee that's defined in the service's [policy](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+          Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnFullEntity" type="boolean">
+
+      Whether to return the canceled single-service bookings.
+
+    </ParamField>
+
+    <ParamField body="waiveCharges" type="boolean">
+
+      Whether to waive charges and cancel the associated [Wix eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction).
+
+      This field only applies to bookings paid via [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction). It has no effect for bookings paid through a custom checkout.
+
+      The booking itself is always canceled. When `true`, the associated eCommerce order is also canceled if all of the following conditions are met:
+
+      - All line items in the order belong to Wix Bookings.
+      - The order's payment status is `NOT_PAID` or `PARTIALLY_PAID`.
+      - The order has a positive outstanding balance. A booking for a free service, for
+      example, may carry a `NOT_PAID` status while its balance is $0, making it ineligible.
+      - The booking has no fees. To check, call
+      [List Booking Fees by Booking IDs](https://dev.wix.com/docs/api-reference/business-solutions/bookings/pricing/booking-fees/list-booking-fees-by-booking-ids):
+      the order is eligible when the returned list is empty.
+      - The order has no additional fees on the booking's line item.
+
+      Default: `false`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="multiServiceBooking" type="MultiServiceBooking">
+
+      Canceled multi-service booking.
+
+      <Expandable title="multiServiceBooking properties">
+
+        <ResponseField name="id" type="string">
+
+          Multi-service booking ID.
+
+        </ResponseField>
+
+        <ResponseField name="bookings" type="BookingResult[]">
+
+          The single-service bookings that make up the multi-service booking package.
+
+          <Expandable title="bookings properties">
+
+            <ResponseField name="bookingId" type="string">
+
+              Single-service booking ID. Always present.
+              This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="booking" type="Booking">
+
+              Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+              See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `MULTI_SERVICE_BOOKING_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `ALL_BOOKINGS_ARE_ALREADY_DECLINED` |  |
+    | `428` | `FAILED_PRECONDITION` | `ALL_BOOKINGS_ARE_ALREADY_CANCELED` |  |
+    | `403` | `PERMISSION_DENIED` | `MULTI_SERVICE_BOOKING_INCLUDES_MULTIPLE_STAFF_MEMBERS` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Canceled | `wix.bookings.v2.booking_canceled` | Triggered when a booking is canceled. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/_api/bookings-service/v2/multi_service_bookings/a1b2c3d4-e5f6-7890-abcd-ef1234567890/cancel' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "participantNotification": {
+            "notifyParticipants": true,
+            "message": "Your spa package has been canceled. If you have any questions, please contact us."
+          },
+          "flowControlSettings": {
+            "ignoreCancellationPolicy": false,
+            "withRefund": false
+          },
+          "returnFullEntity": true
+        }'
+      ```
+
+      ```json Response
+      {
+        "multiServiceBooking": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "bookings": [
+            {
+              "bookingId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+              "booking": {
+                "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                "status": "CANCELED",
+                "paymentStatus": "REFUNDED",
+                "bookedEntity": {
+                  "slot": {
+                    "scheduleId": "massage-schedule-123",
+                    "startDate": "2024-02-15T14:00:00.000Z",
+                    "endDate": "2024-02-15T15:00:00.000Z"
+                  }
+                },
+                "contactDetails": {
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "email": "jane.smith@example.com",
+                  "phone": "+1-555-123-4567"
+                }
+              }
+            },
+            {
+              "bookingId": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+              "booking": {
+                "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+                "status": "CANCELED",
+                "paymentStatus": "REFUNDED",
+                "bookedEntity": {
+                  "slot": {
+                    "scheduleId": "facial-schedule-789",
+                    "startDate": "2024-02-15T15:00:00.000Z",
+                    "endDate": "2024-02-15T15:45:00.000Z"
+                  }
+                },
+                "contactDetails": {
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "email": "jane.smith@example.com",
+                  "phone": "+1-555-123-4567"
+                }
+              }
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Cancels a multi-service booking and all its associated single-service bookings.
+
+    Cancels the entire multi-service booking, updating the status of all single-service bookings to `CANCELED`.
+    The call fails if all single-service bookings are already canceled or declined.
+
+    See [Cancel Booking](https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/cancel-booking) for single-service booking cancellation details.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-BOOKINGS.MANAGE-BOOKINGS">Manage Bookings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { bookings } from '@wix/bookings';
+
+    bookings.cancelMultiServiceBooking(multiServiceBookingId, options): Promise<CancelMultiServiceBookingResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="multiServiceBookingId" type="string" required>
+
+      ID of the multi-service booking to cancel.
+
+    </ParamField>
+
+    <ParamField body="options" type="CancelMultiServiceBookingOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Information about whether to notify the customer and the message to send.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to send a message about the changes to the customer.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Custom message to send to the participants about the changes to the booking.
+
+            </ParamField>
+
+            <ParamField body="metadata" type="object">
+
+              Information about the delivery channels used to send the notification.
+              For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="flowControlSettings" type="CancelBookingFlowControlSettings">
+
+          Information about whether specific procedures of the standard Wix Bookings cancellation flow are changed.
+          For example, whether the customer can cancel the booking even though the service's cancellation policy doesn't allow it or whether to issue a refund upon cancellation.
+
+          <Expandable title="flowControlSettings properties">
+
+            <ParamField body="ignoreCancellationPolicy" type="boolean">
+
+              Whether the cancellation policy applies when canceling the booking.
+
+              When passing `false`, you can only cancel a booking if the cancellation policy allows it.
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="withRefund" type="boolean">
+
+              Whether to issue a refund when canceling the booking.
+
+              The refund will be issued only if the booking is refundable.
+              Currently, a booking is considered refundable when it was paid by membership.
+              If you specify `true`, the booking flow control settings is set to include a refund.
+              If `false` is specified or the field remains empty,
+              the booking flow control settings are set without refund.
+
+              Default: `false`.
+
+            </ParamField>
+
+            <ParamField body="waiveCancellationFee" type="boolean">
+
+              Whether to waive the cancellation fee when canceling the booking.
+
+              - `true`: The customer doesn't have to pay a cancellation fee.
+              - `false`: The customer must pay the cancellation fee that's defined in the service's [policy](https://dev.wix.com/docs/api-reference/business-solutions/bookings/policies/booking-policies/introduction).
+
+              Default: `false`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="returnFullEntity" type="boolean">
+
+          Whether to return the canceled single-service bookings.
+
+        </ParamField>
+
+        <ParamField body="waiveCharges" type="boolean">
+
+          Whether to waive charges and cancel the associated [Wix eCommerce order](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/introduction).
+
+          This field only applies to bookings paid via [Wix eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction). It has no effect for bookings paid through a custom checkout.
+
+          The booking itself is always canceled. When `true`, the associated eCommerce order is also canceled if all of the following conditions are met:
+
+          - All line items in the order belong to Wix Bookings.
+          - The order's payment status is `NOT_PAID` or `PARTIALLY_PAID`.
+          - The order has a positive outstanding balance. A booking for a free service, for
+          example, may carry a `NOT_PAID` status while its balance is $0, making it ineligible.
+          - The booking has no fees. To check, call
+          [List Booking Fees by Booking IDs](https://dev.wix.com/docs/api-reference/business-solutions/bookings/pricing/booking-fees/list-booking-fees-by-booking-ids):
+          the order is eligible when the returned list is empty.
+          - The order has no additional fees on the booking's line item.
+
+          Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CancelMultiServiceBookingResponse>`.
+
+    <ResponseField name="multiServiceBooking" type="MultiServiceBooking">
+
+      Canceled multi-service booking.
+
+      <Expandable title="multiServiceBooking properties">
+
+        <ResponseField name="_id" type="string">
+
+          Multi-service booking ID.
+
+        </ResponseField>
+
+        <ResponseField name="bookings" type="BookingResult[]">
+
+          The single-service bookings that make up the multi-service booking package.
+
+          <Expandable title="bookings properties">
+
+            <ResponseField name="bookingId" type="string">
+
+              Single-service booking ID. Always present.
+              This value is identical to `booking.id`, which is only returned when `returnFullEntity` is `true`.
+
+            </ResponseField>
+
+            <ResponseField name="booking" type="Booking">
+
+              Single-service booking entity. Only returned when `returnFullEntity` is `true`.
+
+              See the [Booking Object](/api-reference/business-solutions/bookings/bookings/bookings-writer-v2/booking-object) for this object's fields.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `MULTI_SERVICE_BOOKING_NOT_FOUND` |  |
+    | `428` | `FAILED_PRECONDITION` | `ALL_BOOKINGS_ARE_ALREADY_DECLINED` |  |
+    | `428` | `FAILED_PRECONDITION` | `ALL_BOOKINGS_ARE_ALREADY_CANCELED` |  |
+    | `403` | `PERMISSION_DENIED` | `MULTI_SERVICE_BOOKING_INCLUDES_MULTIPLE_STAFF_MEMBERS` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Booking Canceled | `wix.bookings.v2.booking_canceled` | Triggered when a booking is canceled. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-cancel-multi-service-booking" id="ex-sdk-cancel-multi-service-booking-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-cancel-multi-service-booking" id="ex-sdk-cancel-multi-service-booking-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-cancel-multi-service-booking-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-cancel-multi-service-booking-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">cancelMultiServiceBooking</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">cancelMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-cancel-multi-service-booking-0"><span className="wix-picker-name">cancelMultiServiceBooking</span></label>
+    <label htmlFor="ex-sdk-cancel-multi-service-booking-1"><span className="wix-picker-name">cancelMultiServiceBooking (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript cancelMultiServiceBooking
+    import { bookings } from '@wix/bookings';
+
+    async function cancelMultiServiceBooking(multiServiceBookingId,options) {
+      const response = await bookings.cancelMultiServiceBooking(multiServiceBookingId,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript cancelMultiServiceBooking (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { bookings } from '@wix/bookings';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { bookings },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function cancelMultiServiceBooking(multiServiceBookingId,options) {
+      const response = await myWixClient.bookings.cancelMultiServiceBooking(multiServiceBookingId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

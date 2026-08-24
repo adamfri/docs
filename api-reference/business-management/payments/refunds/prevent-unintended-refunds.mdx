@@ -1,0 +1,55 @@
+---
+title: "Prevent Unintended Refunds"
+description: "The Refunds API allows you to issue partial refunds, but they should be handled with care to avoid sending multiple copies of the same request."
+icon: "file-lines"
+---
+
+The Refunds API allows you to issue partial refunds, but they should be handled with care to avoid sending multiple copies of the same request.
+
+## Why duplicate refunds occur
+
+If the server receives two requests for a full refund of a charge, one of them will be rejected because the total refund amount can't exceed the charge amount. However, if the server receives two requests for a partial refund, it processes both of them.
+
+Repeat refund requests may happen as a result of:
+- Retries related to network errors.
+- A merchant trying to make a refund from a page with outdated charge information.
+
+### Example scenario
+
+A merchant has an order for 4 items priced $25 each, totaling $100. The merchant wants to refund only 1 of the items for $25 out of $100, but accidentally sends the request twice and refunds a total of $50.
+
+## Using `previouslyRefundedAmount`
+
+[Create Refund](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/create-refund) accepts an optional `previouslyRefundedAmount` parameter to prevent accidental duplicate requests.
+
+This parameter allows you to specify the previously refunded amount for a charge according to your existing `SUCCEEDED` refunds at the moment of requesting the refund. The server checks `previouslyRefundedAmount` against the actual amount already refunded for a charge, and returns an error with code `PREVIOUSLY_REFUNDED_AMOUNT_MISMATCH` if they don't match.
+
+When to use this parameter:
+- Use `previouslyRefundedAmount` when your app stores or caches refund amounts and you want to ensure your cached data is current before issuing a refund.
+- Use it when issuing partial refunds to prevent duplicate refunds if the same request is accidentally sent multiple times.
+
+When to skip this parameter:
+- Skip it if you're issuing a full refund (duplicates will be rejected automatically).
+- Skip it if you query the current refund total immediately before creating the refund and don't cache the result.
+
+### Example
+
+To issue a $25 refund for a charge for which no previous refunds have been made, you would call Create Refund with a `previouslyRefundedAmount` of $0.
+
+If you accidentally send the refund request twice:
+- The first request succeeds because no amount has been refunded.
+- The second request fails because the amount previously refunded is $25 (from the first request).
+
+## Getting the previously refunded amount
+
+To get the current `previouslyRefundedAmount` for a charge:
+
+1. Call [Query Refunds](fallback::https://dev.wix.com/docs/rest/business-management/payments/refunds/query-refunds) specifying the charge ID and `SUCCEEDED` status.
+2. Sum the `amount` field from all returned refunds.
+3. Use this sum as the `previouslyRefundedAmount` when creating your refund.
+
+**Important:** Query the refunds immediately before creating the refund to ensure you have the most current data. If you cache this value, another refund could be created between your query and your refund request, causing a `PREVIOUSLY_REFUNDED_AMOUNT_MISMATCH` error.
+
+## Handling pending refunds
+
+Only one pending refund is allowed for a charge. Creating a refund while another is `PENDING` will return an error with code `CHARGE_REFUND_IN_PROGRESS`.

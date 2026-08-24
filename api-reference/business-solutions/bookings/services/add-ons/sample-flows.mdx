@@ -1,0 +1,64 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows for using add-ons with Bookings services."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows for using add-ons with Bookings services. While the Add-Ons API supports multiple business domains, these flows focus on the current Bookings implementation and provide a useful starting point as you plan your implementation.
+
+## Create bookable add-ons for a new group
+
+You can offer additional products or extend the duration of service bookings by creating add-ons and organizing them into new groups.
+
+To create bookable add-ons for a new group:
+
+1. Optional: If you don't have the ID of the service you want to add the new add-on to, call [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services).
+   Specify an appropriate `filter` and save the relevant service ID.
+2. Call [Create Add On](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/create-add-on) and save the `id`.
+   Repeat for all add-ons you want to create.
+3. Call [Create Add On Group](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/create-add-on-group).
+   Specify the relevant `serviceId` and the add-on IDs in the desired order in the `addOnIds` array.
+
+## Add add-ons to an existing group
+
+Create add-ons and add them to existing groups to expand customer options.
+
+To add bookable add-ons to an existing group:
+
+1. Optional: If you don't have the ID of the service you want to add the new add-on to, call [Query Services](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services).
+   Specify an appropriate `filter` and save the relevant service ID.
+2. Call [Create Add On](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/create-add-on).
+   Repeat for all add-ons you want to create.
+3. Call [List Add On Groups by Service ID](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/list-add-on-groups-by-service-id).
+   Identify the relevant add-on group and save its `id` and `addOnIds` array.
+4. Add your new add-on to the group by calling [Set Add Ons For Group](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/set-add-ons-for-group).
+   Specify all existing add-on IDs plus the new add-on IDs in the desired order.
+
+## Modify add-ons in eCommerce carts
+
+If a customer has already added a booking to their Wix eCommerce cart and wants to modify the add-ons, you can update the cart to change, add, or remove add-ons before checkout.
+
+To modify add-ons in eCommerce carts:
+
+1. Retrieve the site visitor's current cart by calling Wix eCommerce's [Get Current Cart](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/purchase-flow/cart/cart/get-current-cart).
+2. Identify the booking line item in the cart based on `catalogReference.catalogItemId`, which is identical to the corresponding booking ID.
+3. Call [Query Extended Bookings](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings), filtering by booking ID.
+   For appointments and class bookings, save the entire `booking.bookedEntity.slot` object.
+   For courses, save the schedule ID from the `schedule` object instead.
+   You may also want to save the `booking.bookedAddOns` array, allowing you to highlight existing selections later on.
+4. Call [List Add On Groups By Service ID](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/list-add-on-groups-by-service-id).
+   For each returned add-on group, save its `maxNumberOfAddOns` and `addOns` array.
+   For each add-on in the group's `addOns` array, save its `maxQuantity` value.
+5. Display the available add-ons to the customer.
+   You could highlight the current selections and allow customers to:
+   - Replace 1 add-on with another add-on.
+   - Remove existing add-ons.
+   - Add new add-ons, while remaining in the group's `maxNumberOfAddOns`.
+   - For quantity-based add-ons, increase the quantity. Ensure you remain in the add-on's `maxQuantity`.   
+6. If the booking was paid via an [eCommerce checkout](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/checkout/introduction), call [Get Order Draftability Status](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/draft-orders/get-order-draftability-status) with the order ID.
+   The order must be draftable to correctly adjust the price when modifying add-ons.
+   If `"orderDraftable": false`, Reschedule Booking still succeeds, but the order's `priceSummary` isn't updated. 
+7. Update the booking with the modified add-on selections by calling [Reschedule Booking](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/reschedule-booking).
+   Specify the booking ID, the entire `slot` object (or `schedule` ID for courses), and the updated `addOns` array.
+
+When the customer navigates to their cart page, they see the updated add-ons for their booking.

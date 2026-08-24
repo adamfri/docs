@@ -1,0 +1,602 @@
+---
+title: "Bulk Cancel Event"
+description: "Cancels multiple events in bulk."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Cancels multiple events in bulk.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CALENDAR.MANAGE">Manage Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/calendar/v3/bulk/events/cancel
+    ```
+
+    ## Body Params
+
+    <ParamField body="eventIds" type="string[]" required>
+
+      IDs of the events to cancel.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the canceled events.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="participantNotification" type="ParticipantNotification">
+
+      Information about whether participants of the canceled events are notified and
+      the message they receive.
+
+      <Expandable title="participantNotification properties">
+
+        <ParamField body="notifyParticipants" type="boolean">
+
+          Whether to notify the participants about changes made to the schedule or event.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="message" type="string">
+
+          Message to send.
+
+          Min: 1 character
+          Max: 5000 characters
+
+        </ParamField>
+
+        <ParamField body="metadata" type="object">
+
+          Information about the delivery channels used to send the notification.
+          For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+          Max: 10 keys
+          Max key length: 64 characters
+          Max value length: 1000 characters
+
+          Constraints: `format map`.
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="key" type="string" />
+
+            <ParamField body="value" type="string" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="timeZone" type="string">
+
+      Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database)
+      for calculating `adjustedStart` and `adjustedEnd`. For example,
+      `America/New_York` or `UTC`.
+
+      Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/rest/business-management/site-properties/properties/get-site-properties).
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkEventResult[]">
+
+      The result for each event, containing the event and whether the action was successful.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether the requested action was successful.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Event ID.
+              Should always be available, unless it's impossible (for example, when failing to create an event).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="number">
+
+              Index of the item within the request array, for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this event.
+              When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Event">
+
+          The event.
+
+          See the [Event Object](/api-reference/business-management/calendar/events-v3/event-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Total successes and failures.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="number">
+
+          Number of events that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="number">
+
+          Number of events that couldn't be processed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `EVENT_ALREADY_CANCELLED` | The event is already canceled. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Event Updated | `wix.calendar.v3.event_updated` | Triggered when an event is updated, including when it's canceled. Not triggered when `INSTANCE` events are updated. You can use the [Events View API](https://dev.wix.com/docs/rest/business-management/calendar/event-views-v3/introduction) to get notified about `INSTANCE` events. |
+    | Event Cancelled | `wix.calendar.v3.event_cancelled` | Triggered when an event is canceled. Not triggered when `INSTANCE` events are canceled. You can use the [Events View API](https://dev.wix.com/docs/rest/business-management/calendar/event-views-v3/introduction) to get notified about `INSTANCE` events. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Cancels multiple events.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/calendar/v3/bulk/events/cancel' \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+         "eventIds": [
+            "37e01b7f71374c06bca502eb435c1503b26e5434815a4e7ca6ac9be4783c5482",
+            "37e01b7f71374c06bca502eb435c1503c0d77e8daef74681952c80b1bfd42d3d"
+           ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "37e01b7f71374c06bca502eb435c1503b26e5434815a4e7ca6ac9be4783c5482",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "37e01b7f71374c06bca502eb435c1503c0d77e8daef74681952c80b1bfd42d3d",
+              "originalIndex": 1,
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Cancels multiple events in bulk.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-CALENDAR.MANAGE">Manage Calendars</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { events } from '@wix/calendar';
+
+    events.bulkCancelEvent(eventIds, options): Promise<BulkCancelEventResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="eventIds" type="string[]" required>
+
+      IDs of the events to cancel.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCancelEventOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the canceled events.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="participantNotification" type="ParticipantNotification">
+
+          Information about whether participants of the canceled events are notified and
+          the message they receive.
+
+          <Expandable title="participantNotification properties">
+
+            <ParamField body="notifyParticipants" type="boolean">
+
+              Whether to notify the participants about changes made to the schedule or event.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="message" type="string">
+
+              Message to send.
+
+              Min: 1 character
+              Max: 5000 characters
+
+            </ParamField>
+
+            <ParamField body="metadata" type="object">
+
+              Information about the delivery channels used to send the notification.
+              For example, `{"channels": "SMS" }`, `{"channels": "EMAIL" }`, or `{"channels": "EMAIL, SMS" }`.
+
+              Max: 10 keys
+              Max key length: 64 characters
+              Max value length: 1000 characters
+
+              Constraints: `format map`.
+
+              _Nested structure omitted for brevity — see the `object` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          Time zone in [IANA tz database format](https://en.wikipedia.org/wiki/Tz_database)
+          for calculating `adjustedStart` and `adjustedEnd`. For example,
+          `America/New_York` or `UTC`.
+
+          Default: `timeZone` specified in the business [site properties](https://dev.wix.com/docs/rest/business-management/site-properties/properties/get-site-properties).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<BulkCancelEventResponse>`.
+
+    <ResponseField name="results" type="BulkEventResult[]">
+
+      The result for each event, containing the event and whether the action was successful.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Whether the requested action was successful.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Event ID.
+              Should always be available, unless it's impossible (for example, when failing to create an event).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="number">
+
+              Index of the item within the request array, for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this event.
+              When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Event">
+
+          The event.
+
+          See the [Event Object](/api-reference/business-management/calendar/events-v3/event-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Total successes and failures.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="number">
+
+          Number of events that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="number">
+
+          Number of events that couldn't be processed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `EVENT_ALREADY_CANCELLED` | The event is already canceled. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Event Updated | `wix.calendar.v3.event_updated` | Triggered when an event is updated, including when it's canceled. Not triggered when `INSTANCE` events are updated. You can use the [Events View API](https://dev.wix.com/docs/rest/business-management/calendar/event-views-v3/introduction) to get notified about `INSTANCE` events. |
+    | Event Updated With Metadata | `wix.calendar.v3.event_updated_with_metadata` | Deprecated. Use EventUpdated instead, which includes the modified fields and additional metadata. |
+    | Event Cancelled | `wix.calendar.v3.event_cancelled` | Triggered when an event is canceled. Not triggered when `INSTANCE` events are canceled. You can use the [Events View API](https://dev.wix.com/docs/rest/business-management/calendar/event-views-v3/introduction) to get notified about `INSTANCE` events. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-cancel-event" id="ex-sdk-bulk-cancel-event-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-cancel-event" id="ex-sdk-bulk-cancel-event-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-cancel-event" id="ex-sdk-bulk-cancel-event-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-cancel-event-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-cancel-event-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCancelEvent</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCancelEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCancelEvent (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-cancel-event-0"><span className="wix-picker-name">bulkCancelEvent</span></label>
+    <label htmlFor="ex-sdk-bulk-cancel-event-1"><span className="wix-picker-name">bulkCancelEvent (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-cancel-event-2"><span className="wix-picker-name">bulkCancelEvent (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCancelEvent
+    import { events } from '@wix/calendar';
+
+    async function bulkCancelEvent(eventIds,options) {
+      const response = await events.bulkCancelEvent(eventIds,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCancelEvent (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { events } from '@wix/calendar';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { events },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCancelEvent(eventIds,options) {
+      const response = await myWixClient.events.bulkCancelEvent(eventIds,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCancelEvent (with elevated permissions)
+    import { events } from '@wix/calendar';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkCancelEventMethod(eventIds,options) {
+      const elevatedBulkCancelEvent = auth.elevate(events.bulkCancelEvent);
+      const response = await elevatedBulkCancelEvent(eventIds,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

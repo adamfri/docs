@@ -1,0 +1,69 @@
+---
+title: "Introduction"
+description: "The Marketplace Provider Submissions API lets marketplace providers report the results of asynchronous operations back to Wix after the provider has finished p…"
+icon: "file-lines"
+---
+
+The Marketplace Provider Submissions API lets marketplace providers report the results of asynchronous operations back to Wix after the provider has finished processing a request that Wix initiated through the [Marketplace Provider](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/introduction).
+
+Today this API covers mockup generation. When Wix calls [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) on the provider's platform, generation is asynchronous. The provider uses this API to notify Wix once each mockup is ready or has failed, so Wix can update the site owner's UI.
+
+With the Marketplace Provider Submissions API, you can:
+
+- Report the outcome of asynchronous mockup generation for one or more products.
+- Submit the URL of a generated mockup image when generation succeeds.
+- Signal that mockup generation couldn't be completed for specific products.
+
+## How mockups are identified
+
+Each mockup is stored per provider, product, and image type. The identity key for a mockup is the combination of:
+
+- The provider (inferred from the authenticated caller identity, so you don't pass an `appId`).
+- `providerProductId` &mdash; the product's ID on your platform.
+- `imageType` &mdash; the image that was applied, such as `SITE_LOGO`, `CUSTOM`, or `FALLBACK`.
+
+A single product can hold a separate mockup for each supported image type. When submitting a result, always include the same `imageType` that Wix sent in the original [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) request so Wix writes the result to the correct slot.
+
+## Batching and timing
+
+You're free to batch results however suits your pipeline:
+
+- You can submit results for any subset of a [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups) request in a single submission, split them across multiple submissions, or combine results from different generation requests in the same submission. There's no requirement to match the original batch shape.
+- Each submission carries up to 100 mockup results.
+- The Wix site owner's UI can wait on the first mockup in near real time, so aim to submit results as soon as each mockup is ready rather than holding them for a larger batch.
+
+## Statuses
+
+Providers typically submit one of two terminal statuses per mockup:
+
+- `COMPLETED` &mdash; Generation succeeded. Include the `mockupUrl`.
+- `FAILED` &mdash; Generation couldn't be completed for this product. The site owner sees a generic "mockup unavailable" state; no reason is surfaced from the provider.
+
+`PENDING` is accepted by the endpoint but doesn't currently change any Wix-side state. It's reserved for future progress-reporting use.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- This API is intended to be called by marketplace providers from their own backend, not by site owners or end users.
+- Wix identifies your app from the authenticated caller, so no `appId` or correlation ID is sent in the request payload.
+- Bulk operations are limited to 100 items per request.
+
+## Use cases
+
+- [Report generated mockup results back to Wix](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-submissions/sample-flows#report-generated-mockup-results-back-to-wix)
+
+## Terminology
+
+- **Marketplace provider**: A third-party app that exposes a product catalog to Wix site owners through the Suppliers Hub.
+- **Provider product ID**: Unique identifier for a product on the marketplace provider's platform.
+- **Mockup**: Visual representation of a product with a specific image (such as a site logo or a custom design) applied for preview purposes.
+- **Image type**: The kind of image that was applied to produce the mockup, such as `SITE_LOGO`, `CUSTOM`, or `FALLBACK`.
+- **Submission**: A provider-to-Wix notification that reports the outcome of a previously initiated asynchronous operation.
+
+## See also
+
+- [Marketplace Provider](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/introduction)
+- [Bulk Generate Mockups](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/marketplace-provider-service-plugin/bulk-generate-mockups)
+
+@sdk_package_setup

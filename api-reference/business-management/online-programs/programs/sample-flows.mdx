@@ -1,0 +1,91 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Create a draft program
+
+Your app lets site owners create a program and prepare its settings before publishing.
+
+To create a draft program:
+
+1. Call [Create Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/create-program) with `description`, `timeline`, `restrictions`, and any optional settings such as `price`, `seo`, `rewards`, or `videoStepsSettings`.
+2. Store the returned `program.id` and `program.revision`.
+3. Use the Sections and Steps APIs to add the program content.
+4. Use the Categories API if you need to assign categories.
+5. Keep the program in `DRAFT` until all required content and settings are ready.
+
+## Publish a program
+
+Your app publishes a completed draft program so members can discover or join it according to its restrictions.
+
+To publish a program:
+
+1. Call [Get Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/get-program) and verify that the program is still in `DRAFT`.
+2. For scheduled programs, verify that `timeline.startDate` isn't in the past for the site's timezone.
+3. Call [Publish Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/publish-program) with the program ID.
+4. Use the returned program to confirm that `status` is `PUBLISHED`.
+5. If the program is scheduled, the service schedules the automatic end task using the site's timezone.
+
+## Update program details
+
+Your app lets owners edit program settings while preserving optimistic locking.
+
+To update program details:
+
+1. Call [Get Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/get-program) and read the current `revision`.
+2. Call [Update Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/update-program) with the program ID, current `revision`, and the fields to update.
+3. Handle validation errors such as `WRONG_START_DATE`, `WRONG_PARTICIPANTS_NUMBER`, `DUPLICATED_SLUG`, or `TIMELINE_SWITCH_FORBIDDEN`.
+4. Store the new `revision` from the response before the next update.
+
+## Query and search programs
+
+Your app shows lists of programs for owners or public visitors.
+
+To retrieve programs:
+
+1. Use [Query Programs](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/query-programs) when filtering and sorting by structured fields such as `status`, `categoryIds`, `seo.slug`, or `createdDate`.
+2. Use [Search Programs](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/search-programs) when you need full-text search by program title.
+3. Include paging parameters so your app can load additional results.
+4. Expect visibility filtering to depend on the caller identity. Public callers see published and ended non-secret programs. Site members can also see secret programs they participate in. Trusted apps and services can retrieve broader management views.
+
+## Duplicate a program
+
+Your app lets owners use an existing program or template as a starting point.
+
+To duplicate a program:
+
+1. Call [Duplicate Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/duplicate-program) with the source program ID.
+2. Use the returned draft program as the editable copy.
+3. Review the duplicated settings before publishing. The duplicate keeps categories and translation content, but starts with a new ID, draft status, SEO slug set to the duplicated program ID, empty section and step references, and no connected social group.
+4. Add or clone content as needed.
+5. Call [Publish Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/publish-program) when the copy is ready.
+
+You can also duplicate sample programs as a starting point, but the main program creation flow is based on owner-created programs.
+
+To discover available templates before duplicating one, call [List Sample Programs](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/list-sample-programs).
+
+## End, archive, or delete a program
+
+Your app closes programs when they should stop accepting normal participation.
+
+To end a program:
+
+1. Call [End Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/end-program) with the program ID.
+2. Use the returned program to confirm that `status` is `ENDED`.
+3. Keep the program available for historical views or participant progress where your app supports it.
+
+To archive a program:
+
+1. Call [Archive Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/archive-program) with the program ID.
+2. Use the returned program to confirm that `status` is `ARCHIVED`.
+3. Treat archived programs as closed. The service removes the program from search indexing and replaces its SEO slug with the program ID.
+
+To delete a program:
+
+1. Use [Delete Program](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/programs/delete-program) only when the program should be permanently removed instead of closed for normal lifecycle management.
+2. Call Delete Program with the program ID.
+3. Remove the deleted program from local lists and avoid using it for participant history or future lifecycle actions.

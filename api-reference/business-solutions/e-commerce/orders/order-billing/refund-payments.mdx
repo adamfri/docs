@@ -1,0 +1,1653 @@
+---
+title: "Refund Payments"
+description: "Processes payment refunds by calling payment providers and creating refund transactions."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Processes payment refunds by calling payment providers and creating refund transactions.
+
+    Supports two refund methods:
+    - **Automatic refunds**: Calls the payment provider's API to process the refund.
+    - **External refunds**: Marks payments as refunded without calling providers (for manual provider-side refunds).
+
+    Set `paymentRefunds.externalRefund = true` for external refunds when you've manually processed the refund and only need to update the order's transaction records.
+
+    The method also handles restocking inventory and sending customer notifications when specified in `sideEffects`.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/refund-payments
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to process refunds for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="paymentRefunds" type="PaymentRefund[]" required>
+
+      Payment refunds specifying which payments to refund and their amounts.
+      Set `externalRefund` to `true` for manual refunds processed outside the system.
+
+      Constraints: `minItems 1`, `maxItems 50`.
+
+      <Expandable title="paymentRefunds properties">
+
+        <ParamField body="paymentId" type="string" required>
+
+          ID of the payment to refund from the order's payment transactions.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="amount" type="Price">
+
+          Amount to refund from this payment.
+          Not applicable for membership payments and gift card refunds where the full credit is refunded.
+
+          <Expandable title="amount properties">
+
+            <ParamField body="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="externalRefund" type="boolean">
+
+          Whether this refund is processed externally through the payment provider's dashboard.
+
+          + **Automatic refund** (`false`, default): Calls the payment provider's API to process the refund.
+          The system handles the refund transaction and updates the payment status automatically.
+
+          + **External refund** (`true`): Marks the payment as refunded without calling the provider's API.
+          Use this when you've manually processed the refund and only need to update the order records.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="sideEffects" type="RefundSideEffects">
+
+      Additional actions to perform alongside the refund, such as restocking inventory or sending notifications.
+
+      <Expandable title="sideEffects properties">
+
+        <ParamField body="restock" type="RestockSideEffects">
+
+          Inventory restocking actions to perform alongside the refund.
+
+          <Expandable title="restock properties">
+
+            <ParamField body="lineItems" type="RestockItem[]">
+
+              Items to add back to inventory when processing the refund.
+              Use this to automatically restock returned items.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `RestockItem[]` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="notifications" type="NotificationSideEffects">
+
+          Customer notification actions for the refund.
+
+          <Expandable title="notifications properties">
+
+            <ParamField body="sendCustomerEmail" type="boolean">
+
+              Whether to send a refund confirmation email to the customer.
+              The email includes refund details and any custom message provided.
+
+              Default: `false`
+
+            </ParamField>
+
+            <ParamField body="customMessage" type="string">
+
+              Custom message to include in the refund confirmation email sent to the customer.
+              Use this to provide additional context about the refund, return instructions, or customer service information.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="refundItems" type="RefundItems">
+
+      Specific items being refunded including line items, shipping, and additional fees.
+
+      <Expandable title="refundItems properties">
+
+        <ParamField body="lineItems" type="LineItemRefund[]">
+
+          Line items and their quantities to refund.
+
+          Constraints: `minItems 0`, `maxItems 300`.
+
+          <Expandable title="lineItems properties">
+
+            <ParamField body="lineItemId" type="string" required>
+
+              Line item ID.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="quantity" type="integer" required>
+
+              Quantity of this product to refund.
+              Cannot exceed the available refund quantity for this line item.
+
+              Constraints: `min 1`, `max 100000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalFees" type="AdditionalFeeRefund[]">
+
+          Additional fees and their amounts to refund.
+
+          Constraints: `minItems 0`, `maxItems 100`.
+
+          <Expandable title="additionalFees properties">
+
+            <ParamField body="additionalFeeId" type="string" required>
+
+              Additional fee ID to refund.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="Price">
+
+              Amount of the additional fee to refund.
+              If not specified, the full remaining refundable amount for this fee will be refunded.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="shipping" type="ShippingRefund">
+
+          Shipping amount to refund.
+
+          <Expandable title="shipping properties">
+
+            <ParamField body="amount" type="Price">
+
+              Amount of shipping charges to refund.
+              If not specified, the full remaining refundable shipping amount will be refunded.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="customerReason" type="string">
+
+      Optional customer-provided reason for the refund for record-keeping purposes.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="refund" type="Refund">
+
+      Complete refund information including refund ID, status, and amounts processed.
+
+      <Expandable title="refund properties">
+
+        <ResponseField name="id" type="string">
+
+          Refund ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="transactions" type="RefundTransaction[]">
+
+          List of transactions.
+
+          Constraints: `minItems 0`, `maxItems 50`.
+
+          <Expandable title="transactions properties">
+
+            <ResponseField name="paymentId" type="string">
+
+              ID of the payment associated with this refund.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Refund amount.
+
+              Constraints: `immutable`.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundStatus" type="string">
+
+              Refund status.
+
+              **Supported values:**
+
+              - `PENDING` — Refund was initiated on payment provider side. PENDING status was assigned by provider.
+              - `SUCCEEDED` — Refund transaction succeeded.
+              - `FAILED` — Refund transaction failed.
+              - `SCHEDULED` — Refund request acknowledged, and will be executed soon.
+              - `STARTED` — Refund was initiated on payment provider side.
+
+            </ResponseField>
+
+            <ResponseField name="refundStatusInfo" type="RefundStatusInfo">
+
+              Optional details of current refund status.
+
+              _Nested structure omitted for brevity — see the `RefundStatusInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="gatewayRefundId" type="string">
+
+              Payment gateway's refund ID.
+              This field is only returned when the value of `external_refund` is `false`.
+
+            </ResponseField>
+
+            <ResponseField name="providerRefundId" type="string">
+
+              ID of the refund in the payment provider's system. For example, at PayPal, Square, Stripe, etc. Not returned for external refunds.
+
+            </ResponseField>
+
+            <ResponseField name="externalRefund" type="boolean">
+
+              Whether refund was made externally and manually on the payment provider's side.
+
+              Constraints: `immutable`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="details" type="RefundDetails">
+
+          Refund business details.
+
+          <Expandable title="details properties">
+
+            <ResponseField name="items" type="RefundItem[]">
+
+              Order line item IDs and quantities that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `RefundItem[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="shippingIncluded" type="boolean">
+
+              Whether the shipping fee was also refunded.
+
+            </ResponseField>
+
+            <ResponseField name="reason" type="string">
+
+              Reason for the refund, provided by customer (optional).
+
+            </ResponseField>
+
+            <ResponseField name="lineItems" type="LineItemRefund[]">
+
+              Line items that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `LineItemRefund[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="additionalFees" type="AdditionalFeeRefund[]">
+
+              Additional fees that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `AdditionalFeeRefund[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="ShippingRefund">
+
+              Shipping amount that was refunded.
+
+              _Nested structure omitted for brevity — see the `ShippingRefund` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="summary" type="AggregatedRefundSummary">
+
+          Aggregated refund summary.
+
+          **Read-only.**
+
+          <Expandable title="summary properties">
+
+            <ResponseField name="requestedRefund" type="Price">
+
+              Total amount requested for refund.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pendingRefund" type="Price">
+
+              Pending refund amount - the portion of `requestedRefund` that is still pending.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Refunded amount - the portion of `requestedRefund` that refunded successfully.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="failedRefundAmount" type="Price">
+
+              Failed refund amount - the portion of `requestedRefund` that failed.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pending" type="boolean">
+
+              Whether at least one refund transaction is still in `"PENDING"` status.
+
+            </ResponseField>
+
+            <ResponseField name="breakdown" type="RefundItemsBreakdown">
+
+              Breakdown of refunded items. Available only after refund is complete.
+
+              _Nested structure omitted for brevity — see the `RefundItemsBreakdown` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="requestingServiceAppId" type="string">
+
+          ID of the app that initiated this refund.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history reflecting all payments and refunds after processing.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PAYMENT_NOT_FOUND` | Couldn't find the payment. |
+    | `404` | `NOT_FOUND` | `LINE_ITEM_NOT_FOUND` | Couldn't find the line item. |
+    | `404` | `NOT_FOUND` | `ADDITIONAL_FEE_NOT_FOUND` | Couldn't find the additional fee. |
+    | `404` | `NOT_FOUND` | `SHIPPING_NOT_FOUND` | Couldn't find the shipping. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PAYMENT_REFUND_AMOUNT` | Payment refund amount exceeds the available refund amount. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ADDITIONAL_FEE_REFUND_AMOUNT` | Additional fee refund amount exceeds the available refund amount. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SHIPPING_REFUND_AMOUNT` | Shipping refund amount exceeds the available refund amount. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_LINE_ITEM_REFUND_QUANTITY` | Line item refund quantity exceeds the available refund quantity. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_LINE_ITEM_RESTOCK_QUANTITY` | Line item restock quantity exceeds the available restock quantity. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_NOT_REFUNDABLE` | Payment can't be refunded. |
+    | `428` | `FAILED_PRECONDITION` | `EXTERNAL_REFUND_EXPECTED` | Payment requires an external refund. Set `externalRefund` to `true` in the `paymentRefunds` array. |
+    | `400` | `INVALID_ARGUMENT` | `PARTIAL_REFUND_FOR_MULTIPLE_LOCATIONS_NOT_ALLOWED` | Partial refunds with restocking aren't allowed for items with multiple inventory locations. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Partial refund of payment
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/refund-payments' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "orderId": "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+          "paymentRefunds": [
+            {
+              "paymentId": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+              "amount": {
+      					"amount": "23.00"
+      				}
+            }
+          ],
+          "sideEffects": {
+            "restock": {
+              "lineItems": [
+                {
+                  "lineItemId": "00000000-0000-0000-0000-000000000001",
+      						"quantity": 1
+                }
+              ]
+            },
+            "notifications": {
+              "sendCustomerEmail": true,
+              "customMessage": "Sorry <3"
+            }
+          },
+          "refundItems": {
+      			"lineItems": [
+      				{
+      					"lineItemId": "00000000-0000-0000-0000-000000000001",
+      					"quantity": 1
+      				}
+      			],
+      			"additionalFees": [
+      				{
+      					"additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+      					"amount": {
+      						"amount": "1"
+      					}
+      				}
+      			]
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "refund": {
+          "id": "09ecf3d7-5ab3-4e18-810e-a5bca145b107",
+          "transactions": [
+            {
+              "paymentId": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+              "amount": {
+                "amount": "23.00",
+                "formattedAmount": "$23.00"
+              },
+              "refundStatus": "SCHEDULED",
+              "externalRefund": false
+            }
+          ],
+          "details": {
+            "items": [
+              {
+                "lineItemId": "00000000-0000-0000-0000-000000000001",
+                "quantity": 1
+              }
+            ],
+            "shippingIncluded": false,
+            "lineItems": [
+              {
+                "lineItemId": "00000000-0000-0000-0000-000000000001",
+                "quantity": 1
+              }
+            ],
+            "additionalFees": [
+              {
+                "additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+                "amount": {
+                  "amount": "1",
+                  "formattedAmount": "$1.00"
+                }
+              }
+            ]
+          },
+          "createdDate": "2024-10-15T14:05:01.472Z",
+          "summary": {
+            "requestedRefund": {
+              "amount": "23.00",
+              "formattedAmount": "$23.00"
+            },
+            "pendingRefund": {
+              "amount": "23.00",
+              "formattedAmount": "$23.00"
+            },
+            "pending": true
+          }
+        },
+        "orderTransactions": {
+          "orderId": "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+          "payments": [
+            {
+              "id": "360755cf-c684-4678-89cb-7615f48c256a",
+              "regularPaymentDetails": {
+                "paymentOrderId": "2d466981-112a-4d10-bb1e-381183169f4b",
+                "gatewayTransactionId": "5b4eea6a-4eee-42d6-8d3f-1722adfb1c31",
+                "paymentMethod": "WixPayments",
+                "providerTransactionId": "5b4eea6a-4eee-42d6-8d3f-1722adfb1c31",
+                "offlinePayment": false,
+                "status": "REFUNDED",
+                "savedPaymentMethod": false,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                }
+              },
+              "createdDate": "2024-10-15T11:17:59.312Z",
+              "updatedDate": "2024-10-15T11:22:08.875Z",
+              "amount": {
+                "amount": "77.0",
+                "formattedAmount": "$77.00"
+              },
+              "refundDisabled": false
+            },
+            {
+              "id": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+              "regularPaymentDetails": {
+                "paymentOrderId": "f439a5fe-2683-46aa-bf67-ba9dff503f87",
+                "gatewayTransactionId": "deabbe2c-20e1-4cac-809e-70924003cbe3",
+                "paymentMethod": "WixPayments",
+                "providerTransactionId": "deabbe2c-20e1-4cac-809e-70924003cbe3",
+                "offlinePayment": false,
+                "status": "APPROVED",
+                "savedPaymentMethod": false,
+                "creditCardDetails": {
+                  "lastFourDigits": "1111",
+                  "brand": "visa"
+                }
+              },
+              "createdDate": "2024-10-15T11:19:46.285Z",
+              "updatedDate": "2024-10-15T11:19:46.285Z",
+              "amount": {
+                "amount": "111.97",
+                "formattedAmount": "$111.97"
+              },
+              "refundDisabled": false
+            }
+          ],
+          "refunds": [
+            {
+              "id": "09ecf3d7-5ab3-4e18-810e-a5bca145b107",
+              "transactions": [
+                {
+                  "paymentId": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+                  "amount": {
+                    "amount": "23.00",
+                    "formattedAmount": "$23.00"
+                  },
+                  "refundStatus": "SCHEDULED",
+                  "externalRefund": false
+                }
+              ],
+              "details": {
+                "items": [
+                  {
+                    "lineItemId": "00000000-0000-0000-0000-000000000001",
+                    "quantity": 1
+                  }
+                ],
+                "shippingIncluded": false,
+                "lineItems": [
+                  {
+                    "lineItemId": "00000000-0000-0000-0000-000000000001",
+                    "quantity": 1
+                  }
+                ],
+                "additionalFees": [
+                  {
+                    "additionalFeeId": "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+                    "amount": {
+                      "amount": "1",
+                      "formattedAmount": "$1.00"
+                    }
+                  }
+                ]
+              },
+              "createdDate": "2024-10-15T14:05:01.472Z",
+              "summary": {
+                "requestedRefund": {
+                  "amount": "23.00",
+                  "formattedAmount": "$23.00"
+                },
+                "pendingRefund": {
+                  "amount": "23.00",
+                  "formattedAmount": "$23.00"
+                },
+                "pending": true
+              }
+            },
+            {
+              "id": "8d8c686d-8b1b-459d-a3c5-3d1caaa7cddf",
+              "transactions": [
+                {
+                  "paymentId": "360755cf-c684-4678-89cb-7615f48c256a",
+                  "amount": {
+                    "amount": "77",
+                    "formattedAmount": "$77.00"
+                  },
+                  "refundStatus": "SUCCEEDED",
+                  "gatewayRefundId": "f1d208a4-3753-4785-9464-c4d2ba0ba54d",
+                  "providerRefundId": "5464b10f-0958-40fd-ab58-9a3f79be74e6",
+                  "externalRefund": false
+                }
+              ],
+              "details": {
+                "items": [
+                  {
+                    "lineItemId": "00000000-0000-0000-0000-000000000001",
+                    "quantity": 3
+                  }
+                ],
+                "shippingIncluded": true,
+                "lineItems": [
+                  {
+                    "lineItemId": "00000000-0000-0000-0000-000000000001",
+                    "quantity": 3
+                  }
+                ],
+                "additionalFees": [],
+                "shipping": {
+                  "amount": {
+                    "amount": "11",
+                    "formattedAmount": "$11.00"
+                  }
+                }
+              },
+              "createdDate": "2024-10-15T11:22:02.281Z",
+              "summary": {
+                "requestedRefund": {
+                  "amount": "77",
+                  "formattedAmount": "$77.00"
+                },
+                "refunded": {
+                  "amount": "77",
+                  "formattedAmount": "$77.00"
+                },
+                "pending": false
+              }
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Processes payment refunds by calling payment providers and creating refund transactions.
+
+    Supports two refund methods:
+    - **Automatic refunds**: Calls the payment provider's API to process the refund.
+    - **External refunds**: Marks payments as refunded without calling providers (for manual provider-side refunds).
+
+    Set `paymentRefunds.externalRefund = true` for external refunds when you've manually processed the refund and only need to update the order's transaction records.
+
+    The method also handles restocking inventory and sending customer notifications when specified in `sideEffects`.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.refundPayments(orderId, options): Promise<RefundPaymentsResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to process refunds for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="RefundPaymentsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="paymentRefunds" type="PaymentRefund[]" required>
+
+          Payment refunds specifying which payments to refund and their amounts.
+          Set `externalRefund` to `true` for manual refunds processed outside the system.
+
+          Constraints: `minItems 1`, `maxItems 50`.
+
+          <Expandable title="paymentRefunds properties">
+
+            <ParamField body="paymentId" type="string" required>
+
+              ID of the payment to refund from the order's payment transactions.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="Price">
+
+              Amount to refund from this payment.
+              Not applicable for membership payments and gift card refunds where the full credit is refunded.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+            <ParamField body="externalRefund" type="boolean">
+
+              Whether this refund is processed externally through the payment provider's dashboard.
+
+              + **Automatic refund** (`false`, default): Calls the payment provider's API to process the refund.
+              The system handles the refund transaction and updates the payment status automatically.
+
+              + **External refund** (`true`): Marks the payment as refunded without calling the provider's API.
+              Use this when you've manually processed the refund and only need to update the order records.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="sideEffects" type="RefundSideEffects">
+
+          Additional actions to perform alongside the refund, such as restocking inventory or sending notifications.
+
+          <Expandable title="sideEffects properties">
+
+            <ParamField body="restock" type="RestockSideEffects">
+
+              Inventory restocking actions to perform alongside the refund.
+
+              _Nested structure omitted for brevity — see the `RestockSideEffects` object._
+
+            </ParamField>
+
+            <ParamField body="notifications" type="NotificationSideEffects">
+
+              Customer notification actions for the refund.
+
+              _Nested structure omitted for brevity — see the `NotificationSideEffects` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="refundItems" type="RefundItems">
+
+          Specific items being refunded including line items, shipping, and additional fees.
+
+          <Expandable title="refundItems properties">
+
+            <ParamField body="lineItems" type="LineItemRefund[]">
+
+              Line items and their quantities to refund.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `LineItemRefund[]` object._
+
+            </ParamField>
+
+            <ParamField body="additionalFees" type="AdditionalFeeRefund[]">
+
+              Additional fees and their amounts to refund.
+
+              Constraints: `minItems 0`, `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `AdditionalFeeRefund[]` object._
+
+            </ParamField>
+
+            <ParamField body="shipping" type="ShippingRefund">
+
+              Shipping amount to refund.
+
+              _Nested structure omitted for brevity — see the `ShippingRefund` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="customerReason" type="string">
+
+          Optional customer-provided reason for the refund for record-keeping purposes.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<RefundPaymentsResponse>`.
+
+    <ResponseField name="refund" type="Refund">
+
+      Complete refund information including refund ID, status, and amounts processed.
+
+      <Expandable title="refund properties">
+
+        <ResponseField name="_id" type="string">
+
+          Refund ID.
+
+          **Read-only.** Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="transactions" type="RefundTransaction[]">
+
+          List of transactions.
+
+          Constraints: `minItems 0`, `maxItems 50`.
+
+          <Expandable title="transactions properties">
+
+            <ResponseField name="paymentId" type="string">
+
+              ID of the payment associated with this refund.
+
+              Constraints: `format GUID`, `immutable`.
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Refund amount.
+
+              Constraints: `immutable`.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundStatus" type="string">
+
+              Refund status.
+
+              **Supported values:**
+
+              - `PENDING` — Refund was initiated on payment provider side. PENDING status was assigned by provider.
+              - `SUCCEEDED` — Refund transaction succeeded.
+              - `FAILED` — Refund transaction failed.
+              - `SCHEDULED` — Refund request acknowledged, and will be executed soon.
+              - `STARTED` — Refund was initiated on payment provider side.
+
+            </ResponseField>
+
+            <ResponseField name="refundStatusInfo" type="RefundStatusInfo">
+
+              Optional details of current refund status.
+
+              _Nested structure omitted for brevity — see the `RefundStatusInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="gatewayRefundId" type="string">
+
+              Payment gateway's refund ID.
+              This field is only returned when the value of `external_refund` is `false`.
+
+            </ResponseField>
+
+            <ResponseField name="providerRefundId" type="string">
+
+              ID of the refund in the payment provider's system. For example, at PayPal, Square, Stripe, etc. Not returned for external refunds.
+
+            </ResponseField>
+
+            <ResponseField name="externalRefund" type="boolean">
+
+              Whether refund was made externally and manually on the payment provider's side.
+
+              Constraints: `immutable`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="details" type="RefundDetails">
+
+          Refund business details.
+
+          <Expandable title="details properties">
+
+            <ResponseField name="items" type="RefundItem[]">
+
+              Order line item IDs and quantities that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `RefundItem[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="shippingIncluded" type="boolean">
+
+              Whether the shipping fee was also refunded.
+
+            </ResponseField>
+
+            <ResponseField name="reason" type="string">
+
+              Reason for the refund, provided by customer (optional).
+
+            </ResponseField>
+
+            <ResponseField name="lineItems" type="LineItemRefund[]">
+
+              Line items that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 300`.
+
+              _Nested structure omitted for brevity — see the `LineItemRefund[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="additionalFees" type="AdditionalFeeRefund[]">
+
+              Additional fees that were refunded.
+
+              Constraints: `minItems 0`, `maxItems 100`.
+
+              _Nested structure omitted for brevity — see the `AdditionalFeeRefund[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="shipping" type="ShippingRefund">
+
+              Shipping amount that was refunded.
+
+              _Nested structure omitted for brevity — see the `ShippingRefund` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="summary" type="AggregatedRefundSummary">
+
+          Aggregated refund summary.
+
+          **Read-only.**
+
+          <Expandable title="summary properties">
+
+            <ResponseField name="requestedRefund" type="Price">
+
+              Total amount requested for refund.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pendingRefund" type="Price">
+
+              Pending refund amount - the portion of `requestedRefund` that is still pending.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refunded" type="Price">
+
+              Refunded amount - the portion of `requestedRefund` that refunded successfully.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="failedRefundAmount" type="Price">
+
+              Failed refund amount - the portion of `requestedRefund` that failed.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="pending" type="boolean">
+
+              Whether at least one refund transaction is still in `"PENDING"` status.
+
+            </ResponseField>
+
+            <ResponseField name="breakdown" type="RefundItemsBreakdown">
+
+              Breakdown of refunded items. Available only after refund is complete.
+
+              _Nested structure omitted for brevity — see the `RefundItemsBreakdown` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="requestingServiceAppId" type="string">
+
+          ID of the app that initiated this refund.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history reflecting all payments and refunds after processing.
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="_id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="_id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `PAYMENT_NOT_FOUND` | Couldn't find the payment. |
+    | `404` | `NOT_FOUND` | `LINE_ITEM_NOT_FOUND` | Couldn't find the line item. |
+    | `404` | `NOT_FOUND` | `ADDITIONAL_FEE_NOT_FOUND` | Couldn't find the additional fee. |
+    | `404` | `NOT_FOUND` | `SHIPPING_NOT_FOUND` | Couldn't find the shipping. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_PAYMENT_REFUND_AMOUNT` | Payment refund amount exceeds the available refund amount. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_ADDITIONAL_FEE_REFUND_AMOUNT` | Additional fee refund amount exceeds the available refund amount. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_SHIPPING_REFUND_AMOUNT` | Shipping refund amount exceeds the available refund amount. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_LINE_ITEM_REFUND_QUANTITY` | Line item refund quantity exceeds the available refund quantity. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_LINE_ITEM_RESTOCK_QUANTITY` | Line item restock quantity exceeds the available restock quantity. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_NOT_REFUNDABLE` | Payment can't be refunded. |
+    | `428` | `FAILED_PRECONDITION` | `EXTERNAL_REFUND_EXPECTED` | Payment requires an external refund. Set `externalRefund` to `true` in the `paymentRefunds` array. |
+    | `400` | `INVALID_ARGUMENT` | `PARTIAL_REFUND_FOR_MULTIPLE_LOCATIONS_NOT_ALLOWED` | Partial refunds with restocking aren't allowed for items with multiple inventory locations. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-refund-payments" id="ex-sdk-refund-payments-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-refund-payments" id="ex-sdk-refund-payments-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-refund-payments-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-refund-payments-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Refund Payments</span><span className="wix-picker-desc">Partially refund a payment and restock the refunded line item</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">refundPayments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-refund-payments-0"><span className="wix-picker-name">Refund Payments</span><span className="wix-picker-desc">Partially refund a payment and restock the refunded line item</span></label>
+    <label htmlFor="ex-sdk-refund-payments-1"><span className="wix-picker-name">refundPayments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Refund Payments
+    import { orderBilling } from "@wix/ecom";
+
+    async function refundPayments() {
+      const response = await orderBilling.refundPayments(
+        "585daa0c-08d2-42ae-bd6b-18fe59c75836",
+        {
+          paymentRefunds: [
+            {
+              paymentId: "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+              amount: { amount: "23.00" },
+            },
+          ],
+          sideEffects: {
+            restock: {
+              lineItems: [
+                { lineItemId: "00000000-0000-0000-0000-000000000001", quantity: 1 },
+              ],
+            },
+            notifications: {
+              sendCustomerEmail: true,
+              customMessage: "Sorry for the inconvenience.",
+            },
+          },
+          refundItems: {
+            lineItems: [
+              { lineItemId: "00000000-0000-0000-0000-000000000001", quantity: 1 },
+            ],
+            additionalFees: [
+              {
+                additionalFeeId: "d3d9cafb-9e2d-4dae-8129-091df0a6c24f",
+                amount: { amount: "1" },
+              },
+            ],
+          },
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "refund": {
+     *     "_id": "09ecf3d7-5ab3-4e18-810e-a5bca145b107",
+     *     "transactions": [
+     *       {
+     *         "paymentId": "c5e3f495-7de2-4033-9bd0-7eef76700d00",
+     *         "amount": { "amount": "23.00", "formattedAmount": "$23.00" },
+     *         "refundStatus": "SCHEDULED",
+     *         "externalRefund": false
+     *       }
+     *     ],
+     *     "details": {
+     *       "shippingIncluded": false,
+     *       "lineItems": [
+     *         { "lineItemId": "00000000-0000-0000-0000-000000000001", "quantity": 1 }
+     *       ]
+     *     },
+     *     "summary": { "pending": true }
+     *   },
+     *   "orderTransactions": {
+     *     "orderId": "585daa0c-08d2-42ae-bd6b-18fe59c75836"
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript refundPayments (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function refundPayments(orderId,options) {
+      const response = await myWixClient.orderBilling.refundPayments(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

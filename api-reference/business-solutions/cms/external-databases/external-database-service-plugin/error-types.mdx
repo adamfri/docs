@@ -1,0 +1,231 @@
+---
+title: "Error Types"
+description: "Some endpoints in the external database service plugin must respond with errors if the request is invalid or cannot be successfully fulfilled."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+Some endpoints in the external database service plugin must respond with errors if the request is invalid or cannot be successfully fulfilled. In such cases, your service must respond with an error specific to the particular issue in the request.
+
+## Error structure
+
+Each error type conforms to a predefined structure. It includes an error code, an error message, and a data object with additional error handling information. In addition, each error type has a corresponding HTTP code.
+
+Error objects have the following properties:
+
+| Field | Type | Description   |
+| ----- | ---- | --------------|
+| `errorCode` | String | A code that indicates why the request failed. |
+| `errorMessage` | String | A human-readable error message. |
+| `data` | Object | Additional error data specific to the error type. |
+
+For example, your service might receive a request to query a collection that does not exist. In this case, your service must respond with the relevant error code, a descriptive message, and a data object with the `collectionId` of the collection that was not found. This type of error looks like this:
+
+```json
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+
+{
+  "errorCode": "COLLECTION_NOT_FOUND",
+  "errorMessage": "The requested collection was not found.",
+  "data": {
+    "collectionId": "catPictures"
+  }
+}
+```
+
+## Types of errors
+
+The following table lists the errors your service must return based on the issue in the request:
+
+| Error Code                        | HTTP Status Code | Description |
+|-----------------------------------|------------------|-------------|
+| `ITEM_NOT_FOUND`                  | `Not Found (404)` | Item was not found in the specified collection. See corresponding [data object](fallback::#item-not-found).               |
+| `ITEM_ALREADY_EXISTS`             | `Conflict (409)`   | Item with the same `id` already exists in the specified collection. See corresponding [data object](fallback::#item-already-exists)  |
+| `COLLECTION_NOT_FOUND`            | `Not Found (404)`  | Collection was not found. See corresponding [data object](fallback::#collection-not-found).     |
+| `COLLECTION_ALREADY_EXISTS`       | `Conflict (409)`   | Collection with the same `id` already exists. See corresponding [data object](fallback::#collection-already-exists). |
+| `COLLECTION_CHANGE_NOT_SUPPORTED` | `Bad Request (400)` | The service does not allow modifications to the specified collection. The corresponding [data object](fallback::#collection-changes-not-supported) lists the fields that caused the error. |
+| `REFERENCE_NOT_FOUND`             | `Not Found (404)` | Reference was not found for the specified item. See corresponding [data object](fallback::#reference-not-found). |
+| `REFERENCE_ALREADY_EXISTS`        | `Conflict (409)`  | Reference already exists for the specified item. See corresponding [data object](fallback::#reference-already-exists). |
+| `VALIDATION_ERROR`                | `Bad Request (400)` | One or more fields in the request are not valid. The corresponding [data object](fallback::#validation-violations) lists the validation errors caused by the request. |
+| `BAD_REQUEST`                     | `Bad Request (400)`  | Generic error indicating an invalid request. Use the `errorMessage` field to provide more information. |
+
+## Error data object structures
+
+Each error object type has a unique `data` property structure. This section details the `data` structure associated with each type.
+
+### Item not found
+  
+| Field | Type | Description |
+| --- | --- | --- |
+| `itemId` | String | ID of the item that was not found. |
+
+```json
+{
+  "errorCode": "ITEM_NOT_FOUND",
+  "errorMessage": "The requested item was not found.",
+  "data": {
+    "itemId": "c285e77c-a86b-4361-a55f-c6b934d70187"
+  }
+}
+```
+
+### Item already exists
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `itemId` | String | ID of the item that already exists. |
+
+```json
+{
+  "errorCode": "ITEM_ALREADY_EXISTS",
+  "errorMessage": "The item already exists in the collection.",
+  "data": {
+    "itemId": "c2f5e77c-a86b-4361-a55f-c6b934d70187"
+  }
+}
+```
+
+### Collection not found
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `collectionId` | String | ID of the collection that was not found. |
+
+```json
+{
+  "errorCode": "COLLECTION_NOT_FOUND",
+  "errorMessage": "The requested collection was not found.",
+  "data": {
+    "collectionId": "cities"
+  }
+}
+```
+
+### Collection already exists
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `collectionId` | String | ID of the collection that already exists. |
+
+```json
+{
+  "errorCode": "COLLECTION_ALREADY_EXISTS",
+  "errorMessage": "The specified collection already exists.",
+  "data": {
+    "collectionId": "countries"
+  }
+}
+```
+
+### Collection changes not supported
+
+This `data` property of this error lists all fields that the request attempted, but failed, to change. Each such attempt causes an individual [Collection Change Not Supported](fallback::#collection-change-not-supported) error.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `errors` | Array of [collection change not supported](fallback::#collection-change-not-supported) errors | An array of unsupported collection change errors caused by the request. One error is produced for each unmodifiable field the caller attempts to change. |
+
+#### Collection change not supported
+
+Each individual Collection Change not Supported error has the following structure:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `fieldKey` | String | Key of the field that cannot be changed. |
+| `message` | String | Error message explaining why the field cannot be changed. |
+
+```json
+{
+  "errorCode": "COLLECTION_CHANGE_NOT_SUPPORTED",
+  "errorMessage": "Some fields in this collection cannot be changed.",
+  "data": {
+    "errors": [
+      {
+        "fieldKey": "firstName",
+        "message": "This field cannot be changed."
+      },
+      {
+        "fieldKey": "lastName",
+        "message": "This field cannot be changed."
+      }
+    ]
+  }
+}
+```
+
+### Reference not found
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `referringItemId` | String | ID of the referring item. |
+| `referencedItemId` | String | ID of the referenced item. |
+
+```json
+{
+  "errorCode": "REFERENCE_NOT_FOUND",
+  "errorMessage": "The requested reference was not found.",
+  "data": {
+    "referringItemId": "c285e77c-a86b-4361-a55f-c6b934d70187",
+    "referencedItemId": "faa17edb-2d88-488d-8e95-24b9364c3284"
+  }
+}
+```
+
+### Reference already exists
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `referringItemId` | String | ID of the referring item. |
+| `referencedItemId` | String | ID of the referenced item. |
+
+```json
+{
+  "errorCode": "REFERENCE_ALREADY_EXISTS",
+  "errorMessage": "The requested reference already exists for the referring item.",
+  "data": {
+    "referringItemId": "c285e77c-a86b-4361-a55f-c6b934d70187",
+    "referencedItemId": "faa17edb-2d88-488d-8e95-24b9364c3284"
+  }
+}
+```
+
+### Validation violations
+
+This `data` property of this error lists all individual [validation violations](fallback::#validation-violation) caused by the request.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `violations` | Array of [validation violations](fallback::#validation-violation). | An array of all validation violations caused by the request. |
+
+#### Validation violation
+
+Each individual validation violation has the following structure:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `fieldPath` | String | Path to the invalid field. |
+| `rejectedValue` | String | The invalid value. |
+| `message` | String | Error message that describes the violation. |
+
+```json
+{
+  "errorCode": "VALIDATION_ERROR",
+  "errorMessage": "Some fields contain invalid values.",
+  "data": {
+    "violations": [
+      {
+        "fieldPath": "userDateOfBirth",
+        "rejectedValue": "16-12-1994",
+        "message": "Invalid value for this field. See documentation for valid field values."
+      },
+      {
+        "fieldPath": "userImage",
+        "rejectedValue": "https://mediaa.wix.com/6acbb8_7a7bd9193ffc4130ab8ff74f5dcedf8a.jpg",
+        "message": "Invalid value for this field. See documentation for valid field values."
+      }
+    ]
+  }
+}
+```

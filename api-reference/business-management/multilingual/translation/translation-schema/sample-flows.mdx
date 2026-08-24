@@ -1,0 +1,230 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that your app can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that your app can support. It provides a useful
+starting point as you plan your app's implementation.
+
+## Update a global schema
+
+Suppose you're developing an app that provides promotional campaigns for stores. Your app integrates with Wix
+Multilingual to allow Wix users to translate promotions for customers. You've already used
+the [Create Schema](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-schema/create-schema)
+method to create a `GLOBAL` schema for all sites. Your schema includes a `promotionDetails` field that allows stores to
+provide the fine details of the promotion to the customer. Initially, this field is limited to 256 characters. Due to a
+recent update in your app, this field now supports up to 1024 characters. You need to update your app's schema to
+reflect this change:
+
+1. Call [Update Schema](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-schema/update-schema)
+with the `promotionDetails` field, allowing up to 1024 characters.
+
+<Tabs>
+
+<Tab title="REST">
+
+```bash
+curl -X PATCH \
+'https://www.wixapis.com/translation-schema/v1/schemas/8046df3c-7575-4098-a5ab-c91ad8f33c47' \
+  -H 'Authorization: <AUTH>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "schema": {
+      "revision": 3,
+      "fields": {
+        "promotionDetails": {
+          "maxLength": 1024,
+        }
+      }
+    }
+  }'
+
+```
+
+</Tab>
+
+<Tab title="SDK">
+
+```js
+import { translationSchemas } from "@wix/multilingual";
+
+const id = "8046df3c-7575-4098-a5ab-c91ad8f33c47"
+
+const schema = {
+      revision: 3,
+      fields: {
+        promotionDetails: {
+          maxLength: 1024,
+        }
+      }
+    }
+
+async function updateSchema(id, schema) {
+  const response = await translationSchemas.updateSchema(id, schema);
+}
+
+```
+
+</Tab>
+
+</Tabs>
+
+2. Site owners can now provide content for the `promotionDetails` field with up to 1024 characters in length.
+
+<Note>
+
+When updating a schema with a `GLOBAL` scope, be aware that this change will apply to all sites using this schema. If
+you need to update a field for only one specific store, consider creating a schema with a `SITE` scope instead, as
+explained in the sample flow below.
+
+</Note>
+
+## Create a site schema based on an existing global schema
+
+Suppose you're an app developer providing delivery services for restaurants. Your app integrates with Wix Multilingual
+to allow Wix users to translate delivery information. You've already used
+the [Create Schema](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-schema/create-schema)
+method to create a `GLOBAL` schema for all sites.
+
+Here's an example schema object:
+
+```json
+{
+  "schema": {
+    "id": "12345678-90ab-cdef-1234-567890abcdef",
+    "revision": 2,
+    "createdDate": "2024-08-19T12:34:56.789Z",
+    "updatedDate": "2024-08-19T12:34:56.789Z",
+    "key": {
+      "appId": "4ad2dfe1-a943-45a8-94ac-f1dd8b78821b",
+      "entityType": "restaurant-delivery-service",
+      "scope": "GLOBAL"
+    },
+    "fields": {
+      "delivery_instructions": {
+        "id": "delivery_instructions",
+        "type": "LONG_TEXT",
+        "displayName": "Delivery Instructions",
+        "minLength": 0,
+        "maxLength": 512,
+        "hidden": false,
+        "displayOnly": false
+      },
+      "courier_tip": {
+        "id": "courier_tip_currency",
+        "type": "SHORT_TEXT",
+        "displayName": "Tip for Courier",
+        "minLength": null,
+        "maxLength": 3,
+        "hidden": false,
+        "displayOnly": false
+      },
+      "instructions_to_courier": {
+        "id": "instructions_to_courier",
+        "type": "LONG_TEXT",
+        "displayName": "Instructions to Courier",
+        "minLength": 1,
+        "maxLength": 256,
+        "hidden": false,
+        "displayOnly": false
+      }
+    }
+  }
+}
+```
+
+Now let's say the restaurant owner wants to disable the option for customers to tip couriers, and requests that you
+remove the `courier_tip` field from the schema. Since the schema has a `GLOBAL` scope, updating it would affect all
+sites using it. To avoid this, you'll create a site-specific schema based on the existing global one as follows:
+
+1. Call the Create Schema method with a `SITE` scope to create a custom schema for the restaurant's site. Copy all the
+   fields from the existing schema except for the `courier_tip` field.
+
+  ::::tabs
+:::REST_TAB
+```bash
+curl -X POST \
+  'https://www.wixapis.com/translation-schema/v1/schemas' \
+  -H 'Authorization: <AUTH>' \
+  -H 'wix-site-id: <SITEID>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "schema": {
+      "key": {
+        "appId": "4ad2dfe1-a943-45a8-94ac-f1dd8b78821b",
+        "entityType": "restaurant-delivery-service",
+        "scope": "SITE"
+        },
+        "fields": {
+          "deliveryInstructions": {
+            "id": "delivery_instructions",
+            "type": "LONG_TEXT",
+            "displayName": "Delivery Instructions",
+            "minLength": 0,
+            "maxLength": 512,
+            "hidden": false,
+            "displayOnly": false
+          },
+          "instructionsToCourier": {
+            "id": "instructions_to_courier",
+            "type": "LONG_TEXT",
+            "displayName": "Instructions to Courier",
+            "minLength": 1,
+            "maxLength": 256,
+            "hidden": false,
+            "displayOnly": false
+          }
+        }
+      }
+  }'
+
+```
+:::
+:::SDK_TAB
+```js
+import { translationSchemas } from "@wix/multilingual";
+
+const schema = {
+      key: {
+        appId: "4ad2dfe1-a943-45a8-94ac-f1dd8b78821b",
+        entityType: "restaurant-delivery-service",
+        scope: "SITE"
+        },
+        fields: {
+          deliveryInstructions: {
+            id: "delivery_instructions",
+            type: "LONG_TEXT",
+            displayName: "Delivery Instructions",
+            minLength: 0,
+            maxLength: 512,
+            hidden: false,
+            displayOnly: false
+          },
+          instructionsToCourier: {
+            id: "instructions_to_courier",
+            type: "LONG_TEXT",
+            displayName: "Instructions to Courier",
+            minLength: 1,
+            maxLength: 256,
+            hidden: false,
+            displayOnly: false
+          }
+        }
+      }
+
+async function createSchema(schema) {
+  const response = await translationSchemas.createSchema(schema);
+}
+
+```
+:::
+::::
+
+2. After creating the site-specific schema, use
+   the [Translation Content API](fallback::https://dev.wix.com/docs/rest/business-management/multilingual/translation/translation-content/introduction)
+   to add your app's default content to the newly created schema. Then, ask the restaurant owner to add their translated
+   content to ensure that the new delivery instructions are available in all supported locales.
+
+To summarize, updating the schema for a specific site removes the `courier_tip` field only for that site. Other sites
+using the global schema will still have the option to include tips. This prevents unintended changes for all app users.

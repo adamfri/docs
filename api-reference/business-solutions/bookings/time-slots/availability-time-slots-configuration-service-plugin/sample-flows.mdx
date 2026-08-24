@@ -1,0 +1,46 @@
+---
+title: "Sample Flows"
+description: "This article presents a use case and corresponding sample flow that you can support."
+icon: "file-lines"
+---
+
+This article presents a use case and corresponding sample flow that you can support. It provides a useful starting point as you plan your implementation.
+
+## Provide custom time slot configurations during booking
+
+This flow shows what happens when a customer views available booking times, including when they select service variants or add-ons.
+
+> **Prerequisite:** [Resources](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) must exist for the services being booked. The merchant may also have configured services with [service options and variants](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction) or [add-ons](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+
+1. A customer opens the Bookings calendar on a site.
+2. The customer selects a service, and optionally chooses a duration variant and/or add-ons.
+3. Wix calls your [List Availability Time Slot Configurations](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/availability-time-slots-configuration-service-plugin/list-availability-time-slot-configurations) implementation with `services.serviceId` for each service. If the customer made choices, the request also includes `services.customerChoices` with:
+    - `durationInMinutes`: The duration selected by the customer from the service's [options and variants](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/service-options-and-variants/introduction).
+    - `addOnIds`: IDs of selected [add-ons](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction).
+4. Your implementation returns a configuration for each service, specifying `duration`, `bufferTimeInMinutes`, `splitIntervalInMinutes`, `resourceTypes`, and `locations`.
+5. To set `duration.defaultInMinutes`, your implementation must calculate the correct value based on the customer choices. The [Time Slots API](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/time-slots-v2/introduction) forwards customer choices to your implementation without processing them, so your implementation is responsible for using them to calculate the correct duration:
+    - **Only `addOnIds`:** Calculate the total duration as the service's base duration from [`service.schedule.availabilityConstraints.sessionDurations`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction) plus the [`durationInMinutes`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/add-ons/introduction) of all selected add-ons.
+    - **Only `durationInMinutes`:** Use it directly as the slot duration.
+    - **Both `addOnIds` and `durationInMinutes`:** The `durationInMinutes` value already includes the service duration plus all selected add-on durations. Use it directly.
+    - **Neither:** Use the service's default duration from [`service.schedule.availabilityConstraints.sessionDurations`](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/services/services-v2/introduction).
+6. Wix calculates available time slots based on your configuration, resource [schedules](fallback::https://dev.wix.com/docs/api-reference/business-management/calendar/schedules-v3/introduction), and existing [bookings](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/bookings/bookings-reader-v2/introduction).
+7. The customer selects a slot and proceeds to book.
+
+## Provide duration range configurations for flexible-duration services
+
+This flow shows what happens when a customer views available booking times for a service that supports a bookable duration range. Instead of fixed durations, the customer selects how long they want to book within a minimum and maximum range.
+
+> **Prerequisite:** [Resources](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/resources/resources-v2/introduction) must exist for the services being booked.
+
+1. A customer opens the Bookings calendar on a site for a flexible-duration service (for example, a conference room that can be booked for 1 to 4 hours).
+2. Wix calls your [List Availability Time Slot Configurations](fallback::https://dev.wix.com/docs/api-reference/business-solutions/bookings/time-slots/availability-time-slots-configuration-service-plugin/list-availability-time-slot-configurations) implementation with `services.serviceId` for the service.
+3. Your implementation returns a configuration that includes both `duration` and `durationUnit`. For an hourly service:
+    - `duration.defaultInMinutes`: The minimum bookable duration in minutes. For example, `60` for a 1-hour minimum. Wix uses this to calculate available start times.
+    - `durationUnit.unitType`: `HOUR`
+    - `durationUnit.minDuration`: Minimum bookable duration in minutes. For example, `60` for a 1-hour minimum.
+    - `durationUnit.maxDuration`: Maximum bookable duration in minutes. For example, `240` for a 4-hour maximum.
+4. Wix uses `duration.defaultInMinutes` to calculate available start times and displays them to the customer.
+5. After the customer selects a start time, Wix uses `durationUnit` to calculate available end times based on the maximum duration and resource availability.
+6. The customer selects an end time and proceeds to book.
+
+For daily services, return only `durationUnit` and leave `duration` empty. Set `durationUnit.unitType` to `DAY` and specify `minDuration` and `maxDuration` in days. For example, `1` for a 1-day minimum and `5` for a 5-day maximum. Wix then calculates availability as full-day windows instead of time slots.

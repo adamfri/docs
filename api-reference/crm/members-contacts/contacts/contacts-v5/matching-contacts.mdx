@@ -1,0 +1,102 @@
+---
+title: "Matching Contacts"
+description: "When you create, update, or upsert a contact, the same person might already exist in the contact list."
+icon: "file-lines"
+---
+
+When you create, update, or upsert a contact, the same person might already exist in the contact list. For example, a visitor could subscribe to a newsletter and later register as a site member using the same email. This guide explains how the Contacts API detects these cases and what happens when it finds a match.
+
+## Contact identifiers
+
+The Contacts API matches contacts using only 3 fields, called identifiers:
+
+- `externalId`
+- `email.email`
+- `phone.phone`
+
+Additional emails and additional phones aren't identifiers and aren't used for matching.
+
+## Matching contacts and the duplicate contact
+
+- **Matching contacts**: All existing contacts that share at least 1 identifier with the identifiers you provide.
+- **Duplicate contact**: The single best match among the matching contacts. When more than 1 contact matches, the Contacts API chooses the duplicate contact using the priority rules described in [How the Contacts API chooses the duplicate contact](fallback::#how-the-contacts-api-chooses-the-duplicate-contact).
+
+## Which contacts match
+
+Which contacts count as a match depends on which identifiers you provide:
+
+| Identifiers you provide | Matching contacts |
+|---|---|
+| `externalId` only | All contacts with the same `externalId`. |
+| `email.email` only | All contacts with the same email. |
+| `phone.phone` only | All contacts with the same phone. |
+| `externalId` and `email.email` | All contacts with the same `externalId`, plus contacts with the same email that don't have a different `externalId`. |
+| `externalId` and `phone.phone` | All contacts with the same `externalId`, plus contacts with the same phone that don't have a different `externalId`. |
+| `email.email` and `phone.phone` | All contacts with the same email or the same phone. |
+| `externalId`, `email.email`, and `phone.phone` | All contacts with the same `externalId`, plus contacts with the same email or phone that don't have a different `externalId`. |
+
+When you provide both an email and a phone, with or without an `externalId`, a contact needs to match only one of them to count as a match. For example, if you provide `email = a@example.com` and `phone = +1 111`, a contact with `email = a@example.com` but a different phone number still counts as a match, and so does a contact with `phone = +1 111` but a different email address.
+
+The Contacts API fetches up to 100 matching contacts for a single request.
+
+## How the Contacts API chooses the duplicate contact
+
+When more than 1 contact matches, the Contacts API chooses a single duplicate contact based on how many, and which, identifiers each match shares with the ones you provided. Matches with more identifiers, or with higher-priority identifiers, rank higher. Identifier priority, from highest to lowest, is `externalId`, then `email.email`, then `phone.phone`.
+
+For example, if you provide all 3 identifiers, matches rank in this order:
+
+1. `externalId`, `email.email`, and `phone.phone`.
+1. `externalId` and `email.email`.
+1. `externalId` and `phone.phone`.
+1. `externalId` only.
+1. `email.email` and `phone.phone`.
+1. `email.email` only.
+1. `phone.phone` only.
+
+## Effects on each method
+
+- [Create Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/create-contact): By default, creation fails if a contact with the same identifiers already exists. Set `allowDuplicates` to `true` to bypass the duplicate check.
+- [Update Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/update-contact): The update fails if it would make the contact a duplicate of another contact. Set `allowDuplicates` to `true` to allow the update even if it creates a duplicate.
+- [Upsert Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/upsert-contact): Uses the identifiers to decide whether to create a contact or update an existing one. If more than 1 contact matches, the duplicate contact is the one that gets updated.
+- [Find Matching Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/find-matching-contacts): Returns the matching contacts for the identifiers you provide, up to 100, ordered by match strength.
+
+## Examples
+
+The following examples use this contact list:
+
+- Contact A: `externalId = E1`, `email = a@example.com`, `phone = +1 111`
+- Contact B: no `externalId`, `email = a@example.com`, `phone = +1 111`
+- Contact C: `externalId = E2`, `email = a@example.com`, no phone
+- Contact D: no `externalId`, `email = a@example.com`, `phone = +1 999`
+- Contact E: no `externalId`, `email = z@example.com`, `phone = +1 111`
+
+### Higher-priority matches win
+
+If you call [Create Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/create-contact) with `externalId = E1`, `email = a@example.com`, and `phone = +1 111`:
+
+- Both Contact A and Contact B match. Contact A matches on `externalId`, `email.email`, and `phone.phone`. Contact B has no `externalId` to conflict with the request, so it matches on `email.email` and `phone.phone`.
+- Contact A is the duplicate contact, since a match on all 3 identifiers outranks a match on email and phone alone.
+- Creation fails with a duplicate contact error unless you set `allowDuplicates` to `true`.
+
+If you instead call [Upsert Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/upsert-contact) with the same identifiers, the Contacts API updates Contact A instead of creating a new contact.
+
+### A different externalId excludes a contact
+
+If you call [Find Matching Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/find-matching-contacts) with `externalId = E1` and `email = a@example.com`:
+
+- Contact A matches, since it has the same `externalId`.
+- Contact C doesn't match, even though it has the same email, because its `externalId` is different: `E2` instead of `E1`.
+- Contact B matches, since it has the same email and no `externalId` to conflict with the request.
+
+### Either email or phone can match
+
+If you call [Find Matching Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/find-matching-contacts) with `email = a@example.com` and `phone = +1 111`, without an `externalId`:
+
+- Contact D matches because its email matches, even though its phone is different.
+- Contact E matches because its phone matches, even though its email is different.
+- The Contacts API also returns Contact A and Contact B, which match on both identifiers.
+
+## See also
+
+- [Find Matching Contacts](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/find-matching-contacts)
+- [Upsert Contact](fallback::https://dev.wix.com/docs/api-reference/crm/members-contacts/contacts/contacts-v5/upsert-contact)

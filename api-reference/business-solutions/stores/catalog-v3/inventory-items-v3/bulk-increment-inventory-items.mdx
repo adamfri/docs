@@ -1,0 +1,629 @@
+---
+title: "Bulk Increment Inventory Items"
+description: "Increments quantities of multiple inventory items."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Increments quantities of multiple inventory items.
+
+    <Note>
+
+    `trackQuantity` must be `true` to allow for incrementing the quantity.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INVENTORY_ITEM_WRITE">Inventory write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/stores/v3/bulk/inventory-items/increment
+    ```
+
+    ## Body Params
+
+    <ParamField body="incrementData" type="IncrementDataById[]" required>
+
+      Inventory item IDs and increment data.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="incrementData properties">
+
+        <ParamField body="inventoryItemId" type="string" required>
+
+          Inventory item ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="incrementBy" type="integer" required>
+
+          Amount to increment by.
+
+          Constraints: `min 1`, `max 99999`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the full inventory item entities in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="reason" type="string">
+
+      Reason for increment inventory action.
+
+      **Supported values:**
+
+      - `ORDER`
+      - `MANUAL`
+      - `REVERT_INVENTORY_CHANGE`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkInventoryItemResult[]">
+
+      Inventory items updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InventoryItem">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Inventory Item Object](/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/inventory-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVENTORY_QUANTITY_NOT_TRACKED` | Increment attempted for untracked inventory. Enable inventory tracking first. |
+    | `428` | `FAILED_PRECONDITION` | `MAX_QUANTITY_LIMIT_REACHED` | Increment would exceed the maximum quantity limit. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Inventory Item Updated | `wix.stores.catalog.v3.inventory_item_updated` | Triggered when an inventory item is updated. |
+    | Inventory Item Stock Status Updated | `wix.stores.catalog.v3.inventory_item_stock_status_updated` | Triggered when an inventory item's stock is updated. |
+    | Inventory Item Updated With Reason | `wix.stores.catalog.v3.inventory_item_updated_with_reason` | Triggered when an inventory item is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Bulk increment Inventory items associated with product, variant, and location. to product, variant and location.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/stores/v3/bulk/inventory-items/increment' \
+        -H 'Content-type: application/json' \
+        -H 'Authorization:  <AUTH>' \
+        -d '{
+            "returnEntity": true,
+            "reason": "MANUAL",
+            "incrementData": [
+              {
+                "inventoryItemId": "9c346207-6467-434f-aa9e-8999c32d119d",
+                "incrementBy": 1
+              }
+            ]
+          }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "9c346207-6467-434f-aa9e-8999c32d119d",
+              "originalIndex": 0,
+              "success": true,
+              "error": null
+            },
+            "item": {
+              "id": "9c346207-6467-434f-aa9e-8999c32d119d",
+              "revision": "5",
+              "createdDate": "2024-06-27T09:23:55.186Z",
+              "updatedDate": "2024-07-04T11:55:13.092Z",
+              "variantId": "590cef15-c81d-4ed7-970c-1ff879946306",
+              "locationId": "8fb0985f-9027-43d6-b4f9-c4c4f5324194",
+              "productId": "babd2bcc-ea03-4b63-8053-0ec59c73fc36",
+              "quantity": 3,
+              "trackQuantity": true,
+              "availabilityStatus": "IN_STOCK",
+              "preorderInfo": {
+                "enabled": true,
+                "counter": 0,
+                "limit": 10,
+                "message": "Expected shipping by June",
+                "quantity": 10
+              },
+              "product": {
+                "name": "t shirt",
+                "directCategoryIds": [
+                  "05f9cc2f-b5df-4287-aa32-3314179192b8"
+                ]
+              },
+              "extendedFields": null
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Increments quantities of multiple inventory items.
+
+    <Note>
+
+    `trackQuantity` must be `true` to allow for incrementing the quantity.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.STORES.INVENTORY_ITEM_WRITE">Inventory write in v3 catalog</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { inventoryItemsV3 } from '@wix/stores';
+
+    inventoryItemsV3.bulkIncrementInventoryItems(incrementData, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="incrementData" type="IncrementDataById[]" required>
+
+      Inventory item IDs and increment data.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="incrementData properties">
+
+        <ParamField body="inventoryItemId" type="string" required>
+
+          Inventory item ID.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="incrementBy" type="integer" required>
+
+          Amount to increment by.
+
+          Constraints: `min 1`, `max 99999`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkIncrementInventoryItemsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the full inventory item entities in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+        <ParamField body="reason" type="string">
+
+          Reason for increment inventory action.
+
+          **Supported values:**
+
+          - `ORDER`
+          - `MANUAL`
+          - `REVERT_INVENTORY_CHANGE`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkInventoryItemResult[]">
+
+      Inventory items updated by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 300`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for inventory item.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="InventoryItem">
+
+          Full inventory item entity.
+
+          Returned only if `returnEntity: true` is passed in the request.
+
+          See the [Inventory Item Object](/api-reference/business-solutions/stores/catalog-v3/inventory-items-v3/inventory-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `INVENTORY_QUANTITY_NOT_TRACKED` | Increment attempted for untracked inventory. Enable inventory tracking first. |
+    | `428` | `FAILED_PRECONDITION` | `MAX_QUANTITY_LIMIT_REACHED` | Increment would exceed the maximum quantity limit. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Inventory Item Updated | `wix.stores.catalog.v3.inventory_item_updated` | Triggered when an inventory item is updated. |
+    | Inventory Item Stock Status Updated | `wix.stores.catalog.v3.inventory_item_stock_status_updated` | Triggered when an inventory item's stock is updated. |
+    | Inventory Item Updated With Reason | `wix.stores.catalog.v3.inventory_item_updated_with_reason` | Triggered when an inventory item is updated. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-increment-inventory-items" id="ex-sdk-bulk-increment-inventory-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-increment-inventory-items" id="ex-sdk-bulk-increment-inventory-items-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-increment-inventory-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk increment inventory items</span><span className="wix-picker-desc">Increase inventory quantity for items by ID</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkIncrementInventoryItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-0"><span className="wix-picker-name">Bulk increment inventory items</span><span className="wix-picker-desc">Increase inventory quantity for items by ID</span></label>
+    <label htmlFor="ex-sdk-bulk-increment-inventory-items-1"><span className="wix-picker-name">bulkIncrementInventoryItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk increment inventory items
+    import { inventoryItemsV3 } from "@wix/stores";
+
+    const incrementData = [
+      {
+        inventoryItemId: "9c346207-6467-434f-aa9e-8999c32d119d",
+        incrementBy: 1
+      }
+    ];
+
+    const options = {
+      returnEntity: true,
+      reason: inventoryItemsV3.ReasonType.MANUAL
+    };
+
+    async function bulkIncrementInventoryItems() {
+      const response = await inventoryItemsV3.bulkIncrementInventoryItems(incrementData, options);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "id": "9c346207-6467-434f-aa9e-8999c32d119d",
+     *         "originalIndex": 0,
+     *         "success": true
+     *       },
+     *       "item": {
+     *         "_id": "9c346207-6467-434f-aa9e-8999c32d119d",
+     *         "variantId": "590cef15-c81d-4ed7-970c-1ff879946306",
+     *         "productId": "babd2bcc-ea03-4b63-8053-0ec59c73fc36",
+     *         "quantity": 3,
+     *         "trackQuantity": true,
+     *         "availabilityStatus": "IN_STOCK"
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 1,
+     *     "totalFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkIncrementInventoryItems (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { inventoryItemsV3 } from '@wix/stores';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { inventoryItemsV3 },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkIncrementInventoryItems(incrementData,options) {
+      const response = await myWixClient.inventoryItemsV3.bulkIncrementInventoryItems(incrementData,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

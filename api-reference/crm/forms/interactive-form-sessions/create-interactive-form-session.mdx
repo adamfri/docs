@@ -1,0 +1,428 @@
+---
+title: "Create Interactive Form Session"
+description: "Creates an interactive form session for AI-powered conversational form completion."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an interactive form session for AI-powered conversational form completion.
+
+    For implementations that require real-time streaming, call [Create Interactive Form Session Streamed](https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/create-interactive-form-session-streamed) instead.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/forms/ai/v1/interactive-form-sessions
+    ```
+
+    ## Body Params
+
+    <ParamField body="formId" type="string" required>
+
+      Form ID to create an interactive session for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="currentValues" type="object">
+
+      Pre-filled values to apply to the form, to initialize the session with existing data.
+      Field keys must match the form schema field names.
+      For example: `{"firstName": "John", "email": "john@example.com", "age": 25}`.
+      These values are merged with any data extracted during the conversation.
+
+    </ParamField>
+
+    <ParamField body="dryRun" type="boolean">
+
+      Whether the session should run in dry run mode for testing and preview purposes.
+      In dry run mode, the full conversational flow works normally and form data is extracted,
+      but no actual form submission occurs.
+
+      Constraints: `immutable`.
+
+    </ParamField>
+
+    <ParamField body="clientTime" type="ClientTime">
+
+      Current date-time of api client.
+
+      <Expandable title="clientTime properties">
+
+        <ParamField body="currentTime" type="string">
+
+          Current date and time in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) UTC format.
+          For example, `2023-10-01T12:00:00Z`.
+
+        </ParamField>
+
+        <ParamField body="timeZone" type="string">
+
+          Browser's timezone identifier for localizing date and time values in IANA timezone format (for example, `Europe/Vilnius`, `America/New_York`).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="interactiveFormSession" type="InteractiveFormSession">
+
+      Created interactive form session.
+
+      See the [Interactive Form Session Object](/api-reference/crm/forms/interactive-form-sessions/interactive-form-session-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="responseChunks" type="InteractiveFormSessionResponseChunk[]">
+
+      AI assistant response chunks for the interactive form session.
+
+      <Expandable title="responseChunks properties">
+
+        <ResponseField name="chunkType" type="string">
+
+          Response chunk type, that determines how the content should be processed and displayed.
+
+          **Supported values:**
+
+          - `TEXT` — Text message for display to the user.
+          - `TEXT_DATA` — Structured data extracted from user input and mapped to form fields.
+          - `MULTI_SELECT_INPUT` — Selector for selecting multiple options from a list.
+          - `NUMBER_INPUT` — Selector for numeric input with optional validation.
+          - `SEPARATOR` — Visual separator element such as paragraph breaks.
+          - `SINGLE_SELECT_INPUT` — Selector for selecting one option from a list.
+          - `ERROR` — Error message when processing fails or validation errors occur.
+          - `SUBMISSION` — Form submission confirmation including a submission ID.
+          - `IMPORTANT_TEXT` — Highlighted information that may influence form data extraction.
+          - `DEBUG` — Diagnostic information for troubleshooting and development.
+          - `END_OF_RESPONSE` — Signals the completion of a response stream.
+          - `FILE_UPLOAD` — Input for file upload. Not supported.
+          - `SIGNATURE` — Input for digital signature capture. Not supported.
+
+        </ResponseField>
+
+        <ResponseField name="meaningfulInput" type="MeaningfulInput">
+
+          Indicates which portion of the original user input was meaningful for data extraction.
+          Can be used to highlight relevant parts of the user's message in the UI.
+
+          <Expandable title="meaningfulInput properties">
+
+            <ResponseField name="startOffset" type="integer">
+
+              Character position (0-indexed) where the meaningful portion of user input begins.
+
+              Constraints: `min 0`, `max 10000`.
+
+            </ResponseField>
+
+            <ResponseField name="length" type="integer">
+
+              Length in characters of the meaningful portion of user input.
+              Use this with `startOffset` to highlight the relevant text that was processed for data extraction.
+
+              Constraints: `min 0`, `max 10000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST "https://www.wixapis.com/forms/ai/v1/interactive-form-sessions" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer <ACCESS_TOKEN>" \
+        -d '{
+          "formId": "12345678-1234-1234-1234-123456789abc",
+          "currentValues": {
+            "name": "John Doe",
+            "email": "john.doe@example.com"
+          },
+          "dryRun": false,
+          "clientTime": {
+            "currentTime": "2024-01-15T12:30:00Z"
+          }
+        }'
+      ```
+
+      ```json Response
+      {
+        "interactiveFormSession": {
+          "id": "a1b2c3d4-1234-1234-1234-123456789abc",
+          "formId": "12345678-1234-1234-1234-123456789abc"
+        },
+        "responseChunks": [
+          {
+            "chunkType": "TEXT",
+            "textDetails": {
+              "text": "Hello! I'll help you complete this form. I can see you've already provided your name and email. Let me ask you a few more questions.",
+              "style": "NORMAL"
+            }
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Creates an interactive form session for AI-powered conversational form completion.
+
+    For implementations that require real-time streaming, call [Create Interactive Form Session Streamed](https://dev.wix.com/docs/api-reference/crm/forms/interactive-form-sessions/create-interactive-form-session-streamed) instead.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.FORMS.VIEW-FORM">View Forms</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { interactiveFormSessions } from '@wix/forms';
+
+    interactiveFormSessions.createInteractiveFormSession(formId, options): Promise<InteractiveFormSession>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="formId" type="string" required>
+
+      Form ID to create an interactive session for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateInteractiveFormSessionOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="currentValues" type="object">
+
+          Pre-filled values to apply to the form, to initialize the session with existing data.
+          Field keys must match the form schema field names.
+          For example: `{"firstName": "John", "email": "john@example.com", "age": 25}`.
+          These values are merged with any data extracted during the conversation.
+
+        </ParamField>
+
+        <ParamField body="dryRun" type="boolean">
+
+          Whether the session should run in dry run mode for testing and preview purposes.
+          In dry run mode, the full conversational flow works normally and form data is extracted,
+          but no actual form submission occurs.
+
+          Constraints: `immutable`.
+
+        </ParamField>
+
+        <ParamField body="clientTime" type="ClientTime">
+
+          Current date-time of api client.
+
+          <Expandable title="clientTime properties">
+
+            <ParamField body="currentTime" type="string">
+
+              Current date and time in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) UTC format.
+              For example, `2023-10-01T12:00:00Z`.
+
+            </ParamField>
+
+            <ParamField body="timeZone" type="string">
+
+              Browser's timezone identifier for localizing date and time values in IANA timezone format (for example, `Europe/Vilnius`, `America/New_York`).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<InteractiveFormSession>`.
+
+    See the [Interactive Form Session Object](/api-reference/crm/forms/interactive-form-sessions/interactive-form-session-object) for this object's fields.
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Interactive Form Session Created | `wix.forms.ai.v1.interactive_form_session_created` | Triggered when an interactive form session is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-interactive-form-session" id="ex-sdk-create-interactive-form-session-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-interactive-form-session" id="ex-sdk-create-interactive-form-session-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-interactive-form-session-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-interactive-form-session-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create interactive form session</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createInteractiveFormSession (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-interactive-form-session-0"><span className="wix-picker-name">Create interactive form session</span></label>
+    <label htmlFor="ex-sdk-create-interactive-form-session-1"><span className="wix-picker-name">createInteractiveFormSession (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create interactive form session
+    import { interactiveFormSessions } from "@wix/forms";
+
+    const currentValues = {
+      name: "John Doe",
+      email: "john.doe@example.com",
+    };
+
+    async function createInteractiveFormSession() {
+      const response = await interactiveFormSessions.createInteractiveFormSession(
+        "12345678-1234-1234-1234-123456789abc",
+        {
+          currentValues,
+          dryRun: false,
+          clientTime: { currentTime: "2024-01-15T14:30:00+02:00" },
+        }
+      );
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createInteractiveFormSession (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { interactiveFormSessions } from '@wix/forms';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { interactiveFormSessions },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createInteractiveFormSession(formId,options) {
+      const response = await myWixClient.interactiveFormSessions.createInteractiveFormSession(formId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

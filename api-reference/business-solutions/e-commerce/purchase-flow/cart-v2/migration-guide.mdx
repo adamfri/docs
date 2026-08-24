@@ -1,0 +1,195 @@
+---
+title: "Migration Guide"
+description: "<blockquote class=\"important\" Important: The Cart V1 and Checkout V1 APIs will be removed on February 1, 2027."
+icon: "file-lines"
+---
+
+<Note>
+
+The Cart V1 and Checkout V1 APIs will be removed on February 1, 2027. Until then they continue to work, so you can migrate incrementally. We recommend Cart V2 for new development.
+
+</Note>
+
+Cart V2 is a unified API that replaces both the Cart V1 and Checkout V1 APIs. It combines the cart and checkout models into a single Cart entity that covers the entire purchase flow, from adding items to placing an order.
+
+There is no separate checkout entity. The Cart V2 object holds all the information that was previously split between the cart and the checkout, including billing, delivery, gift cards, and payment configuration.
+
+This guide helps you migrate your app or integration from the Cart V1 and Checkout V1 APIs to the Cart V2 API.
+
+For a detailed field, method, and event mapping, see [Migration Mapping](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-mapping).
+
+## Why migrate?
+
+- **Unified model:** No need to manage 2 separate entities and keep them in sync.
+- **New capabilities:** Cart V2 provides features not available in V1.
+- **Better performance:** Cart V2 requests skip the extra transformation layer that V1 requests go through.
+
+## Major changes
+
+### Unified entity model
+
+Cart V1 and Checkout V1 are 2 separate entities that together represent the purchase flow. Cart V2 merges them into a single Cart entity that manages the full lifecycle, from adding items through placing an order.
+
+### No separate checkout step
+
+The V1 flow requires creating a checkout from a cart, then creating an order from the checkout. In V2, call [Place Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/place-order) directly on the cart.
+
+### Calculated totals aren't stored on the entity
+
+In Checkout V1, fields like `priceSummary`, `taxSummary`, `payNow`, and `payLater` are stored on the checkout object. In Cart V2, these aren't stored on the cart. Call [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) or [Estimate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/estimate-cart) to get a `CartSummary` containing these values.
+
+### Dedicated methods for coupon, gift card, and delivery management
+
+In V1, you add coupons and gift cards by passing a code string in create and update requests. In V2, use the dedicated [Add Coupon](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-coupon), [Add Gift Card](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-gift-card), and [Set Delivery Method](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/set-delivery-method) methods.
+
+### Line item fields are grouped into sub-objects
+
+Flat line item fields from V1 are now organized into focused sub-objects in V2: `source`, `pricing`, `attributes`, `paymentConfig`, `deliveryConfig`, and `taxConfig`.
+
+### Currency, language, and location fields moved into sub-objects
+
+Root-level fields like `currency`, `buyerLanguage`, and `businessLocationId` are now organized under `businessInfo` and `customerInfo`.
+
+### Create Cart behavior change
+
+In Cart V1, creating a cart always created the current cart and unmarked the previously current cart. In Cart V2:
+- [Create Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-cart) creates a standalone cart.
+- [Create Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-current-cart) creates a cart and marks it as the current cart, matching the V1 behavior.
+
+### Explicit validation instead of silent adjustments
+
+Checkout V1 handles invalid states implicitly:
+- If an item doesn't exist, the checkout is created without it.
+- If inventory is insufficient, the quantity is silently reduced to the available amount.
+
+In Cart V2, these API calls fail with explicit errors. Your app must handle them and decide how to continue, for example, by showing out-of-stock messages, refreshing catalog data, or blocking checkout. The API is now predictable and transparent, but requires explicit error handling in your app.
+
+## How to migrate
+
+Replace each V1 call with its Cart V2 equivalent. The [Migration Mapping](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-mapping) article lists every method and field. The examples below cover the most common migrations.
+
+### Add items to the current cart
+
+In Cart V1, you call Add To Current Cart with `lineItems`. In Cart V2, call [Add Line Items To Current Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/add-line-items-to-current-cart) with `catalogItems`:
+
+```json
+{
+  "catalogItems": [
+    {
+      "catalogReference": {
+        "catalogItemId": "product-123",
+        "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+      },
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Key differences:
+- Request field: `lineItems` → `catalogItems`
+- Line item input type: `LineItem` → `CatalogItemInput`
+
+### Create a cart (formerly create checkout)
+
+If you used Create Checkout from Checkout V1 to start a "buy now" flow, call [Create Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/create-cart) instead.
+
+Before (Checkout V1 Create Checkout request):
+
+```json
+{
+  "checkoutInfo": {
+    "buyerNote": "Please gift wrap"
+  },
+  "lineItems": [
+    {
+      "catalogReference": {
+        "catalogItemId": "product-123",
+        "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+      },
+      "quantity": 1
+    }
+  ],
+  "channelType": "WEB"
+}
+```
+
+After (Cart V2 Create Cart request):
+
+```json
+{
+  "cart": {
+    "note": "Please gift wrap",
+    "source": {
+      "channelType": "WEB"
+    }
+  },
+  "catalogItems": [
+    {
+      "catalogReference": {
+        "catalogItemId": "product-123",
+        "appId": "1380b703-ce81-ff05-f115-39571d94dfcd"
+      },
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Key differences:
+- `checkoutInfo` → `cart`
+- `buyerNote` → `note`
+- `channelType` (top-level) → `cart.source.channelType`
+- `lineItems` → `catalogItems`
+
+### Get a cart or checkout
+
+Call [Get Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-cart) with the cart ID. In Cart V2, the checkout ID from Checkout V1 is the cart ID. There is no separate entity.
+
+To get calculated totals, which Get Checkout previously returned on the checkout object, call [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart).
+
+### Update a cart or checkout
+
+Call [Update Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/update-cart). Field paths have changed, so update your requests to use the new paths:
+
+- `buyerNote` → `note`
+- `contactInfo.contactDetails` (Cart V1) → `customerInfo`
+- `contactInfo.address` (Cart V1) → `deliveryInfo.address`
+- `billingInfo.address` (Checkout V1) → `paymentInfo.billingAddress`
+- `shippingInfo.shippingDestination.address` (Checkout V1) → `deliveryInfo.address`
+
+For the complete list, see the [entity field mapping](##cart-entity-field-mapping*fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-mapping#cart-entity-field-mapping).
+
+### Place an order (formerly create order)
+
+Call [Place Order](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/place-order) on the cart. It replaces Create Order from Checkout V1. The request field `id` (checkout ID) is now `cartId`.
+
+As in Checkout V1, Place Order creates the order but doesn't collect payment. When money needs to be charged, the response includes `paymentGatewayOrderId`, the same payment gateway order ID that Create Order returned. Collect payment with it the same way as in V1, by passing it as the `paymentId` parameter to the Wix Pay [`startPayment()`](fallback::https://www.wix.com/velo/reference/wix-pay-frontend/startpayment) function.
+
+`paymentGatewayOrderId` is omitted when there is nothing to charge, for example, when the cart total is `0`, the order is fully discounted, or a gift card covers the total.
+
+`startPayment()` runs in Velo on a Wix site. If your app can't run Velo code, such as a headless storefront or an external backend, direct payment collection isn't supported yet. Instead, send the customer to the Wix-hosted checkout page with [Get Checkout URL](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/get-checkout-url).
+
+## FAQ
+
+### Is it necessary to migrate all at once?
+
+No. You can migrate incrementally. The V1 APIs continue to work until they're removed on February 1, 2027. Prioritize your high-traffic flows first.
+
+### What about events?
+
+Cart V2 emits its own events: `CartCreated`, `CartUpdated`, and `CartDeleted`, plus a `CartCalculated` event emitted after [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) and [Estimate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/estimate-cart). If you're subscribed to Cart V1 or Checkout V1 events, subscribe to the Cart V2 events instead.
+
+### How do you get the totals that Get Checkout returned?
+
+Call [Calculate Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/calculate-cart) to get totals such as `priceSummary`, `taxSummary`, and `deliverySummary`. The response also contains the cart itself.
+
+### What replaces the `refresh` parameter on Get Checkout?
+
+Use [Refresh Cart](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/refresh-cart) in Cart V2, which re-evaluates prices, inventory, and discounts.
+
+## See also
+
+- [Introduction](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/introduction)
+- [Sample Flows](fallback::https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/sample-flows)
+- [Migration Mapping](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/purchase-flow/cart-v2/migration-mapping)

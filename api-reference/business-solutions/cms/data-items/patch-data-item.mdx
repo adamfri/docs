@@ -1,0 +1,634 @@
+---
+title: "Patch Data Item"
+description: "Patches an item in a collection."
+icon: "pen"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-patch">PATCH</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Patches an item in a collection.
+
+    Call this method when you need a partial update and want fields that aren't mentioned in the request to stay unchanged. Patch requests are also the right place to use `fieldModifications` actions such as `SET_FIELD` for a direct replacement and `INCREMENT_FIELD` for arithmetic changes. For different behavior, you can call:
+
+    - [Update Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) to replace the full payload rather than patch part of it.
+    - [Save Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/save-data-item) for upsert behavior, meaning to create if the item doesn't exist and update if it does.
+
+    This method modifies the specified item's existing data. Unlike [`Update Data Item`](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item), only the fields specified in the request are modified. Data that isn't explicitly modified remains unchanged.
+
+    To patch an item, specify its ID, the ID of the collection that contains it, and the modifications you want to apply. If an item is found in the specified collection with the specified ID, that item is patched. If the collection doesn't contain an item with that ID, the request fails.
+
+    <Note>
+
+    - When an item is patched, its `data._updatedDate` property is updated to the current date and time.
+    - You can only patch items in [collections created by Wix users](https://support.wix.com/en/article/cms-formerly-content-manager-creating-a-collection). Items in [Wix app collections](https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/working-with-wix-app-collections-and-code) cannot be patched.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    PATCH https://www.wixapis.com/data/v2/items/{patch.dataItemId}
+    ```
+
+    ## Path Params
+
+    <ParamField path="patch.dataItemId" type="string" required>
+
+      ID of the item to patch.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the collection that contains the item to patch.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="patch" type="Patch" required>
+
+      Patch to apply to the item.
+
+      <Expandable title="patch properties">
+
+        <ParamField body="dataItemId" type="string" required>
+
+          ID of the item to patch.
+
+          Constraints: `maxLength 256`.
+
+        </ParamField>
+
+        <ParamField body="fieldModifications" type="FieldModification[]" required>
+
+          Modifications to apply.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="fieldModifications properties">
+
+            <ParamField body="fieldPath" type="string" required>
+
+              Path of the field to be modified. For example: `title`.
+
+              Nested fields can be specified using dot notation. For example: `address.street`.
+
+              Constraints: `maxLength 1000`.
+
+            </ParamField>
+
+            <ParamField body="action" type="string" required>
+
+              Patch action to apply to the specified field.
+
+              **Supported values:**
+
+              - `SET_FIELD` — Sets the specified field to the specified value.
+              - `REMOVE_FIELD` — Clears the specified field.
+              - `INCREMENT_FIELD` — Increments the specified field by the specified value. To decrement, specify a negative value.
+              - `APPEND_TO_ARRAY` — Appends the specified value to the array.
+
+              Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+              - `REMOVE_FROM_ARRAY` — Removes the first instance of the specified value from the array.
+
+              Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="publishPluginOptions" type="PublishPluginOptions">
+
+      Options for the [Publish plugin](https://support.wix.com/en/article/cms-controlling-live-site-item-visibility-from-your-collection).
+
+      This plugin allows items in a [data collection](https://dev.wix.com/docs/rest/business-solutions/cms/data-collections/data-collection-object) to be marked as draft or published. Published items are visible to site visitors, while draft items are not.
+
+      <Expandable title="publishPluginOptions properties">
+
+        <ParamField body="includeDraftItems" type="boolean">
+
+          Whether to include draft items.
+
+          When `true`, both published and draft items are affected. Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="condition" type="Condition">
+
+      Condition for patching the item.
+
+      When a condition is provided, the item is only patched if the condition is met.
+
+      <Expandable title="condition properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter, changes to item(s) will only apply if they satisfy this filter.
+          Learn more about filters in [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="dataItem" type="DataItem">
+
+      Patched data item.
+
+      See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-patch-data-item" id="ex-rest-patch-data-item-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-patch-data-item" id="ex-rest-patch-data-item-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-patch-data-item-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-patch-data-item-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Patch single item conditionally: Only activate accounts that are currently deactivated.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Patch an item</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-patch-data-item-0"><span className="wix-picker-name">Patch single item conditionally: Only activate accounts that are currently deactivated.</span></label>
+    <label htmlFor="ex-rest-patch-data-item-1"><span className="wix-picker-name">Patch an item</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/wix-data/v2/items/5331fc15-9441-4fd4-bc7b-7f6870c69228' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "dataCollectionId": "accounts",
+        "patch": {
+          "dataItemId": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+          "fieldModifications": [
+            {
+              "fieldPath": "active",
+              "action": "SET_FIELD",
+              "setFieldOptions": {
+                "value": true
+              }
+            }
+          ]
+        },
+        "condition": {
+            "filter": {
+                "active": false
+            }
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+          "dataItem": {
+              "id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+              "dataCollectionId": "accounts",
+              "data": {
+                  "_id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+                  "_createdDate": { "$date": "2023-03-28T12:20:43.745Z" },
+                  "_updatedDate": { "$date": "2023-03-28T13:24:45.845Z" },
+                  "_owner": "690264f5-29a0-4aa8-a9b5-0842fc5ab360",
+                  "active": true
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/wix-data/v2/items/5331fc15-9441-4fd4-bc7b-7f6870c69228' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "dataCollectionId": "cities",
+        "patch": {
+          "dataItemId": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+          "fieldModifications": [
+            {
+              "fieldPath": "state",
+              "action": "SET_FIELD",
+              "setFieldOptions": {
+                "value": "California"
+              }
+            },
+            {
+              "action": "REMOVE_FIELD",
+              "fieldPath": "unusedField"
+            },
+            {
+              "fieldPath": "population",
+              "action": "INCREMENT_FIELD",
+              "incrementFieldOptions": {
+                "value": 100000
+              }
+            },
+            {
+              "fieldPath": "tags",
+              "action": "APPEND_TO_ARRAY",
+              "appendToArrayOptions": {
+                "value": "sunny"
+              }
+            },
+            {
+              "fieldPath": "tags",
+              "action": "REMOVE_FROM_ARRAY",
+              "removeFromArrayOptions": {
+                "value": "cold"
+              }
+            }
+          ]
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+          "dataItem": {
+              "id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+              "dataCollectionId": "cities",
+              "data": {
+                  "_id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+                  "_createdDate": { "$date": "2023-03-28T12:20:43.745Z" },
+                  "_updatedDate": { "$date": "2023-03-28T13:24:45.845Z" },
+                  "_owner": "690264f5-29a0-4aa8-a9b5-0842fc5ab360",
+                  "state": "California",
+                  "city": "Los Angeles",
+                  "population": 3800000.0,
+                  "tags": ["west coast", "sunny"]
+              }
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Patches an item in a collection.
+
+    Call this method when you need a partial update and want fields that aren't mentioned in the request to stay unchanged. Patch requests are also the right place to use `fieldModifications` actions such as `SET_FIELD` for a direct replacement and `INCREMENT_FIELD` for arithmetic changes. For different behavior, you can call:
+
+    - [Update Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item) to replace the full payload rather than patch part of it.
+    - [Save Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/save-data-item) for upsert behavior, meaning to create if the item doesn't exist and update if it does.
+
+    This method modifies the specified item's existing data. Unlike [`Update Data Item`](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/update-data-item), only the fields specified in the request are modified. Data that isn't explicitly modified remains unchanged.
+
+    To patch an item, specify its ID, the ID of the collection that contains it, and the modifications you want to apply. If an item is found in the specified collection with the specified ID, that item is patched. If the collection doesn't contain an item with that ID, the request fails.
+
+    <Note>
+
+    - When an item is patched, its `data._updatedDate` property is updated to the current date and time.
+    - You can only patch items in [collections created by Wix users](https://support.wix.com/en/article/cms-formerly-content-manager-creating-a-collection). Items in [Wix app collections](https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/working-with-wix-app-collections-and-code) cannot be patched.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { items } from '@wix/data';
+
+    items.patch(dataCollectionId, itemId, fieldModifications, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the collection that contains the item to patch.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="itemId" type="string" required>
+
+      ID of the data item to patch.
+
+    </ParamField>
+
+    <ParamField body="fieldModifications" type="FieldModification[]" required>
+
+      Field modifications to apply to the item.
+
+      <Expandable title="fieldModifications properties">
+
+        <ParamField body="fieldPath" type="string">
+
+          Path of the field to be modified. For example: `title`.
+
+          Nested fields can be specified using dot notation. For example: `address.street`.
+
+        </ParamField>
+
+        <ParamField body="action" type="string">
+
+          Patch action to apply to the specified field.
+
+          **Supported values:**
+
+          - `SET_FIELD` — Sets the specified field to the specified value.
+          - `REMOVE_FIELD` — Clears the specified field.
+          - `INCREMENT_FIELD` — Increments the specified field by the specified value. To decrement, specify a negative value.
+          - `APPEND_TO_ARRAY` — Appends the specified value to the array.
+
+          Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+          - `REMOVE_FROM_ARRAY` — Removes the first instance of the specified value from the array.
+
+          Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+
+        </ParamField>
+
+        <ParamField body="value" type="any" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="WixDataPatchOptions">
+
+      Options to use when processing this operation.
+
+      <Expandable title="options properties">
+
+        <ParamField body="suppressHooks" type="boolean">
+
+          Prevents hooks from running for the operation. Can only be used in the [backend code of a Wix site](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/backend-code/about-the-site-backend).
+
+        </ParamField>
+
+        <ParamField body="showDrafts" type="boolean">
+
+          When `true`, operations include draft items. Read operations include draft items in their response, and write operations modify draft items.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="condition" type="Condition">
+
+          condition
+
+          <Expandable title="condition properties">
+
+            <ParamField body="filter" type="object">
+
+              Filter, changes to item(s) will only apply if they satisfy this filter.
+              Learn more about filters in [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `WixDataItem`.
+
+    See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-patch-data-item" id="ex-sdk-patch-data-item-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-patch-data-item" id="ex-sdk-patch-data-item-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-patch-data-item" id="ex-sdk-patch-data-item-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-patch-data-item-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-patch-data-item-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">patch</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">patch (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">patch (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-patch-data-item-0"><span className="wix-picker-name">patch</span></label>
+    <label htmlFor="ex-sdk-patch-data-item-1"><span className="wix-picker-name">patch (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-patch-data-item-2"><span className="wix-picker-name">patch (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript patch
+    import { items } from '@wix/data';
+
+    async function patch(dataCollectionId,itemId,fieldModifications,options) {
+      const response = await items.patch(dataCollectionId,itemId,fieldModifications,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript patch (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { items } from '@wix/data';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { items },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function patch(dataCollectionId,itemId,fieldModifications,options) {
+      const response = await myWixClient.items.patch(dataCollectionId,itemId,fieldModifications,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript patch (with elevated permissions)
+    import { items } from '@wix/data';
+    import { auth } from '@wix/essentials';
+
+    async function myPatchMethod(dataCollectionId,itemId,fieldModifications,options) {
+      const elevatedPatch = auth.elevate(items.patch);
+      const response = await elevatedPatch(dataCollectionId,itemId,fieldModifications,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

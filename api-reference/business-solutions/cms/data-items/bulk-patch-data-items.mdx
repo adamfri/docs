@@ -1,0 +1,836 @@
+---
+title: "Bulk Patch Data Items"
+description: "Patches one or more items in a collection."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Patches one or more items in a collection.
+
+    Call this method when you need to apply partial changes to many items and want each item to keep fields that aren't mentioned in the request. This is also the right bulk surface for `fieldModifications` actions such as `SET_FIELD` and `INCREMENT_FIELD`: increments and decrements apply atomically on the server, so concurrent writers don't have to read the current value first or coordinate to avoid lost updates. For different behavior, you can call:
+
+    - [Bulk Update Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-update-data-items) to replace each item's full payload rather than patch part of it.
+    - [Save Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/save-data-item) per item for upsert behavior, meaning to create the item if its ID doesn't exist yet and update it if it does.
+
+    This method modifies the existing data of one or more items. Unlike [`Bulk Update Data Item`](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-update-data-items), only the fields specified in the request are modified. Data that isn't explicitly modified remains unchanged.
+
+    To patch items, specify the ID of the collection that contains them. For each item, specify its ID and the modifications you want to apply. If the item is found in the specified collection with the specified ID, that item is patched. If no such item is found, the response's `results` array contains a corresponding item whose `itemMetadata.error` property contains details about the error.
+
+    Learn more about [Wix Data error codes](https://dev.wix.com/docs/rest/business-solutions/cms/wix-data-error-codes).
+
+    <Note>
+
+    - When an item is patched, its `data._updatedDate` property is updated to the current date and time.
+    - You can only patch items in [collections created by Wix users](https://support.wix.com/en/article/cms-formerly-content-manager-creating-a-collection). Items in [Wix app collections](https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/working-with-wix-app-collections-and-code) cannot be patched.
+    - Calling this method triggers the [`Data Item Updated`](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event for each patched item.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/data/v2/bulk/items/patch
+    ```
+
+    ## Body Params
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the collection that contains the items to patch.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="patches" type="Patch[]" required>
+
+      Patches to apply to the items.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="patches properties">
+
+        <ParamField body="dataItemId" type="string" required>
+
+          ID of the item to patch.
+
+          Constraints: `maxLength 256`.
+
+        </ParamField>
+
+        <ParamField body="fieldModifications" type="FieldModification[]" required>
+
+          Modifications to apply.
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="fieldModifications properties">
+
+            <ParamField body="fieldPath" type="string" required>
+
+              Path of the field to be modified. For example: `title`.
+
+              Nested fields can be specified using dot notation. For example: `address.street`.
+
+              Constraints: `maxLength 1000`.
+
+            </ParamField>
+
+            <ParamField body="action" type="string" required>
+
+              Patch action to apply to the specified field.
+
+              **Supported values:**
+
+              - `SET_FIELD` — Sets the specified field to the specified value.
+              - `REMOVE_FIELD` — Clears the specified field.
+              - `INCREMENT_FIELD` — Increments the specified field by the specified value. To decrement, specify a negative value.
+              - `APPEND_TO_ARRAY` — Appends the specified value to the array.
+
+              Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+              - `REMOVE_FROM_ARRAY` — Removes the first instance of the specified value from the array.
+
+              Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the patched data items. When `true`, each item in the `results` array contains a `dataItem` field with the full patched data item.
+
+      Default: `false`
+
+    </ParamField>
+
+    <ParamField body="publishPluginOptions" type="PublishPluginOptions">
+
+      Options for the [Publish plugin](https://support.wix.com/en/article/cms-controlling-live-site-item-visibility-from-your-collection).
+
+      This plugin allows items in a [data collection](https://dev.wix.com/docs/rest/business-solutions/cms/data-collections/data-collection-object) to be marked as draft or published. Published items are visible to site visitors, while draft items are not.
+
+      <Expandable title="publishPluginOptions properties">
+
+        <ParamField body="includeDraftItems" type="boolean">
+
+          Whether to include draft items.
+
+          When `true`, both published and draft items are affected. Default: `false`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="condition" type="Condition">
+
+      Condition for patching the items.
+
+      When a condition is provided, the items are only patched if the condition is met.
+
+      <Expandable title="condition properties">
+
+        <ParamField body="filter" type="object">
+
+          Filter, changes to item(s) will only apply if they satisfy this filter.
+          Learn more about filters in [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters).
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkDataItemResult[]">
+
+      Patched items.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="action" type="string">
+
+          Action attempted for the data item.
+
+          **Supported values:**
+
+          - `UNKNOWN_ACTION_TYPE`
+          - `INSERT`
+          - `UPDATE`
+          - `DELETE`
+          - `PATCH`
+
+        </ResponseField>
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Item metadata.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Does not appear if the item ID is missing. For example, when item creation fails.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Original index of the item in the array specified in the request. Use this to match items in the request with those in the response.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              In case of failure, the error details.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="dataItem" type="DataItem">
+
+          Updated data item.
+
+          Returned if `returnEntity` is set to `true` and the action is successful.
+
+          See the [Data Item Object](/api-reference/business-solutions/cms/data-items/data-item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-bulk-patch-data-items" id="ex-rest-bulk-patch-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-bulk-patch-data-items" id="ex-rest-bulk-patch-data-items-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-bulk-patch-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-bulk-patch-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Patch multiple items conditionally: Decrement count only when the specified value is positive.</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk patch items</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-bulk-patch-data-items-0"><span className="wix-picker-name">Patch multiple items conditionally: Decrement count only when the specified value is positive.</span></label>
+    <label htmlFor="ex-rest-bulk-patch-data-items-1"><span className="wix-picker-name">Bulk patch items</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/bulk/items/patch' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "dataCollectionId": "MyCollection",
+        "patches": [
+          {
+            "dataItemId": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+            "fieldModifications": [
+              {
+                "fieldPath": "availableSeats",
+                "action": "INCREMENT_FIELD",
+                "incrementFieldOptions": {
+                  "value": -1
+                }
+              }
+            ]
+          },
+          {
+            "dataItemId": "01b60c9f-d793-4d21-a8d2-320c2099e56f",
+            "fieldModifications": [
+              {
+                "fieldPath": "availableSeats",
+                "action": "INCREMENT_FIELD",
+                "incrementFieldOptions": {
+                  "value": -1
+                }
+              }
+            ]
+          }
+        ],
+        "condition": {
+          "filter": {
+             "count": {
+                "$gt": 0
+             }
+          }
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+          "results": [
+              {
+                "action": "PATCH",
+                "itemMetadata": {
+                  "id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+                  "originalIndex": 0,
+                  "success": true
+                }
+              },
+              {
+                "action": "PATCH",
+                "itemMetadata": {
+                  "id": "01b60c9f-d793-4d21-a8d2-320c2099e56f",
+                  "originalIndex": 1,
+                  "success": false,
+                  "error": {
+                    "code": "WDE0193",
+                    "description": "WDE0193: Patch condition not met."
+                  }
+                }
+              }
+          ],
+          "bulkActionMetadata": {
+              "totalSuccesses": 1,
+              "totalFailures": 1
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/wix-data/v2/bulk/items/patch' \
+      -H 'Authorization: <AUTH>' \
+      -d '{
+        "dataCollectionId": "test",
+        "patches": [
+          {
+            "dataItemId": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+            "fieldModifications": [
+              {
+                "fieldPath": "state",
+                "action": "SET_FIELD",
+                "setFieldOptions": {
+                  "value": "California"
+                }
+              }
+            ]
+          },
+          {
+            "dataItemId": "01b60c9f-d793-4d21-a8d2-320c2099e56f",
+            "fieldModifications": [
+              {
+                "fieldPath": "state",
+                "action": "SET_FIELD",
+                "setFieldOptions": {
+                  "value": "California"
+                }
+              }
+            ]
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+          "results": [
+              {
+                "action": "PATCH",
+                "itemMetadata": {
+                  "id": "5331fc15-9441-4fd4-bc7b-7f6870c69228",
+                  "originalIndex": 0,
+                  "success": true
+                }
+              },
+              {
+                "action": "PATCH",
+                "itemMetadata": {
+                  "id": "01b60c9f-d793-4d21-a8d2-320c2099e56f",
+                  "originalIndex": 1,
+                  "success": false,
+                  "error": {
+                    "code": "WDE0073",
+                    "description": "WDE0073: Item [01b60c9f-d793-4d21-a8d2-320c2099e56f] does not exist in collection [cities]."
+                  }
+                }
+              }
+          ],
+          "bulkActionMetadata": {
+              "totalSuccesses": 1,
+              "totalFailures": 1
+          }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Patches one or more items in a collection.
+
+    Call this method when you need to apply partial changes to many items and want each item to keep fields that aren't mentioned in the request. This is also the right bulk surface for `fieldModifications` actions such as `SET_FIELD` and `INCREMENT_FIELD`: increments and decrements apply atomically on the server, so concurrent writers don't have to read the current value first or coordinate to avoid lost updates. For different behavior, you can call:
+
+    - [Bulk Update Data Items](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-update-data-items) to replace each item's full payload rather than patch part of it.
+    - [Save Data Item](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/save-data-item) per item for upsert behavior, meaning to create the item if its ID doesn't exist yet and update it if it does.
+
+    This method modifies the existing data of one or more items. Unlike [`Bulk Update Data Item`](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/bulk-update-data-items), only the fields specified in the request are modified. Data that isn't explicitly modified remains unchanged.
+
+    To patch items, specify the ID of the collection that contains them. For each item, specify its ID and the modifications you want to apply. If the item is found in the specified collection with the specified ID, that item is patched. If no such item is found, the response's `results` array contains a corresponding item whose `itemMetadata.error` property contains details about the error.
+
+    Learn more about [Wix Data error codes](https://dev.wix.com/docs/rest/business-solutions/cms/wix-data-error-codes).
+
+    <Note>
+
+    - When an item is patched, its `data._updatedDate` property is updated to the current date and time.
+    - You can only patch items in [collections created by Wix users](https://support.wix.com/en/article/cms-formerly-content-manager-creating-a-collection). Items in [Wix app collections](https://dev.wix.com/docs/develop-websites/articles/databases/wix-data/collections/working-with-wix-app-collections-and-code) cannot be patched.
+    - Calling this method triggers the [`Data Item Updated`](https://dev.wix.com/docs/rest/business-solutions/cms/data-items/data-item-updated) event for each patched item.
+
+    </Note>
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-DATA.WRITE">Write Data Items</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { items } from '@wix/data';
+
+    items.bulkPatch(dataCollectionId, itemIds, fieldModifications, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="dataCollectionId" type="string" required>
+
+      ID of the collection that contains the items to patch.
+
+      Constraints: `maxLength 256`.
+
+    </ParamField>
+
+    <ParamField body="itemIds" type="string[]" required>
+
+      IDs of the data items to patch.
+
+    </ParamField>
+
+    <ParamField body="fieldModifications" type="FieldModification[]" required>
+
+      Field modifications to apply to each item.
+
+      <Expandable title="fieldModifications properties">
+
+        <ParamField body="fieldPath" type="string">
+
+          Path of the field to be modified. For example: `title`.
+
+          Nested fields can be specified using dot notation. For example: `address.street`.
+
+        </ParamField>
+
+        <ParamField body="action" type="string">
+
+          Patch action to apply to the specified field.
+
+          **Supported values:**
+
+          - `SET_FIELD` — Sets the specified field to the specified value.
+          - `REMOVE_FIELD` — Clears the specified field.
+          - `INCREMENT_FIELD` — Increments the specified field by the specified value. To decrement, specify a negative value.
+          - `APPEND_TO_ARRAY` — Appends the specified value to the array.
+
+          Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+          - `REMOVE_FROM_ARRAY` — Removes the first instance of the specified value from the array.
+
+          Learn more about [data types in Wix Data](https://dev.wix.com/docs/rest/business-solutions/cms/data-types-in-wix-data).
+
+        </ParamField>
+
+        <ParamField body="value" type="any" />
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="WixDataBulkPatchOptions">
+
+      Options to use when processing this operation.
+
+      <Expandable title="options properties">
+
+        <ParamField body="suppressHooks" type="boolean">
+
+          Prevents hooks from running for the operation. Can only be used in the [backend code of a Wix site](https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/backend-code/about-the-site-backend).
+
+        </ParamField>
+
+        <ParamField body="showDrafts" type="boolean">
+
+          When `true`, operations include draft items. Read operations include draft items in their response, and write operations modify draft items.
+          Default: `false`.
+
+        </ParamField>
+
+        <ParamField body="appOptions" type="object">
+
+          Options for [querying Wix app collections](https://dev.wix.com/docs/develop-websites/articles/wix-apps/wix-app-collections/querying-wix-app-collections).
+
+        </ParamField>
+
+        <ParamField body="condition" type="Condition">
+
+          condition
+
+          <Expandable title="condition properties">
+
+            <ParamField body="filter" type="object">
+
+              Filter, changes to item(s) will only apply if they satisfy this filter.
+              Learn more about filters in [API Query Language](https://dev.wix.com/docs/rest/articles/get-started/api-query-language#filters).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="inserted" type="integer">
+
+      Number of inserted items.
+
+    </ResponseField>
+
+    <ResponseField name="updated" type="integer">
+
+      Number of updated items.
+
+    </ResponseField>
+
+    <ResponseField name="removed" type="integer">
+
+      Number of removed items.
+
+    </ResponseField>
+
+    <ResponseField name="skipped" type="integer">
+
+      Number of skipped items.
+
+    </ResponseField>
+
+    <ResponseField name="errors" type="WixDataBulkError[]">
+
+      List of errors.
+
+      <Expandable title="errors properties">
+
+        <ResponseField name="message" type="string">
+
+          Description of the error.
+
+        </ResponseField>
+
+        <ResponseField name="code" type="string">
+
+          Error code.
+
+        </ResponseField>
+
+        <ResponseField name="originalIndex" type="integer">
+
+          Index of the item within the request array. Allows for correlation between request and response items.
+
+        </ResponseField>
+
+        <ResponseField name="item" type="string">
+
+          Failed item (or ID in case of `bulkRemove()`).
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="insertedItemIds" type="string[]">
+
+      List of IDs of inserted items.
+
+    </ResponseField>
+
+    <ResponseField name="updatedItemIds" type="string[]">
+
+      List of IDs of updated items.
+
+    </ResponseField>
+
+    <ResponseField name="removedItemIds" type="string[]">
+
+      List of IDs of removed items.
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Data Item Updated | `wix.data.v2.data_item_updated` | Triggered when a data item is updated or patched. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-patch-data-items" id="ex-sdk-bulk-patch-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-patch-data-items" id="ex-sdk-bulk-patch-data-items-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-patch-data-items" id="ex-sdk-bulk-patch-data-items-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-patch-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-patch-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkPatch</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkPatch (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkPatch (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-patch-data-items-0"><span className="wix-picker-name">bulkPatch</span></label>
+    <label htmlFor="ex-sdk-bulk-patch-data-items-1"><span className="wix-picker-name">bulkPatch (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-patch-data-items-2"><span className="wix-picker-name">bulkPatch (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkPatch
+    import { items } from '@wix/data';
+
+    async function bulkPatch(dataCollectionId,itemIds,fieldModifications,options) {
+      const response = await items.bulkPatch(dataCollectionId,itemIds,fieldModifications,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkPatch (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { items } from '@wix/data';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { items },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkPatch(dataCollectionId,itemIds,fieldModifications,options) {
+      const response = await myWixClient.items.bulkPatch(dataCollectionId,itemIds,fieldModifications,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkPatch (with elevated permissions)
+    import { items } from '@wix/data';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkPatchMethod(dataCollectionId,itemIds,fieldModifications,options) {
+      const elevatedBulkPatch = auth.elevate(items.bulkPatch);
+      const response = await elevatedBulkPatch(dataCollectionId,itemIds,fieldModifications,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

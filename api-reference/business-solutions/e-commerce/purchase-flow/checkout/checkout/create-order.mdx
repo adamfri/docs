@@ -1,0 +1,456 @@
+---
+title: "Create Order"
+description: "Creates an order from a specified checkout."
+icon: "upload"
+tag: "Deprecated"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Warning>
+
+      **Deprecated.** This method is deprecated.
+
+    </Warning>
+
+    Creates an order from a specified checkout.
+
+    For an order to be created from a checkout, the following requirements must be met:
+    + A checkout cannot have calculation errors. Pass the checkout ID to Get Checkout and review the `calculationErrors` field.
+    + A checkout must have at least 1 line item or custom line item.
+    + All of the line Items have an `availability.status` of `"AVAILABLE"` or `"PARTIALLY_AVAILABLE"`.
+    + If there is a payment to be made, meaning that `priceSummary.total` is greater than `0`, the `billingInfo.address` field are required.
+    + When a checkout has line items to be shipped, the `shippingInfo.shippingDestination.address` and `shippingInfo.selectedCarrierServiceOption` fields are required.
+    + When a checkout has line items for pickup, the `shippingInfo.selectedCarrierServiceOption.logistics.pickupDetails` field are required.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/checkouts/{id}/create-order
+    ```
+
+    ## Path Params
+
+    <ParamField path="id" type="string" required>
+
+      Checkout ID.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="savePaymentMethod" type="boolean">
+
+      Whether the payment method should be saved on the order.
+
+    </ParamField>
+
+    <ParamField body="delayCapture" type="boolean">
+
+      Whether to authorize the payment and delay the capture.
+
+      **Developer Preview.**
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="paymentGatewayOrderId" type="string">
+
+      Payment gateway order ID.
+
+      For online orders, pass this value as the `paymentId` parameter to the Wix Pay [`startPayment()`](https://www.wix.com/velo/reference/wix-pay-frontend/startpayment) function so your customer can pay for the order.
+      `paymentGatewayOrderId` will be returned if money needs to be charged.
+
+      In some cases, money cannot be charged:
+      + When the total price (the `priceSummary.total.amount` field in the checkout/order objects) is `0`. For example, in the case of a free item or an item with a 100% discount.
+      + If the total price is not `0`, but the payment is covered by alternative payment methods, such as a gift card.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ERROR` | Payment failed. Check the error data for details. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_PROVIDER_IS_NOT_AVAILABLE_ON_SITE` | Payment provider isn't available on this site. |
+    | `428` | `FAILED_PRECONDITION` | `SITE_NOT_ACCEPTING_PAYMENTS` | Site isn't accepting payments. |
+    | `409` | `ALREADY_EXISTS` | `CHECKOUT_ALREADY_PAID` | Checkout is already paid. |
+    | `409` | `ALREADY_EXISTS` | `CHECKOUT_PAYMENT_ALREADY_IN_PROGRESS` | Checkout payment is already in progress. |
+    | `428` | `FAILED_PRECONDITION` | `CALCULATION_ERROR` | Checkout has calculation errors that must be resolved before creating an order. |
+    | `428` | `FAILED_PRECONDITION` | `REDEEM_GIFT_CARD_ERROR` | Gift card couldn't be redeemed. Check the error data for details. |
+    | `428` | `FAILED_PRECONDITION` | `PARTIAL_OUT_OF_STOCK` | Some items in the checkout are out of stock. |
+    | `428` | `FAILED_PRECONDITION` | `FULL_OUT_OF_STOCK` | All items in the checkout are out of stock. |
+    | `428` | `FAILED_PRECONDITION` | `EMPTY_CHECKOUT` | Checkout is empty and must contain at least 1 line item. |
+    | `428` | `FAILED_PRECONDITION` | `CHECKOUT_CHANGED` | Checkout changed since it was last retrieved. Retrieve the checkout again before creating an order. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_WITH_ZERO_TOTAL` | Subscription checkout total must be greater than 0. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_WITH_SEVERAL_LINE_ITEMS` | Subscription checkout can only contain 1 line item. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_WITH_GIFT_CARD` | Gift cards can't be used with subscription checkouts. |
+    | `428` | `FAILED_PRECONDITION` | `NO_SELECTED_CARRIER_SERVICE_OPTION` | No carrier service option was selected for items requiring shipping. |
+    | `400` | `INVALID_ARGUMENT` | `VIOLATIONS_WITH_ERROR_SEVERITY` | Checkout has validation violations with error severity. |
+    | `500` | `INTERNAL` | `FAILED_TO_RETRIEVE_VALIDATIONS_VIOLATIONS` | Failed to retrieve validation violations. |
+    | `428` | `FAILED_PRECONDITION` | `NO_SAVE_PAYMENT_METHOD_CONFIRMATION` | Payment method must be saved to complete this checkout, but customer confirmation is missing. |
+    | `428` | `FAILED_PRECONDITION` | `SELECTED_CARRIER_SERVICE_OPTION_NO_LONGER_AVAILABLE` | The selected carrier service option is no longer available. Try choosing a different one. |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERS_ONLY_ITEM` | This item is purchasable only by signed-in members. |
+    | `428` | `FAILED_PRECONDITION` | `GIFT_CARD_CANNOT_BE_USED_TO_PURCHASE_GIFT_CARD` | Gift card can't be used to purchase another gift card. |
+    | `428` | `FAILED_PRECONDITION` | `COUPON_CANNOT_BE_USED_TO_PURCHASE_GIFT_CARD` | Coupon can't be used to purchase a gift card. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-create-order" id="ex-rest-create-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-create-order" id="ex-rest-create-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-create-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-create-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create subscription from checkout</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create order from checkout</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-create-order-0"><span className="wix-picker-name">Create subscription from checkout</span></label>
+    <label htmlFor="ex-rest-create-order-1"><span className="wix-picker-name">Create order from checkout</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/ecom/v1/checkouts/01e8665c-2ce7-458e-a6b4-65befaefa382/create-order' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+      ```
+
+      ```json Response
+      {
+        "subscriptionId": "f2eaeee3-8ade-460c-b622-5b63eec6f75f",
+        "paymentGatewayOrderId": "42c7ae00-b96c-4e36-9eb9-026667193f13"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST 'https://www.wixapis.com/ecom/v1/checkouts/98efbd87-8097-44e9-9005-72093d7a21d5/create-order' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+      ```
+
+      ```json Response
+      {
+        "orderId": "f2eaeee3-8ade-460c-b622-5b63eec6f75f",
+        "paymentGatewayOrderId": "42c7ae00-b96c-4e36-9eb9-026667193f13"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Warning>
+
+      **Deprecated.** This method is deprecated.
+
+    </Warning>
+
+    Creates an order from a specified checkout.
+
+    For an order to be created from a checkout, the following requirements must be met:
+    + A checkout cannot have calculation errors. Pass the checkout ID to Get Checkout and review the `calculationErrors` field.
+    + A checkout must have at least 1 line item or custom line item.
+    + All of the line Items have an `availability.status` of `"AVAILABLE"` or `"PARTIALLY_AVAILABLE"`.
+    + If there is a payment to be made, meaning that `priceSummary.total` is greater than `0`, the `billingInfo.address` field are required.
+    + When a checkout has line items to be shipped, the `shippingInfo.shippingDestination.address` and `shippingInfo.selectedCarrierServiceOption` fields are required.
+    + When a checkout has line items for pickup, the `shippingInfo.selectedCarrierServiceOption.logistics.pickupDetails` field are required.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.DC-STORES.MANAGE-ORDERS">Manage Orders</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`, `VISITOR`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { checkout } from '@wix/ecom';
+
+    checkout.createOrder(_id, options): Promise<CreateOrderResponse>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="_id" type="string" required>
+
+      Checkout ID.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateOrderOptions">
+
+      Additional order creation options.
+
+      <Expandable title="options properties">
+
+        <ParamField body="savePaymentMethod" type="boolean">
+
+          Whether the payment method should be saved on the order.
+
+        </ParamField>
+
+        <ParamField body="delayCapture" type="boolean">
+
+          Whether to authorize the payment and delay the capture.
+
+          **Developer Preview.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<CreateOrderResponse>`.
+
+    <ResponseField name="paymentGatewayOrderId" type="string">
+
+      Payment gateway order ID.
+
+      For online orders, pass this value as the `paymentId` parameter to the Wix Pay [`startPayment()`](https://www.wix.com/velo/reference/wix-pay-frontend/startpayment) function so your customer can pay for the order.
+      `paymentGatewayOrderId` will be returned if money needs to be charged.
+
+      In some cases, money cannot be charged:
+      + When the total price (the `priceSummary.total.amount` field in the checkout/order objects) is `0`. For example, in the case of a free item or an item with a 100% discount.
+      + If the total price is not `0`, but the payment is covered by alternative payment methods, such as a gift card.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ERROR` | Payment failed. Check the error data for details. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_PROVIDER_IS_NOT_AVAILABLE_ON_SITE` | Payment provider isn't available on this site. |
+    | `428` | `FAILED_PRECONDITION` | `SITE_NOT_ACCEPTING_PAYMENTS` | Site isn't accepting payments. |
+    | `409` | `ALREADY_EXISTS` | `CHECKOUT_ALREADY_PAID` | Checkout is already paid. |
+    | `409` | `ALREADY_EXISTS` | `CHECKOUT_PAYMENT_ALREADY_IN_PROGRESS` | Checkout payment is already in progress. |
+    | `428` | `FAILED_PRECONDITION` | `CALCULATION_ERROR` | Checkout has calculation errors that must be resolved before creating an order. |
+    | `428` | `FAILED_PRECONDITION` | `REDEEM_GIFT_CARD_ERROR` | Gift card couldn't be redeemed. Check the error data for details. |
+    | `428` | `FAILED_PRECONDITION` | `PARTIAL_OUT_OF_STOCK` | Some items in the checkout are out of stock. |
+    | `428` | `FAILED_PRECONDITION` | `FULL_OUT_OF_STOCK` | All items in the checkout are out of stock. |
+    | `428` | `FAILED_PRECONDITION` | `EMPTY_CHECKOUT` | Checkout is empty and must contain at least 1 line item. |
+    | `428` | `FAILED_PRECONDITION` | `CHECKOUT_CHANGED` | Checkout changed since it was last retrieved. Retrieve the checkout again before creating an order. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_WITH_ZERO_TOTAL` | Subscription checkout total must be greater than 0. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_WITH_SEVERAL_LINE_ITEMS` | Subscription checkout can only contain 1 line item. |
+    | `428` | `FAILED_PRECONDITION` | `SUBSCRIPTION_WITH_GIFT_CARD` | Gift cards can't be used with subscription checkouts. |
+    | `428` | `FAILED_PRECONDITION` | `NO_SELECTED_CARRIER_SERVICE_OPTION` | No carrier service option was selected for items requiring shipping. |
+    | `400` | `INVALID_ARGUMENT` | `VIOLATIONS_WITH_ERROR_SEVERITY` | Checkout has validation violations with error severity. |
+    | `500` | `INTERNAL` | `FAILED_TO_RETRIEVE_VALIDATIONS_VIOLATIONS` | Failed to retrieve validation violations. |
+    | `428` | `FAILED_PRECONDITION` | `NO_SAVE_PAYMENT_METHOD_CONFIRMATION` | Payment method must be saved to complete this checkout, but customer confirmation is missing. |
+    | `428` | `FAILED_PRECONDITION` | `SELECTED_CARRIER_SERVICE_OPTION_NO_LONGER_AVAILABLE` | The selected carrier service option is no longer available. Try choosing a different one. |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERS_ONLY_ITEM` | This item is purchasable only by signed-in members. |
+    | `428` | `FAILED_PRECONDITION` | `GIFT_CARD_CANNOT_BE_USED_TO_PURCHASE_GIFT_CARD` | Gift card can't be used to purchase another gift card. |
+    | `428` | `FAILED_PRECONDITION` | `COUPON_CANNOT_BE_USED_TO_PURCHASE_GIFT_CARD` | Coupon can't be used to purchase a gift card. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-order" id="ex-sdk-create-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-order" id="ex-sdk-create-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Create an order from a checkout</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-order-0"><span className="wix-picker-name">Create an order from a checkout</span></label>
+    <label htmlFor="ex-sdk-create-order-1"><span className="wix-picker-name">createOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Create an order from a checkout
+    /**************************************
+     * Backend code - my-backend-file.web.js/ts *
+     *************************************/
+
+    import { Permissions, webMethod } from '@wix/web-methods';
+    import { checkout } from '@wix/ecom';
+
+    export const myCreateOrderFromCheckoutFunction = webMethod(Permissions.Anyone, async (checkoutId) => {
+      try {
+        const createOrderResponse = await checkout.createOrder(checkoutId);
+        console.log('Success! Created an order from the checkout');
+        return createOrderResponse;
+      } catch (error) {
+        console.error(error);
+        // Handle the error
+      }
+    });
+
+    /*************
+     * Page code *
+     ************/
+
+    import { myCreateOrderFromCheckoutFunction } from 'backend/my-backend-file.web';
+
+    // Sample checkoutId:
+    const checkoutId = '23a7b29a-3c14-4ef1-9353-f4b714b13217';
+
+    myCreateOrderFromCheckoutFunction(checkoutId)
+      .then((createOrderResponse) => {
+        const orderId = createOrderResponse.orderId;
+        const paymentGatewayOrderId = createOrderResponse.paymentGatewayOrderId;
+
+        console.log('Success! Created an order from the checkout');
+        return createOrderResponse;
+      })
+      .catch((error) => {
+        console.error(error);
+        // Handle the error
+      });
+
+    /* Promise resolves to:
+     *
+     * {
+     *   "orderId": "02843248-495f-45c0-a5d6-e913f647c9f2",
+     *   "paymentGatewayOrderId": "f30440f4-413a-4382-bc38-7280b155a5ed"
+     * }
+     *
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { checkout } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { checkout },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createOrder(_id,options) {
+      const response = await myWixClient.checkout.createOrder(_id,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

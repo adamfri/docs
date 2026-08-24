@@ -1,0 +1,690 @@
+---
+title: "Query Referenced Data Items"
+description: "Retrieves the items referenced in the specified field of a referring item."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves the items referenced in the specified field of a referring item. Reference fields refer to items that exist in different collections. Implement this endpoint so callers can retrieve the full details of the referenced items.
+
+    This service plugin supports item multi-references, which means that data collections can have many-to-many relationships with other collections. For example, consider a scenario where a **Movies** collection includes a multi-reference **Actors** field, which might refer to several **Actor** items in an **Actors** collection. Users can therefore query the **Movies** collection to retrieve the **Actor** items referenced in each **Movie** item.
+
+    <Note>
+
+    - This endpoint does not retrieve the full referenced items of referenced items. For example, the referenced **Actors** collection might itself contain a multi-reference field with references to **Award** items in an **Awards** collection. When calling this endpoint to retrieve the referenced items of any **Movie** item, the response contains the referenced **Actor** items, but only the IDs of the **Award** items. To retrieve the full **Award** items, the user must either call this endpoint for the **Actors** collection, or the [Query Data Items](https://dev.wix.com/docs/rest/assets/data/external-database-spi/query-data-items) endpoint for the **Awards** collection.
+    - This endpoint might also be called when a user calls the [isReferenced](https://dev.wix.com/docs/rest/api-reference/wix-data/data-items/is-referenced-data-item) endpoint of the Wix Data API.
+
+    </Note>
+
+    ## Endpoint
+
+    ```http
+    POST /v3/items/query-referenced
+    ```
+
+    ## Body Params
+
+    <ParamField body="collectionId" type="string" required>
+
+      ID of the collection to query.
+
+    </ParamField>
+
+    <ParamField body="referringItemIds" type="string[]">
+
+      IDs of the referring items. If the array is empty, return results for all referring items.
+
+      Constraints: `maxItems 1000`.
+
+    </ParamField>
+
+    <ParamField body="referencedItemIds" type="string[]">
+
+      IDs of the referenced items. If the array is empty, return all referenced items for the referring items.
+
+      Constraints: `maxItems 1000`.
+
+    </ParamField>
+
+    <ParamField body="order" type="string">
+
+      Order to by which to sort the results. Valid values are `ASC` and `DESC`.
+
+      **Supported values:**
+
+      - `ASC`
+      - `DESC`
+
+    </ParamField>
+
+    <ParamField body="referringFieldKey" type="string" required>
+
+      Field ID to query in the referring collection.
+
+    </ParamField>
+
+    <ParamField body="consistentRead" type="boolean" required>
+
+      Whether to retrieve data from the primary database instance. This decreases performance but ensures data retrieved is up-to-date even immediately after an update. Applicable if the external database is eventually consistent.
+
+    </ParamField>
+
+    <ParamField body="fieldsToReturn" type="string[]">
+
+      Fields to return in the referenced item. If the array is empty or not provided, all fields in the referenced item are returned.
+
+    </ParamField>
+
+    <ParamField body="returnTotalCount" type="boolean" required>
+
+      When `true`, the response includes the total number of the items that match the query.
+
+    </ParamField>
+
+    <ParamField body="includeReferencedItems" type="boolean" required>
+
+      When `true`, the response includes the full referenced items. When `false`, only the IDs of referenced items be returned.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="items" type="ReferencedItem[]">
+
+      Retrieved references.
+
+      <Expandable title="items properties">
+
+        <ResponseField name="referringItemId" type="string">
+
+          ID of the item in the referring collection.
+
+        </ResponseField>
+
+        <ResponseField name="referencedItemId" type="string">
+
+          ID of the item in the referenced collection.
+
+        </ResponseField>
+
+        <ResponseField name="referencedItem" type="object">
+
+          Item in the referenced collection. If the external database does not support returning referenced items, this field can remain empty.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="PagingMetadataV2">
+
+      Paging information.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the query. Returned if offset paging is used and the `tooManyToCount` flag is not set.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors to navigate through the result pages using `next` and `prev`. Returned if cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-query-referenced-data-items" id="ex-rest-query-referenced-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-query-referenced-data-items" id="ex-rest-query-referenced-data-items-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-query-referenced-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-query-referenced-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Query for and return any referenced items</span><span className="wix-picker-desc">For a single data item, query and return all referenced items</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Query for referenced items</span><span className="wix-picker-desc">For a single data item, query and return a specified referenced item</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-query-referenced-data-items-0"><span className="wix-picker-name">Query for and return any referenced items</span><span className="wix-picker-desc">For a single data item, query and return all referenced items</span></label>
+    <label htmlFor="ex-rest-query-referenced-data-items-1"><span className="wix-picker-name">Query for referenced items</span><span className="wix-picker-desc">For a single data item, query and return a specified referenced item</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://external-db.example.com/v3/items/query-referenced  \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+        "collectionId": "cities",
+        "referringItemIds": ["c285e77c-a86b-4361-a55f-c6b934d70187"],
+        "referencedItemIds": [],
+        "order": "ASC",
+        "referringFieldKey": "pointsOfInterest",
+        "paging": {
+          "limit": 50,
+          "offset": 0
+        },
+        "consistentRead": false,
+        "fieldsToReturn": [],
+        "returnTotalCount": false,
+        "includeReferencedItems": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "items": [{
+          "referringItemId": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "referencedItemId": "faa17edb-2d88-488d-8e95-24b9364c3284",
+          "referencedItem": {
+            "_id": "faa17edb-2d88-488d-8e95-24b9364c3284",
+            "name": "Statue of Liberty"
+          }
+        }],
+        "pagingMetadata": {
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST https://external-db.example.com/v3/items/query-referenced  \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+        "collectionId": "cities",
+        "referringItemIds": ["c285e77c-a86b-4361-a55f-c6b934d70187"],
+        "referencedItemIds": ["faa17edb-2d88-488d-8e95-24b9364c3284"],
+        "order": "ASC",
+        "referringFieldKey": "pointsOfInterest",
+        "paging": {
+          "limit": 1,
+          "offset": 0
+        },
+        "consistentRead": false,
+        "fieldsToReturn": [],
+        "returnTotalCount": false,
+        "includeReferencedItems": false
+      }'
+      ```
+
+      ```json Response
+      {
+        "items": [{
+          "referringItemId": "c285e77c-a86b-4361-a55f-c6b934d70187",
+          "referencedItemId": "faa17edb-2d88-488d-8e95-24b9364c3284"
+        }],
+        "pagingMetadata": {
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves the items referenced in the specified field of a referring item. Reference fields refer to items that exist in different collections. Implement this endpoint so callers can retrieve the full details of the referenced items.
+
+    This service plugin supports item multi-references, which means that data collections can have many-to-many relationships with other collections. For example, consider a scenario where a **Movies** collection includes a multi-reference **Actors** field, which might refer to several **Actor** items in an **Actors** collection. Users can therefore query the **Movies** collection to retrieve the **Actor** items referenced in each **Movie** item.
+
+    <Note>
+
+    - This endpoint does not retrieve the full referenced items of referenced items. For example, the referenced **Actors** collection might itself contain a multi-reference field with references to **Award** items in an **Awards** collection. When calling this endpoint to retrieve the referenced items of any **Movie** item, the response contains the referenced **Actor** items, but only the IDs of the **Award** items. To retrieve the full **Award** items, the user must either call this endpoint for the **Actors** collection, or the [Query Data Items](https://dev.wix.com/docs/rest/assets/data/external-database-spi/query-data-items) endpoint for the **Awards** collection.
+    - This endpoint might also be called when a user calls the [isReferenced](https://dev.wix.com/docs/rest/api-reference/wix-data/data-items/is-referenced-data-item) endpoint of the Wix Data API.
+
+    </Note>
+
+    ## Method Declaration
+
+    ```typescript
+    import { externalDatabase } from '@wix/data';
+
+    externalDatabase.queryReferencedDataItems(request, metadata): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="request" type="QueryReferencedDataItemsRequest">
+
+      request
+
+      <Expandable title="request properties">
+
+        <ParamField body="collectionId" type="string">
+
+          ID of the collection to query.
+
+        </ParamField>
+
+        <ParamField body="referringItemIds" type="string[]">
+
+          IDs of the referring items. If the array is empty, return results for all referring items.
+
+          Constraints: `maxItems 1000`.
+
+        </ParamField>
+
+        <ParamField body="referencedItemIds" type="string[]">
+
+          IDs of the referenced items. If the array is empty, return all referenced items for the referring items.
+
+          Constraints: `maxItems 1000`.
+
+        </ParamField>
+
+        <ParamField body="order" type="string">
+
+          Order to by which to sort the results. Valid values are `ASC` and `DESC`.
+
+          **Supported values:**
+
+          - `ASC`
+          - `DESC`
+
+        </ParamField>
+
+        <ParamField body="referringFieldKey" type="string">
+
+          Field ID to query in the referring collection.
+
+        </ParamField>
+
+        <ParamField body="consistentRead" type="boolean">
+
+          Whether to retrieve data from the primary database instance. This decreases performance but ensures data retrieved is up-to-date even immediately after an update. Applicable if the external database is eventually consistent.
+
+        </ParamField>
+
+        <ParamField body="fieldsToReturn" type="string[]">
+
+          Fields to return in the referenced item. If the array is empty or not provided, all fields in the referenced item are returned.
+
+        </ParamField>
+
+        <ParamField body="returnTotalCount" type="boolean">
+
+          When `true`, the response includes the total number of the items that match the query.
+
+        </ParamField>
+
+        <ParamField body="includeReferencedItems" type="boolean">
+
+          When `true`, the response includes the full referenced items. When `false`, only the IDs of referenced items be returned.
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="pagingMethod" type="pagingMethod">
+
+          pagingMethod
+
+          <Expandable title="pagingMethod properties">
+
+            <ParamField body="paging" type="Paging">
+
+              Offset-based paging
+
+              _Nested structure omitted for brevity — see the `Paging` object._
+
+            </ParamField>
+
+            <ParamField body="cursorPaging" type="CursorPaging">
+
+              Cursor-based paging
+
+              _Nested structure omitted for brevity — see the `CursorPaging` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="metadata" type="Context">
+
+      this message is not directly used by any service,
+      it exists to describe the expected parameters that SHOULD be provided to invoked Velo methods as part of open-platform.
+      e.g. SPIs, event-handlers, etc..
+      NOTE: this context object MUST be provided as the last argument in each Velo method signature.
+
+      Example:
+      ```typescript
+      export function wixStores_onOrderCanceled({ event, metadata }: OrderCanceledEvent) {
+      ...
+      }
+      ```
+
+      <Expandable title="metadata properties">
+
+        <ParamField body="requestId" type="string">
+
+          A unique identifier of the request. You may print this ID to your logs to help with future debugging and easier correlation with Wix's logs.
+
+        </ParamField>
+
+        <ParamField body="currency" type="string">
+
+          [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 3-letter currency code.
+
+        </ParamField>
+
+        <ParamField body="identity" type="IdentificationData">
+
+          An object that describes the identity that triggered this request.
+
+          <Expandable title="identity properties">
+
+            <ParamField body="identityType" type="string">
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `ANONYMOUS_VISITOR`
+              - `MEMBER`
+              - `WIX_USER`
+              - `APP`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="id" type="id">
+
+              id
+
+              _Nested structure omitted for brevity — see the `id` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="languages" type="string[]">
+
+          A string representing a language and region in the format of `"xx-XX"`. First 2 letters represent the language code according to ISO 639-1. This is followed by a dash "-", and then a by 2 capital letters representing the region according to ISO 3166-2. For example, `"en-US"`.
+
+        </ParamField>
+
+        <ParamField body="instanceId" type="string">
+
+          The service provider app's instance ID.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="items" type="ReferencedItem[]">
+
+      Retrieved references.
+
+      <Expandable title="items properties">
+
+        <ResponseField name="referringItemId" type="string">
+
+          ID of the item in the referring collection.
+
+        </ResponseField>
+
+        <ResponseField name="referencedItemId" type="string">
+
+          ID of the item in the referenced collection.
+
+        </ResponseField>
+
+        <ResponseField name="referencedItem" type="object">
+
+          Item in the referenced collection. If the external database does not support returning referenced items, this field can remain empty.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="PagingMetadataV2">
+
+      Paging information.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="total" type="integer">
+
+          Total number of items that match the query. Returned if offset paging is used and the `tooManyToCount` flag is not set.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursors to navigate through the result pages using `next` and `prev`. Returned if cursor paging is used.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor pointing to next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-query-referenced-data-items" id="ex-sdk-query-referenced-data-items-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-query-referenced-data-items" id="ex-sdk-query-referenced-data-items-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-query-referenced-data-items-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-query-referenced-data-items-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Example of items and pagingMetadata return values</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">queryReferencedDataItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-query-referenced-data-items-0"><span className="wix-picker-name">Example of items and pagingMetadata return values</span></label>
+    <label htmlFor="ex-sdk-query-referenced-data-items-1"><span className="wix-picker-name">queryReferencedDataItems (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Example of items and pagingMetadata return values
+    import { externalDatabase } from '@wix/data/service-plugins';
+
+    externalDatabase.provideHandlers({
+
+      queryReferencedDataItems: async ( payload ) => {
+        const {request, metadata} = payload;
+            // Use the `request` and `metadata` received from Wix and
+            // apply custom logic.
+          return {
+            // Return your response exactly as documented to integrate with Wix.
+            // Return value example:
+            items: [
+              {
+                referringItemId: "c285e77c-a86b-4361-a55f-c6b934d70187",
+                referencedItemId: "faa17edb-2d88-488d-8e95-24b9364c3284"
+              }
+            ],
+            pagingMetadata: {}
+          }
+        }
+    });
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript queryReferencedDataItems (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { externalDatabase } from '@wix/data/service-plugins';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { externalDatabase },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function queryReferencedDataItems(request,metadata) {
+      const response = await myWixClient.externalDatabase.queryReferencedDataItems(request,metadata);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,159 @@
+---
+title: "Sample Booking flows"
+description: "This article shares basic flows you could support."
+icon: "file-lines"
+---
+
+<Note>This article applies to the REST API only.</Note>
+
+This article shares basic flows you could support. You're certainly not
+limited to these use cases, but they can be a helpful jumping-off point for your
+planning. You could add bookings to the business calendar. These
+bookings can be for all types of services: appointment-based, classes, and
+courses. You can also use all Wix eCommerce-supported
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/introduction) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/introduction))
+payment methods, along with
+Wix Pricing Plans
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/pricing-plans/plans/introduction) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/pricing-plans/introduction)).
+
+## Book an appointment
+
+You could display available time slots for appointment-based services
+to customers, let them choose a slot, create the related booking, and handle the
+payment process using Wix eCommerce
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/introduction) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/introduction)).
+
+### Part 1: Book an appointment
+
+1. Call Get Site Properties
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/business-tools/site-properties/get-site-properties) | [REST](fallback::https://dev.wix.com/docs/rest/business-management/site-properties/properties/get-site-properties))
+   to retrieve the `timeZone` of the business location.
+1. Use Query Services
+   ([SDK](https://dev.wix.com/docs/sdk/backend-modules/bookings/services/query-services) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services))
+   and specify `{"type": "APPOINTMENT"}` as a filter to retrieve all appointment-based services.
+1. Display all services to the customer and save the ID of the chosen service.
+1. Call Query Availability
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/availability-calendar/query-availability) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/availability-calendar/query-availability)).
+   Make sure to specify the relevant `serviceId`, the business `timezone`,
+   `startDate` and `endDate` as filters.
+1. Display the available time slots to the customer and let them select their
+   preferred `slot`.
+1. Call Create Booking
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/create-booking) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking)).
+   Specify `startDate`, `endDate`, `resource` and `location` from the selected slot
+   in `booking.bookedEntity.slot`. If the slot's availability hasn't changed
+   since calling Query Availability, the function succeeds and the status of
+   the booking is `CREATED`.
+
+### Part 2: Handle the payment process with Wix eCommerce ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/introduction) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/introduction))
+
+1. Call Create Checkout
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/checkout/create-checkout) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/create-checkout)).
+   Make sure to specify the [Wix Bookings app ID](fallback::https://dev.wix.com/docs/rest/articles/getting-started/wix-business-solutions)
+   as `catalogReference.appId` and the relevant booking ID as
+   `catalogReference.catalogItemId`. Save the checkout ID and `totalAfterGiftCard.amount`.
+1. Retrieve the checkout's URL with
+   Get Checkout URL
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/checkout/get-checkout-url) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/checkout/get-checkout-url))
+   and redirect the customer.
+1. Once the customer completes the checkout, Wix eCommerce automatically creates
+   an order
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/orders/setup) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/introduction))
+   and the customer is charged.
+
+Alternatively, you could follow
+these steps
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/sample-flows#backend-modules_bookings_bookings_part-2-handle-the-payment-process-with-a-custom-checkout) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/sample-booking-flows#part-2-handle-the-payment-process-with-a-custom-checkout))
+to handle the payment process with a custom checkout.
+
+## Book a class session
+
+You could display available class sessions to customers, let
+them choose the session, create the booking, and handle the payment process
+with a custom checkout.
+
+### Part 1: Book a class session:
+
+1. Call Get Site Properties
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/business-tools/site-properties/get-site-properties) | [REST](fallback::https://dev.wix.com/docs/rest/business-management/site-properties/properties/get-site-properties))
+   to retrieve the `timeZone` of the business location.
+1. Call Query Services
+   ([SDK](https://dev.wix.com/docs/sdk/backend-modules/bookings/services/query-services) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services))
+   and specify `{"type": "CLASS"}` as a filter to retrieve all classes.
+1. Display all classes to the customer and save the ID of the chosen service.
+1. Call Query Availability
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/availability-calendar/query-availability) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/time-slots/availability-calendar/query-availability)).
+   Specify the relevant `serviceId`, the required `openSpots`, the business
+   `timezone`, `startDate` and `endDate` as filters.
+1. Display the retrieved class sessions to the customer and let them select their
+   preferred session. Make sure to save the corresponding `availabilityEntries.slot.eventId`.
+1. Call Create Booking
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/create-booking) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking))
+   and specify the saved event ID in `booking.bookedEntity.slot.eventId`.
+   If the class session's availability hasn't changed since calling
+   Query Availability, the call succeeds and the status of the booking is
+   `CREATED`.
+
+### Part 2: Handle the payment process with a custom checkout
+
+1. Implement your custom checkout and display the checkout page to the customer.
+1. Once the customer completes the checkout, use
+   Confirm Or Decline Booking
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/confirm-or-decline-booking) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/confirm-or-decline-booking)).
+   Set `options.paymentStatus` to `PAID` to update the booking status to
+   `CONFIRMED`.
+1. Call Create Order
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/ecom/orders/create-order) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/e-commerce/orders/create-order))
+   with your custom payment details.
+
+Alternatively, you could follow
+these steps
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/sample-flows#backend-modules_bookings_bookings_part-2-handle-the-payment-process-with-wix-ecommerce) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/sample-booking-flows#part-2-handle-the-payment-process-with-wix-ecommerce))
+to handle the payment process with Wix eCommerce.
+## Book a course
+
+You could display available courses to customers, let them choose a
+service, and create the booking.
+
+To book a course:
+
+1. Call Query Services
+   ([SDK](https://dev.wix.com/docs/sdk/backend-modules/bookings/services/query-services) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/services/services-v2/query-services))
+   and specify `{"type": "COURSE"}` as a filter to retrieve all courses.
+1. Display all courses to the customer and save the ID of the chosen service
+   and its `defaultCapacity`.
+1. Retrieve all bookings for this service with
+   Query Extended Bookings
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/extended-bookings/query-extended-bookings) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-reader-v2/query-extended-bookings)).
+   Make sure to specify `bookedEntity.item.schedule.serviceId` as a filter.
+1. Sum up the values for `attendance.numberOfAttendees` from all returned extended
+   bookings. This lets you know how many people have already booked a place in
+   the course.
+1. Subtract the number of booked participants from the service's
+   `defaultCapacity` to calculate the remaining spots.
+1. Let the customer choose how many participants they want to book. Make
+   sure the intended `numberOfParticipants` doesn't exceed the number of
+   remaining places.
+1. Call Create Booking
+   ([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/create-booking) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking))
+   and Specify the relevant schedule ID as `booking.bookedEntity.scheduleId`. If
+   the course's availability hasn't changed since calling Query Extended Bookings,
+   the call succeeds and the status of the booking is `CREATED`.
+
+Then, you could handle the payment process with Wix eCommerce
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/sample-flows#backend-modules_bookings_bookings_part-2-handle-the-payment-process-with-wix-ecommerce) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/sample-booking-flows#part-2-handle-the-payment-process-with-wix-ecommerce))
+or with a custom checkout
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/sample-flows#backend-modules_bookings_bookings_part-2-handle-the-payment-process-with-a-custom-checkout) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/sample-booking-flows#part-2-handle-the-payment-process-with-a-custom-checkout)).
+
+<Note>
+
+Calling Create Booking
+([SDK](fallback::https://dev.wix.com/docs/sdk/backend-modules/bookings/bookings/create-booking) | [REST](fallback::https://dev.wix.com/docs/rest/business-solutions/bookings/bookings/bookings-writer-v2/create-booking))
+can fail if the service is no longer available. You
+can ensure success, for example if you want to create a booking on behalf
+of the business owner. Then, use Create Booking with
+`options.flowControlSettings.skipAvailabilityValidation` set to `true`. Using other
+`flowControlSettings` lets you override the maximum number of participants per
+session, or allow payment methods that aren't supported for the service.
+
+</Note>

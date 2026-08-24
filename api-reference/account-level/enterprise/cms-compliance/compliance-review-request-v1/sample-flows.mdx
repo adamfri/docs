@@ -1,0 +1,31 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Review CMS content changes for compliance
+
+When a user changes content, you can review the change before deciding whether it should stand. The review request gives you both the live version and the proposed version, so you can see exactly what is changing.
+
+To review a content change:
+
+1. Subscribe to the [Review Requested](https://dev.wix.com/docs/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/review-requested) webhook.
+1. When a user submits a publishing or unpublishing workflow, the CMS host calls [Request Review](fallback::https://dev.wix.com/docs/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/request-review), and you receive a Review Requested event.
+1. Read the `action` to see what the user did.
+1. Compare `currentDataItem`, the live version, with `proposedDataItem`, the version submitted for approval. For `PUBLISH_DRAFT`, only `proposedDataItem` is present. For `UNPUBLISH_PUBLISHED`, only `currentDataItem` is present.
+1. For `UNPUBLISH_CHANGED`, read `versionOnUnpublish` when present to determine whether the user requested to preserve the latest draft edits or the live published version.
+1. Apply your review decision in your own system, using `submittedByUserId` and `submittedAt` to record who submitted the change and when.
+
+## Forward content changes to an external compliance system
+
+If you maintain an external audit or compliance system, you can keep it in sync with every reviewable content change on the site.
+
+To forward content changes to an external system:
+
+1. Subscribe to the [Review Requested](https://dev.wix.com/docs/api-reference/account-level/enterprise/cms-compliance/compliance-review-request-v1/review-requested) webhook.
+1. On each event, extract the `complianceReviewRequest` object, including the `action`, `currentDataItem`, `proposedDataItem`, optional `versionOnUnpublish`, and `submittedByUserId`.
+1. Transform the data into your external system's format.
+1. Send the transformed record to your external system.

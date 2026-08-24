@@ -1,0 +1,187 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. These flows provide helpful starting points as you plan your implementation.
+
+## Set up member-only access for a collection
+
+Configure a collection's permissions so that only site members can view its items, and only CMS editors can make changes.
+
+To set up member-only access for a collection:
+
+1. Call [Update Permissions](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/update-permissions) and specify the following parameters:
+
+   ```json
+   {
+     "dataPermissions": {
+       "id": "PremiumProducts",
+       "itemRead": "SITE_MEMBER",
+       "itemInsert": "CMS_EDITOR",
+       "itemUpdate": "CMS_EDITOR",
+       "itemRemove": "CMS_EDITOR"
+     }
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "dataPermissions": {
+       "id": "PremiumProducts",
+       "itemRead": "SITE_MEMBER",
+       "itemInsert": "CMS_EDITOR",
+       "itemUpdate": "CMS_EDITOR",
+       "itemRemove": "CMS_EDITOR"
+     }
+   }
+   ```
+
+2. To check the updated permissions, call [Get Permissions](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/get-permissions) with the collection ID.
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "dataPermissions": {
+       "id": "PremiumProducts",
+       "itemRead": "SITE_MEMBER",
+       "itemInsert": "CMS_EDITOR",
+       "itemUpdate": "CMS_EDITOR",
+       "itemRemove": "CMS_EDITOR"
+     }
+   }
+   ```
+
+## Add special permissions to a custom user role
+
+Configure a collection's permissions so that all site members can edit the items they created, and only users with a specified role can edit all items.
+
+1. Call [Update Permissions](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/update-permissions) to allow site members to only edit the items they created:
+
+   ```json
+   {
+     "dataPermissions": {
+       "id": "ForumPosts",
+       "itemRead": "ANYONE",
+       "itemInsert": "SITE_MEMBER",
+       "itemUpdate": "SITE_MEMBER_AUTHOR",
+       "itemRemove": "SITE_MEMBER_AUTHOR"
+     }
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "dataPermissions": {
+       "id": "ForumPosts",
+       "itemRead": "ANYONE",
+       "itemInsert": "SITE_MEMBER",
+       "itemUpdate": "SITE_MEMBER_AUTHOR",
+       "itemRemove": "SITE_MEMBER_AUTHOR"
+     }
+   }
+   ```
+
+2. To add special edit permissions to a user role, retrieve the role ID by calling [Get Roles Info](fallback::https://dev.wix.com/docs/rest/account-level/user-management/accounts/users/get-roles-info). You can find the roles and their IDs in the `predefinedRoles` or the `customRoles` arrays in the method response:
+
+   ```json
+   {
+     "predefinedRoles": [
+       {
+         "id": "6601492336091027458",
+         "title": "Owner",
+         "description": "Can manage and access all aspects of sites, including billing and domains, plus invite other people and set their permissions.",
+         "restrictFromLevel": "NoRestriction"
+       },
+       {
+         "id": "6642345101181663232",
+         "title": "Account Admin (Co-Owner)",
+         "description": "Can manage and edit all sites and apps in the account, including billing, domains and inviting people, but cannot close account.",
+         "restrictFromLevel": "Site"
+       },
+       {
+         "id": "7068917385753919640",
+         "title": "Content Writer",
+         "description": "Can edit text, links, and media sources for this site and collections in the CMS. Can also publish site.",
+         "restrictFromLevel": "NoRestriction"
+       }
+     ],
+     "customRoles": [
+       {
+         "id": "7046409866117489206",
+         "title": "Content Moderator",
+         "description": "Can edit all items in a specified collection.",
+         "restrictFromLevel": "Site"
+       }
+     ]
+   }
+   ```
+
+   Learn more about [creating custom roles and permissions in the CMS](fallback::https://support.wix.com/en/article/cms-formerly-content-manager-creating-custom-roles-and-permissions).
+
+3. Call [Add Special Permissions](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/add-special-permissions) to allow all users with the custom role to edit all items in the collection. Specify the role ID from the previous step:
+
+   ```json
+   {
+     "dataCollectionId": "ForumPosts",
+     "specialPermissions": {
+       "policyId": "7046409866117489206",
+       "itemRead": "ALLOWED",
+       "itemUpdate": "ALLOWED",
+       "itemRemove": "ALLOWED"
+     }
+   }
+   ```
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "specialPermissions": {
+       "id": "abc123-def456-ghi789",
+       "policyId": "7046409866117489206",
+       "itemRead": "ALLOWED",
+       "itemUpdate": "ALLOWED",
+       "itemRemove": "ALLOWED"
+     }
+   }
+   ```
+
+4. To check the updated permissions, call [Get Permissions](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/get-permissions) with the collection ID.
+
+   The method returns a response such as:
+
+   ```json
+   {
+     "dataPermissions": {
+       "id": "ForumPosts",
+       "itemRead": "ANYONE",
+       "itemInsert": "SITE_MEMBER",
+       "itemUpdate": "SITE_MEMBER_AUTHOR",
+       "itemRemove": "SITE_MEMBER_AUTHOR",
+       "specialPermissions": [
+         {
+           "id": "abc123-def456-ghi789",
+           "policyId": "7046409866117489206",
+           "itemRead": "ALLOWED",
+           "itemUpdate": "ALLOWED",
+           "itemRemove": "ALLOWED"
+         }
+       ]
+     }
+   }
+   ```
+
+<Note>
+
+When you set up special permissions for a particular action to `UNSPECIFIED`, the collection's default access level applies for that action.
+
+This allows you to specify certain permission overrides while maintaining [collection-level permissions](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/introduction#collection-level-permissions) for actions whose [role requirements](fallback::https://dev.wix.com/docs/rest/business-solutions/cms/data-permissions/introduction#user-roles) you don't want to change.
+
+</Note>

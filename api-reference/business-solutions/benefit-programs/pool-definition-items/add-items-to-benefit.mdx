@@ -1,0 +1,535 @@
+---
+title: "Add Items To Benefit"
+description: "Registers items with a benefit."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Registers items with a benefit. This is an eventually consistent operation. Items may take a short time to appear
+    in Query Pool Definition Items results after the call returns. Uses a partial success model. Items already registered
+    with the benefit return a per-item error in `results.itemMetadata`, while new items are added successfully.
+    Check `bulkActionMetadata` for overall counts and results for per-item outcomes.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.BENEFIT_PROGRAMS.MANAGE">Manage benefit programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/benefit-programs/v1/pool-definition-items/add-items-to-benefit
+    ```
+
+    ## Body Params
+
+    <ParamField body="itemReferences" type="ItemReference[]" required>
+
+      Items to add to the benefit's item set.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="itemReferences properties">
+
+        <ParamField body="externalId" type="string" required>
+
+          External item ID assigned by the provider.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="category" type="string">
+
+          Item category.
+
+          Constraints: `maxLength 20`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="poolDefinitionId" type="string" required>
+
+      ID of the pool definition associated with the benefit.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="benefitKey" type="string" required>
+
+      Key identifying the benefit in the pool definition.
+
+      Constraints: `maxLength 64`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkAddItemResult[]">
+
+      Per-item results. `itemMetadata.originalIndex` corresponds to the order of `itemReferences` in the request.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Outcome metadata for the catalog item created in the underlying item service. The item ID here is the Item entity
+          ID. The service creates PoolDefinitionItem records asynchronously and doesn't include their IDs in this response.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Aggregate counts for the bulk operation, including successes and failures.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `POOL_DEFINITION_BENEFIT_NOT_FOUND` | No benefit is configured for the given `poolDefinitionId` and `benefitKey` pair. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      ~~~cURL
+      curl -X POST "https://www.wixapis.com/benefit-programs/v1/pool-definition-items/add-items-to-benefit" \
+          -H 'Content-type: application/json' \
+          -H 'Authorization: <AUTH>' \
+          -d '{
+            "item_references": [
+              {
+                "external_id": "00000000-6666-6666-0000-000000000001",
+                "category": "class"
+              },
+              {
+                "external_id": "00000000-6666-6666-0000-000000000002",
+                "category": "class"
+              }
+            ],
+            "pool_definition_id": "201db180-5043-45cf-a501-bd9c06df5ae5",
+            "benefit_key": "unlimited-classes"
+          }'
+      ~~~
+      ```
+
+      ```json Response
+      ~~~json
+      {
+        "results": [
+          {
+            "item_metadata": {
+              "id": "9a8b7c6d-5e4f-3210-fedc-ba9876543210",
+              "original_index": 0,
+              "success": true
+            }
+          },
+          {
+            "item_metadata": {
+              "id": "1b2c3d4e-5f6a-7890-bcde-f12345678901",
+              "original_index": 1,
+              "success": true
+            }
+          }
+        ],
+        "bulk_action_metadata": {
+          "total_successes": 2,
+          "total_failures": 0,
+          "total_skipped": 0
+        }
+      }
+      ~~~
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Registers items with a benefit. This is an eventually consistent operation. Items may take a short time to appear
+    in Query Pool Definition Items results after the call returns. Uses a partial success model. Items already registered
+    with the benefit return a per-item error in `results.itemMetadata`, while new items are added successfully.
+    Check `bulkActionMetadata` for overall counts and results for per-item outcomes.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.BENEFIT_PROGRAMS.MANAGE">Manage benefit programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { poolDefinitionItems } from '@wix/benefit-programs';
+
+    poolDefinitionItems.addItemsToBenefit(itemReferences, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="itemReferences" type="ItemReference[]" required>
+
+      Items to add to the benefit's item set.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="itemReferences properties">
+
+        <ParamField body="externalId" type="string" required>
+
+          External item ID assigned by the provider.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="category" type="string">
+
+          Item category.
+
+          Constraints: `maxLength 20`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="AddItemsToBenefitOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="poolDefinitionId" type="string" required>
+
+          ID of the pool definition associated with the benefit.
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="benefitKey" type="string" required>
+
+          Key identifying the benefit in the pool definition.
+
+          Constraints: `maxLength 64`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkAddItemResult[]">
+
+      Per-item results. `itemMetadata.originalIndex` corresponds to the order of `itemReferences` in the request.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Outcome metadata for the catalog item created in the underlying item service. The item ID here is the Item entity
+          ID. The service creates PoolDefinitionItem records asynchronously and doesn't include their IDs in this response.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Aggregate counts for the bulk operation, including successes and failures.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `POOL_DEFINITION_BENEFIT_NOT_FOUND` | No benefit is configured for the given `poolDefinitionId` and `benefitKey` pair. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-add-items-to-benefit" id="ex-sdk-add-items-to-benefit-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-add-items-to-benefit" id="ex-sdk-add-items-to-benefit-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-add-items-to-benefit" id="ex-sdk-add-items-to-benefit-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-add-items-to-benefit-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-add-items-to-benefit-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">addItemsToBenefit</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">addItemsToBenefit (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">addItemsToBenefit (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-add-items-to-benefit-0"><span className="wix-picker-name">addItemsToBenefit</span></label>
+    <label htmlFor="ex-sdk-add-items-to-benefit-1"><span className="wix-picker-name">addItemsToBenefit (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-add-items-to-benefit-2"><span className="wix-picker-name">addItemsToBenefit (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript addItemsToBenefit
+    import { poolDefinitionItems } from '@wix/benefit-programs';
+
+    async function addItemsToBenefit(itemReferences,options) {
+      const response = await poolDefinitionItems.addItemsToBenefit(itemReferences,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript addItemsToBenefit (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { poolDefinitionItems } from '@wix/benefit-programs';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { poolDefinitionItems },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function addItemsToBenefit(itemReferences,options) {
+      const response = await myWixClient.poolDefinitionItems.addItemsToBenefit(itemReferences,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript addItemsToBenefit (with elevated permissions)
+    import { poolDefinitionItems } from '@wix/benefit-programs';
+    import { auth } from '@wix/essentials';
+
+    async function myAddItemsToBenefitMethod(itemReferences,options) {
+      const elevatedAddItemsToBenefit = auth.elevate(poolDefinitionItems.addItemsToBenefit);
+      const response = await elevatedAddItemsToBenefit(itemReferences,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

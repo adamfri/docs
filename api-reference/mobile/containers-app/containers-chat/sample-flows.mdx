@@ -1,0 +1,23 @@
+---
+title: "Sample Flows"
+description: "This article presents a possible use case and corresponding sample flow that you can support."
+icon: "file-lines"
+---
+
+This article presents a possible use case and corresponding sample flow that you can support. It provides a useful starting point as you plan your implementation.
+
+## Send a message and track the assistant's response
+
+After a user submits a request, your app needs to send the message to the coding agent and then monitor the assistant's response until it's complete.
+
+To send a message and track the assistant's response:
+
+1. Call [Create Conversation](fallback::https://dev.wix.com/docs/api-reference/mobile/containers-app/containers-chat/conversation-v1/create-conversation) with the project's ID to open a new chat thread. Save the returned `conversation.id`.
+
+1. Call [Send Message](fallback::https://dev.wix.com/docs/api-reference/mobile/containers-app/containers-chat/conversation-v1/send-message) with the `conversationId` and the user's message content in `parts`. Pass a unique `idempotencyKey` for this message (reuse the same key if you retry on failure). Save the returned `message.id` — this is the user message ID.
+
+1. Call [Query Messages](fallback::https://dev.wix.com/docs/api-reference/mobile/containers-app/containers-chat/conversation-v1/query-messages) with the `conversationId` to retrieve the message list. Look for an assistant message whose `inReplyToId` matches the user message ID from the previous step. Its initial `status` is `WORKING`.
+
+1. Continue polling [Query Messages](fallback::https://dev.wix.com/docs/api-reference/mobile/containers-app/containers-chat/conversation-v1/query-messages) until the assistant message's `status` changes to `DONE`. Read the final response from its `parts` field and any follow-up prompts from `followUpQuestionOptions`.
+
+   If the assistant message's `status` is `ERROR`, read the reason from its `parts` field.

@@ -1,0 +1,608 @@
+---
+title: "Bulk Add Item To Categories"
+description: "Adds a single item to multiple categories."
+icon: "upload"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds a single item to multiple categories.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CATEGORIES.CATEGORY_ITEM_WRITE">Category item write</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/categories/v1/bulk/categories/add-item
+    ```
+
+    ## Body Params
+
+    <ParamField body="item" type="ItemReference" required>
+
+      Item to add.
+
+      <Expandable title="item properties">
+
+        <ParamField body="catalogItemId" type="string" required>
+
+          ID of the item within the catalog.
+
+          For Wix Stores, this is the product ID from the [Catalog V3 Products API](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction).
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string" required>
+
+          ID of the Wix app providing the catalog.
+
+          Currently, only Wix Stores is supported. Use `"215238eb-22a5-4c36-9e7b-e7c08025e04e"` for all Wix Stores products.
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="categoryIds" type="string[]" required>
+
+      IDs of categories to which to add the item.
+
+      Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+    </ParamField>
+
+    <ParamField body="treeReference" type="TreeReference" required>
+
+      Category tree reference details.
+
+      <Expandable title="treeReference properties">
+
+        <ParamField body="appNamespace" type="string" required>
+
+          Namespace of the app whose catalog this category tree belongs to.
+
+          Currently, only `"@wix/stores"` is supported.
+
+          Constraints: `minLength 4`, `maxLength 150`.
+
+        </ParamField>
+
+        <ParamField body="treeKey" type="string">
+
+          Key to differentiate between multiple trees managed by the same app.
+
+          For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkItemToCategoriesResult[]">
+
+      Items added by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for category.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `403` | `PERMISSION_DENIED` | `MANAGED_CATEGORY_OPERATION_NOT_ALLOWED` | One or more categories are managed by a specific app. Only that app can modify items in those categories. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Adds 1 item to 2 categories. Response includes 1 successful and 1 failed action.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/categories/v1/bulk/categories/add-item' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+             "item": {
+               "catalogItemId": "0318a3d8-f31c-4ba3-98c7-387571a2eac4",
+               "appId": "215238eb-22a5-4c36-9e7b-e7c08025e04e"
+             },
+             "categoryIds": ["b13e1166-fdf2-425a-a35c-d698edcbafa7", "b12487f7-cc4a-46ae-9c4f-48369f76c226"],
+             "treeReference": {
+               "appNamespace": "@wix/stores",
+               "treeKey": null
+             }
+           }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "b13e1166-fdf2-425a-a35c-d698edcbafa7",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "b12487f7-cc4a-46ae-9c4f-48369f76c226",
+              "originalIndex": 1,
+              "success": false,
+              "error": {
+                "code": "ALREADY_EXISTS",
+                "description": "Unique constraint violation",
+                "data": {
+                  "uniqueConstraintViolation": {
+                    "fieldPaths": [
+                      {
+                        "paths": [
+                          "categoryId"
+                        ]
+                      },
+                      {
+                        "paths": [
+                          "item",
+                          "catalogItemId"
+                        ]
+                      },
+                      {
+                        "paths": [
+                          "item",
+                          "appId"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 1,
+          "totalFailures": 1,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    Adds a single item to multiple categories.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CATEGORIES.CATEGORY_ITEM_WRITE">Category item write</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { categories } from '@wix/categories';
+
+    categories.bulkAddItemToCategories(item, options): Promise<NonNullablePaths>
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="item" type="ItemReference" required>
+
+      Item to add.
+
+      <Expandable title="item properties">
+
+        <ParamField body="catalogItemId" type="string" required>
+
+          ID of the item within the catalog.
+
+          For Wix Stores, this is the product ID from the [Catalog V3 Products API](https://dev.wix.com/docs/api-reference/business-solutions/stores/catalog-v3/products-v3/introduction).
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+        <ParamField body="appId" type="string" required>
+
+          ID of the Wix app providing the catalog.
+
+          Currently, only Wix Stores is supported. Use `"215238eb-22a5-4c36-9e7b-e7c08025e04e"` for all Wix Stores products.
+
+          Constraints: `minLength 1`, `maxLength 36`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkAddItemToCategoriesOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="categoryIds" type="string[]" required>
+
+          IDs of categories to which to add the item.
+
+          Constraints: `format GUID`, `minItems 1`, `maxItems 100`.
+
+        </ParamField>
+
+        <ParamField body="treeReference" type="TreeReference" required>
+
+          Category tree reference details.
+
+          <Expandable title="treeReference properties">
+
+            <ParamField body="appNamespace" type="string" required>
+
+              Namespace of the app whose catalog this category tree belongs to.
+
+              Currently, only `"@wix/stores"` is supported.
+
+              Constraints: `minLength 4`, `maxLength 150`.
+
+            </ParamField>
+
+            <ParamField body="treeKey" type="string">
+
+              Key to differentiate between multiple trees managed by the same app.
+
+              For Wix Stores, pass `null` or omit this field, as each store has only one category tree.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    Returns `Promise<NonNullablePaths>`.
+
+    <ResponseField name="results" type="BulkItemToCategoriesResult[]">
+
+      Items added by bulk action.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Bulk action metadata for category.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `403` | `PERMISSION_DENIED` | `MANAGED_CATEGORY_OPERATION_NOT_ALLOWED` | One or more categories are managed by a specific app. Only that app can modify items in those categories. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Category Items Added To Category | `wix.categories.v1.category_items_added_to_category` |  |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-add-item-to-categories" id="ex-sdk-bulk-add-item-to-categories-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-add-item-to-categories" id="ex-sdk-bulk-add-item-to-categories-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-bulk-add-item-to-categories" id="ex-sdk-bulk-add-item-to-categories-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-add-item-to-categories-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-add-item-to-categories-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkAddItemToCategories</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkAddItemToCategories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkAddItemToCategories (with elevated permissions)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-add-item-to-categories-0"><span className="wix-picker-name">bulkAddItemToCategories</span></label>
+    <label htmlFor="ex-sdk-bulk-add-item-to-categories-1"><span className="wix-picker-name">bulkAddItemToCategories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+    <label htmlFor="ex-sdk-bulk-add-item-to-categories-2"><span className="wix-picker-name">bulkAddItemToCategories (with elevated permissions)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkAddItemToCategories
+    import { categories } from '@wix/categories';
+
+    async function bulkAddItemToCategories(item,options) {
+      const response = await categories.bulkAddItemToCategories(item,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkAddItemToCategories (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { categories } from '@wix/categories';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { categories },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkAddItemToCategories(item,options) {
+      const response = await myWixClient.categories.bulkAddItemToCategories(item,options);
+    };
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkAddItemToCategories (with elevated permissions)
+    import { categories } from '@wix/categories';
+    import { auth } from '@wix/essentials';
+
+    async function myBulkAddItemToCategoriesMethod(item,options) {
+      const elevatedBulkAddItemToCategories = auth.elevate(categories.bulkAddItemToCategories);
+      const response = await elevatedBulkAddItemToCategories(item,options);
+    }
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

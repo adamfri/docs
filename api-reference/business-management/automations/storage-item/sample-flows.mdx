@@ -1,0 +1,283 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. This can be a helpful jumping off point as you plan your implementation.
+
+## Share data across automations
+
+You can run multiple site automations that need to access up-to-date business data. For example, when launching a new promotion campaign, the email marketing and order processing automations need to use the same coupon code as created by the campaign automation. Storage items let you coordinate this data across different automations.
+
+To share data across automations, follow these steps:
+
+1. In a campaign automation, call [Create Storage Item](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/create-storage-item) with the coupon code value `SUMMERSAVE20`:
+
+    ```json
+    {
+      "storageItem": {
+        "key": "season_coupon_code",
+        "displayName": "Season's Coupon Code",
+        "description": "Coupon code for seasonal email campaigns and promotions",
+        "type": "STRING",
+        "stringValue": {
+          "value": "SUMMERSAVE20",
+          "format": "PLAIN_TEXT"
+        }
+      }
+    }
+    ```
+
+    Other automations in the site can now retrieve and update this item using its key.
+
+2. In an email automation, call [Get Storage Item](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/get-storage-item) with the `season_coupon_code` key to retrieve the coupon value. You can set the `consistentRead` parameter to `true` to ensure the data is up to date.
+
+    The method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "5f5fe285-8788-4469-9968-0460fa843075",
+        "key": "season_coupon_code",
+        "displayName": "Season's Coupon Code",
+        "description": "Coupon code for seasonal email campaigns and promotions",
+        "stringValue": {
+          "value": "SUMMERSAVE20",
+          "format": "PLAIN_TEXT"
+        },
+        "type": "STRING",
+        "createdDate": "2025-07-01T11:00:00.000Z",
+        "updatedDate": "2025-07-01T11:00:00.000Z"
+      }
+    }
+    ```
+
+    You can now include the retrieved coupon code in the email sent to customers.
+
+3. Similarly, in your order processing automation, call Get Storage Item with the item's `key` to verify that the coupon code used by the customer matches the one created by the marketing automation.
+
+    The method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "5f5fe285-8788-4469-9968-0460fa843075",
+        "key": "season_coupon_code",
+        "displayName": "Season's Coupon Code",
+        "description": "Coupon code for seasonal email campaigns and promotions",
+        "type": "STRING",
+        "stringValue": {
+          "value": "SUMMERSAVE20",
+          "format": "PLAIN_TEXT"
+        },
+        "createdDate": "2025-07-01T11:00:00.000Z",
+        "updatedDate": "2025-07-01T11:00:00.000Z"
+      }
+    }
+    ```
+
+    The order processing automation can now validate the customer's coupon code and apply the discount.
+
+4. When launching a new campaign, update the coupon code by calling [Update Storage Item Value](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/update-storage-item-value) with the item's `key`.
+
+    The method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "5f5fe285-8788-4469-9968-0460fa843075",
+        "key": "season_coupon_code",
+        "displayName": "Season's Coupon Code",
+        "description": "Coupon code for seasonal email campaigns and promotions",
+        "type": "STRING",
+        "stringValue": {
+          "value": "FALL30OFF",
+          "format": "PLAIN_TEXT"
+        },
+        "createdDate": "2025-07-01T11:00:00.000Z",
+        "updatedDate": "2025-10-01T11:56:54.835Z"
+      }
+    }
+    ```
+
+5. Use the retrieved theme preference to apply the appropriate styling to the email template sent to the user.
+
+6. When the user changes their preference to light mode, call [Update Storage Item Value](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/update-storage-item-value) with the updated value:
+
+    ```json
+    {
+      "stringValue": "light_mode"
+    }
+    ```
+
+    Your email and order processing automations automatically use the updated coupon code.
+
+## Store user preferences
+
+Users may want personalized experiences based on their individual settings. For example, some users prefer dark mode while others prefer light mode, or some prefer email notifications while others prefer SMS. You can use storage items to save these preferences and ensure all automations provide a consistent, personalized experience for each user.
+
+To store and manage user preferences, follow these steps:
+
+1. Call [Create Storage Item](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/create-storage-item) to create a user's theme preference. You can also specify tags for later filtering:
+
+    ```json
+      {
+        "storageItem": {
+          "key": "current_user_theme_preference",
+          "displayName": "Current User's Theme Preference",
+          "description": "Stores user's preferred theme setting",
+          "type": "STRING",
+          "stringValue": {
+            "value": "dark_mode",
+            "format": "PLAIN_TEXT"
+          },
+          "tags": {
+            "privateTags": ["theme"]
+          }
+        }
+      }
+    ```
+
+2. In your email automation, call [Get Storage Item](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/get-storage-item) with the `current_user_theme_preference` item key to retrieve the user's theme preference:
+
+    The method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "04a29bcc-987a-4be2-a751-a2cb740db5b0",
+        "key": "current_user_theme_preference",
+        "displayName": "Current User's Theme Preference",
+        "description": "Stores user's preferred theme setting",
+        "type": "STRING",
+        "stringValue": {
+          "value": "dark_mode",
+          "format": "PLAIN_TEXT"
+        },
+        "tags": {
+          "privateTags": ["theme"]
+        },
+        "createdDate": "2025-07-01T11:00:00.000Z",
+        "updatedDate": "2025-10-01T14:30:00.000Z"
+      }
+    }
+    ```
+
+3. Use the retrieved theme preference to style the email template.
+
+4. If the user changes their preference to light mode, call [Update Storage Item Value](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/update-storage-item-value) with `current_user_theme_preference` as the item's key, and specify `light_mode` as the value to update.
+
+    The method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "04a29bcc-987a-4be2-a751-a2cb740db5b0",
+        "key": "current_user_theme_preference",
+        "displayName": "Current User's Theme Preference",
+        "description": "Stores user's preferred theme setting",
+        "type": "STRING",
+        "stringValue": {
+          "value": "light_mode",
+          "format": "PLAIN_TEXT"
+        },
+        "tags": {
+          "privateTags": ["theme"]
+        },
+        "createdDate": "2025-07-01T11:00:00.000Z",
+        "updatedDate": "2025-10-01T14:30:00.000Z"
+      }
+    }
+    ```
+
+    All automations that interact with this user automatically use the updated preference for consistent personalization.
+
+## Track and update metrics
+
+Some users need to track business metrics that change over time, such as active user counts. Unlike simple counters that only increase, active user metrics require both incrementing and decrementing based on user behavior. Counter storage items support [atomic updates](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/introduction#atomic-updates) that ensure accurate counting even when multiple automations update the same counter simultaneously.
+
+To track and update active user metrics, follow these steps:
+
+1. Call [Create Storage Item](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/create-storage-item) to create a counter for tracking total active users:
+
+    ```json
+    {
+      "storageItem": {
+        "key": "total_active_users",
+        "displayName": "Total Active Users",
+        "description": "Tracks the current number of active users",
+        "type": "COUNTER",
+        "counterValue": {
+          "value": "0"
+        }
+      }
+    }
+    ```
+
+2. In your user registration automation, call [Update Storage Item Counter By](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/update-storage-item-counter-by) with the `value` field set to `1`. This increments the counter by 1 when a user signs up.
+
+    For example, if you previously had 250 users, the method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "f413e6d4-c158-44e2-b62f-10e13d80b760",
+        "key": "total_active_users",
+        "displayName": "Total Active Users",
+        "description": "Tracks the current number of active users",
+        "type": "COUNTER",
+        "counterValue": {
+          "value": "251"
+        },
+        "createdDate": "2025-10-20T12:21:25.006Z",
+        "updatedDate": "2025-10-20T12:21:25.006Z"
+      }
+    }
+    ```
+
+    The counter now accurately reflects the current number of active users after the sign-up.
+
+3. In your account cleanup automation, call [Update Storage Item Counter By](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/update-storage-item-counter-by) with the `value` field set to `-1`. This decrement the counter by 1 when a user deletes their account.
+
+    For example, if you previously had 251 users, the method returns a response such as:
+
+    ```json
+    {
+    "storageItem": {
+        "id": "f413e6d4-c158-44e2-b62f-10e13d80b760",
+        "key": "total_active_users",
+        "displayName": "Total Active Users",
+        "description": "Tracks the current number of active users",
+        "counterValue": {
+          "value": "250"
+        },
+        "type": "COUNTER",
+        "createdDate": "2025-10-20T12:21:25.006Z",
+        "updatedDate": "2025-10-20T12:23:16.850Z"
+      }
+    }
+    ```
+
+4. In your user activity monitoring automation, call [Update Storage Item Counter By](fallback::https://dev.wix.com/docs/api-reference/business-management/automations/storage-item/update-storage-item-counter-by) to decrement the counter by 1 when a user deletes their account or when they have been inactive for more than 60 days.
+
+    The method returns a response such as:
+
+    ```json
+    {
+      "storageItem": {
+        "id": "f413e6d4-c158-44e2-b62f-10e13d80b760",
+        "key": "total_active_users",
+        "displayName": "Total Active Users",
+        "description": "Tracks the current number of active users",
+        "type": "COUNTER",
+        "counterValue": {
+          "value": "247"
+        },
+        "createdDate": "2025-10-20T12:21:25.006Z",
+        "updatedDate": "2026-03-14T02:13:23.950Z"
+      }
+    }
+    ```
+
+    Multiple automations can now safely update the active user counter simultaneously, ensuring an accurate real-time count of the site's active user base.
