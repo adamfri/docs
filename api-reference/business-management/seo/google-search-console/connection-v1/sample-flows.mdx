@@ -1,0 +1,40 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Connect a site to Google Search Console
+
+A site owner wants their site connected to Google Search Console so it can be verified, submit sitemaps, and report search performance. Your app runs the authorization and waits for it to complete.
+
+To connect a site:
+
+1. Call [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection) to check the starting point. If `status` is already `VALID`, the site is connected and there's nothing to do.
+1. Call [Get Connect URL](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connect-url) and store the returned `connectUrl`. If the call fails with `FAILED_PRECONDITION`, resolve the reported problem first: publish the site, connect a domain, or allow search-engine indexing.
+1. Surface `connectUrl` to the person connecting, for example by opening it in a new browser tab. The URL is single-use and expires after 2 hours, so request a fresh one for every attempt.
+1. Poll [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection) every few seconds. `status` is `PENDING` while the person authorizes, and becomes `VALID` when Wix completes the exchange. Stop polling after 2 hours, when the attempt expires.
+
+## Show the site's connection status
+
+Your app has a settings page that shows whether the site is connected to Google Search Console, and offers the right action for the current state.
+
+To show the connection status:
+
+1. Call [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection).
+1. Present the returned `status`. For `VALID`, show the connected account's `connectedEmailMasking`. For `INVALID`, tell the site owner the connection stopped working and offer to reconnect with [Get Connect URL](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connect-url). For `NOT_CONNECTED`, offer to connect.
+1. Use `ownedByCaller` only when `status` is `VALID` or `INVALID`, where it's returned. When it's `false`, the current caller doesn't own the connection, so offer to replace it with care rather than presenting it as theirs. Don't read `false` as proof that a specific other Wix user connected the account.
+
+## Disconnect a Google account
+
+A site owner wants Wix to stop using their Google account, for example before handing the site over to someone else.
+
+Disconnecting deletes the stored credentials, but doesn't remove the site's `google-site-verification` tag and doesn't revoke Wix's access on Google's side. The account owner can revoke it from their Google account settings.
+
+To disconnect a site:
+
+1. Call [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection) to confirm the site is connected and show which account is about to be disconnected.
+1. Call [Disconnect](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/disconnect). A `NOT_FOUND` error means the site has no stored credentials, so there's nothing to disconnect.
+1. Call [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection) again to confirm `status` is `NOT_CONNECTED`.

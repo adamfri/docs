@@ -1,0 +1,59 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Review the keywords behind a content plan
+
+A site owner wants to understand why their content plan suggests the topics it does. Your app shows them the keywords the plan was built from, with the search data behind each one.
+
+To show the keywords behind a plan:
+
+1. Poll [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) until `status` is `SUCCESS`. Research from a generation that's still running isn't readable. If `status` is `FAIL` or `CANCELED`, stop polling and tell the site owner that generation didn't complete, because neither status recovers on its own.
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items). Omit `paging` to receive every keyword in one response.
+1. Store `keywordResearchId` from the response. You need it for any edit, and you compare it on later reads to detect that the research was replaced.
+1. Group the items by `pageId` and use `mainKeywordMap` to show which keyword each page primarily targets. Note that this map is built from the site's full item set, so on a paged response it can name items outside the page you received.
+1. Show `searchVolume` and `competition` for each keyword so the site owner can judge which topics are worth writing about.
+
+## Refine the keywords before the briefs are written
+
+A content plan flow is waiting at `KEYWORD_RESEARCH`. This is the point at which changing a keyword still changes the briefs, so your app lets the site owner adjust the list before releasing the flow.
+
+Editing generated research copies it, so the ID you hold changes on the first write.
+
+To refine the keywords and then generate the briefs:
+
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items) and store `keywordResearchId`.
+1. Let the site owner change the keywords they want, then call [Bulk Update Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/bulk-update-keyword-research-items) once with all of their changes. Send each item ID at most once.
+1. Read `keywordResearchId` from the response and replace the ID you stored. The first edit copies the research, so this value usually differs from the one you sent. Sending the old ID again copies the research a second time.
+1. Call [Create Content Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/create-content-plan) to release the flow and generate the briefs from the edited keywords. Check `success` in the response as well as the HTTP status. If `success` is `false`, show `message` to the site owner and stop, because no briefs were generated.
+1. Poll [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) until `status` is `SUCCESS`. If `status` is `FAIL` or `CANCELED`, stop polling and tell the site owner that generation didn't complete, because neither status recovers on its own. Then call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) to read the briefs.
+
+## Change which keyword a page targets
+
+A site owner decides a page should target a different keyword. Your app promotes the keyword they choose.
+
+Promotion is one-directional: promoting a new keyword is how you replace the old one, because a main keyword can't be demoted on its own.
+
+To change a page's main keyword:
+
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items) and read `mainKeywordMap` to find the page's current main keyword.
+1. Show the site owner the other keywords in that page's cluster, filtering the items by `pageId`.
+1. Call [Update Keyword Research Item](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/update-keyword-research-item) for the keyword they chose, naming `mainKeyword` in the field mask. Promote a single keyword per page in one request, because two promotions for the same page are rejected:
+
+    ```json
+    {
+      "keywordResearchId": "3f9c2b71-4d8e-4a15-9c63-b0e7d21a5f84",
+      "item": {
+        "id": "8c14e7d0-2a63-4b9f-91d5-7ae0c3f28b64",
+        "mainKeyword": true
+      },
+      "fieldMask": "mainKeyword"
+    }
+    ```
+
+1. Store the `keywordResearchId` from the response for any further write.
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items) again and confirm `mainKeywordMap` now names the chosen keyword for that page.

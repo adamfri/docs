@@ -1,6 +1,6 @@
 ---
 title: "Create Comment"
-description: "Creates a new comment and publishes it."
+description: "Creates a new comment."
 icon: "upload"
 mode: "wide"
 ---
@@ -15,7 +15,9 @@ mode: "wide"
 
     <div className="wix-ref">
 
-    Creates a new comment and publishes it.
+    Creates a new comment.
+
+    Depending on the comment context's moderation settings, the comment may be published immediately or submitted for moderation.
 
     The `appId`, `contextId`, and `resourceId` are all required and associate the created comment with the specific
     resource it responds to. See **Integrations** in the Comments introduction for a list of integrated scopes for these fields.
@@ -61,6 +63,25 @@ mode: "wide"
 
     </ParamField>
 
+    <ParamField body="contactDetails" type="ContactDetails">
+
+      Contact details of the comment author, used for guest comments
+      when the author isn't a site member. Write-only: accepted on creation
+      and never returned in read responses.
+
+      <Expandable title="contactDetails properties">
+
+        <ParamField body="email" type="string">
+
+          Email address of the guest comment author. Write-only:
+          accepted on comment creation and never returned in read responses.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
     ## Response Object
 
     <ResponseField name="comment" type="Comment">
@@ -76,6 +97,7 @@ mode: "wide"
     | Status | Code | Application code | Description |
     | --- | --- | --- | --- |
     | `428` | `FAILED_PRECONDITION` | `INVALID_CAPTCHA` | Captcha validation failed. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AUTHOR_EMAIL` | The guest email address is invalid. |
 
     <Note>
 
@@ -102,12 +124,14 @@ mode: "wide"
 
     <input type="radio" name="ex-rest-create-comment" id="ex-rest-create-comment-0" className="wix-picker-radio" defaultChecked />
     <input type="radio" name="ex-rest-create-comment" id="ex-rest-create-comment-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-create-comment" id="ex-rest-create-comment-2" className="wix-picker-radio" />
 
     <input type="checkbox" id="ex-rest-create-comment-open" className="wix-picker-toggle" />
 
     <label htmlFor="ex-rest-create-comment-open" className="wix-picker-button">
 
     <span className="wix-picker-current"><span className="wix-picker-name">Create Reply</span><span className="wix-picker-desc">Create a Wix Blog post reply to existing comment</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Create a guest comment with contact email</span><span className="wix-picker-desc">Illustrates a published response in a context where immediate publication is allowed</span></span>
     <span className="wix-picker-current"><span className="wix-picker-name">Create Comment</span><span className="wix-picker-desc">Create a Wix Blog post comment</span></span>
 
     </label>
@@ -115,7 +139,8 @@ mode: "wide"
     <div className="wix-picker-options">
 
     <label htmlFor="ex-rest-create-comment-0"><span className="wix-picker-name">Create Reply</span><span className="wix-picker-desc">Create a Wix Blog post reply to existing comment</span></label>
-    <label htmlFor="ex-rest-create-comment-1"><span className="wix-picker-name">Create Comment</span><span className="wix-picker-desc">Create a Wix Blog post comment</span></label>
+    <label htmlFor="ex-rest-create-comment-1"><span className="wix-picker-name">Create a guest comment with contact email</span><span className="wix-picker-desc">Illustrates a published response in a context where immediate publication is allowed</span></label>
+    <label htmlFor="ex-rest-create-comment-2"><span className="wix-picker-name">Create Comment</span><span className="wix-picker-desc">Create a Wix Blog post comment</span></label>
 
     </div>
 
@@ -221,6 +246,95 @@ mode: "wide"
             "total": 0,
             "reactionCodeCount": {}
           },
+          "marked": false
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/comments/v1/comments' \
+        -H 'Authorization: <AUTH>' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "comment": {
+          "appId": "14bcded7-0066-7c35-14d7-466cb3f09103",
+          "contextId": "64ad407e0bf87891bba7de3a",
+          "resourceId": "64ad407e0bf87891bba7de3a",
+          "author": {
+            "authorName": "Alex"
+          },
+          "content": {
+            "richContent": {
+              "nodes": [
+                {
+                  "type": "PARAGRAPH",
+                  "id": "paragraph-1",
+                  "nodes": [
+                    {
+                      "type": "TEXT",
+                      "id": "text-1",
+                      "textData": {
+                        "text": "Thanks for sharing this article.",
+                        "decorations": []
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "contactDetails": {
+          "email": "alex@example.com"
+        }
+      }'
+      ```
+
+      ```json Response
+      {
+        "comment": {
+          "id": "90616636-cfe2-4f3d-88ce-1c3d8e3eaa67",
+          "revision": "1",
+          "appId": "14bcded7-0066-7c35-14d7-466cb3f09103",
+          "contextId": "64ad407e0bf87891bba7de3a",
+          "resourceId": "64ad407e0bf87891bba7de3a",
+          "createdDate": "2026-09-09T09:00:00Z",
+          "updatedDate": "2026-09-09T09:00:00Z",
+          "content": {
+            "richContent": {
+              "nodes": [
+                {
+                  "type": "PARAGRAPH",
+                  "id": "paragraph-1",
+                  "nodes": [
+                    {
+                      "type": "TEXT",
+                      "id": "text-1",
+                      "textData": {
+                        "text": "Thanks for sharing this article.",
+                        "decorations": []
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "author": {
+            "visitorId": "beebbc2d-0c41-43f7-bc51-a4b52b0484f6",
+            "authorName": "Alex"
+          },
+          "status": "PUBLISHED",
+          "replyCount": 0,
           "marked": false
         }
       }
@@ -346,7 +460,9 @@ mode: "wide"
 
     <div className="wix-ref">
 
-    Creates a new comment and publishes it.
+    Creates a new comment.
+
+    Depending on the comment context's moderation settings, the comment may be published immediately or submitted for moderation.
 
     The `appId`, `contextId`, and `resourceId` are all required and associate the created comment with the specific
     resource it responds to. See **Integrations** in the Comments introduction for a list of integrated scopes for these fields.
@@ -384,7 +500,7 @@ mode: "wide"
     ```typescript
     import { comments } from '@wix/comments';
 
-    comments.createComment(comment): Promise<NonNullablePaths>
+    comments.createComment(comment, options): Promise<NonNullablePaths>
     ```
 
     ## Method Parameters
@@ -394,6 +510,35 @@ mode: "wide"
       Comment to create.
 
       See the [Comment Object](/api-reference/crm/community/feedback-moderation/comments/comments/comment-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateCommentOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="contactDetails" type="ContactDetails">
+
+          Contact details of the comment author, used for guest comments
+          when the author isn't a site member. Write-only: accepted on creation
+          and never returned in read responses.
+
+          <Expandable title="contactDetails properties">
+
+            <ParamField body="email" type="string">
+
+              Email address of the guest comment author. Write-only:
+              accepted on comment creation and never returned in read responses.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
 
     </ParamField>
 
@@ -408,6 +553,7 @@ mode: "wide"
     | Status | Code | Application code | Description |
     | --- | --- | --- | --- |
     | `428` | `FAILED_PRECONDITION` | `INVALID_CAPTCHA` | Captcha validation failed. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AUTHOR_EMAIL` | The guest email address is invalid. |
 
     <Note>
 
@@ -461,8 +607,8 @@ mode: "wide"
     ```javascript createComment
     import { comments } from '@wix/comments';
 
-    async function createComment(comment) {
-      const response = await comments.createComment(comment);
+    async function createComment(comment,options) {
+      const response = await comments.createComment(comment,options);
     };
     ```
 
@@ -481,8 +627,8 @@ mode: "wide"
       // Include the auth strategy and host as relevant
     });
 
-    async function createComment(comment) {
-      const response = await myWixClient.comments.createComment(comment);
+    async function createComment(comment,options) {
+      const response = await myWixClient.comments.createComment(comment,options);
     };
     ```
 
@@ -494,9 +640,9 @@ mode: "wide"
     import { comments } from '@wix/comments';
     import { auth } from '@wix/essentials';
 
-    async function myCreateCommentMethod(comment) {
+    async function myCreateCommentMethod(comment,options) {
       const elevatedCreateComment = auth.elevate(comments.createComment);
-      const response = await elevatedCreateComment(comment);
+      const response = await elevatedCreateComment(comment,options);
     }
     ```
 

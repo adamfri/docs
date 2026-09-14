@@ -1,0 +1,639 @@
+---
+title: "Generate Heading Structure Suggestions"
+description: "Suggests corrected heading levels for a page's headings."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Suggests corrected heading levels for a page's headings.
+
+    Pass the page's headings in document order, each with its raw HTML and
+    your own reference IDs. The AI checks the heading hierarchy (one H1,
+    no skipped levels, headings that match their content) and returns a
+    suggested tag per heading that should change, echoing your reference IDs
+    back so you can locate each element.
+
+    The heading nodes are the request's content, so this method works for any
+    page, including headless projects.
+
+    This method must be called with a [Wix user identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities), for example an app acting on
+    behalf of a signed-in site owner. Calls made with an API key fail,
+    because the page's title is read through the site's accessibility
+    analysis, which runs as the user.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/seo/suggestions/v1/tag-suggestions/heading-structure
+    ```
+
+    ## Body Params
+
+    <ParamField body="headings" type="HeadingNode[]" required>
+
+      The page's heading elements, in the order they appear on the page.
+
+      Constraints: `maxItems 200`.
+
+      <Expandable title="headings properties">
+
+        <ParamField body="id" type="string">
+
+          Your reference ID for the heading element. Required, and must be unique
+          within the request together with `uiElementId` and `attributeId` if you
+          send them.
+
+          Constraints: `minLength 1`, `maxLength 1000`.
+
+        </ParamField>
+
+        <ParamField body="attributeId" type="string">
+
+          Additional reference ID for the heading's text attribute, if you use
+          one. Echoed back unchanged.
+
+          Constraints: `maxLength 1000`.
+
+        </ParamField>
+
+        <ParamField body="htmlString" type="string">
+
+          Raw HTML of the heading element, including its tag, for example,
+          `<h2>Our services</h2>`. Elements that aren't headings are ignored for
+          the structure check. Send page content only. Don't include personal
+          data.
+
+          Constraints: `minLength 1`, `maxLength 100000`.
+
+        </ParamField>
+
+        <ParamField body="uiElementId" type="string">
+
+          Additional reference ID for the heading element, if you use one. Echoed
+          back unchanged.
+
+          Constraints: `maxLength 1000`.
+
+        </ParamField>
+
+        <ParamField body="sectionId" type="string">
+
+          Your reference ID for the page section the heading belongs to. Helps
+          the AI keep one heading hierarchy per section.
+
+          Constraints: `maxLength 1000`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="pageId" type="string" required>
+
+      Your reference ID for the page the headings belong to. For Wix pages,
+      the page ID, which lets the page's title be read to give the AI context.
+
+      Constraints: `minLength 1`, `maxLength 200`.
+
+    </ParamField>
+
+    <ParamField body="itemType" type="string" required>
+
+      Type of the page's item, as an SEO item type identifier. For example,
+      `STATIC_PAGE_V2` for a regular site page or `BLOG_POST` for a blog post.
+      Other values are rejected.
+
+      Constraints: `minLength 1`, `maxLength 200`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="suggestions" type="HeadingSuggestion[]">
+
+      A suggestion per heading whose level should change. Headings that are
+      already correct aren't returned.
+
+      **Read-only.** Constraints: `maxItems 200`.
+
+      <Expandable title="suggestions properties">
+
+        <ResponseField name="headingId" type="string">
+
+          Your reference ID for the heading element, echoed from the request.
+
+          **Read-only.** Constraints: `maxLength 1000`.
+
+        </ResponseField>
+
+        <ResponseField name="uiElementId" type="string">
+
+          Your `uiElementId` reference, echoed from the request.
+
+          **Read-only.** Constraints: `maxLength 1000`.
+
+        </ResponseField>
+
+        <ResponseField name="attributeId" type="string">
+
+          Your `attributeId` reference, echoed from the request.
+
+          **Read-only.** Constraints: `maxLength 1000`.
+
+        </ResponseField>
+
+        <ResponseField name="currentTag" type="string">
+
+          The heading's current tag. For example, `H2`.
+
+          **Read-only.** Constraints: `maxLength 10`.
+
+        </ResponseField>
+
+        <ResponseField name="proposedTag" type="string">
+
+          The suggested tag. For example, `H3`, or `P` for text that shouldn't be
+          a heading.
+
+          **Read-only.** Constraints: `maxLength 10`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GENERATION_FAILED` | The AI generation pipeline failed. Retry the call. |
+    | `429` | `RESOURCE_EXHAUSTED` | `QUOTA_LIMIT_REACHED` | The caller's generation quota is exhausted. Reserved for future metering and not currently returned. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    The page has an H1 followed by an H3, an H4, and a second H1. The response proposes the level each heading should have.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/seo/suggestions/v1/tag-suggestions/heading-structure' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "pageId": "c1dmp",
+        "itemType": "STATIC_PAGE_V2",
+        "headings": [
+          {
+            "id": "hero-title",
+            "htmlString": "<h1>Portland Pottery Studio</h1>",
+            "sectionId": "hero"
+          },
+          {
+            "id": "services-title",
+            "htmlString": "<h3>Our services</h3>",
+            "sectionId": "services"
+          },
+          {
+            "id": "services-classes",
+            "htmlString": "<h4>Wheel-throwing classes</h4>",
+            "sectionId": "services"
+          },
+          {
+            "id": "contact-title",
+            "htmlString": "<h1>Contact us</h1>",
+            "sectionId": "contact"
+          }
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "suggestions": [
+          {
+            "headingId": "services-title",
+            "currentTag": "H3",
+            "proposedTag": "H2"
+          },
+          {
+            "headingId": "services-classes",
+            "currentTag": "H4",
+            "proposedTag": "H3"
+          },
+          {
+            "headingId": "contact-title",
+            "currentTag": "H1",
+            "proposedTag": "H2"
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Suggests corrected heading levels for a page's headings.
+
+    Pass the page's headings in document order, each with its raw HTML and
+    your own reference IDs. The AI checks the heading hierarchy (one H1,
+    no skipped levels, headings that match their content) and returns a
+    suggested tag per heading that should change, echoing your reference IDs
+    back so you can locate each element.
+
+    The heading nodes are the request's content, so this method works for any
+    page, including headless projects.
+
+    This method must be called with a [Wix user identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities), for example an app acting on
+    behalf of a signed-in site owner. Calls made with an API key fail,
+    because the page's title is read through the site's accessibility
+    analysis, which runs as the user.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { tagSuggestions } from '@wix/seo';
+
+    tagSuggestions.generateHeadingStructureSuggestions(headings, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="headings" type="HeadingNode[]" required>
+
+      The page's heading elements, in the order they appear on the page.
+
+      Constraints: `maxItems 200`.
+
+      <Expandable title="headings properties">
+
+        <ParamField body="_id" type="string">
+
+          Your reference ID for the heading element. Required, and must be unique
+          within the request together with `uiElementId` and `attributeId` if you
+          send them.
+
+          Constraints: `minLength 1`, `maxLength 1000`.
+
+        </ParamField>
+
+        <ParamField body="attributeId" type="string">
+
+          Additional reference ID for the heading's text attribute, if you use
+          one. Echoed back unchanged.
+
+          Constraints: `maxLength 1000`.
+
+        </ParamField>
+
+        <ParamField body="htmlString" type="string">
+
+          Raw HTML of the heading element, including its tag, for example,
+          `<h2>Our services</h2>`. Elements that aren't headings are ignored for
+          the structure check. Send page content only. Don't include personal
+          data.
+
+          Constraints: `minLength 1`, `maxLength 100000`.
+
+        </ParamField>
+
+        <ParamField body="uiElementId" type="string">
+
+          Additional reference ID for the heading element, if you use one. Echoed
+          back unchanged.
+
+          Constraints: `maxLength 1000`.
+
+        </ParamField>
+
+        <ParamField body="sectionId" type="string">
+
+          Your reference ID for the page section the heading belongs to. Helps
+          the AI keep one heading hierarchy per section.
+
+          Constraints: `maxLength 1000`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="GenerateHeadingStructureSuggestionsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="pageId" type="string" required>
+
+          Your reference ID for the page the headings belong to. For Wix pages,
+          the page ID, which lets the page's title be read to give the AI context.
+
+          Constraints: `minLength 1`, `maxLength 200`.
+
+        </ParamField>
+
+        <ParamField body="itemType" type="string" required>
+
+          Type of the page's item, as an SEO item type identifier. For example,
+          `STATIC_PAGE_V2` for a regular site page or `BLOG_POST` for a blog post.
+          Other values are rejected.
+
+          Constraints: `minLength 1`, `maxLength 200`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="suggestions" type="HeadingSuggestion[]">
+
+      A suggestion per heading whose level should change. Headings that are
+      already correct aren't returned.
+
+      **Read-only.** Constraints: `maxItems 200`.
+
+      <Expandable title="suggestions properties">
+
+        <ResponseField name="headingId" type="string">
+
+          Your reference ID for the heading element, echoed from the request.
+
+          **Read-only.** Constraints: `maxLength 1000`.
+
+        </ResponseField>
+
+        <ResponseField name="uiElementId" type="string">
+
+          Your `uiElementId` reference, echoed from the request.
+
+          **Read-only.** Constraints: `maxLength 1000`.
+
+        </ResponseField>
+
+        <ResponseField name="attributeId" type="string">
+
+          Your `attributeId` reference, echoed from the request.
+
+          **Read-only.** Constraints: `maxLength 1000`.
+
+        </ResponseField>
+
+        <ResponseField name="currentTag" type="string">
+
+          The heading's current tag. For example, `H2`.
+
+          **Read-only.** Constraints: `maxLength 10`.
+
+        </ResponseField>
+
+        <ResponseField name="proposedTag" type="string">
+
+          The suggested tag. For example, `H3`, or `P` for text that shouldn't be
+          a heading.
+
+          **Read-only.** Constraints: `maxLength 10`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GENERATION_FAILED` | The AI generation pipeline failed. Retry the call. |
+    | `429` | `RESOURCE_EXHAUSTED` | `QUOTA_LIMIT_REACHED` | The caller's generation quota is exhausted. Reserved for future metering and not currently returned. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-generate-heading-structure-suggestions" id="ex-sdk-generate-heading-structure-suggestions-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-generate-heading-structure-suggestions" id="ex-sdk-generate-heading-structure-suggestions-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-generate-heading-structure-suggestions-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-generate-heading-structure-suggestions-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Suggest corrected heading levels for a page</span><span className="wix-picker-desc">The page has an H1 followed by an H3, an H4, and a second H1. The response proposes the level each heading should have</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">generateHeadingStructureSuggestions (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-generate-heading-structure-suggestions-0"><span className="wix-picker-name">Suggest corrected heading levels for a page</span><span className="wix-picker-desc">The page has an H1 followed by an H3, an H4, and a second H1. The response proposes the level each heading should have</span></label>
+    <label htmlFor="ex-sdk-generate-heading-structure-suggestions-1"><span className="wix-picker-name">generateHeadingStructureSuggestions (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Suggest corrected heading levels for a page
+    import { tagSuggestions } from "@wix/seo";
+
+    async function generateHeadingStructureSuggestions() {
+      const response = await tagSuggestions.generateHeadingStructureSuggestions(
+        [
+          {
+            _id: "hero-title",
+            htmlString: "<h1>Portland Pottery Studio</h1>",
+            sectionId: "hero",
+          },
+          {
+            _id: "services-title",
+            htmlString: "<h3>Our services</h3>",
+            sectionId: "services",
+          },
+          {
+            _id: "services-classes",
+            htmlString: "<h4>Wheel-throwing classes</h4>",
+            sectionId: "services",
+          },
+          {
+            _id: "contact-title",
+            htmlString: "<h1>Contact us</h1>",
+            sectionId: "contact",
+          },
+        ],
+        {
+          pageId: "c1dmp",
+          itemType: "STATIC_PAGE_V2",
+        },
+      );
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "suggestions": [
+     *     {
+     *       "headingId": "services-title",
+     *       "currentTag": "H3",
+     *       "proposedTag": "H2"
+     *     },
+     *     {
+     *       "headingId": "services-classes",
+     *       "currentTag": "H4",
+     *       "proposedTag": "H3"
+     *     },
+     *     {
+     *       "headingId": "contact-title",
+     *       "currentTag": "H1",
+     *       "proposedTag": "H2"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript generateHeadingStructureSuggestions (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { tagSuggestions } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { tagSuggestions },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function generateHeadingStructureSuggestions(headings,options) {
+      const response = await myWixClient.tagSuggestions.generateHeadingStructureSuggestions(headings,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

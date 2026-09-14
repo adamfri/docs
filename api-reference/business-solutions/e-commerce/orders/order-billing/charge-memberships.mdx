@@ -1,0 +1,739 @@
+---
+title: "Charge Memberships"
+description: "Sends a request to charge the memberships."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sends a request to charge the memberships.
+    The status will be updated asynchronously on the returned payments.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="ECOM.ORDER_BILLING_CHARGE_MEMBERSHIPS">ECOM.ORDER_BILLING_CHARGE_MEMBERSHIPS</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/charge-memberships
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to charge the relevant memberships.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="memberId" type="string" required>
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="memberships" type="MembershipCharge[]" required>
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="memberships properties">
+
+        <ParamField body="lineItemId" type="string" required>
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="membershipIdentifier" type="MembershipIdentifier" required>
+
+          membershipIdentifier
+
+          <Expandable title="membershipIdentifier properties">
+
+            <ParamField body="membershipId" type="string" deprecated>
+
+              **Deprecated.** Use `membership_id` instead. Removal: 2026-12-31. Constraints: `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="membershipAppId" type="string" deprecated>
+
+              **Deprecated.** Use `app_id` instead. Removal: 2026-12-31. Constraints: `maxLength 100`.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="identifier" type="identifier">
+
+              identifier
+
+              _Nested structure omitted for brevity — see the `identifier` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Created payments for the charged memberships.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="supportReceiptGeneration" type="boolean">
+
+          Whether receipt generation is allowed for this payment.
+          + `true`: This payment supports receipt generation.
+          + `false`: This payment doesn't support receipt generation, or a receipt was already generated.
+
+          **Read-only.** **Developer Preview.**
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Overall payment status.
+
+          Gift card and membership payments support only `APPROVED`, `PENDING`, `CANCELED`, `DECLINED`, and `VOIDED`. The remaining values apply to regular payments.
+
+          **Developer Preview.**
+
+          **Supported values:**
+
+          - `APPROVED` — Payment was charged successfully.
+          - `PENDING` — Payment is being processed and hasn't been confirmed yet.
+          - `PENDING_MERCHANT` — Payment is awaiting confirmation. For an offline payment, the merchant must confirm they received it. For an online payment, the payment provider hasn't confirmed it, which typically means the merchant's provider account setup isn't complete.
+          - `CANCELED` — Payment was canceled before it was charged.
+          - `DECLINED` — Payment was declined by the payment provider.
+          - `REFUNDED` — Payment was fully refunded.
+          - `PARTIALLY_REFUNDED` — Part of the payment amount was refunded.
+          - `AUTHORIZED` — Funds are held on the buyer's payment method but haven't been captured. Capture them with [Capture Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments) or release them with [Void Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments). An authorized payment can't be refunded until it's captured.
+          - `VOIDED` — Payment was voided, releasing whatever it held or consumed: an authorization on the buyer's payment method, a gift card balance, or membership credits.
+
+          Gift card and membership payments don't support partial refunds, so a full refund of one is reported as `VOIDED` rather than `REFUNDED`.
+
+        </ResponseField>
+
+        <ResponseField name="chargeCorrelationId" type="string">
+
+          ID linking this payment to the charge request that created it. Matches the `idempotencyKey` sent in the Charge Order request.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Order was not found |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERSHIP_NOT_ELIGIBLE` | Membership eligibility check failed. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Charge order using memberships.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/charge-memberships' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+      	  "orderId": "c2f808cb-f9ee-4b27-9b05-d9c2b73a297f",
+      	  "memberships": [
+      	    {
+      	      "lineItemId": "00000000-0000-0000-0000-000000000001",
+      	      "membershipIdentifier": {
+      	        "existingMembership": {
+      	          "appId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3",
+      	          "membershipId": "E7aZarYzwvhnG3IKcri09MIQS12j6VGzL3E9YqIaADsC4w1pLKcVFNRX1RTPVb3oR8tEsyJE49EwYtsa8Bb3Nku0EkUgPaHZYcO"
+      	        }
+      	      }
+      	    },
+      	    {
+      	      "lineItemId": "00000000-0000-0000-0000-000000000002",
+      	      "membershipIdentifier": {
+      	        "existingMembership": {
+      	          "appId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3",
+      	          "membershipId": "E7VlJsGgtb4pg3Fb4QL3XrjIiJB87ufdyTyyuaNAAhxGPYhyzGLSYmkmDfFEDF0st5UaZpmkstmmnfEq3ynXSdS9IqMvcLuDD8A"
+      	        }
+      	      }
+      	    }
+      	  ],
+      	  "memberId": "aab64a42-4a04-4e6a-bb60-346acc5a3d47"
+      	}'
+      ```
+
+      ```json Response
+      {
+        "payments": [
+          {
+            "id": "f826b9ed-8e4e-4bcb-a1bc-1c4763643409",
+            "createdDate": "2026-08-21T13:10:20.255Z",
+            "updatedDate": "2026-08-21T13:10:20.255Z",
+            "refundDisabled": false,
+            "membershipPaymentDetails": {
+              "membershipId": "E7aZarYzwvhnG3IKcri09MIQS12j6VGzL3E9YqIaADsC4w1pLKcVFNRX1RTPVb3oR8tEsyJE49EwYtsa8Bb3Nku0EkUgPaHZYcO",
+              "lineItemId": "00000000-0000-0000-0000-000000000001",
+              "status": "CHARGE_PENDING",
+              "name": {
+                "original": "Silver Membership"
+              },
+              "voided": false,
+              "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+            },
+            "supportReceiptGeneration": false,
+            "status": "PENDING"
+          },
+          {
+            "id": "399611d9-ce92-465b-9839-332008e4a67a",
+            "createdDate": "2026-08-21T13:10:20.255Z",
+            "updatedDate": "2026-08-21T13:10:20.255Z",
+            "refundDisabled": false,
+            "membershipPaymentDetails": {
+              "membershipId": "E7VlJsGgtb4pg3Fb4QL3XrjIiJB87ufdyTyyuaNAAhxGPYhyzGLSYmkmDfFEDF0st5UaZpmkstmmnfEq3ynXSdS9IqMvcLuDD8A",
+              "lineItemId": "00000000-0000-0000-0000-000000000002",
+              "status": "CHARGE_PENDING",
+              "name": {
+                "original": "Gold Membership"
+              },
+              "voided": false,
+              "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+            },
+            "supportReceiptGeneration": false,
+            "status": "PENDING"
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Sends a request to charge the memberships.
+    The status will be updated asynchronously on the returned payments.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="ECOM.ORDER_BILLING_CHARGE_MEMBERSHIPS">ECOM.ORDER_BILLING_CHARGE_MEMBERSHIPS</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.chargeMemberships(orderId, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to charge the relevant memberships.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="ChargeMembershipsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="memberId" type="string" required>
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="memberships" type="MembershipCharge[]" required>
+
+          Constraints: `minItems 1`, `maxItems 100`.
+
+          <Expandable title="memberships properties">
+
+            <ParamField body="lineItemId" type="string" required>
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="membershipIdentifier" type="MembershipIdentifier" required>
+
+              membershipIdentifier
+
+              _Nested structure omitted for brevity — see the `MembershipIdentifier` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Created payments for the charged memberships.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="_id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="_updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="supportReceiptGeneration" type="boolean">
+
+          Whether receipt generation is allowed for this payment.
+          + `true`: This payment supports receipt generation.
+          + `false`: This payment doesn't support receipt generation, or a receipt was already generated.
+
+          **Read-only.** **Developer Preview.**
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Overall payment status.
+
+          Gift card and membership payments support only `APPROVED`, `PENDING`, `CANCELED`, `DECLINED`, and `VOIDED`. The remaining values apply to regular payments.
+
+          **Developer Preview.**
+
+          **Supported values:**
+
+          - `APPROVED` — Payment was charged successfully.
+          - `PENDING` — Payment is being processed and hasn't been confirmed yet.
+          - `PENDING_MERCHANT` — Payment is awaiting confirmation. For an offline payment, the merchant must confirm they received it. For an online payment, the payment provider hasn't confirmed it, which typically means the merchant's provider account setup isn't complete.
+          - `CANCELED` — Payment was canceled before it was charged.
+          - `DECLINED` — Payment was declined by the payment provider.
+          - `REFUNDED` — Payment was fully refunded.
+          - `PARTIALLY_REFUNDED` — Part of the payment amount was refunded.
+          - `AUTHORIZED` — Funds are held on the buyer's payment method but haven't been captured. Capture them with [Capture Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments) or release them with [Void Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments). An authorized payment can't be refunded until it's captured.
+          - `VOIDED` — Payment was voided, releasing whatever it held or consumed: an authorization on the buyer's payment method, a gift card balance, or membership credits.
+
+          Gift card and membership payments don't support partial refunds, so a full refund of one is reported as `VOIDED` rather than `REFUNDED`.
+
+        </ResponseField>
+
+        <ResponseField name="chargeCorrelationId" type="string">
+
+          ID linking this payment to the charge request that created it. Matches the `idempotencyKey` sent in the Charge Order request.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Order was not found |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERSHIP_NOT_ELIGIBLE` | Membership eligibility check failed. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-charge-memberships" id="ex-sdk-charge-memberships-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-charge-memberships" id="ex-sdk-charge-memberships-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-charge-memberships-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-charge-memberships-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Charge Memberships</span><span className="wix-picker-desc">Charge an order using memberships</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">chargeMemberships (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-charge-memberships-0"><span className="wix-picker-name">Charge Memberships</span><span className="wix-picker-desc">Charge an order using memberships</span></label>
+    <label htmlFor="ex-sdk-charge-memberships-1"><span className="wix-picker-name">chargeMemberships (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Charge Memberships
+    import { orderBilling } from "@wix/ecom";
+
+    async function chargeMemberships() {
+      const response = await orderBilling.chargeMemberships(
+        "c2f808cb-f9ee-4b27-9b05-d9c2b73a297f",
+        {
+          memberships: [
+            {
+              lineItemId: "00000000-0000-0000-0000-000000000001",
+              membershipIdentifier: {
+                existingMembership: {
+                  appId: "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3",
+                  membershipId: "E7aZarYzwvhnG3IKcri09MIQS12j6VGzL3E9YqIaADsC4w1pLKcVFNRX1RTPVb3oR8tEsyJE49EwYtsa8Bb3Nku0EkUgPaHZYcO",
+                },
+              },
+            },
+            {
+              lineItemId: "00000000-0000-0000-0000-000000000002",
+              membershipIdentifier: {
+                existingMembership: {
+                  appId: "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3",
+                  membershipId: "E7VlJsGgtb4pg3Fb4QL3XrjIiJB87ufdyTyyuaNAAhxGPYhyzGLSYmkmDfFEDF0st5UaZpmkstmmnfEq3ynXSdS9IqMvcLuDD8A",
+                },
+              },
+            },
+          ],
+          memberId: "aab64a42-4a04-4e6a-bb60-346acc5a3d47",
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "payments": [
+     *     {
+     *       "membershipPaymentDetails": {
+     *         "membershipId": "E7aZarYzwvhnG3IKcri09MIQS12j6VGzL3E9YqIaADsC4w1pLKcVFNRX1RTPVb3oR8tEsyJE49EwYtsa8Bb3Nku0EkUgPaHZYcO",
+     *         "lineItemId": "00000000-0000-0000-0000-000000000001",
+     *         "status": "CHARGE_PENDING",
+     *         "name": { "original": "Silver Membership" },
+     *         "voided": false,
+     *         "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+     *       },
+     *       "refundDisabled": false,
+     *       "status": "PENDING"
+     *     },
+     *     {
+     *       "membershipPaymentDetails": {
+     *         "membershipId": "E7VlJsGgtb4pg3Fb4QL3XrjIiJB87ufdyTyyuaNAAhxGPYhyzGLSYmkmDfFEDF0st5UaZpmkstmmnfEq3ynXSdS9IqMvcLuDD8A",
+     *         "lineItemId": "00000000-0000-0000-0000-000000000002",
+     *         "status": "CHARGE_PENDING",
+     *         "name": { "original": "Gold Membership" },
+     *         "voided": false,
+     *         "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+     *       },
+     *       "refundDisabled": false,
+     *       "status": "PENDING"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript chargeMemberships (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function chargeMemberships(orderId,options) {
+      const response = await myWixClient.orderBilling.chargeMemberships(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

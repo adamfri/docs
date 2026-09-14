@@ -1,0 +1,69 @@
+---
+title: "Introduction"
+description: "The Content Plan Flow API lets you generate an SEO content plan for a Wix site and follow that generation to completion."
+icon: "file-lines"
+---
+
+The Content Plan Flow API lets you generate an SEO content plan for a Wix site and follow that generation to completion. A content plan is a set of blog post briefs. Each brief pairs a target keyword with a suggested title and supporting search data, so a site owner knows what to write about next.
+
+Generation is asynchronous and takes several minutes. You trigger a flow, poll it while it runs, and then read the results with the Keyword Research API and the Blog Post Candidate API.
+
+With the Content Plan Flow API, you can:
+
+- Trigger content plan generation for a site.
+- Track a generation flow's progress.
+- Retrieve the site's most recent completed content plan.
+- Cancel a flow you no longer need.
+
+## The generation lifecycle
+
+A flow reports its progress in `status`:
+
+| Status | What's happening |
+|---|---|
+| `CREATED` | The flow is created and the pipeline is starting. |
+| `SITE_ANALYSIS` | The site's pages are being analyzed. |
+| `SITE_SUMMARY` | The site's existing content is being summarized. |
+| `PENDING_REQUIREMENTS` | The site is missing business information that keyword research requires. Surface this to the site owner, because the flow can't continue until the information is added. |
+| `KEYWORD_RESEARCH` | Keyword research is complete and the flow is waiting. Call Create Content Plan to continue. |
+| `CONTENT_PLAN` | Blog post briefs are being generated from the keyword research. |
+| `SUCCESS` | Generation is complete. The results are ready to read. |
+| `FAIL` | Generation failed. |
+| `CANCELED` | The flow was canceled and can't be resumed. |
+
+Not every flow passes through every status. A flow triggered by an app skips `SITE_ANALYSIS`.
+
+### The flow waits for you at `KEYWORD_RESEARCH`
+
+A flow doesn't run to `SUCCESS` on its own. Once keyword research is done, the flow stops and waits. Call [Create Content Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/create-content-plan) to generate the blog post briefs and let the flow continue. An app that only polls waits indefinitely.
+
+This pause is deliberate. It's the point at which you can review the keywords, and edit them with [Update Keyword Research Item](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/update-keyword-research-item), before briefs are written from them.
+
+### A retry gets a new flow ID
+
+A failed flow is retried automatically. Each retry creates a separate flow with its own ID, and the flow you triggered keeps its `FAIL` status permanently. To find out whether a retry succeeded, call [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) without an ID, which returns the site's most recent successful flow.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Generation takes several minutes. [Trigger Content Plan Generation Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/trigger-content-plan-generation-flow) returns a flow ID immediately, before any content exists.
+- A successful trigger response means the flow was created, not that generation succeeded. Check `status` rather than relying on the response alone.
+- A flow stops at `KEYWORD_RESEARCH` until you call [Create Content Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/create-content-plan).
+- Cancellation is permanent. A canceled flow can't be resumed, and the keyword research linked to it is canceled with it.
+- [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) without an ID returns only a successful flow. A site whose flows are all still running or failed returns a not found error.
+
+## Use cases
+
+- [Generate a content plan and read the results](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/sample-flows#generate-a-content-plan-and-read-the-results)
+- [Pick up a content plan generated in the dashboard](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/sample-flows#pick-up-a-content-plan-generated-in-the-dashboard)
+- [Cancel a generation the site owner no longer wants](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/sample-flows#cancel-a-generation-the-site-owner-no-longer-wants)
+
+## Terminology
+
+- **Content plan**: A set of blog post briefs generated for a site, based on the site's content and on keyword research.
+- **Content plan flow**: A single run of the generation pipeline that produces a content plan. A flow has a status and an ID.
+- **Keyword research**: The set of target keywords generated for a site, with search data for each one. Managed with the Keyword Research API.
+- **Blog post candidate**: One blog post brief in a content plan. Managed with the Blog Post Candidate API.
+
+@sdk_package_setup

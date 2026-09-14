@@ -1,0 +1,173 @@
+---
+title: "Introduction"
+description: "The Locations API manages a site's Google Business Profile locations: the entries that decide how a business appears on Google Search and Google Maps."
+icon: "file-lines"
+---
+
+The Locations API manages a site's Google Business Profile locations: the entries that decide how a
+business appears on Google Search and Google Maps. Use it to import locations from a Google account,
+read and update their details, reply to reviews, manage photos, run verification, and read
+performance insights.
+
+The API is a live view onto Google, not a copy of it. Google owns the business data (name, address,
+opening hours, photos, reviews, attributes, insights) and Wix fetches it per request and passes it
+through. Wix stores only what it needs to keep locations addressable: Google's opaque location and
+account IDs, and a service-area postal address where one applies.
+
+## Before you begin
+
+Read this section first. Most of it changes how you structure your integration, not just how you call
+a method.
+
+- **Google-backed methods and imports require a connection, and they report a missing one two
+  different ways.** Establish the connection with the Google Business Profile Connection API first,
+  and treat a missing connection as a setup step rather than an error to retry.
+  - **The import methods fail outright.** `ListGbpAccounts` and `ListUnimportedLocations` return
+    `FAILED_PRECONDITION` with `CONNECTION_NOT_FOUND`, and `BulkCreateLocations` rejects the whole
+    request before processing any item.
+  - **The hydrating reads succeed with per-location errors.** `QueryGoogleLocations` and
+    `GetGoogleLocation` still return their rows and paging; the missing credential lands on each row
+    as `googleError` instead. So check `googleError` per row rather than relying on the call to fail.
+
+  Wix-only methods remain available without active Google credentials: `GetGBPLocation`,
+  `QueryGBPLocations`, `UpdateLocation`, `DeleteLocation`, and `BulkDeleteLocations`.
+- **A site has one connected Google account, which may span several Business Profile accounts.** A
+  single Google login can hold multiple Business Profile accounts ("location groups"), so
+  `account_id` appears throughout and a site's locations can come from more than one of them.
+- **A location's ID is Google's ID.** `GBPLocation.id` is Google's opaque location identifier, not a
+  Wix-generated one. It is immutable and it is what you use everywhere.
+- **Locations must be imported before you can work with them.** `CreateLocation` registers a listing
+  that already exists at Google; it does not create one. `CreateGoogleLocation` is the method that
+  creates a new listing. See the import flow below, and the table showing which methods reach Google.
+- **Almost nothing here is stored by Wix, so almost nothing is retryable-cheap.** Most calls make a
+  live Google API request. Expect Google's latency and Google's rate limits, and don't build tight
+  polling loops over these methods.
+- **Google failures reach you in one of two shapes, and they carry different detail.**
+  - **Write and import paths fail the call** with `GOOGLE_API_CALL_FAILED`, carrying Google's code,
+    description and HTTP status.
+  - **Hydrating reads never fail the call.** `QueryGoogleLocations` and `GetGoogleLocation` attach the
+    problem to the affected row as `googleError`, and separately `voiceOfMerchantError`, so a single
+    bad location doesn't cost you the page or break the cursor. Google's raw response body is not
+    forwarded on this path.
+
+  Either way, some failures are permanent (the profile is suspended, the field is not editable) and
+  retrying will not help. Read the error before deciding.
+- **`UpdateLocation` does not write to Google.** Despite the name, it only updates Wix-stored fields:
+  `service_area_postal_address`, and `feed_entity_id` on its first write. To change Google-owned data
+  (title, address, hours, categories), call `UpdateGoogleLocation`.
+- **Verification for service-area businesses needs an address saved first.** Call `UpdateLocation`
+  with `field_mask = "service_area_postal_address"` before `GetVerificationOptions`, or Google rejects
+  the request.
+- **Business Profile posts are not part of this API.** Neither are Business Profile accounts
+  themselves. You can list them, but not create or modify them.
+
+## What the API provides
+
+With the Locations API, your app can:
+
+- **Import and manage locations**: list the Business Profile accounts reachable from the site's
+  connection, discover locations not yet imported, and import them individually or in bulk.
+- **Read locations two ways**: `QueryGBPLocations` returns Wix-stored rows only and is the fast,
+  cheap path; `QueryGoogleLocations` returns the same rows hydrated with live Google data in one
+  round-trip.
+- **Update location details**: write through to the Business Profile, or save a service-area address
+  on the Wix side.
+- **Manage reviews**: list reviews, publish a reply, delete a reply.
+- **Manage photos and media**: list, add, and remove media on a location one at a time, or
+  queue a whole gallery with `BulkCreateMediaUploads` and poll `ListMediaUploads` until it
+  drains. Google accepts about 10 edits per minute per profile, so the queue exists to pace a
+  large save for you.
+- **Read and write attributes**: read a location's attributes and the metadata describing which
+  attributes its category supports, then update them.
+- **Run verification**: fetch the available verification methods, start verification, and complete it
+  with the PIN Google issues.
+- **Check profile health**: read Google's Voice of Merchant state to find out whether a profile is
+  live, needs verification, or has an ownership conflict.
+- **Read performance data**: location insights and search-keyword impressions.
+- **Manage access**: list a location's admins and invite new ones.
+- **Look up reference data**: the address schema for a country, and suggestions for regions and
+  establishments when creating a location.
+
+## Import locations
+
+Importing is a three-step discovery flow. Each step narrows what the next one needs.
+
+1. **`ListGbpAccounts`**: the Business Profile accounts reachable from the site's connection. Use it
+   to let the site owner choose which account to import from.
+2. **`ListUnimportedLocations`** with that `account_id`: the locations under that account that this
+   site has not imported yet. Wix computes this as the difference between Google's list and the
+   site's own rows, so already-imported locations don't reappear.
+3. **`BulkCreateLocations`**: import the chosen locations in one call. Per-item failures are reported
+   in `results[].itemMetadata.error`; the request as a whole doesn't abort because one item failed.
+
+## Which side does each method affect?
+
+The `*Google*` methods are the ones that reach Google. Everything else touches only Wix storage,
+including some names that read as though they wouldn't. Check this table before calling anything
+destructive.
+
+| Method | Wix row | Google listing |
+|---|---|---|
+| `CreateLocation`, `BulkCreateLocations` | created | untouched (imports an existing listing) |
+| `CreateGoogleLocation` | created | **created** |
+| `UpdateLocation` | updated | untouched (`service_area_postal_address`, `feed_entity_id`) |
+| `UpdateGoogleLocation` | untouched | **updated** |
+| `DeleteLocation` | deleted | untouched (recovery path for a listing that's already gone) |
+| `DeleteGoogleLocation` | deleted | **deleted** |
+| `BulkDeleteLocations` | deleted | untouched (bulk form of `DeleteLocation`) |
+
+Three traps in that table:
+
+- **There is no bulk Google delete.** `BulkDeleteLocations` removes only Wix rows. To delete several
+  Google listings too, call `DeleteGoogleLocation` once per location.
+- **`UpdateLocation` is not the way to edit a Business Profile.** It writes only the two Wix-stored
+  fields above. Masking a Google-owned field into it will not reach Google. Use
+  `UpdateGoogleLocation`.
+- **`DeleteLocation` is a reconciliation tool, not the normal delete.** Its purpose is cleaning up a
+  Wix row whose Google listing is already gone or unreachable, for example after
+  `DeleteGoogleLocation` returned `LOCATION_DB_PERSIST_FAILED`, meaning Google succeeded but Wix
+  didn't record it.
+
+`BulkDeleteLocations` can partially succeed. An OK response does not mean every row was deleted;
+inspect every `results[].itemMetadata` entry and handle its error before treating the batch as
+complete.
+
+Deleting a location requires `GBP_ADMIN`.
+
+## Personal data
+
+Business Profile data is business information, but two areas carry personal data and should be
+handled accordingly:
+
+- **`service_area_postal_address`** is the one field Wix stores that can be personal data. Service-area
+  businesses (trades, mobile services, anyone without a storefront) are frequently run from a home
+  address, so this is often a residential address. Wix stores it solely to supply Google's verification
+  flow with the `context` it requires; it is not published to the Business Profile and it is not a copy
+  of the Google-owned address. Every field of it is marked as personal data on the wire. Don't log it,
+  don't display it beyond the flow that collects it, and don't retain your own copy.
+- **Search keywords** returned by `ListSearchKeywordImpressions` are the terms real people typed into
+  Google. The contract marks `searchKeyword` as personal data for exactly that reason: a search term
+  can contain a name, an address, or a phone number. Don't log them raw and don't republish them.
+- **Admin email addresses.** `InviteAdminToLocation` takes an email, marked as personal data on the
+  wire, and `GetLocationAdmins` returns the email or account name of each existing manager.
+- **Reviews and phone numbers** pass through from Google and contain reviewer names, review text, and
+  business contact numbers.
+
+## Terminology
+
+- **Google Business Profile (GBP)**: Google's product for managing how a business appears on Search
+  and Maps.
+- **GBPLocation**: A location imported into a Wix site. Identified by Google's opaque location ID;
+  holds the Wix-side identifiers and dates, not the business data.
+- **Business Profile account** (`account_id`): Google's container for locations, also called a
+  location group. One Google login can reach several.
+- **Import**: Creating the Wix-side row that makes an existing Google location addressable from Wix.
+  It never creates a location at Google.
+- **Service-area business**: A business that serves customers at their location rather than at a
+  storefront. These use `service_area_postal_address` for verification.
+- **Verification**: Google's process for confirming that whoever manages a profile is entitled to.
+  Until it completes, a profile may not appear publicly.
+- **Voice of Merchant**: Google's summary of whether a profile is live and authoritative, and what to
+  do if it isn't.
+
+@sdk_package_setup

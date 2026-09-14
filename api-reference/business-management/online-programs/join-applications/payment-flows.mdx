@@ -1,0 +1,159 @@
+---
+title: "Payment Flows"
+description: "Enrolling a member in an online program can require payment, and how that payment happens depends on how the program is priced."
+icon: "file-lines"
+---
+
+Enrolling a member in an online program can require payment, and how that payment happens depends on how the program is priced. A free program needs no payment at all, while a priced program, a program connected to pricing plans, and an offline payment each move through a different sequence of payment statuses before the member becomes a participant.
+
+This article describes the statuses a join application tracks, the flow for each payment method, and the conditions that create a participant. For the methods to call in a full implementation, see [Sample Flows](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/sample-flows).
+
+## Statuses
+
+A join application tracks 2 independent statuses.
+
+`status` reflects where the application sits in the approval workflow:
+
+| Status | Description |
+|--------|-------------|
+| `INVITED` | The Wix user invited the member, who hasn't yet accepted. |
+| `APPROVAL_PENDING` | The member applied and the Wix user hasn't yet decided. |
+| `APPROVED` | The application is approved. Payment may still be required before the member is enrolled. |
+| `CANCELLED` | The member canceled their own application. |
+| `DECLINED` | The Wix user declined the application. |
+| `SUSPENDED` | The connected participant is suspended because the related Pricing Plans subscription expired. A successful new payment resumes the flow. |
+
+`paymentStatus` tracks the payment lifecycle:
+
+| Status | Description |
+|--------|-------------|
+| `NO_PAYMENT_REQUIRED` | Payment isn't needed, because the program is free or the member already has a plan that covers it. |
+| `PAYMENT_PENDING` | Payment is required and the member hasn't started it. |
+| `PAYMENT_IN_PROGRESS` | A payment order exists and the member is completing checkout. |
+| `PENDING_OWNER_APPROVAL` | The member submitted an offline payment that the Wix user must approve or decline. |
+| `PAYMENT_SUCCESSFUL` | Payment completed successfully. |
+| `PAYMENT_FAILED` | The payment system declined the payment, or the Wix user rejected an offline transaction. |
+| `PAYMENT_CANCELED` | The member canceled the payment. |
+
+Status transitions are unidirectional and specific to the current status. For example, you can only approve an application that's in `APPROVAL_PENDING`.
+
+## Flows by payment method
+
+The flows below describe how `paymentStatus` moves for each way a member can pay.
+
+### Free program
+
+When a program has no price and no connected pricing plans, the join application is created with `paymentStatus` set to `NO_PAYMENT_REQUIRED`.
+
+1. The member calls [Create Join Application](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/create-join-application) for a free program.
+2. The application is created with `paymentStatus` set to `NO_PAYMENT_REQUIRED`.
+3. If the program is public, `status` is set to `APPROVED` and a participant is created automatically.
+4. If the program requires approval, `status` is set to `APPROVAL_PENDING` and the Wix user must approve it.
+
+```
+Create Join Application → NO_PAYMENT_REQUIRED
+                                ↓
+                       (if APPROVED) → participant created
+```
+
+### One-time payment
+
+When a program has a price, the member must complete payment before becoming a participant.
+
+1. The member calls [Create Join Application](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/create-join-application) for a paid program. The application is created with `paymentStatus` set to `PAYMENT_PENDING`.
+2. The member calls [Prepare Payment](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/prepare-payment) with `paymentType` set to `SINGLE_PAYMENT`.
+3. Prepare Payment first checks for an eligible Pricing Plans entitlement. If one exists, it returns `PAYMENT_SUCCESSFUL` and no checkout is needed.
+4. Otherwise, a Wix Payments order is created and `paymentStatus` becomes `PAYMENT_IN_PROGRESS`.
+5. Use the returned `paymentInfo.paymentOrderId` with the Wix payment checkout flow.
+6. Retrieve the join application by ID with [Get Join Application](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/get-join-application) to check the payment outcome.
+7. On successful payment, `paymentStatus` becomes `PAYMENT_SUCCESSFUL`. If `status` is `APPROVED`, a participant is created automatically.
+
+```
+Create Join Application → PAYMENT_PENDING
+                                ↓
+Prepare Payment         → PAYMENT_SUCCESSFUL (eligible plan exists)
+         or
+Prepare Payment         → PAYMENT_IN_PROGRESS
+                                ↓
+Payment completed       → PAYMENT_SUCCESSFUL → participant created
+         or
+Payment failed          → PAYMENT_FAILED ──┐
+Payment canceled        → PAYMENT_CANCELED ┤
+                                           ↓
+                            Retry Prepare Payment → PAYMENT_IN_PROGRESS
+```
+
+### Pricing Plans payment
+
+When a program is connected to pricing plans, members can pay through a plan subscription.
+
+1. The member calls [Create Join Application](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/create-join-application) for a program with connected pricing plans.
+2. If the member already has an eligible plan, `paymentStatus` is `PAYMENT_SUCCESSFUL` and the plan IDs are in `paymentInfo.paidPlanIds`. Otherwise, `paymentStatus` is `PAYMENT_PENDING`.
+3. The member calls [Prepare Payment](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/prepare-payment) with `paymentType` set to `PAID_PLANS`.
+4. Prepare Payment first checks for an eligible entitlement. If it finds one, it repairs a stale `PAYMENT_PENDING` application to `PAYMENT_SUCCESSFUL` and returns the eligible plan IDs. No purchase is needed, even if that plan is no longer available for purchase.
+5. If no eligible entitlement exists, the connected pricing plans are validated and `paymentStatus` becomes `PAYMENT_IN_PROGRESS`.
+6. The member completes the plan purchase through Pricing Plans.
+7. On successful purchase, `paymentStatus` becomes `PAYMENT_SUCCESSFUL` and the plan IDs are in `paymentInfo.paidPlanIds`.
+
+```
+Create Join Application → PAYMENT_PENDING (or PAYMENT_SUCCESSFUL if a plan exists)
+                                ↓
+Prepare Payment         → PAYMENT_SUCCESSFUL (eligible plan exists)
+         or
+Prepare Payment         → PAYMENT_IN_PROGRESS
+                                ↓
+Plan purchased          → PAYMENT_SUCCESSFUL → participant created
+```
+
+### Offline payment
+
+Offline payments let members pay manually, by cash, check, or bank transfer. The Wix user must approve the transaction.
+
+1. The member creates a join application with `paymentStatus` set to `PAYMENT_PENDING`.
+2. The member starts an offline payment at checkout, and `paymentStatus` becomes `PENDING_OWNER_APPROVAL`.
+3. The Wix user sees pending offline transactions in the site dashboard.
+4. If the owner approves the transaction, `paymentStatus` becomes `PAYMENT_SUCCESSFUL` and a participant is created.
+5. If the owner declines or cancels the transaction, `paymentStatus` becomes `PAYMENT_FAILED` and the join application is cleaned up.
+
+```
+Create Join Application  → PAYMENT_PENDING
+                                ↓
+Offline payment started  → PENDING_OWNER_APPROVAL
+                                ↓
+Owner approves           → PAYMENT_SUCCESSFUL → participant created
+         or
+Owner declines or cancels → PAYMENT_FAILED → join application deleted
+```
+
+### Coupons
+
+A coupon reduces the payment amount at checkout.
+
+1. The join application is in `PAYMENT_IN_PROGRESS`, following Prepare Payment.
+2. The member calls [Apply Coupon](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/apply-coupon) with the coupon code.
+3. The coupon is validated and applied to the payment order, and `paymentInfo.couponId` is populated.
+4. The member completes payment for the discounted amount, and the coupon is redeemed automatically.
+
+[Apply Coupon](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/apply-coupon), [Remove Coupon](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/remove-coupon), and [Complete Free Coupon Payment](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/complete-free-coupon-payment) are also accepted when `paymentStatus` is `PAYMENT_FAILED` or `PAYMENT_CANCELED`. This lets a member set up or change a coupon and retry without calling Prepare Payment first. If the coupon makes the order free, the retry can be closed out directly:
+
+```
+PAYMENT_FAILED / PAYMENT_CANCELED → Apply Coupon (free-discount coupon stored)
+                                          ↓
+                              Complete Free Coupon Payment
+                                          ↓
+                            PAYMENT_SUCCESSFUL → participant created
+```
+
+## Participant creation
+
+A participant is created automatically when both of these conditions are met:
+
++ `status` is `APPROVED`.
++ `paymentStatus` is `NO_PAYMENT_REQUIRED` or `PAYMENT_SUCCESSFUL`.
+
+Once the participant exists, `participantId` is populated on the join application, linking the application to the resulting participant.
+## See also
+
++ [About the Join Applications API](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/introduction)
++ [Sample Flows](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/sample-flows)
++ [Errors](fallback::https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/errors)

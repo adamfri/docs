@@ -6,10 +6,11 @@ from the public Wix docs portal.
 This repository holds **only the generated site**. The generator that produces it lives
 separately.
 
-- **415 APIs**, 4,924 pages
+- **435 APIs**, 5,131 pages
 - Every operation shows both the **REST** and **SDK** view, each built from its own schema —
   field names, argument shapes, return types and even which pages exist differ between the two
 - Sections, categories, ordering and slugs all mirror the docs portal's own menu
+- A **"Show deprecated items"** toggle in the top bar, matching the docs portal's own
 
 ## Wix look and feel
 
@@ -42,9 +43,11 @@ npx mint@latest broken-links
 docs.json                          theme + navigation
 index.mdx                          landing page
 style.css                          Wix Design System tokens + the two-column layout
+deprecation.css                    hides deprecated items (generated)
+deprecation.js                     the "Show deprecated items" toggle (generated)
 api-reference/
 ├── introduction.mdx               explains the REST/SDK split to readers
-└── <section>/<category>/…/<api>/   415 APIs, mirroring the portal tree
+└── <section>/<category>/…/<api>/   435 APIs, mirroring the portal tree
 kb/authentication/                 15-page headless-docs port
 ```
 
@@ -61,6 +64,10 @@ Introduction first and Sample Flows second. Each page kind carries its own sideb
 - The top bar is 112px against Wix's 48px: Mintlify splits branding and the tab strip across
   two rows and derives the height from their content, so there is no container to set.
 - No "Try It Out" playground, no per-section parameter filtering.
+- Site search cannot follow the deprecation toggle. Hidden pages are excluded from search and
+  the AI assistant at build time, so they stay excluded even with the toggle **on**, where
+  dev.wix.com shows them. Mintlify's index is built once, server-side, and cannot vary per
+  reader.
 - 17 broken internal links, all upstream-authored relative paths written for dev.wix.com's URL
   layout, plus two relative images.
 - 440 portal articles that hang off a section or category rather than an API are not generated

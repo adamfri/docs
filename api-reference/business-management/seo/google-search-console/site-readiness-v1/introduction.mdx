@@ -1,0 +1,56 @@
+---
+title: "Introduction"
+description: "The GSC API manages a Wix site's presence in Google Search Console: it verifies the site with Google, adds it as a Search Console property, submits its sitemap…"
+icon: "file-lines"
+---
+
+The GSC API manages a Wix site's presence in [Google Search Console](fallback::https://search.google.com/search-console/about): it verifies the site with Google, adds it as a Search Console property, submits its sitemap, requests indexing, and reads inspection and search performance data. It acts through the Google account linked to the site with the [GSC Connection API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/introduction).
+
+With the GSC Site Readiness API, you can:
+
+- Check how far along the site is in Google Search Console setup, and which step is still missing.
+- Complete the setup steps: verify site ownership, add the site to Search Console, submit its sitemap, and request indexing.
+- Retrieve the site's search performance data: clicks, impressions, click-through rate, and position.
+- Inspect the site's pages with Google's URL inspection, and read the results.
+- Review the history of setup events for the site.
+
+## How Google Search Console setup works
+
+A site becomes fully set up in Google Search Console in this order:
+
+1. Connect a Google account, with the [GSC Connection API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/introduction).
+2. [Verify Site](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/verify-site): Wix proves the site's ownership to Google. For Wix sites this needs nothing from the site owner, because Wix places the `google-site-verification` meta tag on every page automatically.
+3. [Add Site](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/add-site): the site becomes a property in the connected account's Search Console.
+4. [Submit Sitemap](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/submit-sitemap): Wix generates and hosts the sitemap, and submits its URL to the property.
+5. [Request Site Indexing](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/request-site-indexing): asks Google to crawl and index the site.
+
+[Get Site Readiness](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/get-site-readiness) reports whether the site's Google connection and ownership verification are in place, and if not, the first step that's still blocking. It covers steps 1 and 2 above; call the property steps that follow in order yourself.
+
+## URL inspection
+
+Inspecting pages is a two-step, asynchronous operation. [Inspect URLs](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/inspect-urls) starts the inspection and returns the first batch of results synchronously. When pages remain, Wix keeps inspecting them server-side, and you poll [Get Inspection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/get-inspection) until the inspection completes.
+
+Each inspected page consumes the connected account's Google URL-inspection quota. Google allows up to 2,000 page inspections a day per property, so an inspection can finish with pages left uninspected when the quota runs out, and sites with more than 2,000 pages can't be inspected through this API at all.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- A Google account must be connected to the site first, with the [GSC Connection API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/introduction). Methods that reach Google Search Console fail with `FAILED_PRECONDITION` (`MISSING_TOKEN`) until the connection's status is `VALID`.
+- The setup methods that write to Google Search Console (Verify Site, Add Site, Submit Sitemap) require the site to be published, have a connected domain, and allow search-engine indexing. Otherwise they fail with `FAILED_PRECONDITION`.
+- Calls that reach Google are subject to the property's Google API quotas. A `RESOURCE_EXHAUSTED` (`GOOGLE_QUOTA_EXCEEDED`) error is safe to retry after the quota window resets, and an `UNAVAILABLE` (`GOOGLE_UNAVAILABLE`) error is a temporary Google failure that's safe to retry with backoff.
+- Search performance and inspection data come from Google Search Console, so their freshness and history range follow Google.
+
+## Use cases
+
+- [Set up a site in Google Search Console](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/sample-flows#set-up-a-site-in-google-search-console)
+- [Show the site's search performance](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/sample-flows#show-the-sites-search-performance)
+- [Inspect the site's pages](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/site-readiness-v1/sample-flows#inspect-the-sites-pages)
+
+## Terminology
+
+- **Search Console property**: The representation of the site in Google Search Console. Add Site creates it in the connected account.
+- **Site readiness**: The site's standing in Google Search Console setup, as a computed status: `READY` when setup is complete, or `NOT_READY` with the first blocking step.
+- **URL inspection**: Google's per-page report of index status and issues, as returned by Google's URL Inspection API.
+
+@sdk_package_setup

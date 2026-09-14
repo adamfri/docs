@@ -1,0 +1,194 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It
+provides a useful starting point as you plan your implementation.
+
+> **Prerequisite:** every flow assumes the site already has a Google connection, established through
+> the Google Business Profile Connection API. Without one, the first connection-dependent call fails
+> with `FAILED_PRECONDITION` and `CONNECTION_NOT_FOUND`.
+
+## Import a site's locations
+
+The site owner has just connected their Google account and you want their locations available in Wix.
+
+1. Call **List GBP Accounts**. One Google login can hold several Business Profile accounts, so present
+   the list and let the owner pick. Don't assume the first one.
+2. Call **List Unimported Locations** with the chosen `accountId`. This returns only what the site
+   hasn't imported yet, so re-running the flow won't offer duplicates.
+3. Let the owner select which of those to import.
+4. Call **Bulk Create Locations** with the selected locations, supplying `id` and `accountId` on each.
+5. Inspect `results[].itemMetadata.error`. The call reports per-item failures instead of aborting, so a
+   `200` does not mean every location imported.
+
+Repeat steps 2 to 5 per account if the owner wants locations from more than one.
+
+## List locations for a dashboard
+
+Which method to use depends on whether you need Google's business data.
+
+- **Just the site's locations**: call **Query GBPLocations**. It reads Wix-stored rows only: fast,
+  no Google round-trip, no Google rate limit. Use it for counts, ID lookups, and anything driven by
+  `id`, `googleLocationId`, or `accountId`.
+- **Locations with their live details**: call **Query Google Locations**. Same rows, each hydrated
+  with a live Google fetch, in one round-trip instead of N.
+
+With Query Google Locations, check each row for a `googleError`. A single location failing at Google
+does not fail the request and does not break paging. The page comes back with that row's error
+attached, so render it as a per-location problem rather than an empty dashboard.
+
+## Verify a service-area business
+
+Service-area businesses (trades, mobile services, anything without a storefront) need an address on
+file before Google will offer verification methods, because Google uses it as the verification
+`context`.
+
+1. Collect the service-area address from the site owner.
+2. Call **Update Location** with `location.id` set to the location you're verifying, the address in
+   `location.serviceAreaPostalAddress`, and `fieldMask = "service_area_postal_address"`. The ID is what
+   identifies the row to patch; without it there is nothing to update. This is a Wix-side write; it
+   does not touch the Business Profile.
+3. Call **Get Verification Options** for that `locationId`. Skipping step 2, or saving an address
+   Google cannot resolve, makes Google reject this, surfaced as `INVALID_VERIFICATION_ADDRESS`.
+   Prompt the owner to correct the address and retry.
+4. Present the returned methods and let the owner choose one.
+5. Call **Start Verification** with the chosen method. Google sends a PIN by postcard, phone, or email,
+   and the response returns `pendingVerificationId`. **Persist it**: a postcard takes days to arrive,
+   so it has to survive the session, and step 6 is impossible without it.
+6. Call **Complete Verification** with `locationId`, `pendingVerificationId` and `pin` (all three are
+   required), then handle each typed outcome:
+   - `VERIFICATION_PIN_INVALID`: prompt the owner to check and re-enter the PIN for the same pending
+     verification. Do not request a new PIN automatically for a typing mistake.
+   - `VERIFICATION_PIN_EXPIRED`: the PIN is no longer usable; restart from step 5 to request a new
+     one.
+   - `VERIFICATION_EXPIRED`: Google no longer recognizes the pending verification; restart from
+     step 5 to create a new one.
+
+Treat that address as personal data throughout: for a service-area business it's usually the owner's
+home. Collect it for this flow, don't log it, and don't keep your own copy.
+
+For a storefront business, skip steps 1 and 2 and start at **Get Verification Options**.
+
+## Check whether a profile is actually live
+
+A location existing in Wix does not mean it appears on Google. Verification can be pending, the
+profile can be suspended, or someone else can be claiming ownership.
+
+1. Call **Get Voice of Merchant** for the location.
+2. Act on what Google reports: wait, verify, comply, or resolve an ownership conflict. If it says
+   verify, run the verification flow above.
+
+Surface this on a dashboard rather than only on failure. It's the difference between "your location is
+set up" and "your location is set up but nobody on Google can see it".
+
+## Reply to new reviews
+
+1. Call **List Reviews** for the location, sorted and paged as needed.
+2. For each review needing a response, call **Put Review Reply**. A location has one reply per review,
+   so calling it again replaces the existing reply.
+3. Call **Delete Review Reply** to withdraw one.
+
+Reviews come straight from Google and contain reviewer names and free text. Handle them as personal
+data.
+
+## Manage photos
+
+There are two ways to change a location's photos, and which one you want depends
+on how many changes you're making.
+
+### One photo at a time
+
+1. Call **List Media** for the location.
+2. Call **Create Media** to add a photo, or **Delete Media** to remove one.
+
+These write to the Business Profile immediately and return the outcome. There's
+no draft state. They don't pace themselves, so use them for single changes: a
+burst returns `429`.
+
+### Many photos at once
+
+Google accepts only about 10 edits per minute per Business Profile, so a site
+owner saving a full gallery can't be served by immediate writes. Queue the
+changes instead and let them apply in the background.
+
+1. Call **Bulk Create Media Uploads** with everything to add or remove. It
+   returns in well under a second without calling Google. One call has to be
+   either all additions or all removals, so send two if you need both.
+2. Poll **List Media Uploads** to follow progress. Read the response as a whole:
+
+   | What comes back | What it means |
+   | --- | --- |
+   | Anything `PENDING` or `UPLOADING` | Still working. Don't report results yet. |
+   | Only `FAILED` items | Finished, and those items didn't make it. |
+   | Nothing | Nothing is outstanding for this location. |
+
+3. Show the failures, if any. Call **Dismiss Media Upload Failures** when the
+   site owner acknowledges them.
+
+There's no completion callback, so polling is the only way to know. Expect a
+large set to take a while: the queue applies a few changes a minute per
+location, so 52 photos take on the order of ten minutes to appear in full.
+
+### An empty queue is not proof of success
+
+A change that succeeds is removed from the queue, and so is a failure that's been
+cleared. The two look identical afterwards, so an empty response tells you the
+queue is empty and nothing more. Confirm against **List Media** rather than
+inferring success.
+
+This matters most when more than one app manages the same location. Queuing
+clears every failure for that location, whoever queued it, so one app submitting
+a change discards failures the other hasn't read yet. Read failures before
+queuing again, and don't treat an empty queue as proof your own submission
+worked.
+
+### Showing the gallery mid-flight
+
+While the queue is still working, Google's list lags behind what the site owner
+asked for in both directions. Count only changes still on their way, because a
+`FAILED` addition never reached Google:
+
+```
+gallery = Google's media list
+        + additions still PENDING or UPLOADING
+        - removals still PENDING or UPLOADING
+```
+
+### The rate limit is shared
+
+The same budget of roughly 10 edits per minute covers every write to the
+profile, not just photos. **Update Google Location** and **Update Location
+Attributes** draw on it too, so interleaving those with photo changes brings the
+`429` closer. Pace the profile as a whole rather than each method separately, and
+treat a `429` as worth retrying after a delay rather than as a rejection.
+
+## Report on performance
+
+- **Get Location Insights**: how a location performed.
+- **List Search Keyword Impressions**: the search terms that surfaced it.
+
+Both hit Google live and are subject to Google's rate limits and data-freshness rules. Cache results
+on your side for dashboards rather than calling per page view.
+
+## Remove a location
+
+Decide first whether you are removing it from Wix or deleting the customer's Google listing. These are
+different operations and one is not reversible.
+
+- **Un-import from Wix, leave Google alone**: call **Delete Location**, or **Bulk Delete Locations**
+  for several Wix rows at once.
+- **Delete the Google listing as well**: call **Delete Google Location** once per location. There is
+  no bulk Google delete.
+
+Both require `GBP_ADMIN`.
+
+**Bulk Delete Locations** can partially succeed. An OK response does not mean every row was deleted;
+inspect every `results[].itemMetadata` entry and handle its error before treating the batch as
+complete.
+
+If **Delete Google Location** returns `LOCATION_DB_PERSIST_FAILED`, Google deleted the listing but Wix
+didn't record it, leaving a row pointing at nothing. The error payload carries the location ID; call
+**Delete Location** with it to reconcile.

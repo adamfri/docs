@@ -1,6 +1,6 @@
 ---
 title: "Check Benefit Eligibility By Filter"
-description: "Checks benefit eligibility across the pools that match the filter."
+description: "Checks benefit eligibility across the beneficiary's pools that contain a benefit for the given item."
 icon: "upload"
 mode: "wide"
 ---
@@ -15,9 +15,9 @@ mode: "wide"
 
     <div className="wix-ref">
 
-    Checks benefit eligibility across the pools that match the filter.
+    Checks benefit eligibility across the beneficiary's pools that contain a benefit for the given item.
 
-    The filter selects pools (not individual benefits), using the same fields supported by Query Pools. For field support, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
+    Pools are matched by `itemReference` within `namespace` and must belong to `beneficiary`, which defaults to the calling identity. `poolSelector` narrows the matched pools further.
 
     To be redeemed, a benefit's pool must be active and the associated balance must be greater than the cost of the benefit.
 
@@ -52,71 +52,6 @@ mode: "wide"
     ```
 
     ## Body Params
-
-    <ParamField body="poolFilter" type="PoolFilter" deprecated>
-
-      Defines filtering and sorting criteria used to select pools when checking eligibility.
-
-      The filter selects pools using the same fields supported by Query Pools. For field support, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
-
-      When omitted, eligibility is checked across all pools in the namespace that match the provided `beneficiary`. Combined with `beneficiary` and `namespace`, the filter further narrows which pools are checked.
-
-      Deprecated: use `pool_selector` instead. Can't be combined with `pool_selector`.
-
-      **Deprecated.** Defines filtering and sorting criteria used to select pools when checking eligibility.
-
-      The filter selects pools using the same fields supported by Query Pools. For field support, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
-
-      When omitted, eligibility is checked across all pools in the namespace that match the provided `beneficiary`. Combined with `beneficiary` and `namespace`, the filter further narrows which pools are checked.
-
-      Deprecated: use `pool_selector` instead. Can't be combined with `pool_selector`. Removal: 2026-08-01.
-
-      <Expandable title="poolFilter properties">
-
-        <ParamField body="filter" type="object">
-
-          Filter object. See [API Query Language](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language) for more information.
-
-          For supported filterable and sortable fields, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
-
-        </ParamField>
-
-        <ParamField body="sort" type="Sorting[]">
-
-          Sorting to apply to the matched pools. Determines the order of the returned results, and which results are kept when more than 100 are produced.
-
-          Constraints: `maxItems 5`.
-
-          <Expandable title="sort properties">
-
-            <ParamField body="fieldName" type="string">
-
-              Field to sort by.
-
-              Constraints: `maxLength 512`.
-
-            </ParamField>
-
-            <ParamField body="order" type="string">
-
-              Sort order. Use `ASC` for ascending order or `DESC` for descending order.
-
-              Default: `ASC`
-
-              **Supported values:**
-
-              - `ASC` — Ascending sort order.
-              - `DESC` — Descending sort order.
-
-            </ParamField>
-
-          </Expandable>
-
-        </ParamField>
-
-      </Expandable>
-
-    </ParamField>
 
     <ParamField body="namespace" type="string" required>
 
@@ -180,7 +115,7 @@ mode: "wide"
 
     <ParamField body="beneficiary" type="IdentificationData">
 
-      Pool beneficiary. When provided, only the beneficiary's pools that also match `pool_filter` are checked.
+      Pool beneficiary. Defaults to the calling identity. Only the beneficiary's pools that also match `pool_selector` are checked.
 
       <Expandable title="One of the following">
 
@@ -232,9 +167,7 @@ mode: "wide"
 
       Predefined attributes used to select the pools to check eligibility in.
 
-      When omitted, eligibility is checked across all pools in the namespace that match the provided `beneficiary`. Combined with `beneficiary` and `namespace`, the selector further narrows which pools are checked.
-
-      Can't be combined with `pool_filter`.
+      When omitted, pools in all statuses are checked. Combined with `beneficiary`, `namespace`, and `item_reference`, the selector further narrows which pools are checked.
 
       <Expandable title="poolSelector properties">
 
@@ -263,11 +196,9 @@ mode: "wide"
 
     <ResponseField name="results" type="EligibilityCheckResult[]">
 
-      Results of the eligibility check for the benefits in the pools that matched the filter. A pool that contains multiple benefits for the requested item produces one result per benefit.
+      Results of the eligibility check for the benefits in the pools that match the request. A pool that contains multiple benefits for the requested item produces one result per benefit.
 
-      Empty when no pools match the filter. Capped at 100 results. When more than 100 results are produced, only the first 100, in the order specified by `poolFilter.sort`, are returned.
-
-      Constraints: `maxItems 100`.
+      Empty when no pools match.
 
       <Expandable title="results properties">
 
@@ -306,7 +237,6 @@ mode: "wide"
     | Status | Code | Application code | Description |
     | --- | --- | --- | --- |
     | `400` | `INVALID_ARGUMENT` | `INVALID_ITEM_REFERENCE` | The `itemReference` contains invalid values. |
-    | `400` | `INVALID_ARGUMENT` | `POOL_FILTER_AND_POOL_SELECTOR_PROVIDED` | Both `poolFilter` and `poolSelector` are provided. Provide at most one of them. |
 
     <Note>
 
@@ -328,36 +258,16 @@ mode: "wide"
         -H "Authorization: <AUTH>" \
         -H "Content-Type: application/json" \
         --data '{
-          "pool_filter": {
-            "filter": {
-              "$and": [
-                {
-                  "programId": {
-                    "$eq": "8faed6d2-dfdf-44f1-8a71-bcc19d2fbdde"
-                  }
-                },
-                {
-                  "status": {
-                    "$eq": "ACTIVE"
-                  }
-                }
-              ]
-            },
-            "sort": [
-              {
-                "fieldName": "createdDate",
-                "order": "DESC"
-              }
-            ]
+          "poolSelector": {
+            "poolStatuses": ["ACTIVE"]
           },
-          "item_reference": {
-            "external_id": "57273802-b873-495c-8eba-b8f054452e6c",
-            "provider_app_id": "00000000-0000-0000-0000-000000000000"
+          "itemReference": {
+            "externalId": "57273802-b873-495c-8eba-b8f054452e6c",
+            "providerAppId": "00000000-0000-0000-0000-000000000000"
           },
           "count": 3,
           "beneficiary": {
-            "identity_type": "MEMBER",
-            "member_id": "00000000-0000-0000-0000-000000000000"
+            "memberId": "00000000-0000-0000-0000-000000000000"
           },
           "namespace": "benefit_programs_app"
         }'
@@ -369,16 +279,16 @@ mode: "wide"
       {
         "results": [
           {
-            "benefit_results": [
+            "benefitResults": [
               {
                 "type": "ELIGIBLE_BENEFIT",
-                "eligible_benefit_options": {
-                  "pool_id": "4a4de95d-867a-4089-98a8-83af77e38eca",
-                  "benefit_key": "001",
-                  "item_reference": {
-                    "external_id": "57273802-b873-495c-8eba-b8f054452e6c",
+                "eligibleBenefitOptions": {
+                  "poolId": "4a4de95d-867a-4089-98a8-83af77e38eca",
+                  "benefitKey": "001",
+                  "itemReference": {
+                    "externalId": "57273802-b873-495c-8eba-b8f054452e6c",
                     "category": "",
-                    "provider_app_id": "00000000-0000-0000-0000-000000000000"
+                    "providerAppId": "00000000-0000-0000-0000-000000000000"
                   },
                   "price": "5"
                 }
@@ -386,18 +296,18 @@ mode: "wide"
             ]
           },
           {
-            "benefit_results": [
+            "benefitResults": [
               {
                 "type": "NOT_ENOUGH_BALANCE",
-                "not_enough_balance_options": {
-                  "pool_id": "e189a369-bb35-42c2-9a49-27c9a0a205d9",
-                  "item_reference": {
-                    "external_id": "57273802-b873-495c-8eba-b8f054452e6c",
+                "notEnoughBalanceOptions": {
+                  "poolId": "e189a369-bb35-42c2-9a49-27c9a0a205d9",
+                  "itemReference": {
+                    "externalId": "57273802-b873-495c-8eba-b8f054452e6c",
                     "category": "",
-                    "provider_app_id": "00000000-0000-0000-0000-000000000000"
+                    "providerAppId": "00000000-0000-0000-0000-000000000000"
                   },
-                  "available_balance": "10",
-                  "requested_balance": "15"
+                  "availableBalance": "10",
+                  "requestedBalance": "15"
                 }
               }
             ]
@@ -421,9 +331,9 @@ mode: "wide"
 
     <div className="wix-ref">
 
-    Checks benefit eligibility across the pools that match the filter.
+    Checks benefit eligibility across the beneficiary's pools that contain a benefit for the given item.
 
-    The filter selects pools (not individual benefits), using the same fields supported by Query Pools. For field support, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
+    Pools are matched by `itemReference` within `namespace` and must belong to `beneficiary`, which defaults to the calling identity. `poolSelector` narrows the matched pools further.
 
     To be redeemed, a benefit's pool must be active and the associated balance must be greater than the cost of the benefit.
 
@@ -459,66 +369,24 @@ mode: "wide"
     ```typescript
     import { pools } from '@wix/benefit-programs';
 
-    pools.checkBenefitEligibilityByFilter(options): Promise
+    pools.checkBenefitEligibilityByFilter(namespace, options): Promise
     ```
 
     ## Method Parameters
+
+    <ParamField body="namespace" type="string" required>
+
+      Namespace for your app or site's benefit programs. Namespaces allow you to distinguish between entities that you created and entities that other apps created.
+
+      Constraints: `minLength 1`, `maxLength 20`.
+
+    </ParamField>
 
     <ParamField body="options" type="CheckBenefitEligibilityByFilterOptions" required>
 
       options
 
       <Expandable title="options properties">
-
-        <ParamField body="poolFilter" type="PoolFilter" deprecated>
-
-          Defines filtering and sorting criteria used to select pools when checking eligibility.
-
-          The filter selects pools using the same fields supported by Query Pools. For field support, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
-
-          When omitted, eligibility is checked across all pools in the namespace that match the provided `beneficiary`. Combined with `beneficiary` and `namespace`, the filter further narrows which pools are checked.
-
-          Deprecated: use `pool_selector` instead. Can't be combined with `pool_selector`.
-
-          **Deprecated.** Defines filtering and sorting criteria used to select pools when checking eligibility.
-
-          The filter selects pools using the same fields supported by Query Pools. For field support, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
-
-          When omitted, eligibility is checked across all pools in the namespace that match the provided `beneficiary`. Combined with `beneficiary` and `namespace`, the filter further narrows which pools are checked.
-
-          Deprecated: use `pool_selector` instead. Can't be combined with `pool_selector`. Removal: 2026-08-01.
-
-          <Expandable title="poolFilter properties">
-
-            <ParamField body="filter" type="object">
-
-              Filter object. See [API Query Language](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language) for more information.
-
-              For supported filterable and sortable fields, see [Filtering and Sorting](https://dev.wix.com/docs/rest/business-solutions/benefit-programs/pools/filtering-and-sorting).
-
-            </ParamField>
-
-            <ParamField body="sort" type="Sorting[]">
-
-              Sorting to apply to the matched pools. Determines the order of the returned results, and which results are kept when more than 100 are produced.
-
-              Constraints: `maxItems 5`.
-
-              _Nested structure omitted for brevity — see the `Sorting[]` object._
-
-            </ParamField>
-
-          </Expandable>
-
-        </ParamField>
-
-        <ParamField body="namespace" type="string" required>
-
-          Namespace for your app or site's benefit programs. Namespaces allow you to distinguish between entities that you created and entities that other apps created.
-
-          Constraints: `minLength 1`, `maxLength 20`.
-
-        </ParamField>
 
         <ParamField body="itemReference" type="ItemReference" required>
 
@@ -574,7 +442,7 @@ mode: "wide"
 
         <ParamField body="beneficiary" type="IdentificationData">
 
-          Pool beneficiary. When provided, only the beneficiary's pools that also match `pool_filter` are checked.
+          Pool beneficiary. Defaults to the calling identity. Only the beneficiary's pools that also match `pool_selector` are checked.
 
           <Expandable title="One of the following">
 
@@ -600,9 +468,7 @@ mode: "wide"
 
           Predefined attributes used to select the pools to check eligibility in.
 
-          When omitted, eligibility is checked across all pools in the namespace that match the provided `beneficiary`. Combined with `beneficiary` and `namespace`, the selector further narrows which pools are checked.
-
-          Can't be combined with `pool_filter`.
+          When omitted, pools in all statuses are checked. Combined with `beneficiary`, `namespace`, and `item_reference`, the selector further narrows which pools are checked.
 
           <Expandable title="poolSelector properties">
 
@@ -635,11 +501,9 @@ mode: "wide"
 
     <ResponseField name="results" type="EligibilityCheckResult[]">
 
-      Results of the eligibility check for the benefits in the pools that matched the filter. A pool that contains multiple benefits for the requested item produces one result per benefit.
+      Results of the eligibility check for the benefits in the pools that match the request. A pool that contains multiple benefits for the requested item produces one result per benefit.
 
-      Empty when no pools match the filter. Capped at 100 results. When more than 100 results are produced, only the first 100, in the order specified by `poolFilter.sort`, are returned.
-
-      Constraints: `maxItems 100`.
+      Empty when no pools match.
 
       <Expandable title="results properties">
 
@@ -678,7 +542,6 @@ mode: "wide"
     | Status | Code | Application code | Description |
     | --- | --- | --- | --- |
     | `400` | `INVALID_ARGUMENT` | `INVALID_ITEM_REFERENCE` | The `itemReference` contains invalid values. |
-    | `400` | `INVALID_ARGUMENT` | `POOL_FILTER_AND_POOL_SELECTOR_PROVIDED` | Both `poolFilter` and `poolSelector` are provided. Provide at most one of them. |
 
     <Note>
 
@@ -723,8 +586,8 @@ mode: "wide"
     ```javascript checkBenefitEligibilityByFilter
     import { pools } from '@wix/benefit-programs';
 
-    async function checkBenefitEligibilityByFilter(options) {
-      const response = await pools.checkBenefitEligibilityByFilter(options);
+    async function checkBenefitEligibilityByFilter(namespace,options) {
+      const response = await pools.checkBenefitEligibilityByFilter(namespace,options);
     };
     ```
 
@@ -743,8 +606,8 @@ mode: "wide"
       // Include the auth strategy and host as relevant
     });
 
-    async function checkBenefitEligibilityByFilter(options) {
-      const response = await myWixClient.pools.checkBenefitEligibilityByFilter(options);
+    async function checkBenefitEligibilityByFilter(namespace,options) {
+      const response = await myWixClient.pools.checkBenefitEligibilityByFilter(namespace,options);
     };
     ```
 
@@ -756,9 +619,9 @@ mode: "wide"
     import { pools } from '@wix/benefit-programs';
     import { auth } from '@wix/essentials';
 
-    async function myCheckBenefitEligibilityByFilterMethod(options) {
+    async function myCheckBenefitEligibilityByFilterMethod(namespace,options) {
       const elevatedCheckBenefitEligibilityByFilter = auth.elevate(pools.checkBenefitEligibilityByFilter);
-      const response = await elevatedCheckBenefitEligibilityByFilter(options);
+      const response = await elevatedCheckBenefitEligibilityByFilter(namespace,options);
     }
     ```
 

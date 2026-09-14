@@ -1,0 +1,69 @@
+---
+title: "Introduction"
+description: "The Blog Post Candidate API lets you generate a site's blog post briefs and read them back."
+icon: "file-lines"
+---
+
+The Blog Post Candidate API lets you generate a site's blog post briefs and read them back. A brief pairs a suggested title with a target keyword and the site page the post should support. It's what a site owner writes an actual blog post from.
+
+Briefs are the final output of a content plan. Generating them is also the step that lets a content plan flow finish, so this API is part of the generation loop, not only a way to read results.
+
+With the Blog Post Candidate API, you can:
+
+- Generate the blog post briefs for a content plan flow.
+- Regenerate a site's briefs when the existing ones are used up or unwanted.
+- Retrieve the briefs for a flow, optionally limited to those not yet written about.
+
+## Generating briefs finishes the flow
+
+A content plan flow doesn't run to completion on its own. It stops at the `KEYWORD_RESEARCH` status and waits. [Create Content Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/create-content-plan) generates the briefs and lets the flow continue to `SUCCESS`. An app that triggers a flow and only polls it waits indefinitely.
+
+Because of this, Create Content Plan sits in the middle of the generation loop rather than at the end. The usual order is: trigger a flow, poll it to `KEYWORD_RESEARCH`, call Create Content Plan, poll again to `SUCCESS`, then read the briefs.
+
+## Regeneration creates a separate flow
+
+Calling Create Content Plan on a flow that already reached `SUCCESS` doesn't overwrite that flow. It generates a fresh plan under a new content plan flow and returns the new `contentPlanFlowId` in the response. Poll and read that ID. The original flow keeps its own briefs and stays readable.
+
+## Checking whether generation worked
+
+Create Content Plan doesn't report every failure as an error. Some failures return HTTP 200 with `success` set to `false` and an explanation in `message`. Check `success` as well as the HTTP status before assuming the briefs were generated.
+
+## Marking a brief as used isn't part of this API
+
+A brief is marked as used when a blog post is created from it in the Wix Blog product. That marking belongs to the Blog flow, so this API can read the mark but can't set it.
+
+Two consequences follow:
+
+- `includeOnlyUnmarked` reflects only what Wix Blog has marked. If your app writes posts by another route, track them yourself.
+- Nothing an app calls here refills the pool of unused briefs. Regenerate the plan instead.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Blog post briefs are read-only here. There's no method to create, edit, or delete an individual brief.
+- A brief's `id` is opaque. Don't parse it or build it yourself, and pass it back exactly as received.
+- Call Create Content Plan once for a flow and wait for it to return. Concurrent calls for the same site can produce duplicate content plans.
+- Omitting `paging` returns every brief in a single response. When you send `paging`, `limit` accepts 1 to 100 and defaults to 50.
+- [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) without a `contentPlanFlowId` reads the site's most recent successful flow. A site whose flows are all still running or failed returns a not found error.
+
+## Use cases
+
+- [Read the briefs after a content plan finishes](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/sample-flows#read-the-briefs-after-a-content-plan-finishes)
+- [Work through the unused briefs one at a time](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/sample-flows#work-through-the-unused-briefs-one-at-a-time)
+- [Regenerate a site's briefs](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/sample-flows#regenerate-a-sites-briefs)
+
+## Terminology
+
+- **Blog post candidate**: A single blog post brief. It holds a suggested title, a target keyword, and the page the post supports.
+- **Content plan**: The full set of briefs generated for a site.
+- **Content plan flow**: One run of the generation pipeline. It owns the briefs it produced. Managed with the [Content Plan Flow API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/introduction).
+- **Main keyword**: The primary keyword of the site page a brief supports. Several briefs can share one.
+- **Marked candidate**: A brief that's already been turned into a blog post.
+
+## See also
+
+- [Content Plan Flow API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/introduction)
+- [Keyword Research API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/introduction)
+
+@sdk_package_setup

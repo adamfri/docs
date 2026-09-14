@@ -1,0 +1,740 @@
+---
+title: "Search Google Locations"
+description: "Searches Google's Business Profile catalog for existing listings."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Searches Google's Business Profile catalog for existing listings.
+
+    Specify either a free-text query or a title and address. Each result is a real
+    catalog entry, and carries a `matchStatus` saying whether it can be claimed.
+
+    This doesn't need a connected Google account, so you can call it before the
+    site owner connects one, for example to check whether a business already has a
+    listing.
+
+    Read `matchStatus` carefully, because it's about the catalog rather than about
+    the site owner:
+
+    - `CLAIMABLE`: no Google account has claimed this listing.
+    - `OWNED_ELSEWHERE`: some Google account has claimed it. That account may well
+    be the site owner's own, so don't present this as someone else's listing.
+    Confirm ownership by connecting their account and calling List Unimported
+    Locations.
+
+    For lighter-weight suggestions while someone types, call Suggest
+    Establishments, which returns autocomplete hints rather than catalog entries.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/gbp/v1/google-locations/search
+    ```
+
+    ## Response Object
+
+    <ResponseField name="matches" type="GoogleLocationMatch[]">
+
+      Catalog matches ranked by Google, best match first. Empty when nothing
+      matches.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="matches properties">
+
+        <ResponseField name="location" type="GoogleLocation">
+
+          The matched catalog location (Google resource name in `name`, plus title,
+          address, and any other fields Google returns on the match).
+
+          <Expandable title="location properties">
+
+            <ResponseField name="name" type="string">
+
+              Google resource name, e.g. "locations/12345678901234567890".
+              Empty on create request; populated on response.
+
+              Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Business name shown on the listing (Google's "title").
+
+              Constraints: `minLength 1`, `maxLength 300`.
+
+            </ResponseField>
+
+            <ResponseField name="languageCode" type="string">
+
+              BCP-47 language tag, e.g. "en-US". Required by Google, immutable.
+
+              Constraints: `format LANGUAGE_TAG`.
+
+            </ResponseField>
+
+            <ResponseField name="primaryCategory" type="Category">
+
+              Primary business category. Required by Google.
+
+              _Nested structure omitted for brevity — see the `Category` object._
+
+            </ResponseField>
+
+            <ResponseField name="additionalCategories" type="Category[]">
+
+              Additional categories. Google caps at 9.
+
+              Constraints: `maxItems 9`.
+
+              _Nested structure omitted for brevity — see the `Category[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="profile" type="Profile">
+
+              Optional. Google asks for a description for every category except lodging
+              but doesn't enforce it, so neither does this API. Both an absent profile and
+              one with an empty description are accepted.
+
+              _Nested structure omitted for brevity — see the `Profile` object._
+
+            </ResponseField>
+
+            <ResponseField name="storefrontAddress" type="PostalAddress">
+
+              Storefront postal address. Required for a business that serves customers at
+              its premises, and allowed alongside `serviceArea` when that field's
+              `businessType` is `CUSTOMER_AND_BUSINESS_LOCATION`.
+
+              _Nested structure omitted for brevity — see the `PostalAddress` object._
+
+            </ResponseField>
+
+            <ResponseField name="serviceArea" type="ServiceArea">
+
+              Service-area definition (for businesses that serve customers at the
+              customer's location, exclusively or in addition to their storefront).
+
+              _Nested structure omitted for brevity — see the `ServiceArea` object._
+
+            </ResponseField>
+
+            <ResponseField name="primaryPhone" type="string">
+
+              Primary business phone.
+
+              Constraints: `maxLength 50`.
+
+            </ResponseField>
+
+            <ResponseField name="additionalPhones" type="string[]">
+
+              Additional phones. Google caps at 2.
+
+              Constraints: `maxLength 50`, `maxItems 2`.
+
+            </ResponseField>
+
+            <ResponseField name="websiteUri" type="string">
+
+              Business website.
+
+              Clear it by masking `websiteUri` on Update Google Location and sending
+              `null`. Sending an empty string is rejected.
+
+            </ResponseField>
+
+            <ResponseField name="storeCode" type="string">
+
+              Merchant-defined store code (free-form identifier shown only to the merchant).
+
+              Constraints: `maxLength 64`.
+
+            </ResponseField>
+
+            <ResponseField name="regularHours" type="BusinessHours[]">
+
+              Regular weekly business hours.
+
+              Constraints: `maxItems 14`.
+
+              _Nested structure omitted for brevity — see the `BusinessHours[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="latLng" type="LatLng">
+
+              Geographic coordinates of the storefront.
+
+              _Nested structure omitted for brevity — see the `LatLng` object._
+
+            </ResponseField>
+
+            <ResponseField name="openInfo" type="OpenInfo">
+
+              Open/closed state of the listing.
+
+              _Nested structure omitted for brevity — see the `OpenInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="metadata" type="Metadata">
+
+              Read-only signals Google reports about the listing.
+
+              Only populated on the read paths (Query Google Locations, Get Google
+              Location) and on the Update Google Location response. Search Google
+              Locations reads Google's catalog rather than the merchant's own listing,
+              so it leaves this unset — don't read a default there as a "no".
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Metadata` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Whether this listing can be claimed. Read it carefully: it describes the
+          catalog rather than the site owner. See Search Google Locations.
+
+          **Supported values:**
+
+          - `CLAIMABLE` — The catalog entry is unclaimed and can be created/associated.
+          - `OWNED_ELSEWHERE` — The catalog entry is already claimed by some Google account.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/gbp/v1/google-locations/search' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "query": "Sunset Coffee Roasters, Mission St"
+      }'
+      ```
+
+      ```json Response
+      {
+        "matches": [
+          {
+            "location": {
+              "name": "locations/8034569321457853640",
+              "title": "Sunset Coffee Roasters",
+              "languageCode": "en",
+              "primaryCategory": {
+                "id": "categories/gcid:coffee_shop",
+                "displayName": "Coffee shop"
+              },
+              "storefrontAddress": {
+                "countryCode": "US",
+                "postalCode": "94110",
+                "administrativeArea": "CA",
+                "locality": "San Francisco",
+                "addressLines": ["2436 Mission St"]
+              },
+              "latLng": {
+                "latitude": 37.7563,
+                "longitude": -122.4188
+              }
+            },
+            "status": "CLAIMABLE"
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Searches Google's Business Profile catalog for existing listings.
+
+    Specify either a free-text query or a title and address. Each result is a real
+    catalog entry, and carries a `matchStatus` saying whether it can be claimed.
+
+    This doesn't need a connected Google account, so you can call it before the
+    site owner connects one, for example to check whether a business already has a
+    listing.
+
+    Read `matchStatus` carefully, because it's about the catalog rather than about
+    the site owner:
+
+    - `CLAIMABLE`: no Google account has claimed this listing.
+    - `OWNED_ELSEWHERE`: some Google account has claimed it. That account may well
+    be the site owner's own, so don't present this as someone else's listing.
+    Confirm ownership by connecting their account and calling List Unimported
+    Locations.
+
+    For lighter-weight suggestions while someone types, call Suggest
+    Establishments, which returns autocomplete hints rather than catalog entries.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { locations } from '@wix/gbp';
+
+    locations.searchGoogleLocations(options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="SearchGoogleLocationsOptions" required>
+
+      options
+
+      <Expandable title="One of the following">
+
+        <ParamField body="criteria" type="criteria">
+
+          criteria
+
+          <Expandable title="criteria properties">
+
+            <ParamField body="query" type="string">
+
+              Free-text search (business name, optionally with an address), e.g.
+              "Acme Hardware, Main St". Maps to googleLocations:search &#123;query&#125;.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="location" type="GoogleLocation">
+
+              Structured search built from data the merchant already entered. Maps to
+              googleLocations:search &#123;location&#125;. Only the fields Google matches on
+              (title, address) are meaningful; the rest are ignored for search.
+
+              _Nested structure omitted for brevity — see the `GoogleLocation` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="matches" type="GoogleLocationMatch[]">
+
+      Catalog matches ranked by Google, best match first. Empty when nothing
+      matches.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="matches properties">
+
+        <ResponseField name="location" type="GoogleLocation">
+
+          The matched catalog location (Google resource name in `name`, plus title,
+          address, and any other fields Google returns on the match).
+
+          <Expandable title="location properties">
+
+            <ResponseField name="name" type="string">
+
+              Google resource name, e.g. "locations/12345678901234567890".
+              Empty on create request; populated on response.
+
+              Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="title" type="string">
+
+              Business name shown on the listing (Google's "title").
+
+              Constraints: `minLength 1`, `maxLength 300`.
+
+            </ResponseField>
+
+            <ResponseField name="languageCode" type="string">
+
+              BCP-47 language tag, e.g. "en-US". Required by Google, immutable.
+
+              Constraints: `format LANGUAGE_TAG`.
+
+            </ResponseField>
+
+            <ResponseField name="primaryCategory" type="Category">
+
+              Primary business category. Required by Google.
+
+              _Nested structure omitted for brevity — see the `Category` object._
+
+            </ResponseField>
+
+            <ResponseField name="additionalCategories" type="Category[]">
+
+              Additional categories. Google caps at 9.
+
+              Constraints: `maxItems 9`.
+
+              _Nested structure omitted for brevity — see the `Category[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="profile" type="Profile">
+
+              Optional. Google asks for a description for every category except lodging
+              but doesn't enforce it, so neither does this API. Both an absent profile and
+              one with an empty description are accepted.
+
+              _Nested structure omitted for brevity — see the `Profile` object._
+
+            </ResponseField>
+
+            <ResponseField name="storefrontAddress" type="PostalAddress">
+
+              Storefront postal address. Required for a business that serves customers at
+              its premises, and allowed alongside `serviceArea` when that field's
+              `businessType` is `CUSTOMER_AND_BUSINESS_LOCATION`.
+
+              _Nested structure omitted for brevity — see the `PostalAddress` object._
+
+            </ResponseField>
+
+            <ResponseField name="serviceArea" type="ServiceArea">
+
+              Service-area definition (for businesses that serve customers at the
+              customer's location, exclusively or in addition to their storefront).
+
+              _Nested structure omitted for brevity — see the `ServiceArea` object._
+
+            </ResponseField>
+
+            <ResponseField name="primaryPhone" type="string">
+
+              Primary business phone.
+
+              Constraints: `maxLength 50`.
+
+            </ResponseField>
+
+            <ResponseField name="additionalPhones" type="string[]">
+
+              Additional phones. Google caps at 2.
+
+              Constraints: `maxLength 50`, `maxItems 2`.
+
+            </ResponseField>
+
+            <ResponseField name="websiteUri" type="string">
+
+              Business website.
+
+              Clear it by masking `websiteUri` on Update Google Location and sending
+              `null`. Sending an empty string is rejected.
+
+            </ResponseField>
+
+            <ResponseField name="storeCode" type="string">
+
+              Merchant-defined store code (free-form identifier shown only to the merchant).
+
+              Constraints: `maxLength 64`.
+
+            </ResponseField>
+
+            <ResponseField name="regularHours" type="BusinessHours[]">
+
+              Regular weekly business hours.
+
+              Constraints: `maxItems 14`.
+
+              _Nested structure omitted for brevity — see the `BusinessHours[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="latLng" type="LatLng">
+
+              Geographic coordinates of the storefront.
+
+              _Nested structure omitted for brevity — see the `LatLng` object._
+
+            </ResponseField>
+
+            <ResponseField name="openInfo" type="OpenInfo">
+
+              Open/closed state of the listing.
+
+              _Nested structure omitted for brevity — see the `OpenInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="metadata" type="Metadata">
+
+              Read-only signals Google reports about the listing.
+
+              Only populated on the read paths (Query Google Locations, Get Google
+              Location) and on the Update Google Location response. Search Google
+              Locations reads Google's catalog rather than the merchant's own listing,
+              so it leaves this unset — don't read a default there as a "no".
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `Metadata` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Whether this listing can be claimed. Read it carefully: it describes the
+          catalog rather than the site owner. See Search Google Locations.
+
+          **Supported values:**
+
+          - `CLAIMABLE` — The catalog entry is unclaimed and can be created/associated.
+          - `OWNED_ELSEWHERE` — The catalog entry is already claimed by some Google account.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-search-google-locations" id="ex-sdk-search-google-locations-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-search-google-locations" id="ex-sdk-search-google-locations-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-search-google-locations-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-search-google-locations-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Search Google for existing listings</span><span className="wix-picker-desc">Find listings that match a business name. Works before a Google account is connected</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">searchGoogleLocations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-search-google-locations-0"><span className="wix-picker-name">Search Google for existing listings</span><span className="wix-picker-desc">Find listings that match a business name. Works before a Google account is connected</span></label>
+    <label htmlFor="ex-sdk-search-google-locations-1"><span className="wix-picker-name">searchGoogleLocations (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Search Google for existing listings
+    import { locations } from "@wix/gbp";
+
+    async function searchGoogleLocations() {
+      const response = await locations.searchGoogleLocations({
+        query: "Sunset Coffee Roasters, Mission St",
+      });
+
+      console.log(response.matches);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "matches": [
+     *     {
+     *       "location": {
+     *         "name": "locations/8034569321457853640",
+     *         "title": "Sunset Coffee Roasters",
+     *         "languageCode": "en",
+     *         "primaryCategory": {
+     *           "_id": "categories/gcid:coffee_shop",
+     *           "displayName": "Coffee shop"
+     *         },
+     *         "storefrontAddress": {
+     *           "countryCode": "US",
+     *           "postalCode": "94110",
+     *           "administrativeArea": "CA",
+     *           "locality": "San Francisco",
+     *           "addressLines": ["2436 Mission St"]
+     *         },
+     *         "latLng": {
+     *           "latitude": 37.7563,
+     *           "longitude": -122.4188
+     *         }
+     *       },
+     *       "status": "CLAIMABLE"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript searchGoogleLocations (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { locations } from '@wix/gbp';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { locations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function searchGoogleLocations(options) {
+      const response = await myWixClient.locations.searchGoogleLocations(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

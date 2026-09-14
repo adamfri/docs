@@ -1,0 +1,301 @@
+---
+title: "Premium Payout Object"
+description: "A premium payout is a revenue-share payout earned from a premium subscription sale attributed to the partner (for example, a Wix.com, Studio, or POS plan)."
+icon: "cube"
+---
+
+A premium payout is a revenue-share payout earned from a premium subscription sale attributed to the partner (for example, a Wix.com, Studio, or POS plan). Premium payouts are generated automatically by Wix and can't be created by partners. Partners read them to see what they earned, the payout's approval status, and whether it was invoiced.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Payout ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the PremiumPayout is updated. To prevent conflicting changes, the current revision must be passed when updating the PremiumPayout.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the payout record was created in Wix's systems. This is when Wix recorded the earning, not when the subscription was charged. For the charge date, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the payout record was last updated, for example when its `status` was resolved. Not the date of the subscription charge. For the charge date, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="premiumProductId" type="string">
+
+      ID of the premium product that the payout relates to. The Wix Studio dashboard displays the product's plan name instead of this ID. For the plan family, use `premiumPlanType`.
+
+    </ResponseField>
+
+    <ResponseField name="premiumPlanType" type="string">
+
+      Type of premium plan the payout was earned on. Derived automatically by Wix from the subscription's billing product.
+
+      **Supported values:**
+
+      - `STUDIO` — Wix Studio plan.
+      - `WIX_COM` — Standard Wix.com premium plan.
+      - `BRANDED_APP` — Branded App plan (a native mobile app built for the partner's client).
+      - `EMAIL_MARKETING` — Email Marketing plan.
+      - `LOGO` — Logo Maker plan.
+      - `HOPP` — Hopp plan (Wix's link-in-bio product).
+      - `GOOGLE_FACEBOOK_ADS` — Google and Facebook Ads plan.
+      - `BUSINESS_EMAIL` — Business Email plan (a professional mailbox).
+      - `POS` — Point of Sale (POS) plan.
+      - `ENTERPRISE` — Enterprise plan.
+      - `SOCIAL_MARKETING` — Social Marketing plan.
+
+    </ResponseField>
+
+    <ResponseField name="metaSiteId" type="string">
+
+      ID of the meta site (the Wix site) that the partner receives this payout for. The Wix Studio dashboard displays the site's name and domain instead of this ID.
+
+    </ResponseField>
+
+    <ResponseField name="siteName" type="string">
+
+      Name of the site (`metaSiteId`) that the partner receives this payout for, as it appeared when the payout was created. A snapshot of a past state, so it doesn't follow later renames of the site, and it's truncated to 200 UTF-16 code units, so a name using emoji or a non-Latin script can be cut shorter than 200 visible characters. The cut never splits a surrogate pair, but it can split a longer sequence such as an emoji built from several joined characters. Best effort - it may be empty, and it's always empty on payouts created before Wix started capturing it. Query Premium Payouts can't filter or sort on it, so use `metaSiteId` as the stable key.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Status of the payout. Approval is decided around the subscription's trial end date, within a 14-day window by default.
+      PENDING - Awaiting approval. Shown as `Estimated` in the Wix Studio dashboard.
+      APPROVED - Eligible to be invoiced. Set when the subscription is still active at approval time. Shown as `Paid` in the Wix Studio dashboard.
+      REJECTED - Won't be paid. Set when the subscription is no longer active at approval time. Shown as `Cancelled` in the Wix Studio dashboard, and excluded from the dashboard's earnings total.
+
+      **Supported values:**
+
+      - `PENDING` — Awaiting approval. Shown as `Estimated` in the Wix Studio dashboard.
+      - `APPROVED` — Eligible to be invoiced. Shown as `Paid` in the Wix Studio dashboard.
+      - `REJECTED` — Won't be paid. Shown as `Cancelled` in the Wix Studio dashboard, and excluded from its earnings total.
+
+    </ResponseField>
+
+    <ResponseField name="transactionAmount" type="number">
+
+      Subscription charge the payout was calculated from, in USD. This is what the client paid Wix for the subscription, not what the partner earned - see `amount`.
+
+      The Wix Studio dashboard doesn't display this value. For a regular payout it can be derived from the earning and the rate: `transactionAmount` = `amount` / (`paymentRevenueSharePercent` / 100). The derivation doesn't hold when `negative` is `true` - a reversal carries a negative `amount` but keeps the original positive charge in `transactionAmount`.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+
+      Amount earned by the partner for this payout, in USD.
+
+    </ResponseField>
+
+    <ResponseField name="negative" type="boolean">
+
+      Whether this is a cancellation or refund payout. When `true`, the payout carries a negative `amount` that offsets a previous earning. Negative payouts are returned by queries like any other payout, and count toward totals, so don't filter them out when summing.
+
+    </ResponseField>
+
+    <ResponseField name="paymentRevenueSharePercent" type="number">
+
+      Fractional revenue-share percent applied to `transactionAmount` to calculate `amount`. For example, `0.05` means 0.05%. The earned amount is `transactionAmount` * `paymentRevenueSharePercent` / 100.
+
+    </ResponseField>
+
+    <ResponseField name="transactionDate" type="datetime">
+
+      Date of the subscription transaction that this payout was earned on.
+
+    </ResponseField>
+
+    <ResponseField name="invoiceId" type="string">
+
+      ID of the partner payout invoice this payout was included in, once invoiced. Empty until the payout is invoiced. This is the partner's own payout invoice, not the invoice the client was charged on for the subscription.
+
+      This is the reference code of the partner's invoice. To resolve it, query the Materialized Invoices API for the materialized invoice whose `invoicesRefCodes` contains this value, and read that invoice's `status` to see whether it was paid.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "premiumPayout": {
+          "id": "c3d4e5f6-a7b8-4901-bcde-34567890abcd",
+          "revision": "1",
+          "createdDate": "2024-03-18T17:22:10.299Z",
+          "updatedDate": "2024-03-20T11:05:44.000Z",
+          "premiumProductId": "studio-business-plan",
+          "premiumPlanType": "STUDIO",
+          "metaSiteId": "9c8f0e2a-3b7d-4c1e-8a6f-2d4b1e7c9a05",
+          "siteName": "Bright Coast Bakery",
+          "status": "APPROVED",
+          "transactionAmount": 192.0,
+          "amount": 38.4,
+          "negative": false,
+          "paymentRevenueSharePercent": 20.0,
+          "transactionDate": "2024-03-18T00:00:00.000Z",
+          "invoiceId": "INV-2024-03"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Payout ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the PremiumPayout is updated. To prevent conflicting changes, the current revision must be passed when updating the PremiumPayout.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the payout record was created in Wix's systems. This is when Wix recorded the earning, not when the subscription was charged. For the charge date, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the payout record was last updated, for example when its `status` was resolved. Not the date of the subscription charge. For the charge date, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="premiumProductId" type="string">
+
+      ID of the premium product that the payout relates to. The Wix Studio dashboard displays the product's plan name instead of this ID. For the plan family, use `premiumPlanType`.
+
+    </ResponseField>
+
+    <ResponseField name="premiumPlanType" type="string">
+
+      Type of premium plan the payout was earned on. Derived automatically by Wix from the subscription's billing product.
+
+      **Supported values:**
+
+      - `STUDIO` — Wix Studio plan.
+      - `WIX_COM` — Standard Wix.com premium plan.
+      - `BRANDED_APP` — Branded App plan (a native mobile app built for the partner's client).
+      - `EMAIL_MARKETING` — Email Marketing plan.
+      - `LOGO` — Logo Maker plan.
+      - `HOPP` — Hopp plan (Wix's link-in-bio product).
+      - `GOOGLE_FACEBOOK_ADS` — Google and Facebook Ads plan.
+      - `BUSINESS_EMAIL` — Business Email plan (a professional mailbox).
+      - `POS` — Point of Sale (POS) plan.
+      - `ENTERPRISE` — Enterprise plan.
+      - `SOCIAL_MARKETING` — Social Marketing plan.
+
+    </ResponseField>
+
+    <ResponseField name="metaSiteId" type="string">
+
+      ID of the meta site (the Wix site) that the partner receives this payout for. The Wix Studio dashboard displays the site's name and domain instead of this ID.
+
+    </ResponseField>
+
+    <ResponseField name="siteName" type="string">
+
+      Name of the site (`metaSiteId`) that the partner receives this payout for, as it appeared when the payout was created. A snapshot of a past state, so it doesn't follow later renames of the site, and it's truncated to 200 UTF-16 code units, so a name using emoji or a non-Latin script can be cut shorter than 200 visible characters. The cut never splits a surrogate pair, but it can split a longer sequence such as an emoji built from several joined characters. Best effort - it may be empty, and it's always empty on payouts created before Wix started capturing it. Query Premium Payouts can't filter or sort on it, so use `metaSiteId` as the stable key.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Status of the payout. Approval is decided around the subscription's trial end date, within a 14-day window by default.
+      PENDING - Awaiting approval. Shown as `Estimated` in the Wix Studio dashboard.
+      APPROVED - Eligible to be invoiced. Set when the subscription is still active at approval time. Shown as `Paid` in the Wix Studio dashboard.
+      REJECTED - Won't be paid. Set when the subscription is no longer active at approval time. Shown as `Cancelled` in the Wix Studio dashboard, and excluded from the dashboard's earnings total.
+
+      **Supported values:**
+
+      - `PENDING` — Awaiting approval. Shown as `Estimated` in the Wix Studio dashboard.
+      - `APPROVED` — Eligible to be invoiced. Shown as `Paid` in the Wix Studio dashboard.
+      - `REJECTED` — Won't be paid. Shown as `Cancelled` in the Wix Studio dashboard, and excluded from its earnings total.
+
+    </ResponseField>
+
+    <ResponseField name="transactionAmount" type="number">
+
+      Subscription charge the payout was calculated from, in USD. This is what the client paid Wix for the subscription, not what the partner earned - see `amount`.
+
+      The Wix Studio dashboard doesn't display this value. For a regular payout it can be derived from the earning and the rate: `transactionAmount` = `amount` / (`paymentRevenueSharePercent` / 100). The derivation doesn't hold when `negative` is `true` - a reversal carries a negative `amount` but keeps the original positive charge in `transactionAmount`.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+
+      Amount earned by the partner for this payout, in USD.
+
+    </ResponseField>
+
+    <ResponseField name="negative" type="boolean">
+
+      Whether this is a cancellation or refund payout. When `true`, the payout carries a negative `amount` that offsets a previous earning. Negative payouts are returned by queries like any other payout, and count toward totals, so don't filter them out when summing.
+
+    </ResponseField>
+
+    <ResponseField name="paymentRevenueSharePercent" type="number">
+
+      Fractional revenue-share percent applied to `transactionAmount` to calculate `amount`. For example, `0.05` means 0.05%. The earned amount is `transactionAmount` * `paymentRevenueSharePercent` / 100.
+
+    </ResponseField>
+
+    <ResponseField name="transactionDate" type="datetime">
+
+      Date of the subscription transaction that this payout was earned on.
+
+    </ResponseField>
+
+    <ResponseField name="invoiceId" type="string">
+
+      ID of the partner payout invoice this payout was included in, once invoiced. Empty until the payout is invoiced. This is the partner's own payout invoice, not the invoice the client was charged on for the subscription.
+
+      This is the reference code of the partner's invoice. To resolve it, query the Materialized Invoices API for the materialized invoice whose `invoicesRefCodes` contains this value, and read that invoice's `status` to see whether it was paid.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

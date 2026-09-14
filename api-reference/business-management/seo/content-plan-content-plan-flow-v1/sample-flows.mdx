@@ -1,0 +1,46 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Generate a content plan and read the results
+
+A site owner wants suggestions for what to blog about next. Your app generates a content plan for the site, waits for it, and then presents the resulting blog post briefs.
+
+Generation takes several minutes and pauses part way through, so this flow polls twice: once while the keywords are researched, and once while the briefs are written.
+
+To generate a content plan and read the results:
+
+1. Call [Trigger Content Plan Generation Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/trigger-content-plan-generation-flow) and store the returned `contentPlanFlowId`. You need it for every step that follows.
+1. Poll [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) with that ID until `status` is `KEYWORD_RESEARCH`. Poll every 10 to 15 seconds. If `status` is `PENDING_REQUIREMENTS`, tell the site owner to add their business information, because the flow can't continue without it. If `status` is `FAIL` or `CANCELED`, stop polling and tell the site owner that generation didn't complete, because neither status recovers on its own.
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items) to show the site owner the keywords the flow produced.
+1. Call [Update Keyword Research Item](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/update-keyword-research-item) for any keyword the site owner wants to change. Store the `keywordResearchId` from the response, because editing a keyword can move the research to a new ID.
+1. Call [Create Content Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/create-content-plan) with the flow ID. Check `success` in the response as well as the HTTP status. If `success` is `false`, show `message` to the site owner and stop, because no briefs were generated. Otherwise the call releases the flow and starts generating the briefs.
+1. Poll [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) again until `status` is `SUCCESS`. If `status` is `FAIL` or `CANCELED`, stop polling and tell the site owner that generation didn't complete, because neither status recovers on its own.
+1. Call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) to retrieve the briefs and present them to the site owner.
+
+## Pick up a content plan generated in the dashboard
+
+A site owner has already generated a content plan in their site dashboard. Your app shows that plan without generating a new one, which saves the owner several minutes of waiting.
+
+To pick up an existing content plan:
+
+1. Call [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) without a `contentPlanFlowId`. This returns the site's most recent successful flow. If it returns a not found error, the site has no completed plan, so fall back to triggering one.
+1. Read `keywordResearchId` from the returned flow to identify the research the plan was built from.
+1. Call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) to retrieve the plan's blog post briefs.
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items) to show the keywords behind those briefs.
+
+## Cancel a generation the site owner no longer wants
+
+A site owner starts a content plan generation and then changes their mind, or your app needs to stop a flow that's waiting on business information the owner won't provide.
+
+Cancellation is permanent, so confirm the owner's intent before you call it.
+
+To cancel a generation:
+
+1. Call [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) with the flow ID to confirm the flow is still running.
+1. Call [Cancel Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/cancel-content-plan-flow) with the same ID. The keyword research linked to the flow is canceled with it.
+1. Call [Trigger Content Plan Generation Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/trigger-content-plan-generation-flow) if the site owner later wants a plan. A canceled flow can't be restarted, so this starts a separate flow with a new ID.

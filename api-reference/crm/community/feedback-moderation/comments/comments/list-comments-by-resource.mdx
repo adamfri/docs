@@ -17,6 +17,10 @@ mode: "wide"
 
     Lists published comments and replies from a specified resource, such as a blog post.
 
+    Specify `AUTHOR_BADGES` in `fields` to return broad display badges for member authors
+    in the current page. Badge resolution is best effort. If it isn't available,
+    `authorBadges` is omitted and the comments are still returned.
+
     <Note>
 
       **Authentication**
@@ -179,6 +183,20 @@ mode: "wide"
 
     </ParamField>
 
+    <ParamField query="fields" type="string[]">
+
+      Additional fields to return. Supports `AUTHOR_BADGES`.
+
+      If omitted, `authorBadges` isn't returned.
+
+      Constraints: `maxItems 1`.
+
+      **Supported values:**
+
+      - `AUTHOR_BADGES` — Badges of the comment authors, resolved from their site and app roles.
+
+    </ParamField>
+
     ## Response Object
 
     <ResponseField name="comments" type="Comment[]">
@@ -274,6 +292,37 @@ mode: "wide"
 
     </ResponseField>
 
+    <ResponseField name="authorBadges" type="AuthorBadgesInfo">
+
+      Badges of the authors of the returned comments and replies.
+      Returned only when the request `fields` include `AUTHOR_BADGES`.
+
+      <Expandable title="authorBadges properties">
+
+        <ResponseField name="badgesByMemberId" type="object">
+
+          Badges of each author, keyed by member ID. Authors without badges are omitted.
+
+          Constraints: `format map`.
+
+          <Expandable title="badgesByMemberId properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="AuthorBadges">
+
+              _Nested structure omitted for brevity — see the `AuthorBadges` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
     ## Errors
 
     <Note>
@@ -293,11 +342,13 @@ mode: "wide"
     <input type="radio" name="ex-rest-list-comments-by-resource" id="ex-rest-list-comments-by-resource-0" className="wix-picker-radio" defaultChecked />
     <input type="radio" name="ex-rest-list-comments-by-resource" id="ex-rest-list-comments-by-resource-1" className="wix-picker-radio" />
     <input type="radio" name="ex-rest-list-comments-by-resource" id="ex-rest-list-comments-by-resource-2" className="wix-picker-radio" />
+    <input type="radio" name="ex-rest-list-comments-by-resource" id="ex-rest-list-comments-by-resource-3" className="wix-picker-radio" />
 
     <input type="checkbox" id="ex-rest-list-comments-by-resource-open" className="wix-picker-toggle" />
 
     <label htmlFor="ex-rest-list-comments-by-resource-open" className="wix-picker-button">
 
+    <span className="wix-picker-current"><span className="wix-picker-name">Request author badges with comments</span><span className="wix-picker-desc">Request author badges with comments</span></span>
     <span className="wix-picker-current"><span className="wix-picker-name">List Next Page of Replies</span><span className="wix-picker-desc">Switch to the next page of comments if they exceed the limit</span></span>
     <span className="wix-picker-current"><span className="wix-picker-name">List Next Page of Comments</span><span className="wix-picker-desc">Switch to the next page of comments if they exceed the limit</span></span>
     <span className="wix-picker-current"><span className="wix-picker-name">List Comments</span><span className="wix-picker-desc">Retrieves a list of comments where they're sorted by oldest first, and marked comments are moved to the top of the list. Replies are sorted by newest first. The limit is set to 2 comments and 1 reply for each comment</span></span>
@@ -306,13 +357,85 @@ mode: "wide"
 
     <div className="wix-picker-options">
 
-    <label htmlFor="ex-rest-list-comments-by-resource-0"><span className="wix-picker-name">List Next Page of Replies</span><span className="wix-picker-desc">Switch to the next page of comments if they exceed the limit</span></label>
-    <label htmlFor="ex-rest-list-comments-by-resource-1"><span className="wix-picker-name">List Next Page of Comments</span><span className="wix-picker-desc">Switch to the next page of comments if they exceed the limit</span></label>
-    <label htmlFor="ex-rest-list-comments-by-resource-2"><span className="wix-picker-name">List Comments</span><span className="wix-picker-desc">Retrieves a list of comments where they're sorted by oldest first, and marked comments are moved to the top of the list. Replies are sorted by newest first. The limit is set to 2 comments and 1 reply for each comment</span></label>
+    <label htmlFor="ex-rest-list-comments-by-resource-0"><span className="wix-picker-name">Request author badges with comments</span><span className="wix-picker-desc">Request author badges with comments</span></label>
+    <label htmlFor="ex-rest-list-comments-by-resource-1"><span className="wix-picker-name">List Next Page of Replies</span><span className="wix-picker-desc">Switch to the next page of comments if they exceed the limit</span></label>
+    <label htmlFor="ex-rest-list-comments-by-resource-2"><span className="wix-picker-name">List Next Page of Comments</span><span className="wix-picker-desc">Switch to the next page of comments if they exceed the limit</span></label>
+    <label htmlFor="ex-rest-list-comments-by-resource-3"><span className="wix-picker-name">List Comments</span><span className="wix-picker-desc">Retrieves a list of comments where they're sorted by oldest first, and marked comments are moved to the top of the list. Replies are sorted by newest first. The limit is set to 2 comments and 1 reply for each comment</span></label>
 
     </div>
 
     <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+        'https://www.wixapis.com/comments/v1/comments/list-by-resource?appId=14bcded7-0066-7c35-14d7-466cb3f09103&contextId=64ad407e0bf87891bba7de3a&resourceId=64ad407e0bf87891bba7de3a&cursorPaging=%7B%22limit%22%3A10%2C%22repliesLimit%22%3A0%7D&fields=%5B%22AUTHOR_BADGES%22%5D' \
+        -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "comments": [
+          {
+            "id": "90616636-cfe2-4f3d-88ce-1c3d8e3eaa67",
+            "revision": "1",
+            "appId": "14bcded7-0066-7c35-14d7-466cb3f09103",
+            "contextId": "64ad407e0bf87891bba7de3a",
+            "resourceId": "64ad407e0bf87891bba7de3a",
+            "createdDate": "2026-09-09T09:00:00Z",
+            "updatedDate": "2026-09-09T09:00:00Z",
+            "content": {
+              "richContent": {
+                "nodes": [
+                  {
+                    "type": "PARAGRAPH",
+                    "id": "paragraph-1",
+                    "nodes": [
+                      {
+                        "type": "TEXT",
+                        "id": "text-1",
+                        "textData": {
+                          "text": "Thanks for sharing this article.",
+                          "decorations": []
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "author": {
+              "memberId": "81b3e2a2-60f4-4016-ab20-c2fda4c4c4f2"
+            },
+            "status": "PUBLISHED",
+            "replyCount": 0,
+            "marked": false
+          }
+        ],
+        "pagingMetadata": {
+          "count": 1,
+          "hasNext": false
+        },
+        "commentReplies": {},
+        "authorBadges": {
+          "badgesByMemberId": {
+            "81b3e2a2-60f4-4016-ab20-c2fda4c4c4f2": {
+              "badges": [
+                "ADMIN",
+                "WRITER"
+              ]
+            }
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
 
     <div className="wix-picker-panel">
 
@@ -790,6 +913,10 @@ mode: "wide"
 
     Lists published comments and replies from a specified resource, such as a blog post.
 
+    Specify `AUTHOR_BADGES` in `fields` to return broad display badges for member authors
+    in the current page. Badge resolution is best effort. If it isn't available,
+    `authorBadges` is omitted and the comments are still returned.
+
     <Note>
 
       **Authentication**
@@ -963,6 +1090,20 @@ mode: "wide"
 
         </ParamField>
 
+        <ParamField body="fields" type="string[]">
+
+          Additional fields to return. Supports `AUTHOR_BADGES`.
+
+          If omitted, `authorBadges` isn't returned.
+
+          Constraints: `maxItems 1`.
+
+          **Supported values:**
+
+          - `AUTHOR_BADGES` — Badges of the comment authors, resolved from their site and app roles.
+
+        </ParamField>
+
       </Expandable>
 
     </ParamField>
@@ -1053,6 +1194,37 @@ mode: "wide"
               Paging metadata.
 
               _Nested structure omitted for brevity — see the `CursorPagingMetadata` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="authorBadges" type="AuthorBadgesInfo">
+
+      Badges of the authors of the returned comments and replies.
+      Returned only when the request `fields` include `AUTHOR_BADGES`.
+
+      <Expandable title="authorBadges properties">
+
+        <ResponseField name="badgesByMemberId" type="object">
+
+          Badges of each author, keyed by member ID. Authors without badges are omitted.
+
+          Constraints: `format map`.
+
+          <Expandable title="badgesByMemberId properties">
+
+            <ResponseField name="key" type="string" />
+
+            <ResponseField name="value" type="AuthorBadges">
+
+              _Nested structure omitted for brevity — see the `AuthorBadges` object._
 
             </ResponseField>
 

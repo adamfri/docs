@@ -1,0 +1,142 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you
+can support. It provides a useful starting point as you plan your implementation.
+
+## Export GPV payouts to an external system
+
+Periodically sync a partner's GPV payouts to an external accounting or reporting
+system.
+
+To periodically export GPV payouts:
+
+1. For the first run, call **[Query Gpv Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/query-gpv-payouts)** to get all GPV payouts in the
+   account. Set `cursorPaging.limit` to `100` (the maximum). If you receive a
+   full page, follow `pagingMetadata.cursors.next` to retrieve the next page.
+
+1. Order the payouts by their period and page through the results:
+
+    ```json
+    {
+      "query": {
+        "sort": [
+          { "fieldName": "transactionDate", "order": "ASC" }
+        ],
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. Upload the returned GPV payouts to the external system. Each payout's `amount`
+   and `gpv` are in USD.
+
+1. Save the `transactionDate` of the most recent payout you processed.
+
+1. On each subsequent run, query for payouts attributed to a period after that
+   date:
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "transactionDate": { "$gt": "<LAST_PROCESSED_DATE>" }
+        },
+        "sort": [
+          { "fieldName": "transactionDate", "order": "ASC" }
+        ],
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. Repeat steps 3 to 5 for each run. You can let the user configure the interval
+   to fit their needs.
+
+## Summarize GPV earnings for a period
+
+Show a partner the totals for their GPV earnings over a date range without
+paging through every payout.
+
+To summarize GPV earnings for a period:
+
+1. Call **[Get Gpv Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/get-gpv-payouts-aggregate)** with a filter that bounds the period by
+   `transactionDate`:
+
+    ```json
+    {
+      "filter": {
+        "transactionDate": {
+          "$gte": "2025-01-01T00:00:00.000Z",
+          "$lt": "2025-02-01T00:00:00.000Z"
+        }
+      }
+    }
+    ```
+
+1. Read `payoutsTotalAmount` (total earned, in USD), `payoutsTotalGpv` (total
+   GPV, in USD), and `payoutsCount` from the response to display the headline
+   numbers.
+
+1. Read `payoutsMinimumRevenueSharePercent` and
+   `payoutsMaximumRevenueSharePercent` to show the range of revenue-share rates
+   applied across the period. A range that spans 0.05% to 0.1% indicates the
+   partner crossed the 2,000 USD GPV tier in some periods.
+
+1. To present a month-by-day breakdown like the one in the Wix Studio dashboard,
+   call **[Query Gpv Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/query-gpv-payouts)** for the same range instead. The API returns a flat
+   list with one payout per day, so group the rows by the month of their
+   `transactionDate` client-side and sum each group's `amount` and `gpv` to get
+   the monthly figures.
+
+## Reconcile GPV earnings against a paid invoice
+
+Confirm what a partner earned from GPV in a month matches the invoice they were
+paid, and check the payment status.
+
+To reconcile GPV earnings against an invoice:
+
+1. Call **[Query Gpv Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/query-gpv-payouts)** for the month you want to reconcile, filtering by
+   `transactionDate`:
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "transactionDate": {
+            "$gte": "2025-01-01T00:00:00.000Z",
+            "$lt": "2025-02-01T00:00:00.000Z"
+          }
+        },
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. Sum the returned payouts' `amount` to get the partner's total GPV earnings for
+   the month. Each payout's `invoiceId` tells you whether it has been invoiced
+   yet; payouts with an empty `invoiceId` are not yet on an invoice.
+
+1. Using the Materialized Invoices API, call **[Query Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/query-materialized-invoices)**
+   to find the `MaterializedInvoice` whose `earningsMonth` matches the month.
+   Compare your GPV total against the invoice's `revenueStreamsAggregation.gpv`
+   sub-total, which is the GPV portion of that invoice.
+
+   To go from a single payout to its invoice instead, filter on the payout's
+   `invoiceId`, which is one of the invoice's reference codes:
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "invoicesRefCodes": { "$hasSome": ["<PAYOUT_INVOICE_ID>"] }
+        }
+      }
+    }
+    ```
+
+1. Call **[Get Last Payment](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-last-payment)** from the
+   Materialized Invoices API to confirm whether the invoice has been paid.

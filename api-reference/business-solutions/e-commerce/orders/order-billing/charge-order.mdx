@@ -1,0 +1,1657 @@
+---
+title: "Charge Order"
+description: "Charges payments for an order using one or more payment methods."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Charges payments for an order using one or more payment methods.
+
+    Supports charging through multiple payment methods in a single request:
+    - **Regular payments**: Charges using the customer's payment method (credit card, PayPal, etc.).
+    - **Gift cards**: Redeems gift card codes
+    - **Memberships**: Charges membership credits or benefits for specific line items.
+
+    The method processes all specified payment types and returns the created payments
+    along with the updated order transactions.
+
+    A successful charge returns payments with a `status` of `APPROVED`, `AUTHORIZED`, `PENDING`, or `PENDING_MERCHANT`.
+    `PENDING` and `PENDING_MERCHANT` payments are confirmed asynchronously, so poll the order's transactions
+    or listen for payment events rather than treating the response as final.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="ecom:v1:order_billing:charge_order">ecom:v1:order_billing:charge_order</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/ecom/v1/order-billing/charge-order
+    ```
+
+    ## Body Params
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to charge payments for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="memberId" type="string">
+
+      Member ID associated with the order.
+
+    </ParamField>
+
+    <ParamField body="regularCharge" type="RegularCharge">
+
+      Regular payment charge details.
+
+      <Expandable title="regularCharge properties">
+
+        <ParamField body="amount" type="Price" required>
+
+          Amount to charge.
+
+          <Expandable title="amount properties">
+
+            <ParamField body="amount" type="string" required>
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="redirectUrls" type="RedirectUrls">
+
+          Redirect URLs for the payment flow.
+
+          <Expandable title="redirectUrls properties">
+
+            <ParamField body="successUrl" type="string">
+
+              URL to redirect the customer to after a successful payment transaction.
+              Use this to show a confirmation page or thank you message.
+
+            </ParamField>
+
+            <ParamField body="cancelUrl" type="string">
+
+              URL to redirect the customer to when they cancel the payment process.
+              Typically redirects back to the checkout or cart page.
+
+            </ParamField>
+
+            <ParamField body="errorUrl" type="string">
+
+              URL to redirect the customer to when the payment fails or is rejected.
+              Use this to show an error page with retry options or alternative payment methods.
+
+            </ParamField>
+
+            <ParamField body="pendingUrl" type="string">
+
+              URL to redirect the customer to when the payment is still being processed.
+              Some payment methods require additional time for confirmation or verification.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="delayedCaptureSettings" type="DelayedCaptureSettings">
+
+          Automatic action settings for the authorization.
+          Configure whether to automatically capture or void the authorization after a delay.
+
+          <Expandable title="delayedCaptureSettings properties">
+
+            <ParamField body="scheduledAction" type="string">
+
+              Automatic action to perform on the authorization after the specified delay period.
+
+              **Supported values:**
+
+              - `VOID` — Automatically **void** the authorization after the delay period.
+
+              Use this when you want to automatically release the hold if payment isn't captured.
+              - `CAPTURE` — Automatically **capture** (charge) the authorization after the delay period.
+
+              Use this for delayed billing or when you want to ensure payment is collected after fulfillment.
+
+            </ParamField>
+
+            <ParamField body="delayDuration" type="Duration">
+
+              Time to wait before performing the scheduled action.
+
+              If not specified, the payment provider's default period will be used.
+
+              _Nested structure omitted for brevity — see the `Duration` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="savePaymentMethod" type="boolean">
+
+          Whether to save the payment method for future charges.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ParamField body="intent" type="intent">
+
+          intent
+
+          <Expandable title="intent properties">
+
+            <ParamField body="paymentIntentId" type="string">
+
+              Payment intent ID from the payment provider.
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="delayedCharge" type="boolean">
+
+              Whether to delay the charge.
+              This starts a two-step flow: first preparing the payment, then charging later
+              via Wix Pay startPayment() (https://dev.wix.com/docs/velo/apis/wix-pay-frontend/start-payment) function
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="giftCards" type="GiftCardCharge[]">
+
+      Gift card charges to apply to the order.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="giftCards properties">
+
+        <ParamField body="giftCardCode" type="string" required>
+
+          Gift card redemption code.
+
+          Constraints: `minLength 8`, `maxLength 20`.
+
+        </ParamField>
+
+        <ParamField body="amount" type="Price" required>
+
+          Amount to charge from the gift card.
+
+          <Expandable title="amount properties">
+
+            <ParamField body="amount" type="string" required>
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="currencyConversionInfo" type="CurrencyConversionInfo">
+
+          Details of the conversion from the gift card's currency to the order's currency.
+
+          Required if the order's currency differs from the gift card's currency.
+
+          When provided, the gift card is redeemed with `originalAmount`, otherwise with `amount`.
+
+          <Expandable title="currencyConversionInfo properties">
+
+            <ParamField body="originalCurrency" type="string">
+
+              Currency the amount was converted from, as a three-letter currency code in @ISO-4217 alphabetic format.
+
+              Constraints: `format CURRENCY`.
+
+            </ParamField>
+
+            <ParamField body="originalAmount" type="string">
+
+              Amount before conversion, in `originalCurrency`.
+
+              Constraints: `format DECIMAL_VALUE`, `>= 0`, `<= 1000000000000000`.
+
+            </ParamField>
+
+            <ParamField body="conversionRate" type="string">
+
+              Rate used to convert `originalAmount` to the order's currency. For example, `"1.08"`.
+
+              Constraints: `format DECIMAL_VALUE`, `<= 1000000000000000`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="memberships" type="MembershipCharge[]">
+
+      Membership charges to apply to the order.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="memberships properties">
+
+        <ParamField body="lineItemId" type="string" required>
+
+          Constraints: `format GUID`.
+
+        </ParamField>
+
+        <ParamField body="membershipIdentifier" type="MembershipIdentifier" required>
+
+          membershipIdentifier
+
+          <Expandable title="membershipIdentifier properties">
+
+            <ParamField body="membershipId" type="string" deprecated>
+
+              **Deprecated.** Use `membership_id` instead. Removal: 2026-12-31. Constraints: `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="membershipAppId" type="string" deprecated>
+
+              **Deprecated.** Use `app_id` instead. Removal: 2026-12-31. Constraints: `maxLength 100`.
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="identifier" type="identifier">
+
+              identifier
+
+              _Nested structure omitted for brevity — see the `identifier` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="idempotencyKey" type="string">
+
+      Idempotency key to prevent duplicate charges, for example: checkoutId
+
+    </ParamField>
+
+    <ParamField body="merchantInitiated" type="boolean">
+
+      Specifies whether payment collection is initiated by Merchant or User of User
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Payments created.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="supportReceiptGeneration" type="boolean">
+
+          Whether receipt generation is allowed for this payment.
+          + `true`: This payment supports receipt generation.
+          + `false`: This payment doesn't support receipt generation, or a receipt was already generated.
+
+          **Read-only.** **Developer Preview.**
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Overall payment status.
+
+          Gift card and membership payments support only `APPROVED`, `PENDING`, `CANCELED`, `DECLINED`, and `VOIDED`. The remaining values apply to regular payments.
+
+          **Developer Preview.**
+
+          **Supported values:**
+
+          - `APPROVED` — Payment was charged successfully.
+          - `PENDING` — Payment is being processed and hasn't been confirmed yet.
+          - `PENDING_MERCHANT` — Payment is awaiting confirmation. For an offline payment, the merchant must confirm they received it. For an online payment, the payment provider hasn't confirmed it, which typically means the merchant's provider account setup isn't complete.
+          - `CANCELED` — Payment was canceled before it was charged.
+          - `DECLINED` — Payment was declined by the payment provider.
+          - `REFUNDED` — Payment was fully refunded.
+          - `PARTIALLY_REFUNDED` — Part of the payment amount was refunded.
+          - `AUTHORIZED` — Funds are held on the buyer's payment method but haven't been captured. Capture them with [Capture Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments) or release them with [Void Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments). An authorized payment can't be refunded until it's captured.
+          - `VOIDED` — Payment was voided, releasing whatever it held or consumed: an authorization on the buyer's payment method, a gift card balance, or membership credits.
+
+          Gift card and membership payments don't support partial refunds, so a full refund of one is reported as `VOIDED` rather than `REFUNDED`.
+
+        </ResponseField>
+
+        <ResponseField name="chargeCorrelationId" type="string">
+
+          ID linking this payment to the charge request that created it. Matches the `idempotencyKey` sent in the Charge Order request.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history reflecting all payments statuses
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="supportReceiptGeneration" type="boolean">
+
+              Whether receipt generation is allowed for this payment.
+              + `true`: This payment supports receipt generation.
+              + `false`: This payment doesn't support receipt generation, or a receipt was already generated.
+
+              **Read-only.** **Developer Preview.**
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+
+              Overall payment status.
+
+              Gift card and membership payments support only `APPROVED`, `PENDING`, `CANCELED`, `DECLINED`, and `VOIDED`. The remaining values apply to regular payments.
+
+              **Developer Preview.**
+
+              **Supported values:**
+
+              - `APPROVED` — Payment was charged successfully.
+              - `PENDING` — Payment is being processed and hasn't been confirmed yet.
+              - `PENDING_MERCHANT` — Payment is awaiting confirmation. For an offline payment, the merchant must confirm they received it. For an online payment, the payment provider hasn't confirmed it, which typically means the merchant's provider account setup isn't complete.
+              - `CANCELED` — Payment was canceled before it was charged.
+              - `DECLINED` — Payment was declined by the payment provider.
+              - `REFUNDED` — Payment was fully refunded.
+              - `PARTIALLY_REFUNDED` — Part of the payment amount was refunded.
+              - `AUTHORIZED` — Funds are held on the buyer's payment method but haven't been captured. Capture them with [Capture Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments) or release them with [Void Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments). An authorized payment can't be refunded until it's captured.
+              - `VOIDED` — Payment was voided, releasing whatever it held or consumed: an authorization on the buyer's payment method, a gift card balance, or membership credits.
+
+              Gift card and membership payments don't support partial refunds, so a full refund of one is reported as `VOIDED` rather than `REFUNDED`.
+
+            </ResponseField>
+
+            <ResponseField name="chargeCorrelationId" type="string">
+
+              ID linking this payment to the charge request that created it. Matches the `idempotencyKey` sent in the Charge Order request.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="regularChargeResponseToken" type="string">
+
+      (Optional) Charge response token (for regular charge) from payment gateway. Present when non-delayed charge is requested.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANCELED` | Order was already canceled. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_PAID` | Order was already paid. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_HAS_CHARGEBACKS` | Order has chargebacks and can't be charged. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Charge amount is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `PAYMENT_INTENT_ID_REQUIRED` | Payment intent ID is required for regular charges. payment intent is required only when delayedCharge is false |
+    | `404` | `NOT_FOUND` | `GIFT_CARD_NOT_FOUND` | Couldn't find the gift card. |
+    | `428` | `FAILED_PRECONDITION` | `GIFT_CARD_EXPIRED` | Gift card is expired. |
+    | `428` | `FAILED_PRECONDITION` | `GIFT_CARD_DISABLED` | Gift card is disabled. |
+    | `428` | `FAILED_PRECONDITION` | `INSUFFICIENT_FUNDS` | Gift card has insufficient funds. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_GIFT_CARD_CURRENCY` | Gift card currency is different from order currency. |
+    | `409` | `ALREADY_EXISTS` | `GIFT_CARD_ALREADY_APPLIED` | Gift card was already applied to the order. |
+    | `409` | `ALREADY_EXISTS` | `ALREADY_REDEEMED` | Gift card was already redeemed. |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERSHIP_NOT_ELIGIBLE` | Membership eligibility check failed. |
+    | `409` | `ALREADY_EXISTS` | `LINE_ITEM_PAID` | Requested line item is already paid with membership. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ATTEMPT_EXPIRED` | The payment attempt expired before it could be charged. Collect the payment details again and retry the charge. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_METHOD_UNAVAILABLE` | Payment method is unavailable. It's either disabled or not connected to the site. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_APPROVED` | The payment was already approved. Unlike `ORDER_PAID`, the order isn't necessarily fully paid. Retrieve the order's payments instead of charging again. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_IN_PROGRESS` | A payment for this order is already in progress. Wait for it to reach a final status before charging again. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Charge order using credit card, membership and gift card.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+        'https://www.wixapis.com/ecom/v1/order-billing/charge-order' \
+        -H 'Content-Type: application/json' \
+        -H 'Authorization: <AUTH>' \
+        -d '{
+          "orderId": "c8be6e35-227e-4c9e-89a9-936b5f568d81",
+          "regularCharge": {
+            "amount": {
+              "amount": "9.99"
+            },
+            "paymentIntentId": "5dd3717a-1030-4508-a86a-663d2f316e53",
+            "redirectUrls": {
+              "cancelUrl": "https://www.cancel.com",
+              "errorUrl": "https://www.error.com",
+              "pendingUrl": "https://www.pending.com",
+              "successUrl": "https://www.success.com"
+            },
+            "savePaymentMethod": false
+          },
+          "memberships": [
+            {
+              "lineItemId": "00000000-0000-0000-0000-000000000002",
+              "membershipIdentifier": {
+                "existingMembership": {
+                  "appId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3",
+                  "membershipId": "E7aAmgntEU1i8EynJ7KVoTdWmx84CF9vnpn5LNeiMHBGQJWp3XFK2bdG6NYklX8v3gtWo33WswnN1qYfjR5XSFZ4ffKU2ryTsVi"
+                }
+              }
+            }
+          ],
+          "giftCards": [
+            {
+              "amount": {
+                "amount": "10.0"
+              },
+              "giftCardCode": "TESTGIFTCARD0001"
+            }
+          ],
+          "idempotencyKey": "ca6baead-b619-4c4a-811d-e12a4e4dda72",
+          "memberId": "aab64a42-4a04-4e6a-bb60-346acc5a3d47",
+          "merchantInitiated": false
+        }'
+      ```
+
+      ```json Response
+      {
+        "payments": [
+          {
+            "id": "0e2d3ad1-2790-444e-95c5-9f6b649b9168",
+            "regularPaymentDetails": {
+              "gatewayTransactionId": "296fa780-ec09-40d1-957f-9604eb2c7d1f",
+              "offlinePayment": false,
+              "status": "APPROVED",
+              "savedPaymentMethod": false,
+              "chargebacks": []
+            },
+            "createdDate": "2026-08-21T12:25:18.684Z",
+            "updatedDate": "2026-08-21T12:25:18.684Z",
+            "amount": {
+              "amount": "9.99",
+              "formattedAmount": "$9.99"
+            },
+            "refundDisabled": false,
+            "supportReceiptGeneration": false,
+            "status": "APPROVED",
+            "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+          },
+          {
+            "id": "80f47012-1793-4220-bc3c-cc07d1b6e0df",
+            "createdDate": "2026-08-21T12:25:18.684Z",
+            "updatedDate": "2026-08-21T12:25:18.684Z",
+            "refundDisabled": false,
+            "membershipPaymentDetails": {
+              "membershipId": "E7aAmgntEU1i8EynJ7KVoTdWmx84CF9vnpn5LNeiMHBGQJWp3XFK2bdG6NYklX8v3gtWo33WswnN1qYfjR5XSFZ4ffKU2ryTsVi",
+              "lineItemId": "00000000-0000-0000-0000-000000000002",
+              "status": "CHARGE_PENDING",
+              "name": {
+                "original": "Silver Membership"
+              },
+              "voided": true,
+              "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+            },
+            "supportReceiptGeneration": false,
+            "status": "PENDING",
+            "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+          },
+          {
+            "id": "be152511-9a00-4aa8-bedd-9b01335b887e",
+            "giftcardPaymentDetails": {
+              "giftCardPaymentId": "",
+              "appId": "d80111c5-a0f4-47a8-b63a-65b54d774a27",
+              "voided": true,
+              "obfuscatedCode": "************0001"
+            },
+            "createdDate": "2026-08-21T12:25:18.684Z",
+            "updatedDate": "2026-08-21T12:25:18.684Z",
+            "amount": {
+              "amount": "10.0",
+              "formattedAmount": "$10.00"
+            },
+            "refundDisabled": false,
+            "supportReceiptGeneration": false,
+            "status": "PENDING",
+            "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+          }
+        ],
+        "orderTransactions": {
+          "orderId": "c8be6e35-227e-4c9e-89a9-936b5f568d81",
+          "payments": [
+            {
+              "id": "0e2d3ad1-2790-444e-95c5-9f6b649b9168",
+              "regularPaymentDetails": {
+                "gatewayTransactionId": "296fa780-ec09-40d1-957f-9604eb2c7d1f",
+                "offlinePayment": false,
+                "status": "APPROVED",
+                "savedPaymentMethod": false,
+                "chargebacks": []
+              },
+              "createdDate": "2026-08-21T12:25:18.684Z",
+              "updatedDate": "2026-08-21T12:25:18.684Z",
+              "amount": {
+                "amount": "9.99",
+                "formattedAmount": "$9.99"
+              },
+              "refundDisabled": false,
+              "supportReceiptGeneration": false,
+              "status": "APPROVED",
+              "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+            },
+            {
+              "id": "80f47012-1793-4220-bc3c-cc07d1b6e0df",
+              "createdDate": "2026-08-21T12:25:18.684Z",
+              "updatedDate": "2026-08-21T12:25:18.684Z",
+              "refundDisabled": false,
+              "membershipPaymentDetails": {
+                "membershipId": "E7aAmgntEU1i8EynJ7KVoTdWmx84CF9vnpn5LNeiMHBGQJWp3XFK2bdG6NYklX8v3gtWo33WswnN1qYfjR5XSFZ4ffKU2ryTsVi",
+                "lineItemId": "00000000-0000-0000-0000-000000000002",
+                "status": "CHARGE_PENDING",
+                "name": {
+                  "original": "Silver Membership"
+                },
+                "voided": true,
+                "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+              },
+              "supportReceiptGeneration": false,
+              "status": "PENDING",
+              "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+            },
+            {
+              "id": "be152511-9a00-4aa8-bedd-9b01335b887e",
+              "giftcardPaymentDetails": {
+                "giftCardPaymentId": "",
+                "appId": "d80111c5-a0f4-47a8-b63a-65b54d774a27",
+                "voided": true,
+                "obfuscatedCode": "************0001"
+              },
+              "createdDate": "2026-08-21T12:25:18.684Z",
+              "updatedDate": "2026-08-21T12:25:18.684Z",
+              "amount": {
+                "amount": "10.0",
+                "formattedAmount": "$10.00"
+              },
+              "refundDisabled": false,
+              "supportReceiptGeneration": false,
+              "status": "PENDING",
+              "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+            }
+          ],
+          "refunds": []
+        },
+        "regularChargeResponseToken": "eyJjaGFyZ2VJZCI6IjI5NmZhNzgwLWVjMDktNDBkMS05NTdmLTk2MDRlYjJjN2QxZiIsInRyYW5zYWN0aW9uU3RhdHVzIjoiQVBQUk9WRUQiLCJyZWRpcmVjdFVybCI6Imh0dHBzOi8vd3d3LnN1Y2Nlc3MuY29tIiwiYW1vdW50Ijo5Ljk5LCJjdXJyZW5jeSI6IlVTRCIsInBheW1lbnRNZXRob2QiOiJDcmVkaXQvRGViaXQgQ2FyZHMifQ==
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Charges payments for an order using one or more payment methods.
+
+    Supports charging through multiple payment methods in a single request:
+    - **Regular payments**: Charges using the customer's payment method (credit card, PayPal, etc.).
+    - **Gift cards**: Redeems gift card codes
+    - **Memberships**: Charges membership credits or benefits for specific line items.
+
+    The method processes all specified payment types and returns the created payments
+    along with the updated order transactions.
+
+    A successful charge returns payments with a `status` of `APPROVED`, `AUTHORIZED`, `PENDING`, or `PENDING_MERCHANT`.
+    `PENDING` and `PENDING_MERCHANT` payments are confirmed asynchronously, so poll the order's transactions
+    or listen for payment events rather than treating the response as final.
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="ecom:v1:order_billing:charge_order">ecom:v1:order_billing:charge_order</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    ## Method Declaration
+
+    ```typescript
+    import { orderBilling } from '@wix/ecom';
+
+    orderBilling.chargeOrder(orderId, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="orderId" type="string" required>
+
+      Order ID to charge payments for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="ChargeOrderOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="memberId" type="string">
+
+          Member ID associated with the order.
+
+        </ParamField>
+
+        <ParamField body="regularCharge" type="RegularCharge">
+
+          Regular payment charge details.
+
+          <Expandable title="regularCharge properties">
+
+            <ParamField body="amount" type="Price" required>
+
+              Amount to charge.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+            <ParamField body="redirectUrls" type="RedirectUrls">
+
+              Redirect URLs for the payment flow.
+
+              _Nested structure omitted for brevity — see the `RedirectUrls` object._
+
+            </ParamField>
+
+            <ParamField body="delayedCaptureSettings" type="DelayedCaptureSettings">
+
+              Automatic action settings for the authorization.
+              Configure whether to automatically capture or void the authorization after a delay.
+
+              _Nested structure omitted for brevity — see the `DelayedCaptureSettings` object._
+
+            </ParamField>
+
+            <ParamField body="savePaymentMethod" type="boolean">
+
+              Whether to save the payment method for future charges.
+
+              Default: `false`
+
+            </ParamField>
+
+          </Expandable>
+
+          <Expandable title="One of the following">
+
+            <ParamField body="intent" type="intent">
+
+              intent
+
+              _Nested structure omitted for brevity — see the `intent` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="giftCards" type="GiftCardCharge[]">
+
+          Gift card charges to apply to the order.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="giftCards properties">
+
+            <ParamField body="giftCardCode" type="string" required>
+
+              Gift card redemption code.
+
+              Constraints: `minLength 8`, `maxLength 20`.
+
+            </ParamField>
+
+            <ParamField body="amount" type="Price" required>
+
+              Amount to charge from the gift card.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ParamField>
+
+            <ParamField body="currencyConversionInfo" type="CurrencyConversionInfo">
+
+              Details of the conversion from the gift card's currency to the order's currency.
+
+              Required if the order's currency differs from the gift card's currency.
+
+              When provided, the gift card is redeemed with `originalAmount`, otherwise with `amount`.
+
+              _Nested structure omitted for brevity — see the `CurrencyConversionInfo` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="memberships" type="MembershipCharge[]">
+
+          Membership charges to apply to the order.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="memberships properties">
+
+            <ParamField body="lineItemId" type="string" required>
+
+              Constraints: `format GUID`.
+
+            </ParamField>
+
+            <ParamField body="membershipIdentifier" type="MembershipIdentifier" required>
+
+              membershipIdentifier
+
+              _Nested structure omitted for brevity — see the `MembershipIdentifier` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="idempotencyKey" type="string">
+
+          Idempotency key to prevent duplicate charges, for example: checkoutId
+
+        </ParamField>
+
+        <ParamField body="merchantInitiated" type="boolean">
+
+          Specifies whether payment collection is initiated by Merchant or User of User
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="payments" type="Payment[]">
+
+      Payments created.
+
+      Constraints: `maxItems 100`.
+
+      <Expandable title="payments properties">
+
+        <ResponseField name="_id" type="string">
+
+          Payment ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+        </ResponseField>
+
+        <ResponseField name="_updatedDate" type="datetime">
+
+          Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="amount" type="Price">
+
+          Payment amount.
+
+          <Expandable title="amount properties">
+
+            <ResponseField name="amount" type="string">
+
+              Amount.
+
+              Constraints: `>= 0`, `<= 1000000000000000`.
+
+            </ResponseField>
+
+            <ResponseField name="formattedAmount" type="string">
+
+              Amount formatted with currency symbol.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refundDisabled" type="boolean">
+
+          Whether refunds for this payment are disabled.
+          + `true`: This payment is not refundable.
+          + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+        </ResponseField>
+
+        <ResponseField name="supportReceiptGeneration" type="boolean">
+
+          Whether receipt generation is allowed for this payment.
+          + `true`: This payment supports receipt generation.
+          + `false`: This payment doesn't support receipt generation, or a receipt was already generated.
+
+          **Read-only.** **Developer Preview.**
+
+        </ResponseField>
+
+        <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+          Details about cash rounding applied to this payment, when relevant.
+
+          **Developer Preview.**
+
+          <Expandable title="cashRounding properties">
+
+            <ResponseField name="unroundedAmount" type="Price">
+
+              Payment amount before cash rounding was applied.
+              When provided, balance and status calculations use this value instead of `amount`
+              to prevent false overpayment or underpayment due to rounding.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="roundingAdjustment" type="CashRounding">
+
+              The difference between 'amount' and 'unroundedAmount' (amount minus unroundedAmount).
+              A positive value indicates the price was rounded up; a negative value indicates a round-down.
+
+              **Read-only.** **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRounding` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Overall payment status.
+
+          Gift card and membership payments support only `APPROVED`, `PENDING`, `CANCELED`, `DECLINED`, and `VOIDED`. The remaining values apply to regular payments.
+
+          **Developer Preview.**
+
+          **Supported values:**
+
+          - `APPROVED` — Payment was charged successfully.
+          - `PENDING` — Payment is being processed and hasn't been confirmed yet.
+          - `PENDING_MERCHANT` — Payment is awaiting confirmation. For an offline payment, the merchant must confirm they received it. For an online payment, the payment provider hasn't confirmed it, which typically means the merchant's provider account setup isn't complete.
+          - `CANCELED` — Payment was canceled before it was charged.
+          - `DECLINED` — Payment was declined by the payment provider.
+          - `REFUNDED` — Payment was fully refunded.
+          - `PARTIALLY_REFUNDED` — Part of the payment amount was refunded.
+          - `AUTHORIZED` — Funds are held on the buyer's payment method but haven't been captured. Capture them with [Capture Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments) or release them with [Void Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments). An authorized payment can't be refunded until it's captured.
+          - `VOIDED` — Payment was voided, releasing whatever it held or consumed: an authorization on the buyer's payment method, a gift card balance, or membership credits.
+
+          Gift card and membership payments don't support partial refunds, so a full refund of one is reported as `VOIDED` rather than `REFUNDED`.
+
+        </ResponseField>
+
+        <ResponseField name="chargeCorrelationId" type="string">
+
+          ID linking this payment to the charge request that created it. Matches the `idempotencyKey` sent in the Charge Order request.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="orderTransactions" type="OrderTransactions">
+
+      Updated order transaction history reflecting all payments statuses
+
+      <Expandable title="orderTransactions properties">
+
+        <ResponseField name="orderId" type="string">
+
+          Order ID.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="payments" type="Payment[]">
+
+          Record of payments made to the merchant.
+
+          Constraints: `maxItems 100`.
+
+          <Expandable title="payments properties">
+
+            <ResponseField name="_id" type="string">
+
+              Payment ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the payment was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+            </ResponseField>
+
+            <ResponseField name="_updatedDate" type="datetime">
+
+              Date and time the payment was last updated in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="amount" type="Price">
+
+              Payment amount.
+
+              _Nested structure omitted for brevity — see the `Price` object._
+
+            </ResponseField>
+
+            <ResponseField name="refundDisabled" type="boolean">
+
+              Whether refunds for this payment are disabled.
+              + `true`: This payment is not refundable.
+              + `false`: This payment may be refunded. However, this ultimately depends on the payment provider.
+
+            </ResponseField>
+
+            <ResponseField name="supportReceiptGeneration" type="boolean">
+
+              Whether receipt generation is allowed for this payment.
+              + `true`: This payment supports receipt generation.
+              + `false`: This payment doesn't support receipt generation, or a receipt was already generated.
+
+              **Read-only.** **Developer Preview.**
+
+            </ResponseField>
+
+            <ResponseField name="cashRounding" type="CashRoundingDetails">
+
+              Details about cash rounding applied to this payment, when relevant.
+
+              **Developer Preview.**
+
+              _Nested structure omitted for brevity — see the `CashRoundingDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+
+              Overall payment status.
+
+              Gift card and membership payments support only `APPROVED`, `PENDING`, `CANCELED`, `DECLINED`, and `VOIDED`. The remaining values apply to regular payments.
+
+              **Developer Preview.**
+
+              **Supported values:**
+
+              - `APPROVED` — Payment was charged successfully.
+              - `PENDING` — Payment is being processed and hasn't been confirmed yet.
+              - `PENDING_MERCHANT` — Payment is awaiting confirmation. For an offline payment, the merchant must confirm they received it. For an online payment, the payment provider hasn't confirmed it, which typically means the merchant's provider account setup isn't complete.
+              - `CANCELED` — Payment was canceled before it was charged.
+              - `DECLINED` — Payment was declined by the payment provider.
+              - `REFUNDED` — Payment was fully refunded.
+              - `PARTIALLY_REFUNDED` — Part of the payment amount was refunded.
+              - `AUTHORIZED` — Funds are held on the buyer's payment method but haven't been captured. Capture them with [Capture Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/capture-authorized-payments) or release them with [Void Authorized Payments](https://dev.wix.com/docs/api-reference/business-solutions/e-commerce/orders/order-billing/void-authorized-payments). An authorized payment can't be refunded until it's captured.
+              - `VOIDED` — Payment was voided, releasing whatever it held or consumed: an authorization on the buyer's payment method, a gift card balance, or membership credits.
+
+              Gift card and membership payments don't support partial refunds, so a full refund of one is reported as `VOIDED` rather than `REFUNDED`.
+
+            </ResponseField>
+
+            <ResponseField name="chargeCorrelationId" type="string">
+
+              ID linking this payment to the charge request that created it. Matches the `idempotencyKey` sent in the Charge Order request.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="refunds" type="Refund[]">
+
+          Record of refunds made to the buyer.
+
+          Constraints: `maxItems 300`.
+
+          <Expandable title="refunds properties">
+
+            <ResponseField name="_id" type="string">
+
+              Refund ID.
+
+              **Read-only.** Constraints: `format GUID`.
+
+            </ResponseField>
+
+            <ResponseField name="transactions" type="RefundTransaction[]">
+
+              List of transactions.
+
+              Constraints: `minItems 0`, `maxItems 50`.
+
+              _Nested structure omitted for brevity — see the `RefundTransaction[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="details" type="RefundDetails">
+
+              Refund business details.
+
+              _Nested structure omitted for brevity — see the `RefundDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="_createdDate" type="datetime">
+
+              Date and time the refund was created in [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) format. Defaults to current time when not provided.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="summary" type="AggregatedRefundSummary">
+
+              Aggregated refund summary.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `AggregatedRefundSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="requestingServiceAppId" type="string">
+
+              ID of the app that initiated this refund.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="regularChargeResponseToken" type="string">
+
+      (Optional) Charge response token (for regular charge) from payment gateway. Present when non-delayed charge is requested.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `404` | `NOT_FOUND` | `ORDER_NOT_FOUND` | Couldn't find the order. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_CANCELED` | Order was already canceled. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_PAID` | Order was already paid. |
+    | `428` | `FAILED_PRECONDITION` | `ORDER_HAS_CHARGEBACKS` | Order has chargebacks and can't be charged. |
+    | `400` | `INVALID_ARGUMENT` | `INVALID_AMOUNT` | Charge amount is invalid. |
+    | `400` | `INVALID_ARGUMENT` | `PAYMENT_INTENT_ID_REQUIRED` | Payment intent ID is required for regular charges. payment intent is required only when delayedCharge is false |
+    | `404` | `NOT_FOUND` | `GIFT_CARD_NOT_FOUND` | Couldn't find the gift card. |
+    | `428` | `FAILED_PRECONDITION` | `GIFT_CARD_EXPIRED` | Gift card is expired. |
+    | `428` | `FAILED_PRECONDITION` | `GIFT_CARD_DISABLED` | Gift card is disabled. |
+    | `428` | `FAILED_PRECONDITION` | `INSUFFICIENT_FUNDS` | Gift card has insufficient funds. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_GIFT_CARD_CURRENCY` | Gift card currency is different from order currency. |
+    | `409` | `ALREADY_EXISTS` | `GIFT_CARD_ALREADY_APPLIED` | Gift card was already applied to the order. |
+    | `409` | `ALREADY_EXISTS` | `ALREADY_REDEEMED` | Gift card was already redeemed. |
+    | `428` | `FAILED_PRECONDITION` | `MEMBERSHIP_NOT_ELIGIBLE` | Membership eligibility check failed. |
+    | `409` | `ALREADY_EXISTS` | `LINE_ITEM_PAID` | Requested line item is already paid with membership. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ATTEMPT_EXPIRED` | The payment attempt expired before it could be charged. Collect the payment details again and retry the charge. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_METHOD_UNAVAILABLE` | Payment method is unavailable. It's either disabled or not connected to the site. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_APPROVED` | The payment was already approved. Unlike `ORDER_PAID`, the order isn't necessarily fully paid. Retrieve the order's payments instead of charging again. |
+    | `428` | `FAILED_PRECONDITION` | `PAYMENT_ALREADY_IN_PROGRESS` | A payment for this order is already in progress. Wait for it to reach a final status before charging again. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-charge-order" id="ex-sdk-charge-order-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-charge-order" id="ex-sdk-charge-order-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-charge-order-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-charge-order-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Charge Order</span><span className="wix-picker-desc">Charge an order using a credit card, a membership, and a gift card</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">chargeOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-charge-order-0"><span className="wix-picker-name">Charge Order</span><span className="wix-picker-desc">Charge an order using a credit card, a membership, and a gift card</span></label>
+    <label htmlFor="ex-sdk-charge-order-1"><span className="wix-picker-name">chargeOrder (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Charge Order
+    import { orderBilling } from "@wix/ecom";
+
+    async function chargeOrder() {
+      const response = await orderBilling.chargeOrder(
+        "c8be6e35-227e-4c9e-89a9-936b5f568d81",
+        {
+          regularCharge: {
+            amount: { amount: "9.99" },
+            paymentIntentId: "5dd3717a-1030-4508-a86a-663d2f316e53",
+            redirectUrls: {
+              cancelUrl: "https://www.cancel.com",
+              errorUrl: "https://www.error.com",
+              pendingUrl: "https://www.pending.com",
+              successUrl: "https://www.success.com",
+            },
+            savePaymentMethod: false,
+          },
+          memberships: [
+            {
+              lineItemId: "00000000-0000-0000-0000-000000000002",
+              membershipIdentifier: {
+                existingMembership: {
+                  appId: "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3",
+                  membershipId: "E7aAmgntEU1i8EynJ7KVoTdWmx84CF9vnpn5LNeiMHBGQJWp3XFK2bdG6NYklX8v3gtWo33WswnN1qYfjR5XSFZ4ffKU2ryTsVi",
+                },
+              },
+            },
+          ],
+          giftCards: [
+            {
+              amount: { amount: "10.0" },
+              giftCardCode: "TESTGIFTCARD0001",
+            },
+          ],
+          idempotencyKey: "ca6baead-b619-4c4a-811d-e12a4e4dda72",
+          memberId: "aab64a42-4a04-4e6a-bb60-346acc5a3d47",
+          merchantInitiated: false,
+        },
+      );
+      return response;
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "payments": [
+     *     {
+     *       "regularPaymentDetails": {
+     *         "gatewayTransactionId": "296fa780-ec09-40d1-957f-9604eb2c7d1f",
+     *         "offlinePayment": false,
+     *         "status": "APPROVED",
+     *         "savedPaymentMethod": false,
+     *         "chargebacks": []
+     *       },
+     *       "amount": { "amount": "9.99", "formattedAmount": "$9.99" },
+     *       "refundDisabled": false,
+     *       "status": "APPROVED",
+     *       "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+     *     },
+     *     {
+     *       "membershipPaymentDetails": {
+     *         "membershipId": "E7aAmgntEU1i8EynJ7KVoTdWmx84CF9vnpn5LNeiMHBGQJWp3XFK2bdG6NYklX8v3gtWo33WswnN1qYfjR5XSFZ4ffKU2ryTsVi",
+     *         "lineItemId": "00000000-0000-0000-0000-000000000002",
+     *         "status": "CHARGE_PENDING",
+     *         "name": { "original": "Silver Membership" },
+     *         "voided": true,
+     *         "providerAppId": "1522827f-c56c-a5c9-2ac9-00f9e6ae12d3"
+     *       },
+     *       "refundDisabled": false,
+     *       "status": "PENDING",
+     *       "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+     *     },
+     *     {
+     *       "giftcardPaymentDetails": {
+     *         "appId": "d80111c5-a0f4-47a8-b63a-65b54d774a27",
+     *         "voided": true,
+     *         "obfuscatedCode": "************0001"
+     *       },
+     *       "amount": { "amount": "10.0", "formattedAmount": "$10.00" },
+     *       "refundDisabled": false,
+     *       "status": "PENDING",
+     *       "chargeCorrelationId": "ca6baead-b619-4c4a-811d-e12a4e4dda72"
+     *     }
+     *   ],
+     *   "orderTransactions": {
+     *     "orderId": "c8be6e35-227e-4c9e-89a9-936b5f568d81"
+     *   },
+     *   "regularChargeResponseToken": "eyJjaGFyZ2VJZCI6IjI5NmZhNzgwLWVjMDktNDBkMS05NTdmLTk2MDRlYjJjN2QxZiIsInRyYW5zYWN0aW9uU3RhdHVzIjoiQVBQUk9WRUQiLCJyZWRpcmVjdFVybCI6Imh0dHBzOi8vd3d3LnN1Y2Nlc3MuY29tIiwiYW1vdW50Ijo5Ljk5LCJjdXJyZW5jeSI6IlVTRCIsInBheW1lbnRNZXRob2QiOiJDcmVkaXQvRGViaXQgQ2FyZHMifQ=="
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript chargeOrder (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { orderBilling } from '@wix/ecom';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { orderBilling },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function chargeOrder(orderId,options) {
+      const response = await myWixClient.orderBilling.chargeOrder(orderId,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

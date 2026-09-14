@@ -1,0 +1,105 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you
+can support. It provides a useful starting point as you plan your implementation.
+
+## Reconcile a partner's monthly earnings starting from the invoice
+
+Show a partner what they were paid for a month, then break the total down into its
+revenue streams and confirm the payment went through.
+
+To reconcile a partner's monthly earnings:
+
+1. Call **[Query Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/query-materialized-invoices)** to find the invoice for the month you care
+   about. Filter on `earningsMonth` (the first day of the month) and, optionally,
+   on `status`:
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "earningsMonth": "2026-05-01T00:00:00.000Z",
+          "status": "PAID"
+        },
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. Read the invoice's `revenueStreamsAggregation` to see how the total splits into
+   `premium`, `gpv`, `marketplace`, and `appMarket` sub-totals. All four add up to
+   the invoice's `amount`, so include `appMarket` in any breakdown you present.
+
+1. To confirm each sub-total, query the matching payout service for the same
+   month: **[Query Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/query-premium-payouts)** for `premium`, **[Query Gpv Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/query-gpv-payouts)** for `gpv`,
+   and **[Query Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/query-marketplace-payouts)** for `marketplace`. The per-stream payouts
+   should reconcile to the corresponding sub-total on the invoice. There's no
+   payout API behind `appMarket`, so that sub-total can't be broken down per
+   earning — treat the invoice figure as authoritative for it.
+
+   The `premium` sub-total can come out higher than the sum of the matching
+   premium payouts, because earnings that don't belong to a specific stream are
+   counted there too. Treat the invoice's sub-total as authoritative.
+
+1. Call **[Get Last Payment](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-last-payment)** to check the status of the partner's most recent
+   payment. Read `paid` to confirm it succeeded, and if it didn't, read
+   `rejection` for the reason.
+
+## Build a partner earnings statement
+
+Total a partner's earnings across a period and present a per-stream breakdown.
+
+To build an earnings statement:
+
+1. Call **[Get Materialized Invoices Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-materialized-invoices-aggregate)** with a filter for the
+   period to get the total amount and count of matching invoices. Pass the
+   `filter` as a URL-encoded query parameter, for example to total invoices from
+   2026 onwards:
+
+   `?filter=%7B%22earningsMonth%22%3A%7B%22%24gte%22%3A%222026-01-01T00%3A00%3A00.000Z%22%7D%7D`
+
+   The total covers every matching invoice, whatever its `status`. Add a `status`
+   condition if you want a narrower figure, for example only what has actually
+   been paid.
+
+1. Call **[Query Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/query-materialized-invoices)** with the same filter to list the
+   individual invoices. Sort by `earningsMonth` and page through the results with
+   `cursorPaging.limit` set to `100` (the maximum):
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "earningsMonth": { "$gte": "2026-01-01T00:00:00.000Z" }
+        },
+        "sort": [
+          { "fieldName": "earningsMonth", "order": "ASC" }
+        ],
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. For each invoice, read `amount` and `revenueStreamsAggregation` to present the
+   month's total and its premium, GPV, and marketplace breakdown. All amounts are
+   in USD.
+
+## Surface payments that need attention
+
+Alert a partner when their latest payment failed so they can fix the cause.
+
+To surface a failed payment:
+
+1. Call **[Get Last Payment](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-last-payment)** to retrieve the partner's most recent payment.
+
+1. Check `paid`. If it's `false`, read `rejection.issueType` and `rejection.reason`
+   to determine why the payment failed (for example, an issue with the payout
+   method or the payee's bank details).
+
+1. Prompt the partner to resolve the issue, and use **[Query Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/query-materialized-invoices)**
+   filtered on `status` of `UNPAID` to show which invoices are still awaiting
+   payment.

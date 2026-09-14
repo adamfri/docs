@@ -1,0 +1,94 @@
+---
+title: "Sample Flows"
+description: "This article shows how the Connection API is used in practice."
+icon: "file-lines"
+---
+
+This article shows how the Connection API is used in practice. Every flow assumes you are acting on a
+specific site and that the site owner is available to authorize in a browser at least once.
+
+## Connect a site to Google Business Profile
+
+Your app needs to manage a site's Business Profile locations, and the site isn't connected yet.
+
+1. Call **Get Connection**. If `status` is already `VALID`, you're done — skip the rest.
+2. Call **Get Connect URL** to get `connectUrl`.
+   - Do not automatically retry this call after a timeout or ambiguous response. Each successful
+     request creates a distinct live authorization attempt, even though the REST route uses GET.
+   - `CONNECTING_USER_LOOKUP_UNAVAILABLE` means the site-owner lookup failed temporarily. Retry this
+     step; this typed failure occurs before an authorization attempt is created.
+   - `CONNECTING_USER_NOT_RESOLVABLE` means Wix could not identify a user to own the credential. Stop
+     and correct the caller identity or site ownership before trying again.
+3. Show `connectUrl` to the site owner as a link or a button. Don't fetch it yourself: the URL is for
+   a human to open in their own browser, where they sign in to Google and grant access.
+4. The owner authorizes at Google. Google redirects their browser back to Wix, which completes the
+   OAuth exchange and stores the credentials server-side.
+5. Poll **Get Connection** until `status` is `VALID`. Poll on a modest interval — every few seconds is
+   plenty, since the limiting factor is how long a person takes to click through Google's consent
+   screen.
+6. Stop polling and prompt the owner to try again if the connect URL's 15-minute window elapses with
+   `status` unchanged.
+
+Then proceed with the Locations API.
+
+## Check a connection before Google-backed work
+
+Any batch job or scheduled task that calls Google or imports Business Profile data should establish
+the connection first, so that "not set up" is reported differently from "the operation failed".
+Wix-only reads and deletes can still run without active Google credentials.
+
+1. Call **Get Connection**.
+2. Branch on `status`:
+   - `VALID` — proceed.
+   - `NEVER_CONNECTED` — the site has never been connected. Report a setup step, not an error.
+   - `NEEDS_RECONNECT` — the credentials are gone. Run the connect flow again from step 2 above.
+
+Doing this up front turns one clear message into a report the site owner can act on, instead of a
+Google-backed Locations call failing part-way through a batch.
+
+## Recover from `NEEDS_RECONNECT`
+
+`NEEDS_RECONNECT` means the connection record survives but the stored Google credentials do not — most
+often because the Google account holder exercised a data-deletion request. Retrying will not fix it.
+
+1. Tell the site owner their Google connection needs re-authorizing, and why.
+2. Call **Get Connect URL** and run the connect flow again. You don't need to disconnect first:
+   reconnecting over a credential-less connection is expected and supported.
+3. Poll **Get Connection** until `status` is `VALID`.
+
+## Move a site to a different Google account
+
+No Disconnect is needed. Run the connect flow and authorize with the new account — Wix resolves the
+account after Google answers, and a different account replaces the existing connection.
+
+1. Warn the site owner (see below). There is no confirmation step later in this flow.
+2. Call **Get Connect URL** and run the connect flow with the new Google account.
+3. Poll **Get Connection** until `status` is `VALID`, then re-import the locations you need.
+
+What to tell the site owner before step 2:
+
+- Every Business Profile location on the old connection is permanently removed when the connection
+  is replaced — the ones created through this API as well as the ones imported from Google. For
+  locations migrated from an earlier Wix integration this cannot be reversed by re-importing.
+- Replacing the connection does not revoke Wix's access inside their old Google account. They remove
+  that from their Google account settings if they want it gone.
+- Nothing changes in the Google Business Profile itself. The locations, reviews, and photos stay
+  exactly as they are on Google.
+
+## Handle two simultaneous connect attempts
+
+If two people call **Get Connect URL** before either authorization completes, both calls can succeed
+and return distinct URLs. The API does not serialize pending attempts. Once one callback creates the
+connection, later **Get Connect URL** calls still succeed — being already connected is no longer a
+reason to reject one — and whichever callback completes next is resolved by account, not rejected:
+the same Google account heals the connection in place, a different one replaces it — permanently
+removing every location on the connection it replaced. A connection reported as
+`NEEDS_RECONNECT` is always replaced, even by the same account, because its stored credentials are
+gone and there is nothing left to match against — so its locations are permanently removed too, and
+the site owner should be warned before either attempt starts. Re-read **Get Connection**
+rather than assuming an earlier URL is still the one in effect.
+
+If callbacks complete concurrently, both can pass the pre-check and create more than one connection.
+The next public API call then returns `MULTIPLE_CONNECTIONS_NOT_REPRESENTABLE` because the API will
+not guess which connection you meant. This is not a caller error and is not retryable; report it and
+contact Wix.

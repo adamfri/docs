@@ -1,0 +1,110 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you
+can support. It provides a useful starting point as you plan your implementation.
+
+## List a partner's premium payouts for a month
+
+Show a partner the premium revenue-share earnings recorded for a given month.
+
+To list a partner's premium payouts for a month:
+
+1. Call **[Query Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/query-premium-payouts)** with a `transactionDate` range covering the
+   month and sort by `transactionDate`. Set `cursorPaging.limit` to `100` (the
+   maximum); if the response has `pagingMetadata.hasNext` set to `true`, follow
+   `pagingMetadata.cursors.next` to fetch the next page.
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "transactionDate": {
+            "$gte": "2026-03-01T00:00:00.000Z",
+            "$lt": "2026-04-01T00:00:00.000Z"
+          }
+        },
+        "sort": [
+          { "fieldName": "transactionDate", "order": "ASC" }
+        ],
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. For each returned payout, read `amount` (in USD), `status`, and
+   `premiumPlanType` to present what the partner earned and whether it is
+   approved. A payout with `negative` set to `true` reverses an earlier earning,
+   so sum `amount` across payouts to get the net total.
+
+1. To drill into a single payout, call **[Get Premium Payout](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/get-premium-payout)** with its `id`.
+
+## Calculate total approved premium earnings for a period
+
+Show a partner the headline total of their approved premium earnings without
+paging through every record.
+
+To calculate total approved premium earnings:
+
+1. Call **[Get Premium Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/get-premium-payouts-aggregate)** with a filter on the period and
+   `status` set to `APPROVED`.
+
+    ```json
+    {
+      "filter": {
+        "transactionDate": {
+          "$gte": "2026-03-01T00:00:00.000Z",
+          "$lt": "2026-04-01T00:00:00.000Z"
+        },
+        "status": "APPROVED"
+      }
+    }
+    ```
+
+1. Read `payoutsTotalAmount` (in USD) and `payoutsCount` from the response to
+   display the partner's total approved premium earnings and how many payouts
+   contributed to it.
+
+1. To match the earnings total shown in the Wix Studio dashboard instead, filter
+   on `status` not equal to `REJECTED`, which keeps both approved and pending
+   payouts:
+
+    ```json
+    {
+      "filter": {
+        "transactionDate": {
+          "$gte": "2026-03-01T00:00:00.000Z",
+          "$lt": "2026-04-01T00:00:00.000Z"
+        },
+        "status": { "$ne": "REJECTED" }
+      }
+    }
+    ```
+
+   Note that the total returned always covers exactly the payouts the filter
+   matches. Without a `status` condition it includes rejected payouts, so it
+   won't line up with the dashboard, whose row list shows rejected payouts but
+   whose total leaves them out.
+
+## Reconcile premium earnings with the partner's invoice and payment
+
+Reconcile what a partner earned from premium subscriptions in a month against the
+invoice issued for that month and the status of their most recent payment.
+
+To reconcile a partner's premium earnings for a month:
+
+1. Call **[Query Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/query-premium-payouts)** for the month, as in the first flow, and total
+   the `amount` of the approved payouts. This is the premium portion the partner
+   earned.
+
+1. Read the matching invoice for that month with **[Query Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/query-materialized-invoices)**
+   (Materialized Invoices API), filtering on the invoice's earnings month. The
+   invoice's `revenueStreamsAggregation.premium` sub-total should reconcile with
+   the premium payout total from step 1.
+
+1. Check the partner's payment status with **[Get Last Payment](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-last-payment)** (Materialized
+   Invoices API) to see whether the most recent payment succeeded or was
+   rejected, and why.

@@ -1,0 +1,51 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Add a form only when the site's plan allows it
+
+Creating a form on a site that has already reached its forms limit is rejected. Checking the limit first keeps the site owner out of a failed write and lets you show them an upgrade prompt instead.
+
+To add a form within the site's limits:
+
+1. Call [Get Restrictions](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-restrictions/get-restrictions) and read `restrictions.formsLimit` and `totalFormCount`.
+1. Compare `totalFormCount` with `restrictions.formsLimit.limit`. A `limit` of `null` means the plan sets no limit on the number of forms, and a `totalFormCount` of `0` means the count couldn't be retrieved, so treat it as unknown rather than as an empty site.
+1. Show the site owner an upgrade prompt when the site has reached its forms limit.
+1. Call [Create Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/create-form) when the site is below its forms limit.
+
+## Warn a site owner as they approach a limit
+
+Each limit carries a `warnThreshold`, the count at which to tell the site owner that the limit is close. Reaching the threshold doesn't block anything, so the site owner can keep working while the warning is on screen.
+
+To warn a site owner before they run out of forms:
+
+1. Call [Get Restrictions](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-restrictions/get-restrictions) and read `restrictions.formsLimit` and `totalFormCount`.
+1. Compare `totalFormCount` with `restrictions.formsLimit.warnThreshold`. `warnThreshold` is `null` when `limit` is `null`, and is never greater than `limit`.
+1. Display a nearing-limit notice quoting `totalFormCount` and `restrictions.formsLimit.limit` once the threshold is reached. For some limits `warnThreshold` equals `limit`, so the notice can coincide with the limit itself.
+
+## Offer only the premium features the site's plan allows
+
+`features` is an allowlist: any feature absent from it is unavailable on the site's current plan, and a form that uses it is rejected. Reading the list before you render a form editor lets you present the plan's capabilities accurately.
+
+To offer only the allowed premium features:
+
+1. Call [Get Restrictions](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-restrictions/get-restrictions) and read `restrictions`.
+1. Enable each premium capability whose feature is present in `restrictions.features`, such as a file upload field for `FILE_UPLOAD_FIELD`, a signature field for `SIGNATURE_FIELD`, or payment collection for `ACCEPT_PAYMENTS`.
+1. Cap how many fields, steps, rules, and submission email recipients the editor lets the site owner add, using `restrictions.fieldsLimit`, `restrictions.stepsLimit`, `restrictions.rulesLimit`, and `restrictions.emailsLimit`.
+1. Call [Create Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/create-form) or [Update Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/update-form) with the resulting schema.
+
+## Bring a site's forms back within its limits after a plan change
+
+A downgrade can leave existing forms over a limit. Such a form is disabled rather than deleted: it stops accepting submissions, but it and its submissions stay readable, and it accepts submissions again once the site is back within its limits.
+
+To bring a site's forms back within its limits:
+
+1. Call [Get Restrictions](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-restrictions/get-restrictions) and read `restrictions`.
+1. Call [Query Forms](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/query-forms) to retrieve the site's forms.
+1. Compare each form against `restrictions.fieldsLimit`, `restrictions.stepsLimit`, `restrictions.rulesLimit`, and `restrictions.features`.
+1. Show the site owner which forms are over the new limits, so they can choose to edit them or restore their previous plan.
+1. Call [Update Form](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/update-form) for each form the site owner brings back within the limits.

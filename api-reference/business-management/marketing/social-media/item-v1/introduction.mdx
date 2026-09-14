@@ -14,6 +14,7 @@ With the Items API, you can:
 - Query items to find drafts, scheduled posts, or published posts.
 - Reschedule or cancel scheduled items.
 - Publish multiple items in bulk.
+- Publish a multi-frame story draft as a sequence of stories.
 
 Before publishing or scheduling, check that the target channel is connected with the [Accounts API](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/account-v1/introduction) and that the site has remaining quota with the [Premium Features API](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/premium-feature-v1/introduction). You can optionally generate post content with the [Generated Content API](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/generated-content-v1/introduction) before creating a draft.
 
@@ -27,13 +28,34 @@ An item moves through statuses as you work with it:
 
 The recommended flow is to create a draft first, then publish or schedule it with [Publish Item By ID](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/publish-item-by-id). You can also call [Publish Item](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/publish-item) with a complete item in one step.
 
+## Multi-frame stories
+
+A story item holds one media item per frame. A story draft with more than one media item can only be published with [Publish Multi Story Draft](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/publish-multi-story-draft), which splits the draft into one story item per frame and publishes them in media order, stopping at the first failure. Publishing such a draft with any other method fails with `MULTI_STORY_PUBLISH_NOT_SUPPORTED`, because the channel would publish only its first frame. Frames already published by an earlier call are skipped, so the call can be safely retried after a partial failure, and the draft is deleted only once all of its frames are published. Each published frame carries the original draft's ID in `originItemId`, so you can match the new items to whatever you recorded against the draft.
+
+Multi-frame story drafts are typically generated for a site by the [Marketing Plan API](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/introduction), which decides which of a plan's activities carry a story and how many frames each one has.
+
+## Filtering and sorting items
+
+[Query Items](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/query-items) supports a fixed set of filterable and sortable fields, listed in that method's description. Two behaviors are worth knowing before you rely on a query:
+
+- A field that isn't supported is ignored rather than rejected. A filter naming the wrong field returns the same items as no filter at all, so check the field names when a query returns more items than you expect.
+- A value the API doesn't define matches no items, rather than returning an error. Enum values themselves are case insensitive, so `SCHEDULED` and `scheduled` are equivalent.
+
+Deleted items are never returned, with or without a filter. Sorting on one of the analytics fields requires the site to have post insights. Without them, the items are sorted by `date` instead, in whichever direction you asked for.
+
+## Identifying what created an item
+
+Every item records what created it, in `consumerInfo.name`. Specify it whenever you create or publish an item, using one stable name for whatever is making the call, whether that's an app, an AI agent, or a service of your own. The name is stored with the item and returned every time the item is read, so the items your integration created can be told apart from items created in the site's dashboard or by something else.
+
+Set it at creation. [Create Draft Item](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/create-draft-item), [Publish Item](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/publish-item), and [Bulk Publish Items](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/bulk-publish-items) accept it. [Update Item](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/update-item) doesn't change it, so an item created without a name can't be identified later.
+
 ## Before you begin
 
 It's important to note the following points before starting to code:
 
 - A site owner must connect their social channels in the site's dashboard before you can publish to them. See [Connecting to your social media accounts](fallback::https://support.wix.com/en/article/social-media-marketing-connect-to-your-social-media-accounts).
 - Each item targets a single connected channel. Its `type` and content must match a combination that channel supports.
-- Post media must be a Wix Media Manager URL (`static.wixstatic.com` for images, `video.wixstatic.com` for videos). To use an image or video that isn't in the Media Manager yet, add it first with the [Media Manager](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager).
+- Post media: Media Manager URLs (`static.wixstatic.com` for images, `video.wixstatic.com` for videos) are the supported option and are what the site's dashboard produces. The API doesn't validate the URL's host, so a non-Media-Manager URL is accepted, but it must be publicly reachable by the target channel, and channels differ in how they handle such a URL. To use an image or video that isn't in the Media Manager yet, add it first with the [Media Manager](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager).
 - Publishing and scheduling can fail if the site has reached its plan quota. Call [Get Feature Data](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/premium-feature-v1/get-feature-data) with `PUBLISH_POST` or `SCHEDULE_POST` before you publish or schedule.
 - Posts created natively on a channel rather than through Wix are imported once a day for sites on a paid social media marketing plan. They appear as items with `external` set to `true` and may take up to a day to show up.
 
@@ -44,6 +66,8 @@ It's important to note the following points before starting to code:
 - [Reschedule or cancel a scheduled post](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/sample-flows#reschedule-or-cancel-a-scheduled-post).
 - [Generate post content and publish it](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/sample-flows#generate-post-content-and-publish-it).
 - [Generate a caption for a post](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/sample-flows#generate-a-caption-for-a-post).
+- [Find a site's scheduled posts](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/sample-flows#find-a-sites-scheduled-posts).
+- [Publish a multi-frame story](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/sample-flows#publish-a-multi-frame-story).
 
 ## Terminology
 
@@ -51,5 +75,6 @@ It's important to note the following points before starting to code:
 - **Channel**: A social network that a post is published to, such as Instagram or TikTok.
 - **Account**: A connected social channel, such as an Instagram business account or a Facebook page, that an item is published to.
 - **Status**: Indicates whether an item is a draft, scheduled, or published.
+- **Story**: A full-screen vertical post that a channel shows for a limited time. A story draft can hold several media items, one per frame, and each frame is published as its own story item.
 
 @sdk_package_setup

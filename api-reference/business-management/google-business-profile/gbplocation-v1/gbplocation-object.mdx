@@ -1,0 +1,315 @@
+---
+title: "Gbplocation Object"
+description: "A GBP location is a site's stable record of one Google Business Profile location."
+icon: "cube"
+---
+
+A GBP location is a site's stable record of one Google Business Profile
+location.
+
+It holds the identifiers and operational metadata needed to work with that
+location on Google's behalf. It doesn't store the Google-owned profile data
+itself: name, address, opening hours, photos, reviews, attributes and insights
+are all retrieved live from Google on each call, so they're never stale here
+and never edited here.
+
+`id` is Google's own location identifier, so you can use it to correlate a
+location with data you retrieve from Google directly.
+
+The only personal data on a GBP location is `serviceAreaPostalAddress`, which
+is set for service-area businesses. It's often a home address, so it's stored
+encrypted and is covered by the site's data-deletion requests.
+
+A Google account must be connected before locations can be imported, and before
+any call that reads or writes a specific location's profile. See the
+[Connection API](https://dev.wix.com/docs/api-reference/business-management/google-business-profile/connection-v1).
+
+Two methods work without a connection, because they read Google's public catalog
+rather than a site's own profile: Search Google Locations, and List Attribute
+Metadata when called with `categoryRegion`. Both are useful before a site owner
+has connected anything.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Google's opaque location identifier on the public API.
+
+      Constraints: `minLength 1`, `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      ID of the Google Business Profile account that holds this location, what
+      Google calls a location group.
+
+      One site can have locations in more than one account, because a single
+      Google login can own several.
+
+      Constraints: `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="serviceAreaPostalAddress" type="PostalAddress">
+
+      Saved postal address for service-area businesses. Used as the `context`
+      parameter in Google's FetchVerificationOptions call for service-area
+      verification flows. Null for storefront businesses.
+
+      <Expandable title="serviceAreaPostalAddress properties">
+
+        <ResponseField name="countryCode" type="string">
+
+          ISO 3166-1 alpha-2 country code (e.g. "US", "GB").
+
+          Constraints: `format COUNTRY`.
+
+        </ResponseField>
+
+        <ResponseField name="postalCode" type="string">
+
+          Postal/ZIP code.
+
+          Constraints: `maxLength 20`.
+
+        </ResponseField>
+
+        <ResponseField name="administrativeArea" type="string">
+
+          Administrative area (state, province, region).
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="locality" type="string">
+
+          City or locality.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="addressLines" type="string[]">
+
+          Street address lines. Up to 5 lines.
+
+          Constraints: `maxLength 255`, `maxItems 5`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the location was imported into Wix.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the location was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="string">
+
+      Revision number, incremented on every update. Used for optimistic locking.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="googleLocationId" type="string">
+
+      Google's location identifier for this location, the same value as `id`.
+      Filter and sort on this field in Query GBP Locations.
+
+      **Read-only.** Constraints: `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="feedEntityId" type="string">
+
+      Identity this location is published under in Google partner feeds, used as
+      the entity ID, merchant ID or parent entity ID across Reserve with Google,
+      Order with Google and Dine with Google.
+
+      Can be set once. A location that already has a value keeps it, and a request
+      that tries to change it is rejected: Google has already ingested the value as
+      the merchant's identity, so changing it withdraws the business from those
+      feeds and can remove its booking and ordering buttons. Setting it on a
+      location that doesn't have one yet is allowed.
+
+      Locations created through this API are given a value automatically, so you
+      usually don't need to set it. Specify it only when migrating a location whose
+      identity Google already knows.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "gBPLocation": {
+          "id": "8034569321457853640",
+          "accountId": "104312867792031877552",
+          "serviceAreaPostalAddress": {
+            "countryCode": "US",
+            "postalCode": "94110",
+            "administrativeArea": "CA",
+            "locality": "San Francisco",
+            "addressLines": ["2436 Mission St"]
+          },
+          "createdDate": "2026-06-02T11:38:54.207Z",
+          "updatedDate": "2026-07-01T14:05:12.906Z",
+          "revision": "2",
+          "googleLocationId": "8034569321457853640",
+          "feedEntityId": "sunset-coffee-roasters-mission"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Google's opaque location identifier on the public API.
+
+      Constraints: `minLength 1`, `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="accountId" type="string">
+
+      ID of the Google Business Profile account that holds this location, what
+      Google calls a location group.
+
+      One site can have locations in more than one account, because a single
+      Google login can own several.
+
+      Constraints: `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="serviceAreaPostalAddress" type="PostalAddress">
+
+      Saved postal address for service-area businesses. Used as the `context`
+      parameter in Google's FetchVerificationOptions call for service-area
+      verification flows. Null for storefront businesses.
+
+      <Expandable title="serviceAreaPostalAddress properties">
+
+        <ResponseField name="countryCode" type="string">
+
+          ISO 3166-1 alpha-2 country code (e.g. "US", "GB").
+
+          Constraints: `format COUNTRY`.
+
+        </ResponseField>
+
+        <ResponseField name="postalCode" type="string">
+
+          Postal/ZIP code.
+
+          Constraints: `maxLength 20`.
+
+        </ResponseField>
+
+        <ResponseField name="administrativeArea" type="string">
+
+          Administrative area (state, province, region).
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="locality" type="string">
+
+          City or locality.
+
+          Constraints: `maxLength 100`.
+
+        </ResponseField>
+
+        <ResponseField name="addressLines" type="string[]">
+
+          Street address lines. Up to 5 lines.
+
+          Constraints: `maxLength 255`, `maxItems 5`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the location was imported into Wix.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the location was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="string">
+
+      Revision number, incremented on every update. Used for optimistic locking.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="googleLocationId" type="string">
+
+      Google's location identifier for this location, the same value as `id`.
+      Filter and sort on this field in Query GBP Locations.
+
+      **Read-only.** Constraints: `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="feedEntityId" type="string">
+
+      Identity this location is published under in Google partner feeds, used as
+      the entity ID, merchant ID or parent entity ID across Reserve with Google,
+      Order with Google and Dine with Google.
+
+      Can be set once. A location that already has a value keeps it, and a request
+      that tries to change it is rejected: Google has already ingested the value as
+      the merchant's identity, so changing it withdraws the business from those
+      feeds and can remove its booking and ordering buttons. Setting it on a
+      location that doesn't have one yet is allowed.
+
+      Locations created through this API are given a value automatically, so you
+      usually don't need to set it. Specify it only when migrating a location whose
+      identity Google already knows.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

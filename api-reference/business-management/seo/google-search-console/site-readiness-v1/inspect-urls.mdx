@@ -1,0 +1,652 @@
+---
+title: "Inspect Urls"
+description: "Runs Google URL inspection on the given site pages."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Runs Google URL inspection on the given site pages.
+
+    Inspection starts synchronously and the response contains the results of
+    the first chunk of pages. When the first chunk covered every requested
+    page, the status is already `COMPLETE` and no polling is needed. When
+    pages remain, the status is `ONGOING` and Wix keeps inspecting them
+    server-side. Poll Get Inspection until the status is `COMPLETE` or
+    `ERROR`.
+
+    Each page inspection consumes Google URL-inspection quota for the
+    connected account. Inspection stops early when that quota runs out, so
+    check `remaining_page_count` to see whether any pages were left
+    uninspected.
+
+    Google allows up to 2,000 page inspections a day per property. Sites with
+    more pages than that can't be inspected through this method and fail with
+    `FAILED_PRECONDITION` (`SITE_EXCEEDS_INSPECTION_LIMIT`). Inspect single
+    pages manually in Google Search Console instead.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/gsc/v1/inspect-urls
+    ```
+
+    ## Body Params
+
+    <ParamField body="pageIds" type="string[]" required>
+
+      IDs of the site pages to inspect. Each inspection result identifies its
+      page in the `page` object, with the same `pageId`.
+
+      Constraints: `maxLength 200`, `maxItems 2000`.
+
+    </ParamField>
+
+    <ParamField body="updateResults" type="boolean">
+
+      Whether to merge the new results into the previous inspection instead of
+      replacing it.
+
+      Default: `false`. A new inspection replaces the stored results.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="InspectedPage[]">
+
+      Results of the pages inspected so far.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="page" type="SitePage">
+
+          The inspected page.
+
+          **Read-only.**
+
+          <Expandable title="page properties">
+
+            <ResponseField name="pageId" type="string">
+
+              ID of the page.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Display name of the page.
+
+              **Read-only.** Constraints: `maxLength 1000`.
+
+            </ResponseField>
+
+            <ResponseField name="path" type="string">
+
+              URL path of the page.
+
+              **Read-only.** Constraints: `maxLength 2000`.
+
+            </ResponseField>
+
+            <ResponseField name="itemType" type="string">
+
+              Item type of the page. For example, `static-page` or a vertical item
+              type.
+
+              **Read-only.** Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Whether the page's inspection succeeded. `OK` or `ERROR`.
+
+          **Read-only.** Constraints: `maxLength 20`.
+
+        </ResponseField>
+
+        <ResponseField name="data" type="object">
+
+          Google's raw URL-inspection result for the page, as returned by the
+          Google Search Console
+          [URL Inspection API](https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect).
+
+          Any human-readable text in this payload (issue descriptions and the like)
+          is in English. Verdicts and states are stable identifiers, so localize
+          from those rather than from the text.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="createdDate" type="datetime">
+
+          Date and time this result was produced.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Status of the inspection. `ONGOING` means Wix is still inspecting the
+      remaining pages in the background. Poll Get Inspection for the rest.
+
+      **Supported values:**
+
+      - `UNKNOWN_INSPECTION_STATUS` — Unknown inspection status.
+      - `ONGOING` — The inspection is still running in the background.
+      - `COMPLETE` — The inspection finished, and nothing is running in the background anymore.
+      Pages can still be left uninspected if the connected account's Google
+      quota ran out, so check the remaining page count.
+      - `ERROR` — The inspection stopped with an error.
+
+    </ResponseField>
+
+    <ResponseField name="remainingPageCount" type="integer">
+
+      Number of pages not inspected yet.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_TOKEN` | No Google account is connected for this site. Connect first with the GSC Connection API. |
+    | `428` | `FAILED_PRECONDITION` | `SITE_EXCEEDS_INSPECTION_LIMIT` | The site has more pages than Google allows to inspect in a day (2,000 per property). Inspect single pages manually in Google Search Console. |
+    | `429` | `RESOURCE_EXHAUSTED` | `GOOGLE_QUOTA_EXCEEDED` | Google's API quota for the property is used up. Retry after the quota window resets. |
+    | `503` | `UNAVAILABLE` | `GOOGLE_UNAVAILABLE` | Google answered with a temporary server error. Retry with backoff. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/gsc/v1/inspect-urls' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "pageIds": [
+          "c1dmp",
+          "xt2o4"
+        ]
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "page": {
+              "pageId": "c1dmp",
+              "name": "Home",
+              "path": "/",
+              "itemType": "static-page"
+            },
+            "status": "OK",
+            "data": {
+              "inspectionResult": {
+                "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=https://www.my-fashion-store.com/&id=cAie2snXCzy2eF3ZLpAJDg",
+                "indexStatusResult": {
+                  "verdict": "PASS",
+                  "coverageState": "Submitted and indexed",
+                  "robotsTxtState": "ALLOWED",
+                  "indexingState": "INDEXING_ALLOWED",
+                  "lastCrawlTime": "2026-08-29T11:47:03.000Z",
+                  "pageFetchState": "SUCCESSFUL",
+                  "googleCanonical": "https://www.my-fashion-store.com/",
+                  "userCanonical": "https://www.my-fashion-store.com/"
+                }
+              }
+            },
+            "createdDate": "2026-09-01T08:24:51.000Z"
+          },
+          {
+            "page": {
+              "pageId": "xt2o4",
+              "name": "About",
+              "path": "/about",
+              "itemType": "static-page"
+            },
+            "status": "OK",
+            "data": {
+              "inspectionResult": {
+                "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=https://www.my-fashion-store.com/&id=hK1x0wnYDp32eF3ZLpAJDg",
+                "indexStatusResult": {
+                  "verdict": "NEUTRAL",
+                  "coverageState": "Discovered - currently not indexed",
+                  "robotsTxtState": "ALLOWED",
+                  "indexingState": "INDEXING_ALLOWED",
+                  "pageFetchState": "SUCCESSFUL",
+                  "userCanonical": "https://www.my-fashion-store.com/about"
+                }
+              }
+            },
+            "createdDate": "2026-09-01T08:24:53.000Z"
+          }
+        ],
+        "status": "COMPLETE",
+        "remainingPageCount": 0
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Runs Google URL inspection on the given site pages.
+
+    Inspection starts synchronously and the response contains the results of
+    the first chunk of pages. When the first chunk covered every requested
+    page, the status is already `COMPLETE` and no polling is needed. When
+    pages remain, the status is `ONGOING` and Wix keeps inspecting them
+    server-side. Poll Get Inspection until the status is `COMPLETE` or
+    `ERROR`.
+
+    Each page inspection consumes Google URL-inspection quota for the
+    connected account. Inspection stops early when that quota runs out, so
+    check `remaining_page_count` to see whether any pages were left
+    uninspected.
+
+    Google allows up to 2,000 page inspections a day per property. Sites with
+    more pages than that can't be inspected through this method and fail with
+    `FAILED_PRECONDITION` (`SITE_EXCEEDS_INSPECTION_LIMIT`). Inspect single
+    pages manually in Google Search Console instead.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { siteReadiness } from '@wix/gsc';
+
+    siteReadiness.inspectUrls(pageIds, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="pageIds" type="string[]" required>
+
+      IDs of the site pages to inspect. Each inspection result identifies its
+      page in the `page` object, with the same `pageId`.
+
+      Constraints: `maxLength 200`, `maxItems 2000`.
+
+    </ParamField>
+
+    <ParamField body="options" type="InspectUrlsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="updateResults" type="boolean">
+
+          Whether to merge the new results into the previous inspection instead of
+          replacing it.
+
+          Default: `false`. A new inspection replaces the stored results.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="InspectedPage[]">
+
+      Results of the pages inspected so far.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="page" type="SitePage">
+
+          The inspected page.
+
+          **Read-only.**
+
+          <Expandable title="page properties">
+
+            <ResponseField name="pageId" type="string">
+
+              ID of the page.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Display name of the page.
+
+              **Read-only.** Constraints: `maxLength 1000`.
+
+            </ResponseField>
+
+            <ResponseField name="path" type="string">
+
+              URL path of the page.
+
+              **Read-only.** Constraints: `maxLength 2000`.
+
+            </ResponseField>
+
+            <ResponseField name="itemType" type="string">
+
+              Item type of the page. For example, `static-page` or a vertical item
+              type.
+
+              **Read-only.** Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+
+          Whether the page's inspection succeeded. `OK` or `ERROR`.
+
+          **Read-only.** Constraints: `maxLength 20`.
+
+        </ResponseField>
+
+        <ResponseField name="data" type="object">
+
+          Google's raw URL-inspection result for the page, as returned by the
+          Google Search Console
+          [URL Inspection API](https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect).
+
+          Any human-readable text in this payload (issue descriptions and the like)
+          is in English. Verdicts and states are stable identifiers, so localize
+          from those rather than from the text.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="_createdDate" type="datetime">
+
+          Date and time this result was produced.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Status of the inspection. `ONGOING` means Wix is still inspecting the
+      remaining pages in the background. Poll Get Inspection for the rest.
+
+      **Supported values:**
+
+      - `UNKNOWN_INSPECTION_STATUS` — Unknown inspection status.
+      - `ONGOING` — The inspection is still running in the background.
+      - `COMPLETE` — The inspection finished, and nothing is running in the background anymore.
+      Pages can still be left uninspected if the connected account's Google
+      quota ran out, so check the remaining page count.
+      - `ERROR` — The inspection stopped with an error.
+
+    </ResponseField>
+
+    <ResponseField name="remainingPageCount" type="integer">
+
+      Number of pages not inspected yet.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_TOKEN` | No Google account is connected for this site. Connect first with the GSC Connection API. |
+    | `428` | `FAILED_PRECONDITION` | `SITE_EXCEEDS_INSPECTION_LIMIT` | The site has more pages than Google allows to inspect in a day (2,000 per property). Inspect single pages manually in Google Search Console. |
+    | `429` | `RESOURCE_EXHAUSTED` | `GOOGLE_QUOTA_EXCEEDED` | Google's API quota for the property is used up. Retry after the quota window resets. |
+    | `503` | `UNAVAILABLE` | `GOOGLE_UNAVAILABLE` | Google answered with a temporary server error. Retry with backoff. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-inspect-urls" id="ex-sdk-inspect-urls-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-inspect-urls" id="ex-sdk-inspect-urls-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-inspect-urls-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-inspect-urls-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Run Google URL inspection on site pages</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">inspectUrls (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-inspect-urls-0"><span className="wix-picker-name">Run Google URL inspection on site pages</span></label>
+    <label htmlFor="ex-sdk-inspect-urls-1"><span className="wix-picker-name">inspectUrls (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Run Google URL inspection on site pages
+    import { siteReadiness } from "@wix/gsc";
+
+    async function inspectUrls() {
+      const response = await siteReadiness.inspectUrls(["c1dmp", "xt2o4"]);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "page": {
+     *         "pageId": "c1dmp",
+     *         "name": "Home",
+     *         "path": "/",
+     *         "itemType": "static-page"
+     *       },
+     *       "status": "OK",
+     *       "data": {
+     *         "inspectionResult": {
+     *           "indexStatusResult": {
+     *             "verdict": "PASS",
+     *             "coverageState": "Submitted and indexed",
+     *             "robotsTxtState": "ALLOWED",
+     *             "indexingState": "INDEXING_ALLOWED",
+     *             "lastCrawlTime": "2026-08-29T11:47:03.000Z",
+     *             "pageFetchState": "SUCCESSFUL",
+     *             "googleCanonical": "https://www.my-fashion-store.com/",
+     *             "userCanonical": "https://www.my-fashion-store.com/"
+     *           }
+     *         }
+     *       },
+     *       "createdDate": "2026-09-01T08:24:51.000Z"
+     *     },
+     *     {
+     *       "page": {
+     *         "pageId": "xt2o4",
+     *         "name": "About",
+     *         "path": "/about",
+     *         "itemType": "static-page"
+     *       },
+     *       "status": "OK",
+     *       "data": {
+     *         "inspectionResult": {
+     *           "indexStatusResult": {
+     *             "verdict": "NEUTRAL",
+     *             "coverageState": "Discovered - currently not indexed",
+     *             "robotsTxtState": "ALLOWED",
+     *             "indexingState": "INDEXING_ALLOWED",
+     *             "pageFetchState": "SUCCESSFUL",
+     *             "userCanonical": "https://www.my-fashion-store.com/about"
+     *           }
+     *         }
+     *       },
+     *       "createdDate": "2026-09-01T08:24:53.000Z"
+     *     }
+     *   ],
+     *   "status": "COMPLETE",
+     *   "remainingPageCount": 0
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript inspectUrls (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { siteReadiness } from '@wix/gsc';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { siteReadiness },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function inspectUrls(pageIds,options) {
+      const response = await myWixClient.siteReadiness.inspectUrls(pageIds,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

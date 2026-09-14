@@ -38,11 +38,55 @@ Pages built from a Wix Data collection are the one case where a page type holds 
 
 Every other page type has a single pattern for the whole type, and specifying a page ID for one of those fails rather than being ignored. `collectionName` isn't supported yet, so address a dynamic page by its ID instead.
 
+## Page types
+
+Send one of the known page type names. An unknown name fails with `UNSUPPORTED_PAGE_TYPE`. That error message lists every name the method accepts.
+
+Send `STATIC_PAGE` for Editor pages, never `STATIC_PAGE_V2`. 
+
+App pages added with a site page extension don't have their own page type. They use the `STATIC_PAGE` pattern, the same as Home or About.
+
+A page type provided by a Wix business solution is only available when that business solution is installed on the site. Get, List SEO Pattern Variables, and Create fail with `PAGE_TYPE_NOT_ON_SITE` when it isn't.
+
+These are the page types sites commonly customize:
+
+| `pageType` | What it is |
+|---|---|
+| `STATIC_PAGE` | Pages created in the Editor, such as Home or About |
+| `WIX_DATA_PAGE_ITEM` | A page built from a Wix Data collection. Specify `pageId` to address one page |
+| `BLOG_POST` | Blog posts |
+| `BLOG_CATEGORY` | Blog categories |
+| `BLOG_TAGS` | Blog tags |
+| `BLOG_ARCHIVE` | Blog archive pages |
+| `STORES_PRODUCT` | Store products |
+| `STORES_CATEGORY` | Store categories |
+| `STORES_SUB_CATEGORY` | Store subcategories |
+| `BOOKINGS_SERVICE` | Bookings services |
+| `EVENTS_PAGE` | Event pages |
+| `FORUM_POST` | Forum posts |
+| `FORUM_CATEGORY` | Forum categories |
+| `GROUPS_PAGE` | Group pages |
+| `GROUPS_POST` | Group posts |
+| `MEMBERS_AREA_PROFILE` | Member profiles |
+| `MEMBERS_AREA_AUTHOR_PROFILE` | Author profiles in the members area |
+| `PORTFOLIO_COLLECTIONS` | Portfolio collections |
+| `PORTFOLIO_PROJECTS` | Portfolio projects |
+| `PRICING_PLANS` | Pricing plans |
+| `PRO_GALLERY_ITEM` | Pro Gallery items |
+| `CHALLENGES_PAGE` | Online programs |
+| `RESTAURANTS_MENU_PAGE` | Restaurant menus |
+| `RESTAURANTS_MENU_ITEM` | Restaurant menu items |
+| `TABLE_RESERVATIONS_EXPERIENCE` | Table reservation experiences |
+
+The API also accepts names for some page components and platform pages, such as `SEARCH_PAGE` or `BREADCRUMBS_COMPONENT`. Those names appear in that error message. They aren't the page types a site customizes in SEO settings.
+
+Page types aren't the same set as the item types of the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction). A page type can support a pattern without supporting tags set per item, and the other way round.
+
 ## Before you begin
 
 It's important to note the following points before starting to code:
 
-- **A page type always has a pattern in effect.** [Get SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/get-seo-pattern) for a page type with no pattern of its own reports the Wix default, and `source` says which of the two is in effect.
+- **A page type always has a pattern in effect, and the Wix default is returned alongside it every time.** [Get SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/get-seo-pattern) returns `pattern`, the pattern in effect, together with `defaultPattern`, the Wix default for that page type. Both are present on every call, including for a page type the site has customized. `source` says which of the two is in effect: `PATTERN_SOURCE_USER` when the page type has a pattern of its own, `PATTERN_SOURCE_DEFAULT` when it doesn't. So to see what [Reset SEO Pattern To Default](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/reset-seo-pattern-to-default) would restore, read `defaultPattern`. There's no need to reset the pattern to find out.
 - **Create and Set aren't interchangeable.** [Create SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/create-seo-pattern) works only on a page type that has no pattern of its own. [Set SEO Pattern](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/set-seo-pattern) changes a pattern that already exists.
 - **A pattern may reference only the variables its page type offers, and variable names differ by page type.** A store product offers `{{product.name}}`, for example, while a page built from a Wix Data collection offers `{{wix-data-page-item.main-collection-primary-field}}`. Call [List SEO Pattern Variables](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/seo-pattern-v1/list-seo-pattern-variables) for each page type rather than reusing a name.
 - **Setting `pattern` replaces the page type's tag templates in full.** Retrieve the pattern first and send back the complete set you want it to have.
@@ -57,7 +101,7 @@ It's important to note the following points before starting to code:
 ## Terminology
 
 - **Pattern:** A template of SEO tags defined for one page type, whose variables are filled in per item.
-- **Page type:** A category of page on a site, such as a store product, a blog post, or a static page. Page types aren't the same set as the item types of the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction): a page type can support a pattern without supporting tags set per item, and the other way round.
+- **Page type:** A known name for a category of page that shares a pattern, such as `STORES_PRODUCT` or `BLOG_POST`. See [Page types](fallback::#page-types).
 - **Variable:** A placeholder such as `{{product.name}}`, written in double braces, that's replaced with an item's own value when its page renders. Each page type offers its own set.
 - **Wix default:** The pattern Wix supplies for a page type, which applies until a site defines one of its own.
 

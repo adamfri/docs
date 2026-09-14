@@ -92,7 +92,7 @@ mode: "wide"
     | `400` | `INVALID_ARGUMENT` | `TOTAL_MUST_BE_GREATER_OR_EQUAL_TO_ZERO` | Invoice total must be 0 or greater. |
     | `400` | `INVALID_ARGUMENT` | `BALANCE_MUST_BE_GREATER_OR_EQUAL_TO_ZERO` | Invoice balance must be 0 or greater. |
     | `400` | `INVALID_ARGUMENT` | `TOTAL_TOO_LOW_FOR_AUTO_CHARGE` | Invoice total must be at least 1 for invoices with `AUTO_CHARGE` reference type. |
-    | `428` | `FAILED_PRECONDITION` | `ILLEGAL_ACTION` | Invoice isn't in a state that allows this action. |
+    | `428` | `FAILED_PRECONDITION` | `ILLEGAL_ACTION` | Invoice can't be updated by this caller or in its current state. If `errorType` is `CONVERSION_REQUIRED`, convert the invoice first. |
     | `428` | `FAILED_PRECONDITION` | `ILLEGAL_FIELD_UPDATE_FOR_PAID_INVOICE` | This field can't be updated after a payment has been made. Restricted fields: `customerInfo`, `shippingInfo`, `businessDetails`, `regionalProperties`, `deposit`. |
     | `428` | `FAILED_PRECONDITION` | `ILLEGAL_FIELD_UPDATE_FOR_INVOICE` | Computed fields (`payments`, `taxInfo`, `totals`) can't be directly updated on standalone invoices. |
     | `428` | `FAILED_PRECONDITION` | `ILLEGAL_FIELD_UPDATE_FOR_PUBLISHED_INVOICE` | `presetProperties.presetId` can't be changed after the invoice is published. |
@@ -110,9 +110,16 @@ mode: "wide"
     | `400` | `INVALID_ARGUMENT` | `TIME_ZONE_INVALID` | Invoice `regionalProperties.timeZone` must be a valid time zone. |
     | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_MUST_EXIST` | Invoice must have at least one line item. |
     | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_IDS_MUST_BE_UNIQUE` | Line item IDs must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEM_QUANTITY_MUST_BE_INTEGER` | Line item quantity must be whole number. |
     | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_TOO_LARGE` | Rich content object exceeds the maximum allowed size. |
     | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_INVALID` | Rich content object couldn't be parsed. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_MULTIPLE_LINE_ITEMS_NOT_SUPPORTED` | A subscription invoice must contain exactly one line item. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_LINE_ITEM_START_DATE_ILLEGAL_FOR_NON_INITIAL_INVOICE` | A subscription line item's `startDate` may only be set on the initial invoice (when `currentCycle` is 1). |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_LINE_ITEM_CURRENT_CYCLE_MUST_BE_INITIAL_FOR_STANDALONE_INVOICE` | For a standalone invoice with subscription info, `currentCycle` must be 1. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_NOT_ALLOWED_FOR_REFERENCE_TYPE` | Subscription line items are only allowed on invoices with `AUTO_CHARGE`, `ORDER`, or `MIGRATED` reference type. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_LINE_ITEM_DEPOSIT_NOT_ALLOWED` | A deposit can't be set on an invoice with a subscription line item. |
     | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_MULTIPLE_DISCOUNTS_NOT_SUPPORTED` | A subscription invoice supports at most one discount: either one global discount or one discount per line item, not both. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_BOOKINGS_LINE_ITEM_NOT_SUPPORTED` | Subscription line items aren't supported for Wix Bookings items. |
 
     <Note>
 
@@ -201,7 +208,7 @@ mode: "wide"
               "lastName": "Smith",
               "email": "john.smith@example.com",
               "phone": "+1-555-555-9999",
-              "company": "John's Company",
+              "company": "Johns Company",
               "vatId": {
                 "id": "123-45-6789",
                 "type": "CPF"
@@ -224,7 +231,7 @@ mode: "wide"
               "lastName": "Doe",
               "email": "john.doe@example.com",
               "phone": "+1-555-555-5555",
-              "company": "John's Company",
+              "company": "Johns Company",
               "vatId": {
                 "id": "123-45-6789",
                 "type": "CPF"
@@ -465,7 +472,7 @@ mode: "wide"
 
           Actions that can be performed on this invoice based on its current status.
 
-          **Read-only.** Constraints: `maxItems 11`.
+          **Read-only.** Constraints: `maxItems 12`.
 
           **Supported values:**
 
@@ -480,6 +487,7 @@ mode: "wide"
           - `ARCHIVE` — Invoice can be archived. Available when invoice isn't in `DRAFT` status and isn't already archived.
           - `UNARCHIVE` — Invoice can be unarchived. Available when invoice is archived.
           - `MARK_AS_SENT` — Invoice can be marked as sent. Available when invoice isn't in `DRAFT` status.
+          - `CONVERT` — Invoice can be converted into the standard standalone or auto-charge flow. Available for eligible legacy invoices without payments or an initialized payment flow.
 
         </ParamField>
 
@@ -522,7 +530,7 @@ mode: "wide"
 
         <ParamField body="reference" type="Reference">
 
-          Reference linking the invoice to a Wix eCommerce order or standalone context.
+          Invoice type and Wix eCommerce association. May change when an eligible legacy invoice is converted.
 
           Constraints: `immutable`.
 
@@ -1435,7 +1443,7 @@ mode: "wide"
     | `400` | `INVALID_ARGUMENT` | `TOTAL_MUST_BE_GREATER_OR_EQUAL_TO_ZERO` | Invoice total must be 0 or greater. |
     | `400` | `INVALID_ARGUMENT` | `BALANCE_MUST_BE_GREATER_OR_EQUAL_TO_ZERO` | Invoice balance must be 0 or greater. |
     | `400` | `INVALID_ARGUMENT` | `TOTAL_TOO_LOW_FOR_AUTO_CHARGE` | Invoice total must be at least 1 for invoices with `AUTO_CHARGE` reference type. |
-    | `428` | `FAILED_PRECONDITION` | `ILLEGAL_ACTION` | Invoice isn't in a state that allows this action. |
+    | `428` | `FAILED_PRECONDITION` | `ILLEGAL_ACTION` | Invoice can't be updated by this caller or in its current state. If `errorType` is `CONVERSION_REQUIRED`, convert the invoice first. |
     | `428` | `FAILED_PRECONDITION` | `ILLEGAL_FIELD_UPDATE_FOR_PAID_INVOICE` | This field can't be updated after a payment has been made. Restricted fields: `customerInfo`, `shippingInfo`, `businessDetails`, `regionalProperties`, `deposit`. |
     | `428` | `FAILED_PRECONDITION` | `ILLEGAL_FIELD_UPDATE_FOR_INVOICE` | Computed fields (`payments`, `taxInfo`, `totals`) can't be directly updated on standalone invoices. |
     | `428` | `FAILED_PRECONDITION` | `ILLEGAL_FIELD_UPDATE_FOR_PUBLISHED_INVOICE` | `presetProperties.presetId` can't be changed after the invoice is published. |
@@ -1453,9 +1461,16 @@ mode: "wide"
     | `400` | `INVALID_ARGUMENT` | `TIME_ZONE_INVALID` | Invoice `regionalProperties.timeZone` must be a valid time zone. |
     | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_MUST_EXIST` | Invoice must have at least one line item. |
     | `400` | `INVALID_ARGUMENT` | `LINE_ITEMS_IDS_MUST_BE_UNIQUE` | Line item IDs must be unique. |
+    | `400` | `INVALID_ARGUMENT` | `LINE_ITEM_QUANTITY_MUST_BE_INTEGER` | Line item quantity must be whole number. |
     | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_TOO_LARGE` | Rich content object exceeds the maximum allowed size. |
     | `400` | `INVALID_ARGUMENT` | `RICH_CONTENT_INVALID` | Rich content object couldn't be parsed. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_MULTIPLE_LINE_ITEMS_NOT_SUPPORTED` | A subscription invoice must contain exactly one line item. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_LINE_ITEM_START_DATE_ILLEGAL_FOR_NON_INITIAL_INVOICE` | A subscription line item's `startDate` may only be set on the initial invoice (when `currentCycle` is 1). |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_LINE_ITEM_CURRENT_CYCLE_MUST_BE_INITIAL_FOR_STANDALONE_INVOICE` | For a standalone invoice with subscription info, `currentCycle` must be 1. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_NOT_ALLOWED_FOR_REFERENCE_TYPE` | Subscription line items are only allowed on invoices with `AUTO_CHARGE`, `ORDER`, or `MIGRATED` reference type. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_LINE_ITEM_DEPOSIT_NOT_ALLOWED` | A deposit can't be set on an invoice with a subscription line item. |
     | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_MULTIPLE_DISCOUNTS_NOT_SUPPORTED` | A subscription invoice supports at most one discount: either one global discount or one discount per line item, not both. |
+    | `400` | `INVALID_ARGUMENT` | `SUBSCRIPTION_BOOKINGS_LINE_ITEM_NOT_SUPPORTED` | Subscription line items aren't supported for Wix Bookings items. |
 
     <Note>
 

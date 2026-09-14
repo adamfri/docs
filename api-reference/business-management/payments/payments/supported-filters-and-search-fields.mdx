@@ -1,0 +1,112 @@
+---
+title: "Supported Filters and Search Fields"
+description: "Search Payments accepts structured filters, full-text search expressions, and correlated nested matches against refunds and disputes."
+icon: "file-lines"
+---
+
+[Search Payments](fallback::https://dev.wix.com/docs/api-reference/business-management/payments/payments/search-payments) accepts
+structured filters, full-text search expressions, and correlated nested
+matches against refunds and disputes. The tables below list the fields supported in each.
+
+For an overview of the query and search syntax,
+see [API Query and Search Language](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language).
+
+## Top-level filters and sorting
+
+| Field         | Supported Filters                                                    | Sortable |
+|---------------|----------------------------------------------------------------------|----------|
+| `id`          | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+| `appId`       | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `refundable`  | `$eq`, `$ne`, `$exists`                                              | Yes      |
+| `createdDate` | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | Yes      |
+
+## Charge filters and sorting
+
+| Field                                      | Supported Filters                                                    | Sortable |
+|--------------------------------------------|----------------------------------------------------------------------|----------|
+| `charge.status`                            | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+| `charge.providerId`                        | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+| `charge.currencyCode`                      | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+| `charge.amount`                            | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | Yes      |
+| `charge.paymentMethod.paymentMethodTypeId` | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+| `charge.paymentMethod.paymentBrandId`      | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+
+## Refund filters
+
+These fields apply to individual items in the `refunds` array. To require multiple conditions to match the same refund,
+wrap them in `$matchItems`.
+
+| Field                 | Supported Filters                                                    | Sortable |
+|-----------------------|----------------------------------------------------------------------|----------|
+| `refunds.id`          | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `refunds.status`      | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `refunds.amount`      | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | No       |
+| `refunds.createdDate` | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | No       |
+
+## Dispute filters
+
+These fields apply to individual items in the `disputes` array. To require multiple conditions to match the same
+dispute, wrap them in `$matchItems`.
+
+| Field                  | Supported Filters                                                    | Sortable |
+|------------------------|----------------------------------------------------------------------|----------|
+| `disputes.id`          | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `disputes.status`      | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `disputes.stage`       | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `disputes.reason`      | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | No       |
+| `disputes.defendable`  | `$eq`, `$ne`, `$exists`                                              | No       |
+| `disputes.amount`      | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | No       |
+| `disputes.createdDate` | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | No       |
+| `disputes.dueDate`     | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | No       |
+
+## Notification of fraud filters and sorting
+
+| Field                             | Supported Filters                                                    | Sortable |
+|-----------------------------------|----------------------------------------------------------------------|----------|
+| `notificationOfFraud.reason`      | `$eq`, `$ne`, `$in`, `$nin`, `$exists`                               | Yes      |
+| `notificationOfFraud.createdDate` | `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$exists` | Yes      |
+
+## Full-text search
+
+The `search.expression` field matches against the following fields. A match in any of them returns the payment.
+
+- `charge.billingInfo.contactDetails.firstName`
+- `charge.billingInfo.contactDetails.lastName`
+- `charge.billingInfo.contactDetails.email`
+- `charge.shippingInfo.contactDetails.email`
+- `charge.orderLineItems.name`
+
+## Correlated nested matching
+
+Use `$matchItems` on `refunds` or `disputes` to require all conditions to match the same item, rather than different
+items on the same payment.
+
+For example, use the following `search.filter` section to find payments with a `SUCCEEDED` refund whose amount is
+greater than `100`:
+
+```json
+{
+  "filter": {
+    "refunds": {
+      "$matchItems": [
+        {
+          "status": {
+            "$eq": "SUCCEEDED"
+          }
+        },
+        {
+          "amount": {
+            "$gt": "100"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Without `$matchItems`, the same query would also return payments where one refund is `SUCCEEDED` and a different
+refund's amount is greater than `100`.
+
+__Related content:__
+[API Query and Search Language](https://dev.wix.com/docs/rest/articles/getting-started/api-query-language)

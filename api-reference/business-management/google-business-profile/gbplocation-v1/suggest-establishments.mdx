@@ -1,0 +1,444 @@
+---
+title: "Suggest Establishments"
+description: "Retrieves business suggestions for partial text, for autocompleting a business name as someone types."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves business suggestions for partial text, for autocompleting a
+    business name as someone types.
+
+    Only existing businesses come back. Regions and street addresses never do,
+    so use Suggest Regions for those. Use this to find and prefill the business
+    a site owner wants to claim.
+
+    Needs no connected Google account and no existing location. Text shorter
+    than 3 characters returns an empty list rather than an error.
+
+    `countryCode` is optional here, unlike Suggest Regions: business names are
+    searched worldwide unless you narrow them.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/gbp/v1/establishments/suggest
+    ```
+
+    ## Body Params
+
+    <ParamField body="query" type="string" required>
+
+      Partial free-text the end-user is typing (e.g. "acme hard"). Sent per
+      debounced keystroke; Google returns business-name predictions matching
+      this prefix. Queries shorter than 3 chars return an empty list
+      (handled server-side), not an error.
+
+      Constraints: `minLength 1`, `maxLength 200`.
+
+    </ParamField>
+
+    <ParamField body="countryCode" type="string">
+
+      Optional ISO 3166-1 alpha-2 country to restrict results to (e.g. "US").
+      Unlike SuggestRegions, business search is unrestricted when omitted.
+
+    </ParamField>
+
+    <ParamField body="languageCode" type="string">
+
+      Optional BCP-47 language for the returned names (e.g. "fr"). Defaults to
+      Google's behavior (typically the account/region language) when empty.
+
+      Constraints: `maxLength 35`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="suggestions" type="EstablishmentSuggestion[]">
+
+      Business-name predictions ranked by Google, best match first.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="suggestions properties">
+
+        <ResponseField name="placeId" type="string">
+
+          Google's opaque place identifier for the predicted business.
+
+          Constraints: `maxLength 255`.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Full human-readable prediction text (e.g. "Acme Hardware, Main St, NYC").
+
+          Constraints: `maxLength 512`.
+
+        </ResponseField>
+
+        <ResponseField name="mainText" type="string">
+
+          Primary part of the prediction (e.g. "Acme Hardware"), for bold styling.
+
+          Constraints: `maxLength 512`.
+
+        </ResponseField>
+
+        <ResponseField name="secondaryText" type="string">
+
+          Secondary part of the prediction (e.g. "Main St, NYC"), for muted styling.
+
+          Constraints: `maxLength 512`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/gbp/v1/establishments/suggest' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "query": "Sunset Coffee",
+        "countryCode": "US",
+        "languageCode": "en"
+      }'
+      ```
+
+      ```json Response
+      {
+        "suggestions": [
+          {
+            "placeId": "ChIJj3RhqNJ9j4ARBl4Nqk3S2vU",
+            "description": "Sunset Coffee Roasters, 2436 Mission St, San Francisco, CA, USA",
+            "mainText": "Sunset Coffee Roasters",
+            "secondaryText": "2436 Mission St, San Francisco, CA, USA"
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves business suggestions for partial text, for autocompleting a
+    business name as someone types.
+
+    Only existing businesses come back. Regions and street addresses never do,
+    so use Suggest Regions for those. Use this to find and prefill the business
+    a site owner wants to claim.
+
+    Needs no connected Google account and no existing location. Text shorter
+    than 3 characters returns an empty list rather than an error.
+
+    `countryCode` is optional here, unlike Suggest Regions: business names are
+    searched worldwide unless you narrow them.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { locations } from '@wix/gbp';
+
+    locations.suggestEstablishments(query, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="query" type="string" required>
+
+      Partial free-text the end-user is typing (e.g. "acme hard"). Sent per
+      debounced keystroke; Google returns business-name predictions matching
+      this prefix. Queries shorter than 3 chars return an empty list
+      (handled server-side), not an error.
+
+      Constraints: `minLength 1`, `maxLength 200`.
+
+    </ParamField>
+
+    <ParamField body="options" type="SuggestEstablishmentsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="countryCode" type="string">
+
+          Optional ISO 3166-1 alpha-2 country to restrict results to (e.g. "US").
+          Unlike SuggestRegions, business search is unrestricted when omitted.
+
+        </ParamField>
+
+        <ParamField body="languageCode" type="string">
+
+          Optional BCP-47 language for the returned names (e.g. "fr"). Defaults to
+          Google's behavior (typically the account/region language) when empty.
+
+          Constraints: `maxLength 35`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="suggestions" type="EstablishmentSuggestion[]">
+
+      Business-name predictions ranked by Google, best match first.
+
+      Constraints: `maxItems 20`.
+
+      <Expandable title="suggestions properties">
+
+        <ResponseField name="placeId" type="string">
+
+          Google's opaque place identifier for the predicted business.
+
+          Constraints: `maxLength 255`.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Full human-readable prediction text (e.g. "Acme Hardware, Main St, NYC").
+
+          Constraints: `maxLength 512`.
+
+        </ResponseField>
+
+        <ResponseField name="mainText" type="string">
+
+          Primary part of the prediction (e.g. "Acme Hardware"), for bold styling.
+
+          Constraints: `maxLength 512`.
+
+        </ResponseField>
+
+        <ResponseField name="secondaryText" type="string">
+
+          Secondary part of the prediction (e.g. "Main St, NYC"), for muted styling.
+
+          Constraints: `maxLength 512`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-suggest-establishments" id="ex-sdk-suggest-establishments-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-suggest-establishments" id="ex-sdk-suggest-establishments-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-suggest-establishments-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-suggest-establishments-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Suggest establishments by name</span><span className="wix-picker-desc">Autocomplete existing businesses while the owner types their business name</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">suggestEstablishments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-suggest-establishments-0"><span className="wix-picker-name">Suggest establishments by name</span><span className="wix-picker-desc">Autocomplete existing businesses while the owner types their business name</span></label>
+    <label htmlFor="ex-sdk-suggest-establishments-1"><span className="wix-picker-name">suggestEstablishments (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Suggest establishments by name
+    import { locations } from "@wix/gbp";
+
+    async function suggestEstablishments() {
+      const response = await locations.suggestEstablishments("Sunset Coffee", {
+        countryCode: "US",
+        languageCode: "en",
+      });
+
+      console.log(response.suggestions);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "suggestions": [
+     *     {
+     *       "placeId": "ChIJj3RhqNJ9j4ARBl4Nqk3S2vU",
+     *       "description": "Sunset Coffee Roasters, 2436 Mission St, San Francisco, CA, USA",
+     *       "mainText": "Sunset Coffee Roasters",
+     *       "secondaryText": "2436 Mission St, San Francisco, CA, USA"
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript suggestEstablishments (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { locations } from '@wix/gbp';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { locations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function suggestEstablishments(query,options) {
+      const response = await myWixClient.locations.suggestEstablishments(query,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

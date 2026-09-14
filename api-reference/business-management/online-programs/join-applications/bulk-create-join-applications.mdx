@@ -1,0 +1,567 @@
+---
+title: "Bulk Create Join Applications"
+description: "Creates up to 100 join applications."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates up to 100 join applications.
+
+    Specify `memberId`, `programId`, and `status` for each application. Set `returnEntity` to `true` to return the created applications in the response.
+
+    To create a single join application, call [Create Join Application](https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/create-join-application).
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CHALLENGES.MANAGE">Manage Online Programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/online-programs/participants/v3/bulk/join-applications/create
+    ```
+
+    ## Body Params
+
+    <ParamField body="joinApplications" type="JoinApplication[]" required>
+
+      Join applications to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Join Application Object](/api-reference/business-management/online-programs/join-applications/join-application-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="returnEntity" type="boolean">
+
+      Whether to return the created join applications in the response.
+
+      Default: `false`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkJoinApplicationResult[]">
+
+      Result of each individual create, including metadata.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual create.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="JoinApplication">
+
+          Created join application. Returned only when `returnEntity` is `true` in the request.
+
+          See the [Join Application Object](/api-reference/business-management/online-programs/join-applications/join-application-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk create.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PREMIUM_PLAN_REQUIRED` | The site needs a Premium plan to add more participants. |
+    | `428` | `FAILED_PRECONDITION` | `PARTICIPANTS_LIMIT_EXCEEDED` | The program's participant limit has been reached. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Join Application Created | `wix.online_programs.participants.v3.join_application_created` | Triggered when a join application is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Creates multiple join applications in a single request
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/online-programs/participants/v3/bulk/join-applications/create' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "joinApplications": [
+          {
+            "memberId": "6c7c7b22-67a2-43c7-9d27-3b8ed07d9a45",
+            "programId": "5f2d6b0e-8f8f-4e6e-a1b1-6f6a8427c3d7",
+            "status": "INVITED"
+          },
+          {
+            "memberId": "2a01d8c7-54e5-4f42-9c9f-7a5d4d2ec4f1",
+            "programId": "5f2d6b0e-8f8f-4e6e-a1b1-6f6a8427c3d7",
+            "status": "INVITED"
+          }
+        ],
+        "returnEntity": true
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "f5b74327-4e94-4d42-a214-03e7f1f805ef",
+              "originalIndex": 0,
+              "success": true
+            },
+            "item": {
+              "id": "f5b74327-4e94-4d42-a214-03e7f1f805ef",
+              "revision": "1",
+              "createdDate": "2026-06-01T14:25:14.390Z",
+              "updatedDate": "2026-06-01T14:25:14.390Z",
+              "memberId": "6c7c7b22-67a2-43c7-9d27-3b8ed07d9a45",
+              "programId": "5f2d6b0e-8f8f-4e6e-a1b1-6f6a8427c3d7",
+              "status": "INVITED",
+              "paymentStatus": "NO_PAYMENT_REQUIRED"
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "0f8eb82f-2f17-46c5-bab2-16923146b4c4",
+              "originalIndex": 1,
+              "success": true
+            },
+            "item": {
+              "id": "0f8eb82f-2f17-46c5-bab2-16923146b4c4",
+              "revision": "1",
+              "createdDate": "2026-06-01T14:25:14.430Z",
+              "updatedDate": "2026-06-01T14:25:14.430Z",
+              "memberId": "2a01d8c7-54e5-4f42-9c9f-7a5d4d2ec4f1",
+              "programId": "5f2d6b0e-8f8f-4e6e-a1b1-6f6a8427c3d7",
+              "status": "INVITED",
+              "paymentStatus": "NO_PAYMENT_REQUIRED"
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 2,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Creates up to 100 join applications.
+
+    Specify `memberId`, `programId`, and `status` for each application. Set `returnEntity` to `true` to return the created applications in the response.
+
+    To create a single join application, call [Create Join Application](https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/create-join-application).
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CHALLENGES.MANAGE">Manage Online Programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { joinApplications } from '@wix/online-programs';
+
+    joinApplications.bulkCreateJoinApplications(joinApplications, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="joinApplications" type="JoinApplication[]" required>
+
+      Join applications to create.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      See the [Join Application Object](/api-reference/business-management/online-programs/join-applications/join-application-object) for this object's fields.
+
+    </ParamField>
+
+    <ParamField body="options" type="BulkCreateJoinApplicationsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="returnEntity" type="boolean">
+
+          Whether to return the created join applications in the response.
+
+          Default: `false`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkJoinApplicationResult[]">
+
+      Result of each individual create, including metadata.
+
+      Constraints: `minItems 1`, `maxItems 100`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual create.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Provided only whenever possible. For example, `itemId` can't be provided when item creation has failed.
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+              Constraints: `min 0`.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action for this item was successful. When `false`, the `error` field is returned.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="JoinApplication">
+
+          Created join application. Returned only when `returnEntity` is `true` in the request.
+
+          See the [Join Application Object](/api-reference/business-management/online-programs/join-applications/join-application-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Metadata for the bulk create.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+          Constraints: `min 0`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `PREMIUM_PLAN_REQUIRED` | The site needs a Premium plan to add more participants. |
+    | `428` | `FAILED_PRECONDITION` | `PARTICIPANTS_LIMIT_EXCEEDED` | The program's participant limit has been reached. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Join Application Created | `wix.online_programs.participants.v3.join_application_created` | Triggered when a join application is created. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-bulk-create-join-applications" id="ex-sdk-bulk-create-join-applications-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-bulk-create-join-applications" id="ex-sdk-bulk-create-join-applications-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-bulk-create-join-applications-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-bulk-create-join-applications-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Bulk create join applications</span><span className="wix-picker-desc">Creates multiple join applications in a single request</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">bulkCreateJoinApplications (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-bulk-create-join-applications-0"><span className="wix-picker-name">Bulk create join applications</span><span className="wix-picker-desc">Creates multiple join applications in a single request</span></label>
+    <label htmlFor="ex-sdk-bulk-create-join-applications-1"><span className="wix-picker-name">bulkCreateJoinApplications (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Bulk create join applications
+    import { joinApplications } from "@wix/online-programs";
+
+    async function bulkCreateJoinApplications() {
+      const response = await joinApplications.bulkCreateJoinApplications(
+        [
+          {
+            memberId: "6c7c7b22-67a2-43c7-9d27-3b8ed07d9a45",
+            programId: "5f2d6b0e-8f8f-4e6e-a1b1-6f6a8427c3d7",
+            status: "INVITED",
+          },
+          {
+            memberId: "2a01d8c7-54e5-4f42-9c9f-7a5d4d2ec4f1",
+            programId: "5f2d6b0e-8f8f-4e6e-a1b1-6f6a8427c3d7",
+            status: "INVITED",
+          },
+        ],
+        { returnEntity: true },
+      );
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript bulkCreateJoinApplications (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { joinApplications } from '@wix/online-programs';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { joinApplications },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function bulkCreateJoinApplications(joinApplications,options) {
+      const response = await myWixClient.joinApplications.bulkCreateJoinApplications(joinApplications,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

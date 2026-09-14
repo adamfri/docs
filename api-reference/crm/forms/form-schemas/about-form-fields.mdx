@@ -30,6 +30,7 @@ Both nested object names follow the same rule: take the enum value, convert it t
   "identifier": "TEXT_INPUT",
   "inputOptions": {
     "target": "short_answer_e62b",
+    "required": true,
     "inputType": "STRING",
     "stringOptions": {
       "validation": {},
@@ -51,11 +52,19 @@ Field `id` values in this article are examples. Supply your own GUIDs, or omit `
 
 </Note>
 
+### A componentType must be valid for its inputType
+
+The 3 values must agree. Wix builds a field's view by dispatching on `componentType` in the field's `inputType`, so a combination that doesn't exist produces a field with no view. For example, `inputType: NUMBER` supports only `NUMBER_INPUT` and `RATING_INPUT`, so pairing it with `TEXT_INPUT` yields nothing to render.
+
+Creation succeeds either way. Wix stores the field and returns it in `formFields`, but the field has no view, so the form has nothing to display for it. Take each pairing from [Field types](fallback::#field-types) rather than assembling your own.
+
 ## Field identifiers
 
 `identifier` labels a field with its purpose. Unlike `target`, which names the key a submitted value is stored under, `identifier` tells Wix apps what kind of field they're looking at.
 
-Use the known values listed in [Field types](fallback::#field-types). Wix Forms uses `identifier` to render submissions in the submission table, so a field with a missing or non-standard identifier may display incorrectly there, even though the form itself works and the API accepts the request.
+Use the known values listed in [Field types](fallback::#field-types). Wix accepts an unrecognized value, such as a custom string or a GUID: the request succeeds, and Wix stores the field, returns it in `formFields`, and accepts its submissions. But Wix apps use `identifier` to recognize a field, so the Wix Forms editor doesn't render it, and the Wix user can't see or edit that field. A form whose fields all carry unrecognized identifiers opens empty in the editor.
+
+Always map a field onto a known identifier, and set its display name with the component's label.
 
 Identifiers starting with `CONTACTS_` mark fields that map to a contact property. These fields also set `inputOptions.contactMapping`, which makes form submissions create or update a contact. See [Contact fields](fallback::#contact-fields).
 
@@ -109,7 +118,7 @@ The following table lists every supported field and the values that produce it. 
 
 Rich content and the submit button are display fields. They set `fieldType` to `DISPLAY` and have no input type or component type. Instead, `displayOptions.displayFieldType` selects the element, and its settings nest under the matching options object.
 
-A rich content field shows formatted text, images, or links without collecting a value. Its content is a [Ricos rich content](fallback::https://dev.wix.com/docs/rest/crm/ricos/introduction) object, and `maxShownParagraphs` optionally collapses longer content behind an expandable section:
+A rich content field shows formatted text, images, or links without collecting a value. Its content is a [Ricos rich content](https://dev.wix.com/docs/rest/crm/ricos/introduction) object, and `maxShownParagraphs` optionally collapses longer content behind an expandable section:
 
 ```json
 {
@@ -193,6 +202,25 @@ Always include `validation`, even when it's empty: `{}`. It goes inside the fiel
 
 Nest it under the object named after the field's `inputType`, not its `componentType`. Placing it under the wrong object is accepted at creation, but leaves the field with no validation the form recognizes.
 
+### Required fields
+
+`required` sits directly on `inputOptions`, alongside `target` and `inputType`. It isn't part of the validation object:
+
+```json
+"inputOptions": {
+  "target": "short_answer_e62b",
+  "required": true,
+  "inputType": "STRING",
+  "stringOptions": {
+    "validation": {}
+  }
+}
+```
+
+A `required` placed inside `<inputType>Options.validation` isn't part of the schema and has no effect. Creation still succeeds, so nothing signals the mistake, and the field stays optional, the same as any field that omits `required`.
+
+`required` marks a whole field. A multi-line address field also chooses which of its subfields a submitter must fill, in `validation.fields`. See [Contact fields](fallback::#contact-fields).
+
 ### Format constraints
 
 Several fields rely on `validation.format` rather than a distinct component to constrain what submitters can enter. Set it inside the input type's options object:
@@ -275,9 +303,11 @@ Use `numberOfColumns` to lay choices out. Image choice fields typically use `TWO
 
 Service picker fields follow the same pattern, but each option `value` is a Wix Services service ID rather than free text.
 
+For what a choice field submits, see [Choice](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-submissions/about-submission-values#choice) in About Submission Values.
+
 ## Checkbox labels use rich content
 
-Checkbox and subscribe checkbox fields take a [Ricos rich content](fallback::https://dev.wix.com/docs/rest/crm/ricos/introduction) object as their label, not a plain string. This lets a label contain links, which consent text often needs:
+Checkbox and subscribe checkbox fields take a [Ricos rich content](https://dev.wix.com/docs/rest/crm/ricos/introduction) object as their label, not a plain string. This lets a label contain links, which consent text often needs:
 
 ```json
 {
@@ -440,7 +470,13 @@ The server stores `id` in lowercase, so pass a lowercase GUID for `id` and match
 
 File upload, signature, and all 4 payment fields are premium features. The site needs a Core premium plan or higher. Creating a form schema that includes one of these fields on a site without a qualifying plan fails.
 
-The site's plan also caps how many fields a single form schema can hold, and how many form schemas the site can have. Creating a form schema that exceeds either cap fails rather than truncating. Both caps depend on the plan, so read the current values with [List Forms Providers Configs](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/list-forms-providers-configs) instead of assuming a fixed number. Splitting a single logical form across several schemas to stay under the field cap trades a single submission record for several, and consumes more of the site's form allowance.
+The site's plan also caps how much a form schema can hold: `fieldsLimit` for input fields, `stepsLimit` for steps, `rulesLimit` for conditional rules, and `emailsLimit` for submission email recipients. It caps how many form schemas the site can have too. Creating a form schema that exceeds a cap fails rather than truncating.
+
+Read the current values with Get Restrictions, which returns the caps for the site along with its current form count. `fieldsLimit` counts input fields, so display elements such as rich content and the submit button don't count toward it. An unset cap means no limit.
+
+Don't read these caps from List Forms Providers Configs. That method returns what each provider app declares for all sites, not the limits in force for a site.
+
+Splitting a single logical form across several schemas to stay under the field cap trades a single submission record for several, and consumes more of the site's form allowance.
 
 ### Another Wix app
 

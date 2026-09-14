@@ -1,0 +1,32 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Optimize a page for its focus keyword
+
+A site owner picked a focus keyword for their services page and wants the page's text rewritten to rank for it. Your app runs an optimization job and presents each suggested change for approval.
+
+> **Prerequisite:** The page has a focus keyword set in its SEO settings, for example with the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction).
+
+To optimize a page:
+
+1. Call [Trigger Page Optimization](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/page-optimization-v1/trigger-page-optimization) with the page's `pageId` and its URL path in `pagePath`, for example `/services`. Keep the returned `predictionId`.
+1. Poll [Get Page Optimization Results](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/page-optimization-v1/get-page-optimization-results) with `?predictionId=<predictionId>` every few seconds. While `status` is `IN_PROGRESS`, keep polling. Generation typically takes under 2 minutes.
+1. When `status` is `COMPLETED`, read `pageOptimization`. Present `metaTitle`, `metaDescription`, `h1`, `h2OrH3`, and each entry of `content` as a before/after pair the owner can accept or reject.
+1. For each accepted pair, locate the element on the page by its `before` text and replace it with `after`. Apply the title tag and description tag through the page's SEO settings, for example with the [Item SEO Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/item-seo-tags-v1/introduction).
+1. If `status` is `FAILED`, call [Trigger Page Optimization](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/page-optimization-v1/trigger-page-optimization) again to retry.
+
+## Optimize the homepage
+
+Your app offers a one-click SEO boost for the homepage. The homepage represents the whole site rather than one topic, so it has its own trigger method with homepage-specific guidance.
+
+To optimize the homepage:
+
+1. Call [Trigger Home Page Optimization](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/page-optimization-v1/trigger-home-page-optimization) with the homepage's `pageId` and `/` as `pagePath`. Keep the returned `predictionId`.
+1. Poll [Get Page Optimization Results](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/page-optimization-v1/get-page-optimization-results) with `?predictionId=<predictionId>` until `status` is `COMPLETED`.
+1. Present the suggestions and apply the accepted changes to the homepage, as in the previous flow.
+1. If the owner comes back later, call [Get Page Optimization Results](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/page-optimization-v1/get-page-optimization-results) with `?pageId=<pageId>` instead. It returns the homepage's latest suggestion set even after the `predictionId` expired.

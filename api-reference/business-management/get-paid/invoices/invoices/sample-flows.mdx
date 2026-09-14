@@ -70,7 +70,7 @@ To generate and download a PDF for an invoice:
 
 1. Call [Generate PDF Document](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/generate-pdf-document) with the invoice ID to start the generation process.
 2. Poll [Get Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/get-invoice) and check `documentInfo.status`.
-3. When `documentInfo.status` is `AVAILABLE`, use `documentInfo.downloadUrl` to download the PDF. Download links expire after 24 hours. Call [Generate PDF Document](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/standalone-invoice-payment-lifecycle) again if the link has expired.
+3. When `documentInfo.status` is `AVAILABLE`, use `documentInfo.downloadUrl` to download the PDF. Download links expire after 24 hours. Call [Generate PDF Document](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/generate-pdf-document) again if the link has expired.
 
 ## Implement bulk invoice processing for recurring billing
 
@@ -82,3 +82,28 @@ To implement bulk invoice processing:
 2. Call [Bulk Create Invoices](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/bulk-create-invoices) to process up to 100 invoices simultaneously with the prepared customer and billing data.
 3. Check the `bulkActionMetadata` in the response for success and failure counts, and handle errors for any failed invoices.
 4. For invoice updates across multiple customers, call [Bulk Update Invoices](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/bulk-update-invoices).
+
+## Create an invoice with automatic charges
+
+Set up a subscription that automatically charges the customer on each billing cycle. Use this flow when you want to automatically generate and charge subsequent invoices after the first invoice is paid—for example, charge a customer each year for an annual membership.
+
+<Note>
+
+Only one subscription line item is supported per invoice.
+
+</Note>
+
+To create an invoice with automatic charges:
+
+1. Call [Create Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/create-invoice) with the following required fields:
+   - `referenceType`: `AUTO_CHARGE`
+   - `customerInfo.contactId`
+   - `currency`
+   - `issueDate`
+   - A line item with `subscriptionInfo` configured:
+     - `cycle`: the billing frequency (`daily`, `weekly`, `monthly`, or `yearly`) and `interval`
+     - `numberOfCycles`: total number of billing cycles, or `0` for an indefinite subscription
+2. Call [Publish Invoice](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/publish-invoice) to assign an invoice number.
+3. Call [Initiate Payment](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/initiate-payment) with the invoice ID. This creates a Wix eCommerce order and returns a `checkoutUrl`. Redirect the customer to the `checkoutUrl` to complete the first payment.
+4. Once the invoice is fully paid, Wix activates the subscription. Subsequent invoices are auto-generated and charged on each billing cycle.
+5. Monitor each cycle invoice by listening to the [Invoice Updated](fallback::https://dev.wix.com/docs/api-reference/business-management/get-paid/invoices/invoices/invoice-updated) event.

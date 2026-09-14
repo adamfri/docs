@@ -1,0 +1,113 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It
+provides a useful starting point as you plan your implementation.
+
+> **Prerequisite:** every flow assumes the site already has a Google connection, established through
+> the Google Business Profile Connection API, and that the location is already imported. Changes are
+> queued per location, identified by Google's location ID.
+
+## Save a full gallery
+
+The site owner has arranged a gallery of photos and hits save. Google accepts only about 10 edits
+per minute per profile, so apply the whole set through the queue instead of one immediate write per
+photo.
+
+1. Collect the changes. Each addition needs a publicly reachable `sourceUrl`, a `category` such as
+   `LOGO`, `COVER`, or `INTERIOR`, and `format: "PHOTO"`.
+2. Call **Bulk Create Media Uploads** with up to 52 changes and `operation: "CREATE"` on each. The
+   call returns in well under a second without calling Google. One call has to be either all
+   additions or all removals, so send two calls if the save mixes both.
+3. Inspect `results[].itemMetadata.error`. The call reports per-item failures instead of aborting,
+   so a `200` does not mean every change was queued.
+4. To keep the `batchId` for correlating later troubleshooting with this save, pass
+   `returnEntity: true` in step 2 and read it from `results[].item`. Without `returnEntity` the
+   results carry only `itemMetadata`, which has no batch ID. One save can produce more than one
+   batch.
+
+Give each change a `slotKey` that is stable and meaningful to you, such as `logo` or
+`photo:a3f8c112`. It's how a failure is matched back to the photo that caused it, and it's part of
+what makes a repeated submission a duplicate rather than a second change, so a retried save doesn't
+upload the same photo twice.
+
+## Remove photos in bulk
+
+1. Call the Locations API's **List Media** to read the current gallery and collect the `mediaKey` of
+   each photo to remove.
+2. Call **Bulk Create Media Uploads** with `operation: "DELETE"` and the `mediaKey` on each change.
+3. Follow progress the same way as for additions.
+
+## Follow progress and report the outcome
+
+There's no completion callback, so polling is the only way to know where the queue stands.
+
+1. Poll **List Media Uploads** with the `locationId`. Expect a large set to take a while: the queue
+   applies a few changes a minute per location, so 52 photos take on the order of ten minutes.
+2. Read the response as a whole:
+
+   | What comes back | What it means |
+   | --- | --- |
+   | Anything `PENDING` or `UPLOADING` | Still working. Don't report results yet. |
+   | Only `FAILED` items | Finished, and those items didn't make it. |
+   | Nothing | Nothing is outstanding for this location. |
+
+3. When only failures remain, show them to the site owner. Each failure carries a typed reason:
+   - `IMAGE_TOO_SMALL`, `ASPECT_RATIO_REJECTED`, `FORMAT_UNSUPPORTED`: the photo itself was
+     rejected. Ask the owner for a different file. Retrying the same one fails again.
+   - `SOURCE_UNREACHABLE`: Google could not fetch the `sourceUrl`. Check that the URL is public and
+     still valid, then queue the change again.
+   - `PERMISSION_REVOKED`: access to the Google account was lost. Send the owner through the
+     reconnect flow of the Connection API before queuing anything else. Warn them first:
+     reconnecting from a lost-credentials state permanently removes every location on the old
+     connection, whichever Google account they authorize with. See the Connection API's Get
+     Connect URL documentation.
+   - `RATE_LIMIT_EXHAUSTED`: Google was still rate limiting after the queue used up its retries.
+     Queue the change again later.
+   - `UPLOAD_UNVERIFIED`: the change may or may not have reached Google, and the queue chose not to
+     risk a duplicate by trying again. Nothing is wrong with the photo. Word it for the site owner
+     that way: "we couldn't confirm this photo was added", not "this photo was rejected". Check
+     **List Media** before queuing it again, so a photo that did land isn't added twice.
+4. Call **Dismiss Media Upload Failures** once the site owner has acknowledged the failures. Until
+   then they stay in the queue and keep appearing in every poll.
+
+## Confirm the final gallery
+
+An empty queue is not proof of success. A change that succeeds is removed from the queue, and so is
+a failure that's been dismissed; the two look identical afterwards. When the queue drains, call the
+Locations API's **List Media** and compare against what the owner asked for, rather than inferring
+success from emptiness.
+
+This matters most when more than one app manages the same location. Queuing new changes clears every
+failure for that location, whoever queued it, so one app submitting a change discards failures the
+other hasn't read yet. Read failures before queuing again.
+
+## Show the gallery while the queue is working
+
+While changes are mid-flight, Google's list lags behind what the site owner asked for in both
+directions. Render the target state by combining the two sources, counting only changes still on
+their way, because a `FAILED` addition never reached Google:
+
+```
+gallery = Google's media list
+        + additions still PENDING or UPLOADING
+        - removals still PENDING or UPLOADING
+```
+
+Match a pending addition to its slot with `slotKey`, and a pending removal to the photo it removes
+with `mediaKey`.
+
+One exception to "a `FAILED` addition never reached Google": an addition that failed with
+`UPLOAD_UNVERIFIED` may or may not have landed. Treat it as unknown rather than absent, and settle
+it against **List Media** before counting it either way.
+
+## Mind the shared rate limit
+
+The same budget of roughly 10 edits per minute covers every write to the profile, not just photos.
+The Locations API's **Update Google Location** and **Update Location Attributes** draw on it too, so
+interleaving those with a draining queue brings a `429` closer and slows the queue down. Pace the
+profile as a whole rather than each method separately, and treat a `429` on the immediate methods as
+worth retrying after a delay rather than as a rejection.

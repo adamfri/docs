@@ -1,0 +1,254 @@
+---
+title: "Gpv Payout Object"
+description: "A GpvPayout is a revenue-share payout derived from gross payment volume (GPV): the total payment volume processed across the sites a partner manages."
+icon: "cube"
+---
+
+A GpvPayout is a revenue-share payout derived from gross payment volume (GPV):
+the total payment volume processed across the sites a partner manages. Wix
+generates GpvPayouts automatically, creating one payout per transaction date
+and updating it in place as volume accrues. Partners read GpvPayouts to see
+what they earned and whether each payout was invoiced. All monetary values are
+in USD.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      GpvPayout ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the GpvPayout is updated. To prevent conflicting changes, the current revision must be passed when updating the GpvPayout.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the payout record was created in Wix's systems. This is record bookkeeping, not the day the volume was processed. For that, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the payout record was last updated, for example when more volume accrued for the day. Not the day the volume was processed. For that, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="transactionDate" type="datetime">
+
+      Day the payout is attributed to. Wix maintains a single GpvPayout per `transactionDate`, updating it as volume accrues, so payouts are returned as a flat list of days. Group them client-side if you need monthly totals.
+
+    </ResponseField>
+
+    <ResponseField name="gpv" type="number">
+
+      Total gross payment volume (GPV) processed across the partner's sites for the transaction date, in USD. Labeled `Client sales` in the Wix Studio dashboard.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+
+      Amount earned by the partner for this payout, in USD. Calculated as `gpv` multiplied by `paymentRevenueSharePercent`, divided by 100.
+
+    </ResponseField>
+
+    <ResponseField name="paymentRevenueSharePercent" type="number">
+
+      Revenue-share rate applied to `gpv` to calculate `amount`. The value is a fractional percent: `0.05` means 0.05% (not 5%), so `amount` = `gpv` * `paymentRevenueSharePercent` / 100. Wix sets the rate automatically based on daily GPV: `0.05` (0.05%) when daily GPV is at or below `2000` USD, and `0.1` (0.1%) when daily GPV is above `2000` USD.
+
+    </ResponseField>
+
+    <ResponseField name="sitesGpv" type="SiteGpv[]">
+
+      The sites whose GPV contributed to this payout, up to 200 sites, each with the volume it contributed. The Wix Studio dashboard shows only the number of sites and the first few site names, so this breakdown is more detailed than the dashboard's.
+
+      Constraints: `maxItems 200`.
+
+      <Expandable title="sitesGpv properties">
+
+        <ResponseField name="metaSiteId" type="string">
+
+          ID of the site.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="gpvInUsd" type="number">
+
+          Gross payment volume processed on the site, in USD.
+
+        </ResponseField>
+
+        <ResponseField name="siteName" type="string">
+
+          Name of the site, captured when Wix last calculated this payout. A payout's day is recalculated while volume is still accruing, so a site renamed during that window can show the newer name; once the day is settled the name stops changing. Truncated to 200 UTF-16 code units, so a name using emoji or a non-Latin script can be cut shorter than 200 visible characters. The cut never splits a surrogate pair, but it can split a longer sequence such as an emoji built from several joined characters. Best effort - it may be empty, and it's always empty on payouts created before Wix started capturing it. Use `metaSiteId` as the stable key.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="invoiceId" type="string">
+
+      ID of the invoice this payout was included in. Empty until the payout is invoiced.
+
+      This is the reference code of the partner's invoice. To resolve it, query the Materialized Invoices API for the materialized invoice whose `invoicesRefCodes` contains this value, and read that invoice's `status` to see whether it was paid.
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "gpvPayout": {
+          "id": "b2c3d4e5-f6a7-4890-abcd-234567890abc",
+          "revision": "3",
+          "createdDate": "2024-03-18T17:22:10.299Z",
+          "updatedDate": "2024-03-20T11:05:44.000Z",
+          "transactionDate": "2024-03-18T00:00:00.000Z",
+          "gpv": 3200.0,
+          "amount": 3.2,
+          "paymentRevenueSharePercent": 0.1,
+          "sitesGpv": [
+            {
+              "metaSiteId": "9c8f0e2a-3b7d-4c1e-8a6f-2d4b1e7c9a05",
+              "siteName": "Bright Coast Bakery",
+              "gpvInUsd": 2100.0
+            },
+            {
+              "metaSiteId": "f1a2b3c4-d5e6-4789-9abc-1234567890ab",
+              "siteName": "Northgate Dental",
+              "gpvInUsd": 1100.0
+            }
+          ],
+          "invoiceId": "INV-2024-03"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      GpvPayout ID.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="integer">
+
+      Revision number, which increments by 1 each time the GpvPayout is updated. To prevent conflicting changes, the current revision must be passed when updating the GpvPayout.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the payout record was created in Wix's systems. This is record bookkeeping, not the day the volume was processed. For that, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the payout record was last updated, for example when more volume accrued for the day. Not the day the volume was processed. For that, use `transactionDate`.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="transactionDate" type="datetime">
+
+      Day the payout is attributed to. Wix maintains a single GpvPayout per `transactionDate`, updating it as volume accrues, so payouts are returned as a flat list of days. Group them client-side if you need monthly totals.
+
+    </ResponseField>
+
+    <ResponseField name="gpv" type="number">
+
+      Total gross payment volume (GPV) processed across the partner's sites for the transaction date, in USD. Labeled `Client sales` in the Wix Studio dashboard.
+
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+
+      Amount earned by the partner for this payout, in USD. Calculated as `gpv` multiplied by `paymentRevenueSharePercent`, divided by 100.
+
+    </ResponseField>
+
+    <ResponseField name="paymentRevenueSharePercent" type="number">
+
+      Revenue-share rate applied to `gpv` to calculate `amount`. The value is a fractional percent: `0.05` means 0.05% (not 5%), so `amount` = `gpv` * `paymentRevenueSharePercent` / 100. Wix sets the rate automatically based on daily GPV: `0.05` (0.05%) when daily GPV is at or below `2000` USD, and `0.1` (0.1%) when daily GPV is above `2000` USD.
+
+    </ResponseField>
+
+    <ResponseField name="sitesGpv" type="SiteGpv[]">
+
+      The sites whose GPV contributed to this payout, up to 200 sites, each with the volume it contributed. The Wix Studio dashboard shows only the number of sites and the first few site names, so this breakdown is more detailed than the dashboard's.
+
+      Constraints: `maxItems 200`.
+
+      <Expandable title="sitesGpv properties">
+
+        <ResponseField name="metaSiteId" type="string">
+
+          ID of the site.
+
+          Constraints: `format GUID`.
+
+        </ResponseField>
+
+        <ResponseField name="gpvInUsd" type="number">
+
+          Gross payment volume processed on the site, in USD.
+
+        </ResponseField>
+
+        <ResponseField name="siteName" type="string">
+
+          Name of the site, captured when Wix last calculated this payout. A payout's day is recalculated while volume is still accruing, so a site renamed during that window can show the newer name; once the day is settled the name stops changing. Truncated to 200 UTF-16 code units, so a name using emoji or a non-Latin script can be cut shorter than 200 visible characters. The cut never splits a surrogate pair, but it can split a longer sequence such as an emoji built from several joined characters. Best effort - it may be empty, and it's always empty on payouts created before Wix started capturing it. Use `metaSiteId` as the stable key.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="invoiceId" type="string">
+
+      ID of the invoice this payout was included in. Empty until the payout is invoiced.
+
+      This is the reference code of the partner's invoice. To resolve it, query the Materialized Invoices API for the materialized invoice whose `invoicesRefCodes` contains this value, and read that invoice's `status` to see whether it was paid.
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

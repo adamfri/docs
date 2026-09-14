@@ -1,0 +1,543 @@
+---
+title: "Get Search Analytics"
+description: "Retrieves the site's search performance data from Google Search Console."
+icon: "download"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves the site's search performance data from Google Search Console.
+
+    Returns clicks, impressions, click-through rate, and average position,
+    grouped by the requested dimensions. For example, group by `date` for a
+    daily chart, or by `query` for top search terms.
+
+    The data is Google Search Console's search performance report for the
+    site, so its freshness and history range follow Google Search Console.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/gsc/v1/search-analytics
+    ```
+
+    ## Query Params
+
+    <ParamField query="startDate" type="string" required>
+
+      First day of the requested period, in `YYYY-MM-DD` format.
+
+      Constraints: `maxLength 10`.
+
+    </ParamField>
+
+    <ParamField query="endDate" type="string" required>
+
+      Last day of the requested period, in `YYYY-MM-DD` format. Inclusive.
+
+      Constraints: `maxLength 10`.
+
+    </ParamField>
+
+    <ParamField query="dimensions" type="string[]">
+
+      Dimensions to group the results by, in the order they should appear in
+      each result's `keys`. Supported values are Google Search Console's search
+      analytics dimensions: `date`, `query`, `page`, `country`, `device`,
+      `searchAppearance`.
+
+      Default: no grouping, a single aggregate row for the whole period.
+
+      Constraints: `maxLength 50`, `maxItems 10`.
+
+    </ParamField>
+
+    <ParamField query="type" type="string">
+
+      Search type to report on. Supported values: `web`, `image`, `video`,
+      `news`.
+
+      Default: `web`.
+
+      Constraints: `maxLength 20`.
+
+    </ParamField>
+
+    <ParamField query="rowLimit" type="integer">
+
+      Maximum number of rows to return.
+
+    </ParamField>
+
+    <ParamField query="startRow" type="integer">
+
+      Zero-based index of the first row to return. Use with `rowLimit` to page
+      through large result sets.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="SearchAnalyticsResult[]">
+
+      Search performance rows, one per combination of the requested dimensions.
+
+      Constraints: `maxItems 10000`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="keys" type="string[]">
+
+          Values of the requested dimensions, in the order the dimensions were
+          requested. For example, for `dimensions: ["date"]`, the row's date.
+
+          **Read-only.** Constraints: `maxLength 5000`, `maxItems 10`.
+
+        </ResponseField>
+
+        <ResponseField name="clicks" type="number">
+
+          Number of clicks from Google Search results.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="impressions" type="number">
+
+          Number of times the site appeared in Google Search results.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="ctr" type="number">
+
+          Click-through rate: `clicks / impressions`, between 0 and 1.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="position" type="number">
+
+          Average position of the site's topmost result, where 1 is the first
+          position.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_TOKEN` | No Google account is connected for this site. Connect first with the GSC Connection API. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_URL` | The site's public URL couldn't be resolved. For example, the site isn't published yet. |
+    | `429` | `RESOURCE_EXHAUSTED` | `GOOGLE_QUOTA_EXCEEDED` | Google's API quota for the property is used up. Retry after the quota window resets. |
+    | `503` | `UNAVAILABLE` | `GOOGLE_UNAVAILABLE` | Google answered with a temporary server error. Retry with backoff. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+      'https://www.wixapis.com/gsc/v1/search-analytics?startDate=2026-08-01&endDate=2026-08-31&dimensions=query&rowLimit=3' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "keys": [
+              "linen summer dress"
+            ],
+            "clicks": 128,
+            "impressions": 2140,
+            "ctr": 0.0598,
+            "position": 6.4
+          },
+          {
+            "keys": [
+              "fashion store amsterdam"
+            ],
+            "clicks": 74,
+            "impressions": 990,
+            "ctr": 0.0747,
+            "position": 4.1
+          },
+          {
+            "keys": [
+              "organic cotton shirt"
+            ],
+            "clicks": 31,
+            "impressions": 1205,
+            "ctr": 0.0257,
+            "position": 11.8
+          }
+        ]
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves the site's search performance data from Google Search Console.
+
+    Returns clicks, impressions, click-through rate, and average position,
+    grouped by the requested dimensions. For example, group by `date` for a
+    daily chart, or by `query` for top search terms.
+
+    The data is Google Search Console's search performance report for the
+    site, so its freshness and history range follow Google Search Console.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { siteReadiness } from '@wix/gsc';
+
+    siteReadiness.getSearchAnalytics(startDate, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="startDate" type="string" required>
+
+      First day of the requested period, in `YYYY-MM-DD` format.
+
+      Constraints: `maxLength 10`.
+
+    </ParamField>
+
+    <ParamField body="options" type="GetSearchAnalyticsOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="endDate" type="string" required>
+
+          Last day of the requested period, in `YYYY-MM-DD` format. Inclusive.
+
+          Constraints: `maxLength 10`.
+
+        </ParamField>
+
+        <ParamField body="dimensions" type="string[]">
+
+          Dimensions to group the results by, in the order they should appear in
+          each result's `keys`. Supported values are Google Search Console's search
+          analytics dimensions: `date`, `query`, `page`, `country`, `device`,
+          `searchAppearance`.
+
+          Default: no grouping, a single aggregate row for the whole period.
+
+          Constraints: `maxLength 50`, `maxItems 10`.
+
+        </ParamField>
+
+        <ParamField body="type" type="string">
+
+          Search type to report on. Supported values: `web`, `image`, `video`,
+          `news`.
+
+          Default: `web`.
+
+          Constraints: `maxLength 20`.
+
+        </ParamField>
+
+        <ParamField body="rowLimit" type="integer">
+
+          Maximum number of rows to return.
+
+        </ParamField>
+
+        <ParamField body="startRow" type="integer">
+
+          Zero-based index of the first row to return. Use with `rowLimit` to page
+          through large result sets.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="SearchAnalyticsResult[]">
+
+      Search performance rows, one per combination of the requested dimensions.
+
+      Constraints: `maxItems 10000`.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="keys" type="string[]">
+
+          Values of the requested dimensions, in the order the dimensions were
+          requested. For example, for `dimensions: ["date"]`, the row's date.
+
+          **Read-only.** Constraints: `maxLength 5000`, `maxItems 10`.
+
+        </ResponseField>
+
+        <ResponseField name="clicks" type="number">
+
+          Number of clicks from Google Search results.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="impressions" type="number">
+
+          Number of times the site appeared in Google Search results.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="ctr" type="number">
+
+          Click-through rate: `clicks / impressions`, between 0 and 1.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="position" type="number">
+
+          Average position of the site's topmost result, where 1 is the first
+          position.
+
+          **Read-only.**
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_TOKEN` | No Google account is connected for this site. Connect first with the GSC Connection API. |
+    | `428` | `FAILED_PRECONDITION` | `MISSING_URL` | The site's public URL couldn't be resolved. For example, the site isn't published yet. |
+    | `429` | `RESOURCE_EXHAUSTED` | `GOOGLE_QUOTA_EXCEEDED` | Google's API quota for the property is used up. Retry after the quota window resets. |
+    | `503` | `UNAVAILABLE` | `GOOGLE_UNAVAILABLE` | Google answered with a temporary server error. Retry with backoff. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-search-analytics" id="ex-sdk-get-search-analytics-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-search-analytics" id="ex-sdk-get-search-analytics-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-search-analytics-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-search-analytics-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Get the site's top search queries for a period</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getSearchAnalytics (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-search-analytics-0"><span className="wix-picker-name">Get the site's top search queries for a period</span></label>
+    <label htmlFor="ex-sdk-get-search-analytics-1"><span className="wix-picker-name">getSearchAnalytics (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Get the site's top search queries for a period
+    import { siteReadiness } from "@wix/gsc";
+
+    async function getSearchAnalytics() {
+      const response = await siteReadiness.getSearchAnalytics("2026-08-01", {
+        endDate: "2026-08-31",
+        dimensions: ["query"],
+        rowLimit: 3,
+      });
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "keys": ["linen summer dress"],
+     *       "clicks": 128,
+     *       "impressions": 2140,
+     *       "ctr": 0.0598,
+     *       "position": 6.4
+     *     },
+     *     {
+     *       "keys": ["fashion store amsterdam"],
+     *       "clicks": 74,
+     *       "impressions": 990,
+     *       "ctr": 0.0747,
+     *       "position": 4.1
+     *     },
+     *     {
+     *       "keys": ["organic cotton shirt"],
+     *       "clicks": 31,
+     *       "impressions": 1205,
+     *       "ctr": 0.0257,
+     *       "position": 11.8
+     *     }
+     *   ]
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getSearchAnalytics (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { siteReadiness } from '@wix/gsc';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { siteReadiness },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getSearchAnalytics(startDate,options) {
+      const response = await myWixClient.siteReadiness.getSearchAnalytics(startDate,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

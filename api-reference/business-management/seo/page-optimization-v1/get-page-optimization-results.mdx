@@ -1,0 +1,421 @@
+---
+title: "Get Page Optimization Results"
+description: "Retrieves the optimization suggestions generated for a page."
+icon: "download"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves the optimization suggestions generated for a page.
+
+    Poll this method after a trigger call. The response's `status` reports
+    where the job stands: while generation is still in progress the
+    suggestions are empty and `status` is `IN_PROGRESS`; when it completes,
+    the response carries the full suggestion set with `status` `COMPLETED`.
+    A job that failed reports `FAILED`. Trigger again to retry. Suggestions
+    are stored per page, so a later trigger for the same page replaces them,
+    and a replaced job's lookup reports `NOT_FOUND`.
+
+    Look up by `predictionId` (from the trigger call), or by `pageId`. A
+    `predictionId` can be looked up for 2 hours after the trigger call; after
+    that, look up by `pageId`, which returns the page's latest generation.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/seo/suggestions/v1/page-optimization/results
+    ```
+
+    ## Query Params
+
+    <ParamField query="predictionId" type="string">
+
+      ID of the generation job, from the trigger call. Can be looked up for 2
+      hours after the trigger call.
+
+    </ParamField>
+
+    <ParamField query="pageId" type="string">
+
+      ID of the page to retrieve suggestions for. An alternative to
+      `predictionId` that returns the page's latest generation.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="pageOptimization" type="PageOptimization">
+
+      The generated suggestions. Returned only when `status` is `COMPLETED`.
+
+      See the [Page Optimization Object](/api-reference/business-management/seo/page-optimization-v1/page-optimization-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Status of the generation job the lookup matched.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `UNKNOWN_OPTIMIZATION_STATUS` — Unknown status.
+      - `NOT_FOUND` — No generation job matches the lookup. It never existed, or a later
+      trigger for the same page replaced it.
+      - `IN_PROGRESS` — Generation is still running. Poll again.
+      - `COMPLETED` — Generation finished; the response carries the suggestions.
+      - `FAILED` — Generation failed. Trigger again to retry.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GENERATION_FAILED` | Reading the stored result failed. Retry the call. |
+    | `429` | `RESOURCE_EXHAUSTED` | `QUOTA_LIMIT_REACHED` | The caller's generation quota is exhausted. Reserved for future metering and not currently returned. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Poll until `status` is `COMPLETED`. While the job runs, the response carries only `"status": "IN_PROGRESS"`.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+      'https://www.wixapis.com/seo/suggestions/v1/page-optimization/results?predictionId=3f9c1b2e-8a4d-4c6e-9b7a-2d5e8f1c4a6b' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "pageOptimization": {
+          "id": "3f9c1b2e-8a4d-4c6e-9b7a-2d5e8f1c4a6b",
+          "metaTitle": {
+            "before": "Services | Portland Pottery Studio",
+            "after": "Pottery Classes in Portland | Portland Pottery Studio"
+          },
+          "metaDescription": {
+            "before": "",
+            "after": "Join hands-on pottery classes in Portland for beginners and experienced makers. Wheel-throwing, hand-building, and glazing workshops every week."
+          },
+          "h1": {
+            "before": "Our services",
+            "after": "Pottery classes in Portland for every skill level"
+          },
+          "h2OrH3": {
+            "before": "Wheel-throwing classes",
+            "after": "Beginner and advanced wheel-throwing classes"
+          },
+          "content": [
+            {
+              "before": "We offer classes for all levels.",
+              "after": "Our Portland pottery classes welcome complete beginners and experienced potters alike, with small groups and all materials included."
+            },
+            {
+              "before": "Book a spot online or call us.",
+              "after": "Book your pottery class in Portland online in under a minute, or call the studio to reserve a spot for a group."
+            }
+          ]
+        },
+        "status": "COMPLETED"
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves the optimization suggestions generated for a page.
+
+    Poll this method after a trigger call. The response's `status` reports
+    where the job stands: while generation is still in progress the
+    suggestions are empty and `status` is `IN_PROGRESS`; when it completes,
+    the response carries the full suggestion set with `status` `COMPLETED`.
+    A job that failed reports `FAILED`. Trigger again to retry. Suggestions
+    are stored per page, so a later trigger for the same page replaces them,
+    and a replaced job's lookup reports `NOT_FOUND`.
+
+    Look up by `predictionId` (from the trigger call), or by `pageId`. A
+    `predictionId` can be looked up for 2 hours after the trigger call; after
+    that, look up by `pageId`, which returns the page's latest generation.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { pageOptimization } from '@wix/seo';
+
+    pageOptimization.getPageOptimizationResults(options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="options" type="GetPageOptimizationResultsOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="predictionId" type="string">
+
+          ID of the generation job, from the trigger call. Can be looked up for 2
+          hours after the trigger call.
+
+        </ParamField>
+
+        <ParamField body="pageId" type="string">
+
+          ID of the page to retrieve suggestions for. An alternative to
+          `predictionId` that returns the page's latest generation.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="pageOptimization" type="PageOptimization">
+
+      The generated suggestions. Returned only when `status` is `COMPLETED`.
+
+      See the [Page Optimization Object](/api-reference/business-management/seo/page-optimization-v1/page-optimization-object) for this object's fields.
+
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+
+      Status of the generation job the lookup matched.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `UNKNOWN_OPTIMIZATION_STATUS` — Unknown status.
+      - `NOT_FOUND` — No generation job matches the lookup. It never existed, or a later
+      trigger for the same page replaced it.
+      - `IN_PROGRESS` — Generation is still running. Poll again.
+      - `COMPLETED` — Generation finished; the response carries the suggestions.
+      - `FAILED` — Generation failed. Trigger again to retry.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GENERATION_FAILED` | Reading the stored result failed. Retry the call. |
+    | `429` | `RESOURCE_EXHAUSTED` | `QUOTA_LIMIT_REACHED` | The caller's generation quota is exhausted. Reserved for future metering and not currently returned. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-get-page-optimization-results" id="ex-sdk-get-page-optimization-results-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-get-page-optimization-results" id="ex-sdk-get-page-optimization-results-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-get-page-optimization-results-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-get-page-optimization-results-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Retrieve a finished optimization by its prediction ID</span><span className="wix-picker-desc">Poll until status is COMPLETED. While the job runs, the response carries only "status": "IN_PROGRESS"</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">getPageOptimizationResults (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-get-page-optimization-results-0"><span className="wix-picker-name">Retrieve a finished optimization by its prediction ID</span><span className="wix-picker-desc">Poll until status is COMPLETED. While the job runs, the response carries only "status": "IN_PROGRESS"</span></label>
+    <label htmlFor="ex-sdk-get-page-optimization-results-1"><span className="wix-picker-name">getPageOptimizationResults (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Retrieve a finished optimization by its prediction ID
+    import { pageOptimization } from "@wix/seo";
+
+    async function getPageOptimizationResults() {
+      const response = await pageOptimization.getPageOptimizationResults({
+        predictionId: "3f9c1b2e-8a4d-4c6e-9b7a-2d5e8f1c4a6b",
+      });
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "pageOptimization": {
+     *     "_id": "3f9c1b2e-8a4d-4c6e-9b7a-2d5e8f1c4a6b",
+     *     "metaTitle": {
+     *       "before": "Services | Portland Pottery Studio",
+     *       "after": "Pottery Classes in Portland | Portland Pottery Studio"
+     *     },
+     *     "metaDescription": {
+     *       "before": "",
+     *       "after": "Join hands-on pottery classes in Portland for beginners and experienced makers. Wheel-throwing, hand-building, and glazing workshops every week."
+     *     },
+     *     "h1": {
+     *       "before": "Our services",
+     *       "after": "Pottery classes in Portland for every skill level"
+     *     },
+     *     "h2OrH3": {
+     *       "before": "Wheel-throwing classes",
+     *       "after": "Beginner and advanced wheel-throwing classes"
+     *     },
+     *     "content": [
+     *       {
+     *         "before": "We offer classes for all levels.",
+     *         "after": "Our Portland pottery classes welcome complete beginners and experienced potters alike, with small groups and all materials included."
+     *       },
+     *       {
+     *         "before": "Book a spot online or call us.",
+     *         "after": "Book your pottery class in Portland online in under a minute, or call the studio to reserve a spot for a group."
+     *       }
+     *     ]
+     *   },
+     *   "status": "COMPLETED"
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript getPageOptimizationResults (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { pageOptimization } from '@wix/seo';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { pageOptimization },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function getPageOptimizationResults(options) {
+      const response = await myWixClient.pageOptimization.getPageOptimizationResults(options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

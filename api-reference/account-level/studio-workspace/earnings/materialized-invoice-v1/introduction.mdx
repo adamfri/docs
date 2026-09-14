@@ -1,0 +1,118 @@
+---
+title: "Introduction"
+description: "The Materialized Invoices API lets a Wix Partner read the invoices and payments they actually received from Wix's payment handler, Tipalti."
+icon: "file-lines"
+---
+
+The Materialized Invoices API lets a Wix Partner read the invoices and payments
+they actually received from Wix's payment handler, Tipalti. It surfaces what Wix
+paid out, grouped by month and payment status, so a partner can see and reconcile
+their revenue-share earnings. This API is read-only.
+
+A materialized invoice aggregates the underlying invoices for a single earnings
+month into 1 record per payment status, and breaks the total down by revenue
+stream. Each invoice's `revenueStreamsAggregation` splits the total into
+`premium`, `gpv`, `marketplace`, and `appMarket` sub-totals, which together add
+up to the invoice's `amount`. Wix creates the records automatically as the
+partner is paid, and all amounts are in USD.
+
+With the Materialized Invoices API, you can:
+
+- Query a partner's materialized invoices and filter or sort them by earnings
+  month, status, amount, or invoice reference code.
+- Read each invoice's `revenueStreamsAggregation` to see how a month's total
+  splits across premium, GPV, marketplace, and app market earnings.
+- Get the total amount and count of a partner's materialized invoices matching a
+  filter, for example to total a year's earnings.
+- Get the partner's most recent payment, including whether it succeeded and, if
+  not, the rejection reason.
+
+## How this fits with the other revenue-share APIs
+
+A Wix Partner earns revenue share from separate streams: premium subscriptions
+they sell, through the
+[Revenue Share Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1)
+API, gross payment volume (GPV) processed across the sites they manage, through
+the [Revenue Share GPV Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1)
+API, and marketplace transactions such as template sales, through the
+[Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1)
+API. Those APIs record per-earning payout entities. The Materialized Invoices API
+is the anchor that shows what Wix actually paid. Each materialized invoice's
+`revenueStreamsAggregation.premium`, `.gpv`, and `.marketplace` sub-totals
+reconcile back to the matching payouts in those services, and `LastPayment`
+reports the status of the partner's most recent payment.
+
+An invoice can also carry a fourth sub-total, `appMarket`, for earnings from apps
+the partner published on the Wix App Market. There's no payout API for that
+stream, so you can't reconcile `appMarket` per earning the way you can the other
+streams. However, it does count toward the invoice's `amount`.
+
+## How Wix groups invoices
+
+- `earningsMonth` is a month bucket, not an exact instant. Wix normalizes it to
+  the first day of the month at the start of the day.
+- Wix groups the underlying invoices into 1 materialized invoice per earnings
+  month per payment status, so a single month can produce more than 1 record,
+  for example a `PAID` invoice and an `UNPAID` invoice.
+- A `BELOW_THRESHOLD` status means the unpaid total is below the payout
+  threshold, and Wix doesn't schedule it for payment until the total reaches that
+  threshold. The threshold is $200.
+
+## Differences from the Wix Studio dashboard
+
+Partners also see their invoices in the Wix Studio dashboard. These differences
+matter when comparing its figures with this API:
+
+- **Total**: The dashboard's total covers only `PAID` and `UNPAID` invoices that
+  match the filters selected in the UI, so it leaves out `BELOW_THRESHOLD`
+  invoices and anything outside the active filters.
+  [Get Materialized Invoices Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-materialized-invoices-aggregate)
+  totals exactly what its filter matches across every status, so pass an empty
+  filter for the partner's full history, or a `status` condition to reproduce a
+  narrower figure.
+- **Invoice drill-in**: The dashboard's per-invoice detail view shows the
+  individual invoices from the payment handler that a materialized invoice
+  aggregates. This API doesn't expose those. Use `invoicesRefCodes` to identify
+  them, and query the premium, GPV, and marketplace payout APIs for the earnings
+  behind each sub-total.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Wix creates materialized invoices and last payments automatically as the
+  partner is paid. A partner can't create, update, or delete them.
+- Reads are scoped to the caller's partner account. A partner only sees their own
+  invoices and payments.
+- All amounts are in USD, including the bare `amount` field on a materialized
+  invoice and its `revenueStreamsAggregation` sub-totals.
+- `revenueStreamsAggregation` has 4 sub-totals, not 3: `premium`, `gpv`,
+  `marketplace`, and `appMarket`. Include `appMarket` when you add them up, or
+  your breakdown can come out lower than the invoice's `amount`.
+- The reference codes in `invoicesRefCodes` are the same values that premium,
+  GPV, and marketplace payouts carry in their `invoiceId`, so you can filter on
+  `invoicesRefCodes` to find the invoice a specified payout was included in.
+
+## Use cases
+
+- [Reconcile a partner's monthly earnings starting from the invoice](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/sample-flows#reconcile-a-partners-monthly-earnings-starting-from-the-invoice).
+- [Build a partner earnings statement](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/sample-flows#build-a-partner-earnings-statement).
+- [Surface payments that need attention](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/sample-flows#surface-payments-that-need-attention).
+
+## Terminology
+
+- **Materialized invoice**: The main entity of this API. An aggregation of the
+  underlying invoices for 1 earnings month and payment status, with a
+  per-stream breakdown.
+- **Last payment**: The partner's most recent payment from the payment handler,
+  including whether it succeeded and any rejection details.
+- **Earnings month**: The month an invoice covers, represented as the first day
+  of that month.
+- **Revenue stream**: One of the sources an invoice's total breaks down into:
+  premium, GPV, marketplace, or app market.
+- **GPV**: Gross payment volume, the total payment volume processed across the
+  sites the partner manages.
+- **Reference code**: The identifier the payment handler, Tipalti, assigns to an
+  invoice or payment.
+
+@sdk_package_setup

@@ -152,7 +152,7 @@ icon: "cube"
 
           Additional fees applied to this pricing variant.
 
-          Constraints: `maxItems 10`.
+          Constraints: `maxItems 5`.
 
           <Expandable title="fees properties">
 
@@ -293,6 +293,142 @@ icon: "cube"
 
         </ResponseField>
 
+        <ResponseField name="visible" type="boolean">
+
+          Whether this pricing variant is visible to customers. Defaults to `true` when not set.
+          At least one variant per plan must remain visible.
+          Variant-level visibility is independent from plan-level visibility (`Plan.visibility`).
+
+        </ResponseField>
+
+        <ResponseField name="categoryIds" type="string[]">
+
+          IDs of the categories this variant belongs to. Categories group variants across plans
+          (for example into a "Monthly / Yearly" selector) independently of billing cycle. Optional.
+
+          **Developer Preview.** Constraints: `format GUID`, `maxItems 1`.
+
+        </ResponseField>
+
+        <ResponseField name="priceOverrides" type="PriceOverrides">
+
+          Rules that override this pricing variant's price for purchases that meet their conditions.
+          Applied during purchase. An override that matches the purchase always replaces the variant's original price,
+          even when the resulting price is higher. If multiple overrides match the same purchase, the lowest resulting
+          price among them wins - the original price doesn't participate in this comparison.
+          The overridden price applies to every billing cycle of the resulting subscription, not only the first payment.
+          Updates replace the entire list of overrides. To remove all overrides, set this field to `null` -
+          an empty overrides list isn't accepted.
+
+          **Developer Preview.**
+
+          <Expandable title="priceOverrides properties">
+
+            <ResponseField name="overrides" type="PriceOverride[]">
+
+              Price override rules.
+
+              Constraints: `minItems 1`, `maxItems 10`.
+
+              <Expandable title="overrides properties">
+
+                <ResponseField name="id" type="string">
+
+                  Price override ID. Must be unique within the pricing variant.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="conditions" type="PurchaseConditions">
+
+                  Conditions a purchase must meet for this override to apply.
+
+                  _Nested structure omitted for brevity — see the `PurchaseConditions` object._
+
+                </ResponseField>
+
+                <ResponseField name="overrideType" type="string">
+
+                  How the pricing variant's price is overridden.
+
+                  **Supported values:**
+
+                  - `FIXED_PRICE` — The pricing variant's price is replaced with a fixed price.
+                  - `PERCENTAGE_DISCOUNT` — The pricing variant's price is reduced by a percentage.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="feeOverrides" type="FeeOverrides">
+
+          Rules that override specific fees of this pricing variant for purchases that meet their conditions.
+          Applied during purchase. If multiple overrides apply to the same fee, the lowest resulting fee amount wins, with a waived fee counting as `0`.
+          Updates replace the entire list of overrides. To remove all overrides, set this field to `null` -
+          an empty overrides list isn't accepted.
+
+          **Developer Preview.**
+
+          <Expandable title="feeOverrides properties">
+
+            <ResponseField name="overrides" type="FeeOverride[]">
+
+              Fee override rules.
+
+              Constraints: `minItems 1`, `maxItems 10`.
+
+              <Expandable title="overrides properties">
+
+                <ResponseField name="id" type="string">
+
+                  Fee override ID. Must be unique within the pricing variant.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="feeId" type="string">
+
+                  ID of the fee on the same pricing variant that this override applies to.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="conditions" type="PurchaseConditions">
+
+                  Conditions a purchase must meet for this override to apply.
+
+                  _Nested structure omitted for brevity — see the `PurchaseConditions` object._
+
+                </ResponseField>
+
+                <ResponseField name="overrideType" type="string">
+
+                  How the fee is overridden.
+
+                  **Supported values:**
+
+                  - `FIXED_AMOUNT` — The fee's amount is replaced with a fixed amount.
+                  - `WAIVED` — The fee isn't applied to the purchase at all.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
       </Expandable>
 
     </ResponseField>
@@ -399,6 +535,225 @@ icon: "cube"
 
     </ResponseField>
 
+    <ResponseField name="benefitDistributionSettings" type="BenefitDistributionSettings">
+
+      The settings of the benefit distribution for subscriptions to this plan
+
+      **Developer Preview.**
+
+      <Expandable title="benefitDistributionSettings properties">
+
+        <ResponseField name="distributionStrategyType" type="string">
+
+          The distribution strategy of the benefits for this subscription, which is used to determine how the benefits are distributed in each cycle.
+
+          **Supported values:**
+
+          - `UNKNOWN_DISTRIBUTION_STRATEGY_TYPE`
+          - `PER_BILLING_CYCLE`
+          - `CUSTOM_SCHEDULE`
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="distributionStrategy" type="distributionStrategy">
+
+          distributionStrategy
+
+          <Expandable title="distributionStrategy properties">
+
+            <ResponseField name="customScheduleOptions" type="CustomScheduleOptions">
+
+              Custom schedule
+
+              <Expandable title="customScheduleOptions properties">
+
+                <ResponseField name="cycleDuration" type="Duration">
+
+                  Cycle duration
+
+                  _Nested structure omitted for brevity — see the `Duration` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="startDateSettings" type="StartDateSettings">
+
+      Settings that control when subscriptions to this plan start.
+      Applied during purchase to calculate the subscription start date and validate customer-selected start dates.
+      The settings apply only to pricing variants with a compatible `billing_terms.start_type`:
+      `FIXED_DATE` and `DAY_OF_MONTH` apply to variants with the `ON_PURCHASE` start type,
+      while `DATE_RANGE` applies to variants with the `CUSTOM` start type.
+
+      **Developer Preview.**
+
+      <Expandable title="startDateSettings properties">
+
+        <ResponseField name="type" type="string">
+
+          How the subscription start date is determined.
+
+          **Supported values:**
+
+          - `FIXED_DATE` — Subscription starts on a single fixed date.
+          Applies only to pricing variants with the `ON_PURCHASE` start type.
+          - `DAY_OF_MONTH` — Subscription starts on a specific day of each month.
+          Applies only to pricing variants with the `ON_PURCHASE` start type.
+          - `DATE_RANGE` — Customer selects a start date within a date range.
+          Applies only to pricing variants with the `CUSTOM` start type.
+
+        </ResponseField>
+
+        <ResponseField name="startDateUnavailableMessage" type="string">
+
+          Message displayed to customers when no start date is available. For example, when the fixed start date or the end of the date range has passed.
+          Applicable only when `type` is `FIXED_DATE`, or `DATE_RANGE` with `date_range_options.end_date` set -
+          in other configurations a start date is always available and the message is ignored.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="startDateOption" type="startDateOption">
+
+          startDateOption
+
+          <Expandable title="startDateOption properties">
+
+            <ResponseField name="fixedDateOptions" type="FixedDateOptions">
+
+              Subscription starts on a single fixed date.
+
+              <Expandable title="fixedDateOptions properties">
+
+                <ResponseField name="startDate" type="datetime">
+
+                  Date and time when the subscription starts.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="dayOfMonthOptions" type="DayOfMonthOptions">
+
+              Subscription starts on a specific day of each month.
+
+              <Expandable title="dayOfMonthOptions properties">
+
+                <ResponseField name="dayOfMonth" type="integer">
+
+                  Day of the month the subscription starts. For months with fewer days, the subscription starts on the last day of the month.
+                  If the purchase happens on the configured day, the subscription starts on that same day.
+                  Only determines the subscription start date - subsequent billing cycles follow the
+                  pricing variant's `billing_terms.billing_cycle` from that start date.
+
+                  Constraints: `min 1`, `max 31`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="dateRangeOptions" type="DateRangeOptions">
+
+              Customer selects a start date within a date range.
+
+              <Expandable title="dateRangeOptions properties">
+
+                <ResponseField name="startDate" type="datetime">
+
+                  Date and time from which the customer can select the subscription start date.
+                  The selected start date must be on or after this exact instant.
+
+                </ResponseField>
+
+                <ResponseField name="endDate" type="datetime">
+
+                  Date and time until which the customer can select the subscription start date. If not set, the range is open-ended.
+                  The selected start date must be before this exact instant.
+                  Must be later than `start_date`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tags">
+
+      Tags that can be assigned to this plan for classification and filtering.
+
+      **Developer Preview.**
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="publicTags" type="TagList">
+
+          Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+          <Expandable title="publicTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
     <ResponseField name="extendedFields" type="ExtendedFields">
 
       Data extensions. Learn more about [extended fields](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/backend-extensions/schema-plugins/about-schema-plugin-extensions).
@@ -483,11 +838,18 @@ icon: "cube"
           ],
           "visibility": "PUBLIC",
           "buyable": true,
-          "status": "ACTIVE",
           "buyerCanCancel": true,
           "archived": false,
           "primary": false,
-          "currency": "EUR"
+          "currency": "EUR",
+          "tags": {
+            "privateTags": {
+              "tagIds": ["gY7dW"]
+            },
+            "publicTags": {
+              "tagIds": ["vN3xQ"]
+            }
+          }
         }
       }
       ```
@@ -608,7 +970,7 @@ icon: "cube"
 
           Additional fees applied to this pricing variant.
 
-          Constraints: `maxItems 10`.
+          Constraints: `maxItems 5`.
 
           <Expandable title="fees properties">
 
@@ -749,6 +1111,142 @@ icon: "cube"
 
         </ResponseField>
 
+        <ResponseField name="visible" type="boolean">
+
+          Whether this pricing variant is visible to customers. Defaults to `true` when not set.
+          At least one variant per plan must remain visible.
+          Variant-level visibility is independent from plan-level visibility (`Plan.visibility`).
+
+        </ResponseField>
+
+        <ResponseField name="categoryIds" type="string[]">
+
+          IDs of the categories this variant belongs to. Categories group variants across plans
+          (for example into a "Monthly / Yearly" selector) independently of billing cycle. Optional.
+
+          **Developer Preview.** Constraints: `format GUID`, `maxItems 1`.
+
+        </ResponseField>
+
+        <ResponseField name="priceOverrides" type="PriceOverrides">
+
+          Rules that override this pricing variant's price for purchases that meet their conditions.
+          Applied during purchase. An override that matches the purchase always replaces the variant's original price,
+          even when the resulting price is higher. If multiple overrides match the same purchase, the lowest resulting
+          price among them wins - the original price doesn't participate in this comparison.
+          The overridden price applies to every billing cycle of the resulting subscription, not only the first payment.
+          Updates replace the entire list of overrides. To remove all overrides, set this field to `null` -
+          an empty overrides list isn't accepted.
+
+          **Developer Preview.**
+
+          <Expandable title="priceOverrides properties">
+
+            <ResponseField name="overrides" type="PriceOverride[]">
+
+              Price override rules.
+
+              Constraints: `minItems 1`, `maxItems 10`.
+
+              <Expandable title="overrides properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Price override ID. Must be unique within the pricing variant.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="conditions" type="PurchaseConditions">
+
+                  Conditions a purchase must meet for this override to apply.
+
+                  _Nested structure omitted for brevity — see the `PurchaseConditions` object._
+
+                </ResponseField>
+
+                <ResponseField name="overrideType" type="string">
+
+                  How the pricing variant's price is overridden.
+
+                  **Supported values:**
+
+                  - `FIXED_PRICE` — The pricing variant's price is replaced with a fixed price.
+                  - `PERCENTAGE_DISCOUNT` — The pricing variant's price is reduced by a percentage.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="feeOverrides" type="FeeOverrides">
+
+          Rules that override specific fees of this pricing variant for purchases that meet their conditions.
+          Applied during purchase. If multiple overrides apply to the same fee, the lowest resulting fee amount wins, with a waived fee counting as `0`.
+          Updates replace the entire list of overrides. To remove all overrides, set this field to `null` -
+          an empty overrides list isn't accepted.
+
+          **Developer Preview.**
+
+          <Expandable title="feeOverrides properties">
+
+            <ResponseField name="overrides" type="FeeOverride[]">
+
+              Fee override rules.
+
+              Constraints: `minItems 1`, `maxItems 10`.
+
+              <Expandable title="overrides properties">
+
+                <ResponseField name="_id" type="string">
+
+                  Fee override ID. Must be unique within the pricing variant.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="feeId" type="string">
+
+                  ID of the fee on the same pricing variant that this override applies to.
+
+                  Constraints: `format GUID`.
+
+                </ResponseField>
+
+                <ResponseField name="conditions" type="PurchaseConditions">
+
+                  Conditions a purchase must meet for this override to apply.
+
+                  _Nested structure omitted for brevity — see the `PurchaseConditions` object._
+
+                </ResponseField>
+
+                <ResponseField name="overrideType" type="string">
+
+                  How the fee is overridden.
+
+                  **Supported values:**
+
+                  - `FIXED_AMOUNT` — The fee's amount is replaced with a fixed amount.
+                  - `WAIVED` — The fee isn't applied to the purchase at all.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
       </Expandable>
 
     </ResponseField>
@@ -848,6 +1346,225 @@ icon: "cube"
           The maximum number of subscriptions allowed.
 
           Constraints: `min 1`, `max 10000`.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="benefitDistributionSettings" type="BenefitDistributionSettings">
+
+      The settings of the benefit distribution for subscriptions to this plan
+
+      **Developer Preview.**
+
+      <Expandable title="benefitDistributionSettings properties">
+
+        <ResponseField name="distributionStrategyType" type="string">
+
+          The distribution strategy of the benefits for this subscription, which is used to determine how the benefits are distributed in each cycle.
+
+          **Supported values:**
+
+          - `UNKNOWN_DISTRIBUTION_STRATEGY_TYPE`
+          - `PER_BILLING_CYCLE`
+          - `CUSTOM_SCHEDULE`
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="distributionStrategy" type="distributionStrategy">
+
+          distributionStrategy
+
+          <Expandable title="distributionStrategy properties">
+
+            <ResponseField name="customScheduleOptions" type="CustomScheduleOptions">
+
+              Custom schedule
+
+              <Expandable title="customScheduleOptions properties">
+
+                <ResponseField name="cycleDuration" type="Duration">
+
+                  Cycle duration
+
+                  _Nested structure omitted for brevity — see the `Duration` object._
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="startDateSettings" type="StartDateSettings">
+
+      Settings that control when subscriptions to this plan start.
+      Applied during purchase to calculate the subscription start date and validate customer-selected start dates.
+      The settings apply only to pricing variants with a compatible `billing_terms.start_type`:
+      `FIXED_DATE` and `DAY_OF_MONTH` apply to variants with the `ON_PURCHASE` start type,
+      while `DATE_RANGE` applies to variants with the `CUSTOM` start type.
+
+      **Developer Preview.**
+
+      <Expandable title="startDateSettings properties">
+
+        <ResponseField name="type" type="string">
+
+          How the subscription start date is determined.
+
+          **Supported values:**
+
+          - `FIXED_DATE` — Subscription starts on a single fixed date.
+          Applies only to pricing variants with the `ON_PURCHASE` start type.
+          - `DAY_OF_MONTH` — Subscription starts on a specific day of each month.
+          Applies only to pricing variants with the `ON_PURCHASE` start type.
+          - `DATE_RANGE` — Customer selects a start date within a date range.
+          Applies only to pricing variants with the `CUSTOM` start type.
+
+        </ResponseField>
+
+        <ResponseField name="startDateUnavailableMessage" type="string">
+
+          Message displayed to customers when no start date is available. For example, when the fixed start date or the end of the date range has passed.
+          Applicable only when `type` is `FIXED_DATE`, or `DATE_RANGE` with `date_range_options.end_date` set -
+          in other configurations a start date is always available and the message is ignored.
+
+        </ResponseField>
+
+      </Expandable>
+
+      <Expandable title="One of the following">
+
+        <ResponseField name="startDateOption" type="startDateOption">
+
+          startDateOption
+
+          <Expandable title="startDateOption properties">
+
+            <ResponseField name="fixedDateOptions" type="FixedDateOptions">
+
+              Subscription starts on a single fixed date.
+
+              <Expandable title="fixedDateOptions properties">
+
+                <ResponseField name="startDate" type="datetime">
+
+                  Date and time when the subscription starts.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="dayOfMonthOptions" type="DayOfMonthOptions">
+
+              Subscription starts on a specific day of each month.
+
+              <Expandable title="dayOfMonthOptions properties">
+
+                <ResponseField name="dayOfMonth" type="integer">
+
+                  Day of the month the subscription starts. For months with fewer days, the subscription starts on the last day of the month.
+                  If the purchase happens on the configured day, the subscription starts on that same day.
+                  Only determines the subscription start date - subsequent billing cycles follow the
+                  pricing variant's `billing_terms.billing_cycle` from that start date.
+
+                  Constraints: `min 1`, `max 31`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+            <ResponseField name="dateRangeOptions" type="DateRangeOptions">
+
+              Customer selects a start date within a date range.
+
+              <Expandable title="dateRangeOptions properties">
+
+                <ResponseField name="startDate" type="datetime">
+
+                  Date and time from which the customer can select the subscription start date.
+                  The selected start date must be on or after this exact instant.
+
+                </ResponseField>
+
+                <ResponseField name="endDate" type="datetime">
+
+                  Date and time until which the customer can select the subscription start date. If not set, the range is open-ended.
+                  The selected start date must be before this exact instant.
+                  Must be later than `start_date`.
+
+                </ResponseField>
+
+              </Expandable>
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="tags" type="Tags">
+
+      Tags that can be assigned to this plan for classification and filtering.
+
+      **Developer Preview.**
+
+      <Expandable title="tags properties">
+
+        <ResponseField name="privateTags" type="TagList">
+
+          Tags that require an additional permission in order to access them, normally not given to site members or visitors.
+
+          <Expandable title="privateTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="publicTags" type="TagList">
+
+          Tags that are exposed to anyone who has access to the labeled entity itself, including site members and visitors.
+
+          <Expandable title="publicTags properties">
+
+            <ResponseField name="tagIds" type="string[]">
+
+              List of tag IDs
+
+              Constraints: `maxLength 5`, `maxItems 100`.
+
+            </ResponseField>
+
+          </Expandable>
 
         </ResponseField>
 

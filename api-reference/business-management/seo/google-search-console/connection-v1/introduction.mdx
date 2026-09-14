@@ -1,0 +1,56 @@
+---
+title: "Introduction"
+description: "The GSC Connection API connects a Wix site to Google Search Console by linking a Google account to the site."
+icon: "file-lines"
+---
+
+The GSC Connection API connects a Wix site to [Google Search Console](fallback::https://search.google.com/search-console/about) by linking a Google account to the site. Once a site is connected, the GSC Site Readiness API can verify the site with Google, submit sitemaps, request indexing, and read search performance data.
+
+A site has at most one Google Search Console connection, so no method takes a connection ID.
+
+With the GSC Connection API, you can:
+
+- Start a Google authorization and retrieve the URL where the person connecting approves it.
+- Check whether the site is connected, and as which Google account.
+- Disconnect the site's Google account.
+
+## How connecting works
+
+Connecting is a browser flow that Wix completes for you:
+
+1. Call [Get Connect URL](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connect-url) and surface the returned URL to the person connecting.
+2. They authorize Wix in their browser, on Google's consent screen.
+3. Google redirects back to Wix, and Wix completes the OAuth exchange and stores the credentials server-side. There is no authorization code for you to exchange, and the API never returns tokens.
+4. Poll [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection) until `status` is `VALID`.
+
+Each connect URL is single-use and expires after 2 hours, so request a fresh one for every attempt.
+
+## Connection ownership
+
+The connection belongs to the site, but it's owned by the Wix user who authorized it. [Get Connection](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/get-connection) reports whether the current caller is that owner in `ownedByCaller`, and identifies the connected Google account by a masked email address only.
+
+`ownedByCaller` is returned only when `status` is `VALID` or `INVALID`. It's `false` for any caller without a Wix user identity, so a `false` value means the caller isn't the owner, not that a particular other Wix user is.
+
+Re-authorizing with the same Google account refreshes the stored credentials. Authorizing with a different Google account, or as a different Wix user, replaces the connection.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- The site must be published, have a connected domain, and allow search-engine indexing. Otherwise, Get Connect URL fails with `FAILED_PRECONDITION`.
+- Any Google account can be used and needs no prior Search Console setup. Site verification and property access are established after connecting, through the GSC Site Readiness API.
+- Starting a connection requires a Wix user identity to own it. Calls without one fail with `PERMISSION_DENIED`.
+- A revoked connection isn't detected immediately. `status` becomes `INVALID` only after Wix makes a Google Search Console call that's rejected, so a broken connection can still report `VALID`.
+
+## Use cases
+
+- [Connect a site to Google Search Console](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/sample-flows#connect-a-site-to-google-search-console)
+- [Show the site's connection status](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/sample-flows#show-the-sites-connection-status)
+- [Disconnect a Google account](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/google-search-console/connection-v1/sample-flows#disconnect-a-google-account)
+
+## Terminology
+
+- **Connection**: The link between a Wix site and a Google account, held as Google credentials that Wix stores server-side and never returns.
+- **Search Console property**: The representation of the site in Google Search Console. Properties are managed with the GSC Site Readiness API after the site is connected.
+
+@sdk_package_setup

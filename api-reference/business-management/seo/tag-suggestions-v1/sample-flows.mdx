@@ -1,0 +1,41 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Suggest title and description tags in an SEO editor
+
+Your app has an SEO panel where a site owner edits a page's title tag and description tag. Instead of leaving the fields blank, the panel offers AI-generated texts the owner can pick from.
+
+To suggest title and description tags:
+
+1. Determine the page's name, its primary keyword if the owner set one, and its kind. Map the kind to a `pageType` value, for example `PRODUCT_PAGE` for a store product page or `BLOG_POST` for a blog post. Leave `pageType` out for a regular site page.
+1. Call [Generate Title Suggestions](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/tag-suggestions-v1/generate-title-suggestions) with `pageName`, `pageType`, and `primaryKeyword`. Present the returned `tagSuggestions.suggestions` to the owner. They're ordered best match first.
+1. Call [Generate Description Suggestions](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/tag-suggestions-v1/generate-description-suggestions) with `pageName`, `topic`, and `pageType`. Add the optional hints you have, such as `toneOfVoice`, `businessType`, `businessLocation`, or the page's text in `pageContent`. Present the returned suggestions.
+1. When the owner picks a suggestion, apply it to the page's title tag or description tag in your SEO settings. If the owner wants more options, call the method again. Each call generates fresh suggestions.
+
+## Add alt text to a store's product images
+
+A store owner has products with images that have no alt text. Your app fills the gaps in bulk, so the images are accessible and understood by search engines.
+
+To add alt text to a store's product images:
+
+1. For each product, collect its image URLs from Wix media, such as `https://static.wixstatic.com/media/...`, and the product ID. Give each image your own reference `id`, such as the image's position or media ID.
+1. Call [Bulk Generate Alt Text Suggestions](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/tag-suggestions-v1/bulk-generate-alt-text-suggestions) with `itemType` set to `STORES_PRODUCT` and up to 20 `images`, each with its `id`, `url`, and the product ID as `parentItemId`. Split larger sets into calls of 20.
+1. Go through `results`. For each result with `success` set to `true`, take the first entry of `suggestions` as the best match, or let the owner choose from the list. `failureCount` tells you how many images got no alt text.
+1. For each result with `success` set to `false`, call [Generate Alt Text Suggestions](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/tag-suggestions-v1/generate-alt-text-suggestions) with that image alone to retry it.
+1. Apply the chosen alt text to each image in your store's product settings.
+
+## Fix a page's heading structure
+
+Your app checks a page's accessibility and SEO. It found headings that skip a level or a page with 2 H1 headings, and wants to propose the correct level for each heading.
+
+To fix a page's heading structure:
+
+1. Collect the page's heading elements in the order they appear on the page. For each heading, keep its raw HTML including the tag, for example `<h3>Contact us</h3>`, and your own reference `id` for the element. If the page is split into sections, set `sectionId` on each heading so the AI keeps one hierarchy per section.
+1. Call [Generate Heading Structure Suggestions](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/tag-suggestions-v1/generate-heading-structure-suggestions) with the `headings`, the `pageId`, and the page's `itemType`, for example `STATIC_PAGE_V2` for a regular site page.
+1. Go through `suggestions`. Each entry names a heading by the `headingId` you sent and gives its `currentTag` and `proposedTag`. Change the element's tag to `proposedTag`. A `proposedTag` of `P` means the text shouldn't be a heading at all.
+1. If `suggestions` is empty, the heading structure is already correct and nothing needs to change.

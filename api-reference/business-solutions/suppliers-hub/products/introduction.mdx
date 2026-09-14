@@ -16,7 +16,7 @@ With the Marketplace Products API, you can:
 
 ## Applying for partnership
 
-This API is available only to approved Wix business partners and requires a signed business agreement with Wix. To apply for partnership, contact jills@wix.com with a short description of your product and integration goals.
+This API is available only to approved Wix business partners and requires a signed business agreement with Wix. To apply for partnership, contact suppliershub@wix.com with a short description of your product and integration goals.
 
 Access to this API is limited to ensure that integrations meet Wix's product quality, data security, and user experience standards. Each request is reviewed individually based on the partner's product characteristics, technical capabilities, and alignment with Wix's ecosystem.
 
@@ -37,13 +37,45 @@ Your provider app serves as the connection point between your suppliers' product
 
 The Marketplace supports 2 business models, and products can support one or both:
 
-**Dropshipping**: Store owners add your products to their stores without holding inventory. When a customer places an order, the supplier ships directly to the customer. Dropshipping products require `minimumPrice` and shipping information.
+**Dropshipping**: Store owners add your products to their stores without holding inventory. When a customer places an order, the supplier ships directly to the customer. Dropshipping products require `minimumPrice`, shipping information, and `dropshippingOptions`.
 
 **Wholesale**: Store owners purchase products in bulk at volume-based pricing tiers. Wholesale products require `wholesaleOptions` with:
 + **Price tiers**: Quantity-based pricing that must be continuous, with no gaps between tiers. For example, tier 1 for quantities 1-100, tier 2 for 101+.
 + **Minimum order quantity**: The smallest quantity a store owner can purchase.
 
 Products can support both models simultaneously by setting `types` to both `DROPSHIPPING` and `WHOLESALE`. This allows store owners to choose their preferred business model for each product.
+
+## Inventory
+
+Products include an `inventory` field with two values: `inventory.quantity` (the total stock across all product variants) and `inventory.tier`, a coarse stock-level bucket derived from `quantity`. Use `tier` when you only need a low/medium/high signal — for example, to render badges or trigger restock alerts — without tracking exact counts.
+
+Providers report stock by calling [Update Product](fallback::https://dev.wix.com/docs/api-reference/business-solutions/suppliers-hub/products/update-product) with `inventory.quantity`. `inventory.tier` is computed automatically using these thresholds:
+
+| Tier         | Quantity   |
+|--------------|------------|
+| `EMPTY`      | 0          |
+| `VERY_LOW`   | 1–10       |
+| `LOW`        | 11–25      |
+| `MEDIUM`     | 26–50      |
+| `HIGH`       | 51–100     |
+| `VERY_HIGH`  | 101+       |
+
+If inventory hasn't been reported yet, `quantity` is null and `tier` is `UNKNOWN_INVENTORY_TIER`.
+
+A Product Updated webhook fires when `tier` transitions, with `inventory.tier` listed in the modified fields, so you can react to stock-level changes without polling.
+
+## Product options
+
+Product options describe the variations a product comes in, such as size or color. Each option has a `name` and a list of `values`. All values within a single option must be the same type.
+
+There are 2 predefined option types:
+
++ **`color`**: Set `values.color` with a color `name`, an optional `hex` code, and an optional `sortIndex`. Use `"Multicolor"` for mixed colors, and omit `hex` in that case.
++ **`size`**, and any other non-color option: Set `values.text` with a display `name` and an optional `sortIndex`. For example, `"S"`, `"M"`, or `"L"`.
+
+Use `sortIndex` to control the display order of an option's values. For best results, use contiguous numbers starting at `0` with no gaps. When you omit `sortIndex`, the client decides the order.
+
+Options are currently informational only. They display available variations to help buyers make purchase decisions, but they don't create separate inventory items or variants.
 
 ## Before you begin
 

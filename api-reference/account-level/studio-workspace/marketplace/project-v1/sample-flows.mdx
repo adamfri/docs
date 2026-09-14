@@ -1,0 +1,50 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Build a provider's work queue
+
+A provider needs to see which engagements are waiting on them and what each client asked for, so they can decide what to pick up next. The project carries the client's request, so building this list doesn't require retrieving any briefs.
+
+To build a provider's work queue:
+
+1. Call [Query Projects](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/query-projects) with a filter on `status` to retrieve the projects to act on, such as `NEW` for the requests awaiting a first response.
+1. Read `briefDescription` on each returned project to see what the client asked for.
+1. Read `expirationDate` on each project to see how long the provider has to respond before a project that's still `NEW` expires.
+1. Pass each project's `contactId` to the [Contacts API](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/contacts/contacts/introduction) to retrieve the client's name and contact details.
+
+## Take an engagement from first contact to delivery
+
+A provider has agreed to take on a client's request and works it through to delivery. Each call returns the updated project, including the `revision` needed for the next call.
+
+To take an engagement from first contact to delivery:
+
+1. Call [Get Project](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/get-project) to read the current `status` and `revision`.
+1. Call [Start Project](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/start-project) when work begins. The project's `status` must be `NEW`, `CONTACTED`, or `IN_DISCUSSION`.
+1. Call [Complete Project](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/complete-project) when the work is delivered. Specify `completedProjectSnapshot`, `metasiteId`, or both as proof of delivery, and optionally `serviceName` and `budget` to record the work's category and what the client agreed to pay.
+
+## End an engagement that isn't going ahead
+
+Not every request turns into work. A provider closes out an engagement they won't be delivering, recording why so the outcome is captured.
+
+To end an engagement that isn't going ahead:
+
+1. Call [Get Project](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/get-project) to read the current `status` and `revision`.
+1. Call [Cancel Project](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/cancel-project) with `cancellationInfo`, choosing the `reason` that fits, such as `CLIENT_NOT_RESPONDING` or `BUDGET_IS_TOO_LOW`, and adding any details in `additionalInfo`.
+
+Cancellation is final, so a canceled project can't be restarted.
+
+## Respond to a client's review
+
+After a project is delivered, the client can rate and review it. A provider replies to that feedback in public.
+
+To respond to a client's review:
+
+1. Call [Get Project](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/get-project) and confirm the `status` is `COMPLETED` and that `review` exists without a `reply`.
+1. Call [Reply to Project Review](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/reply-to-project-review) with the `reply` text and the current `revision`.
+
+A review supports a single reply, which can't be changed once submitted.

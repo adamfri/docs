@@ -1,0 +1,47 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you can support. It provides a useful starting point as you plan your implementation.
+
+## Read the briefs after a content plan finishes
+
+A site owner has generated a content plan and wants to see what to write about. Your app reads the finished briefs and presents them in plan order.
+
+This flow assumes a content plan flow that has already reached `SUCCESS`.
+
+To read the briefs:
+
+1. Call [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) with the flow ID and confirm `status` is `SUCCESS`. Briefs aren't available before then. If `status` is `FAIL` or `CANCELED`, stop polling and tell the site owner that generation didn't complete, because neither status recovers on its own.
+1. Call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) with the same flow ID. Omit `paging` to receive every brief in one response.
+1. Present each candidate's `briefData` to the site owner. `h1Title` is the suggested title, `keyword` is what the post should target, and `pageUrl` is the page the post supports.
+
+## Work through the unused briefs one at a time
+
+A site owner publishes one post at a time over several weeks. Each time they return, your app shows only the briefs they haven't written about yet.
+
+A brief is marked as used when a post is created from it in the Wix Blog product. Your app can read that mark but can't set it, so track anything you publish by another route yourself.
+
+To show only the unused briefs:
+
+1. Call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) with `?includeOnlyUnmarked=true`. Only the literal value `true` filters, so omitting the parameter returns every brief.
+1. Present the returned briefs. The count in `pagingMetadata` reflects the filtered set, so you can show how many remain.
+1. Let the site owner pick one and write the post from its `briefData`.
+1. Call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) again the next time the owner returns. A brief written through Wix Blog drops out of the filtered results on its own.
+
+## Regenerate a site's briefs
+
+A site owner has used most of their briefs, or wants a different set after editing their keywords. Your app generates a fresh plan without losing the existing one.
+
+Regeneration doesn't overwrite the finished flow. It produces a separate one, so hold on to the new ID the response gives you.
+
+To regenerate the briefs:
+
+1. Call [List Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/list-keyword-research-items) and let the site owner adjust the keywords first, if they want a different set rather than simply more briefs.
+1. Call [Create Content Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/create-content-plan) with the finished flow's ID. Call it once and wait, because concurrent calls for one site can produce duplicate plans.
+1. Check `success` in the response. If it's `false`, read `message` for the reason and stop. A successful HTTP status alone doesn't mean the briefs were generated.
+1. Store the `contentPlanFlowId` from the response. Regeneration returns a new ID, and the original flow keeps its own briefs.
+1. Poll [Get Content Plan Flow](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/get-content-plan-flow) with the new ID until `status` is `SUCCESS`.
+1. Call [List Blog Post Candidates](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/list-blog-post-candidates) with the new ID to read the regenerated briefs.

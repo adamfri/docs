@@ -47,6 +47,29 @@ You can control which actions customers can perform themselves for a specific pl
 - Subscribe to the plan. Determined by the plan's `buyable`.
 - Cancel their subscription to the plan. Determined by the plan's `buyerCanCancel`.
 
+## Tags
+
+You can assign tags to plans to classify them and filter by them later. Tags are managed by the [Tags API](fallback::https://dev.wix.com/docs/api-reference/business-management/tags), and a plan stores only tag IDs, not tag names. Assign a tag to a plan only after the tag exists. When you create or list tags for plans, pass `wix.pricing_plans.v3.plan` as the `fqdn`.
+
+A plan has two separate tag lists:
+
+- **Public tags**: Visible to anyone who can read the plan, including site members and visitors.
+- **Private tags**: Visible only to callers with the `PRICING_PLANS.PLAN_READ` permission. Use these for internal classification you don't want to expose on the live site.
+
+A plan can hold up to 100 tags in each list.
+
+To update tags:
+
+- [Bulk Update Plan Tags](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/plans-v3/bulk-update-plan-tags) assigns and unassigns tags on up to 100 plans by ID, and returns the result for each plan.
+- [Bulk Update Plan Tags By Filter](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/plans-v3/bulk-update-plan-tags-by-filter) assigns and unassigns tags on every plan matching a filter. An empty filter matches all plans. The update runs asynchronously, so the response returns a `jobId` instead of per-plan results.
+- [Update Plan](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/plans-v3/update-plan) replaces the plan's entire tag list. Use the bulk methods to add or remove individual tags without overwriting the rest.
+
+Both bulk methods accept `assignTags` and `unassignTags`. At least one of them must be non-empty, otherwise the call fails with `EMPTY_ASSIGN_AND_UNASSIGN_LISTS`. A tag listed in both is assigned.
+
+To find plans by tag, filter on `tags.publicTags.tagIds` or `tags.privateTags.tagIds` with `$hasSome` or `$hasAll`. See [Supported Filters and Sorting](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/plans-v3/filter-and-sort).
+
+Every tag change emits two events. [Plan Updated](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/plans-v3/plan-updated) fires with the plan's new state, and [Plan Tags Modified](fallback::https://dev.wix.com/docs/rest/business-solutions/pricing-plans/plans-v3/plan-tags-modified) fires with the tags that were assigned and unassigned. Subscribe to Plan Tags Modified when you only care about tag changes and want the delta rather than the full plan.
+
 ## Before you begin
 
 It's important to note the following points before starting to code:
@@ -61,6 +84,7 @@ It's important to note the following points before starting to code:
 
 - [Import plans from external systems](https://dev.wix.com/docs/rest/business-solutions/pricing-plans/pricing-plans/plans-v3/sample-flows)
 - [Sync pricing plans across multiple systems](https://dev.wix.com/docs/rest/business-solutions/pricing-plans/pricing-plans/plans-v3/sample-flows)
+- [Organize plans with tags](https://dev.wix.com/docs/rest/business-solutions/pricing-plans/pricing-plans/plans-v3/sample-flows)
 
 ## Terminology
 
@@ -72,5 +96,6 @@ It's important to note the following points before starting to code:
 - **Pricing strategy**: Determines how much customers pay. Supports flat rate pricing only, where customers pay a fixed amount per billing cycle.
 - **Billing terms**: Configuration that defines when billing starts, how often customers are charged (billing cycle), and when the plan ends.
 - **Perks**: Names of benefits included with the plan. For display only. To configure benefits, see [Benefit Programs](fallback::https://dev.wix.com/docs/rest/business-solutions/benefit-programs/introduction).
+- **Tag**: A label you can assign to a plan to classify it and filter by it. Tags are either public, readable by anyone who can read the plan, or private, readable only with the `PRICING_PLANS.PLAN_READ` permission.
 
 @sdk_package_setup

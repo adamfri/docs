@@ -1,0 +1,66 @@
+---
+title: "Introduction"
+description: "The Media Upload API queues a set of photo changes for one Google Business Profile location and applies them gradually in the background."
+icon: "file-lines"
+---
+
+The Media Upload API queues a set of photo changes for one Google Business Profile
+location and applies them gradually in the background. Google accepts only about 10
+edits per minute per profile, so a site owner saving a full gallery can't be served by
+immediate writes. Queue the changes instead and let them apply at Google's pace.
+
+Use this API when there's more than a handful of photos. For a single photo, use the
+Create Media and Delete Media methods of the
+[Locations API](fallback::https://dev.wix.com/docs/api-reference/business-management/google-business-profile/gbplocation-v1),
+which write to the Business Profile immediately.
+
+## Before you begin
+
+- **A connection is required.** Establish it with the
+  [Connection API](fallback::https://dev.wix.com/docs/api-reference/business-management/google-business-profile/connection-v1)
+  first. The queue applies changes with the connected Google account's credentials.
+- **The location must be imported.** Changes are queued per location, identified by
+  Google's location ID, the same identifier the Locations API uses.
+- **One call is all additions or all removals.** A single Bulk Create Media Uploads
+  call can't mix the two. Send two calls if you need both.
+- **There's no completion callback.** Poll List Media Uploads to follow progress. A
+  large set takes a while: the queue applies a few changes a minute per location, so
+  52 photos take on the order of ten minutes to appear in full.
+
+## How the queue reports state
+
+Anything you can read from List Media Uploads is either still waiting to be applied or
+has failed. A change that succeeds leaves nothing behind, so an empty list means the
+queue finished and everything worked.
+
+Read the response as a whole:
+
+| What comes back | What it means |
+| --- | --- |
+| Anything `PENDING` or `UPLOADING` | Still working. Don't report results yet. |
+| Only `FAILED` items | Finished, and those items didn't make it. |
+| Nothing | Nothing is outstanding for this location. |
+
+An empty queue is not proof of success: a cleared failure and a success look identical
+afterwards. Confirm the final gallery against the Locations API's List Media method
+rather than inferring success. Failures stay in the queue until they're dismissed with
+Dismiss Media Upload Failures, and queuing new changes clears every failure for that
+location, whoever queued it, so read failures before queuing again.
+
+## The rate limit is shared
+
+The same budget of roughly 10 edits per minute covers every write to the profile, not
+just photos. The Locations API's Update Google Location and Update Location Attributes
+methods draw on it too, so interleaving those with photo changes brings a `429` closer.
+Pace the profile as a whole rather than each method separately.
+
+## Terminology
+
+- **Media upload**: one queued change, either adding a photo from a source URL or
+  removing an existing photo, for one location.
+- **Batch** (`batchId`): the group of changes queued by one Bulk Create Media Uploads
+  call. Useful for troubleshooting, since one save can produce more than one batch.
+- **Drain**: the background process that applies queued changes to the Business
+  Profile at Google's accepted pace.
+
+@sdk_package_setup

@@ -1,0 +1,64 @@
+---
+title: "Errors"
+description: "This article outlines error messages that might be issued when calling methods of the Join Applications API."
+icon: "file-lines"
+---
+
+This article outlines error messages that might be issued when calling methods of the Join Applications API.
+
+The errors are grouped by the action that triggers them, because most of them can be issued by more than 1 method.
+
+## Program and enrollment errors
+
+The following errors can occur when creating a join application, accepting an invitation, approving an application, or inviting members in bulk.
+
+`PROGRAM_NOT_FOUND` and `PROGRAM_NOT_PUBLISHED` apply only when creating a join application or inviting members in bulk. Accepting an invitation and approving an application don't validate the program's publication status.
+
+| HTTP status | Error code | Error message | Troubleshooting |
+|-------------|------------|---------------|-----------------|
+| `NOT_FOUND (404)` | `PROGRAM_NOT_FOUND` | The specified program doesn't exist. | Verify `programId` and try again. |
+| `FAILED_PRECONDITION (428)` | `PROGRAM_NOT_PUBLISHED` | The program isn't published. | Publish the program before accepting applications or inviting members. |
+| `ALREADY_EXISTS (409)` | `ALREADY_EXISTS` | A join application already exists for the specified program and member. | Retrieve the existing application instead of creating another one. A member can have only 1 join application per program. |
+| `INVALID_ARGUMENT (400)` | `MISSING_MEMBER_ID` | The owner flow requires a member ID. | Specify `memberId` when creating an application on a member's behalf. |
+| `FAILED_PRECONDITION (428)` | `PREMIUM_PLAN_REQUIRED` | The site needs a Premium plan to add more participants. | Upgrade the site's plan or reduce the number of participants. |
+| `FAILED_PRECONDITION (428)` | `PARTICIPANTS_LIMIT_EXCEEDED` | The program's participant limit has been reached. | Raise the program's participant limit or remove participants before retrying. |
+
+## Status transition errors
+
+The following error can occur when approving, declining, or canceling an application, or when accepting an invitation.
+
+| HTTP status | Error code | Error message | Troubleshooting |
+|-------------|------------|---------------|-----------------|
+| `FAILED_PRECONDITION (428)` | `INVALID_JOIN_APPLICATION_STATUS` | The join application isn't in the status that the requested action requires. | Retrieve the application and take an action that's valid for its current `status`. Approving, declining, and canceling all require `APPROVAL_PENDING`, and accepting an invitation requires `INVITED`. |
+
+## Retrieval errors
+
+The following error can occur when retrieving the calling member's own application.
+
+| HTTP status | Error code | Error message | Troubleshooting |
+|-------------|------------|---------------|-----------------|
+| `NOT_FOUND (404)` | `NOT_FOUND` | The calling member has no join application for the specified program. | Verify `programId`. Create a join application if the member hasn't applied yet. |
+
+## Payment and coupon errors
+
+The following errors can occur when preparing payment, applying or removing a coupon, or completing a payment with a free coupon.
+
+| HTTP status | Error code | Error message | Troubleshooting |
+|-------------|------------|---------------|-----------------|
+| `FAILED_PRECONDITION (428)` | `OP_APP_NOT_INSTALLED` | Online Programs isn't installed on the site. | Install Online Programs before preparing payment. |
+| `FAILED_PRECONDITION (428)` | `PP_APP_NOT_INSTALLED` | Pricing Plans isn't installed on the site. | Install Pricing Plans before preparing a paid-plan payment. |
+| `NOT_FOUND (404)` | `NO_PAID_PLAN_CONNECTED` | No paid plan is connected to the program. | Connect an eligible paid plan to the program, then retry. |
+| `FAILED_PRECONDITION (428)` | `INVALID_PAYMENT_STATUS` | The join application's payment status doesn't permit the requested action. | Retrieve the application and follow the payment flow for its current `paymentStatus`. Preparing payment requires `PAYMENT_PENDING`, `PAYMENT_FAILED`, or `PAYMENT_CANCELED`. Coupon actions require `PAYMENT_IN_PROGRESS`, `PAYMENT_FAILED`, or `PAYMENT_CANCELED`. |
+| `FAILED_PRECONDITION (428)` | `MISSING_PAYMENT_ORDER` | No payment order exists for the join application. | Call Prepare Payment before managing a coupon or completing a free-coupon payment. |
+| `FAILED_PRECONDITION (428)` | `COUPON_IS_ALREADY_APPLIED` | A coupon is already applied to the payment order. | Remove the current coupon before applying a different one. |
+| `FAILED_PRECONDITION (428)` | `COUPON_DOES_NOT_EXIST` | No coupon matches the supplied code, or the supplied coupon ID doesn't match the coupon currently applied to the join application. | When applying a coupon, verify the coupon code. When removing a coupon, use the coupon ID returned by Apply Coupon or available in the join application's `payment_info.coupon_id` field. |
+| `FAILED_PRECONDITION (428)` | `NO_COUPON_APPLIED` | No coupon is applied to the payment order. | Apply a coupon before completing a free-coupon payment. |
+| `FAILED_PRECONDITION (428)` | `COUPON_DOES_NOT_COVER_FULL_AMOUNT` | The coupon doesn't reduce the payment total to zero. | Complete the payment through the regular checkout flow. |
+
+## Bulk tag-update errors
+
+The following error can occur when updating tags for multiple join applications.
+
+| HTTP status | Error code | Error message | Troubleshooting |
+|-------------|------------|---------------|-----------------|
+| `INVALID_ARGUMENT (400)` | `EMPTY_ASSIGN_AND_UNASSIGN_LISTS` | No tags were specified to assign or unassign. | Specify at least 1 tag in `assignTags` or `unassignTags`. |

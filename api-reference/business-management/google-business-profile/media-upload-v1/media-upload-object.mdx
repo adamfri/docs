@@ -1,0 +1,449 @@
+---
+title: "Media Upload Object"
+description: "One queued photo change on a Google Business Profile location: either an addition or a removal."
+icon: "cube"
+---
+
+One queued photo change on a Google Business Profile location: either an
+addition or a removal.
+
+Photo changes are queued and applied gradually rather than immediately,
+because Google accepts only about 10 edits per minute per Business Profile.
+
+Anything you can read here is either still waiting to be applied or has
+failed. A change that succeeded leaves nothing behind, so an empty list means
+the queue finished and everything worked. See `state`.
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <ResponseField name="id" type="string">
+
+      Queued change ID.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="locationId" type="string">
+
+      ID of the location this change applies to. This is Google's location
+      identifier.
+
+      Constraints: `minLength 1`, `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="batchId" type="string">
+
+      Groups the changes queued by one Bulk Create Media Uploads call. Useful for
+      troubleshooting, since one save can produce more than one batch.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="slotKey" type="string">
+
+      Your own key for this photo: `logo`, `cover`, or `photo:<id>`.
+
+      Set it to something stable and meaningful to you. It's how a failure is
+      matched back to the photo that caused it, and it's part of what makes a
+      repeated submission a duplicate rather than a second change.
+
+      Constraints: `maxLength 255`.
+
+    </ResponseField>
+
+    <ResponseField name="sourceUrl" type="string">
+
+      Publicly reachable URL Google fetches the image from. Additions only.
+
+      Keep it reachable well beyond the upload itself. A failure report renders
+      this URL as a thumbnail, possibly weeks later.
+
+      Constraints: `maxLength 2048`.
+
+    </ResponseField>
+
+    <ResponseField name="category" type="string">
+
+      Where the photo appears on the profile. Additions only.
+
+      **Supported values:**
+
+      - `COVER` — The banner image at the top of the profile. One per location.
+      - `PROFILE` — The profile image shown alongside the business name.
+      - `LOGO` — The business's logo. One per location.
+      - `EXTERIOR` — The outside of the premises, including the storefront.
+      - `INTERIOR` — The inside of the premises.
+      - `PRODUCT` — A product the business sells.
+      - `AT_WORK` — The team at work, such as staff serving customers.
+      - `FOOD_AND_DRINK` — Food or drink the business serves.
+      - `MENU` — The menu, for a business that serves food or drink.
+      - `COMMON_AREA` — A shared space, such as a lobby or a waiting area.
+      - `ROOMS` — Guest rooms, for accommodation businesses.
+      - `TEAMS` — The people who work at the business.
+      - `ADDITIONAL` — Anything that doesn't fit the other categories. This is the default for a
+      gallery photo.
+
+    </ResponseField>
+
+    <ResponseField name="format" type="string">
+
+      Media type of the photo. Additions only.
+
+      **Supported values:**
+
+      - `PHOTO`
+      - `VIDEO`
+
+    </ResponseField>
+
+    <ResponseField name="operation" type="string">
+
+      Whether this change adds a photo to the profile or removes one.
+
+      **Supported values:**
+
+      - `CREATE` — Add a photo to the profile.
+      - `DELETE` — Remove a photo from the profile.
+
+    </ResponseField>
+
+    <ResponseField name="sequence" type="integer">
+
+      Position in the order the queue applies changes, assigned by the server.
+
+      Every removal comes before every addition, because Google rejects new photos
+      on a profile that's already at its limit, so the old ones have to go first.
+      Additions then follow as logo, cover, and gallery in the order given.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="state" type="string">
+
+      Whether this change is waiting, being applied, or has failed.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `PENDING` — Waiting its turn in the queue.
+      - `UPLOADING` — Being applied to Google now. A change that stays here isn't one that never
+      ran: its outcome isn't known yet.
+      - `FAILED` — Failed, and won't be retried. Kept until replaced or dismissed.
+
+    </ResponseField>
+
+    <ResponseField name="attempts" type="integer">
+
+      How many times this change has been attempted.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="mediaKey" type="string">
+
+      Google's identifier for the photo to remove. Removals only.
+
+      Constraints: `maxLength 255`.
+
+    </ResponseField>
+
+    <ResponseField name="failure" type="MediaUploadFailure">
+
+      Why this change failed. Present only when `state` is `FAILED`.
+
+      **Read-only.**
+
+      <Expandable title="failure properties">
+
+        <ResponseField name="reason" type="string">
+
+          Why the change failed, in terms you can show a site owner.
+
+          **Supported values:**
+
+          - `IMAGE_TOO_SMALL` — Below Google's minimum dimensions.
+          - `ASPECT_RATIO_REJECTED` — Cover/logo ratio outside Google's accepted range.
+          - `FORMAT_UNSUPPORTED` — File type Google will not accept.
+          - `SOURCE_UNREACHABLE` — Google could not fetch the image URL.
+          - `PERMISSION_REVOKED` — Access to the Google account was lost. The site owner needs to connect
+          again.
+          - `RATE_LIMIT_EXHAUSTED` — Google was still rate limiting after the queue used up its retries.
+          - `UPLOAD_UNVERIFIED` — The change may or may not have reached Google, and the queue chose not to
+          risk a duplicate by trying again. Additions only.
+
+          Unlike every other reason here, this doesn't say anything is wrong with the
+          photo. It says the outcome couldn't be confirmed. Word it for the site owner
+          that way: "we couldn't confirm this photo was added", not "this photo was
+          rejected".
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="createdDate" type="datetime">
+
+      Date and time the change was queued.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="updatedDate" type="datetime">
+
+      Date and time the change was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="string">
+
+      Revision number, incremented on every update.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    ## Example
+
+    <CodeGroup>
+
+      ```json Object
+      {
+        "mediaUpload": {
+          "id": "7b6a2e10-84cf-4d95-a0e3-52c9b7d16f48",
+          "locationId": "locations/8117348495523092385",
+          "batchId": "e0b2745c-9f31-4a8d-b6c7-1d4e58a9f302",
+          "slotKey": "cover",
+          "sourceUrl": "https://static.wixstatic.com/media/bakery-storefront.jpg",
+          "category": "COVER",
+          "format": "PHOTO",
+          "operation": "CREATE",
+          "sequence": 1001,
+          "state": "FAILED",
+          "attempts": 3,
+          "failure": {
+            "reason": "ASPECT_RATIO_REJECTED"
+          },
+          "createdDate": "2026-08-24T09:15:22.481Z",
+          "updatedDate": "2026-08-24T09:18:41.905Z",
+          "revision": "4"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <ResponseField name="_id" type="string">
+
+      Queued change ID.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="locationId" type="string">
+
+      ID of the location this change applies to. This is Google's location
+      identifier.
+
+      Constraints: `minLength 1`, `maxLength 255`, `immutable`.
+
+    </ResponseField>
+
+    <ResponseField name="batchId" type="string">
+
+      Groups the changes queued by one Bulk Create Media Uploads call. Useful for
+      troubleshooting, since one save can produce more than one batch.
+
+      **Read-only.** Constraints: `format GUID`.
+
+    </ResponseField>
+
+    <ResponseField name="slotKey" type="string">
+
+      Your own key for this photo: `logo`, `cover`, or `photo:<id>`.
+
+      Set it to something stable and meaningful to you. It's how a failure is
+      matched back to the photo that caused it, and it's part of what makes a
+      repeated submission a duplicate rather than a second change.
+
+      Constraints: `maxLength 255`.
+
+    </ResponseField>
+
+    <ResponseField name="sourceUrl" type="string">
+
+      Publicly reachable URL Google fetches the image from. Additions only.
+
+      Keep it reachable well beyond the upload itself. A failure report renders
+      this URL as a thumbnail, possibly weeks later.
+
+      Constraints: `maxLength 2048`.
+
+    </ResponseField>
+
+    <ResponseField name="category" type="string">
+
+      Where the photo appears on the profile. Additions only.
+
+      **Supported values:**
+
+      - `COVER` — The banner image at the top of the profile. One per location.
+      - `PROFILE` — The profile image shown alongside the business name.
+      - `LOGO` — The business's logo. One per location.
+      - `EXTERIOR` — The outside of the premises, including the storefront.
+      - `INTERIOR` — The inside of the premises.
+      - `PRODUCT` — A product the business sells.
+      - `AT_WORK` — The team at work, such as staff serving customers.
+      - `FOOD_AND_DRINK` — Food or drink the business serves.
+      - `MENU` — The menu, for a business that serves food or drink.
+      - `COMMON_AREA` — A shared space, such as a lobby or a waiting area.
+      - `ROOMS` — Guest rooms, for accommodation businesses.
+      - `TEAMS` — The people who work at the business.
+      - `ADDITIONAL` — Anything that doesn't fit the other categories. This is the default for a
+      gallery photo.
+
+    </ResponseField>
+
+    <ResponseField name="format" type="string">
+
+      Media type of the photo. Additions only.
+
+      **Supported values:**
+
+      - `PHOTO`
+      - `VIDEO`
+
+    </ResponseField>
+
+    <ResponseField name="operation" type="string">
+
+      Whether this change adds a photo to the profile or removes one.
+
+      **Supported values:**
+
+      - `CREATE` — Add a photo to the profile.
+      - `DELETE` — Remove a photo from the profile.
+
+    </ResponseField>
+
+    <ResponseField name="sequence" type="integer">
+
+      Position in the order the queue applies changes, assigned by the server.
+
+      Every removal comes before every addition, because Google rejects new photos
+      on a profile that's already at its limit, so the old ones have to go first.
+      Additions then follow as logo, cover, and gallery in the order given.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="state" type="string">
+
+      Whether this change is waiting, being applied, or has failed.
+
+      **Read-only.**
+
+      **Supported values:**
+
+      - `PENDING` — Waiting its turn in the queue.
+      - `UPLOADING` — Being applied to Google now. A change that stays here isn't one that never
+      ran: its outcome isn't known yet.
+      - `FAILED` — Failed, and won't be retried. Kept until replaced or dismissed.
+
+    </ResponseField>
+
+    <ResponseField name="attempts" type="integer">
+
+      How many times this change has been attempted.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="mediaKey" type="string">
+
+      Google's identifier for the photo to remove. Removals only.
+
+      Constraints: `maxLength 255`.
+
+    </ResponseField>
+
+    <ResponseField name="failure" type="MediaUploadFailure">
+
+      Why this change failed. Present only when `state` is `FAILED`.
+
+      **Read-only.**
+
+      <Expandable title="failure properties">
+
+        <ResponseField name="reason" type="string">
+
+          Why the change failed, in terms you can show a site owner.
+
+          **Supported values:**
+
+          - `IMAGE_TOO_SMALL` — Below Google's minimum dimensions.
+          - `ASPECT_RATIO_REJECTED` — Cover/logo ratio outside Google's accepted range.
+          - `FORMAT_UNSUPPORTED` — File type Google will not accept.
+          - `SOURCE_UNREACHABLE` — Google could not fetch the image URL.
+          - `PERMISSION_REVOKED` — Access to the Google account was lost. The site owner needs to connect
+          again.
+          - `RATE_LIMIT_EXHAUSTED` — Google was still rate limiting after the queue used up its retries.
+          - `UPLOAD_UNVERIFIED` — The change may or may not have reached Google, and the queue chose not to
+          risk a duplicate by trying again. Additions only.
+
+          Unlike every other reason here, this doesn't say anything is wrong with the
+          photo. It says the outcome couldn't be confirmed. Word it for the site owner
+          that way: "we couldn't confirm this photo was added", not "this photo was
+          rejected".
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="_createdDate" type="datetime">
+
+      Date and time the change was queued.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="_updatedDate" type="datetime">
+
+      Date and time the change was last updated.
+
+      **Read-only.**
+
+    </ResponseField>
+
+    <ResponseField name="revision" type="string">
+
+      Revision number, incremented on every update.
+
+      **Read-only.**
+
+    </ResponseField>
+
+  </Tab>
+
+</Tabs>

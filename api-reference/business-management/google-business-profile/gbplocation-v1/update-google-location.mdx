@@ -1,0 +1,2105 @@
+---
+title: "Update Google Location"
+description: "Updates a location's Business Profile in Google."
+icon: "pen"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-patch">PATCH</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates a location's Business Profile in Google.
+
+    This changes the profile the public sees on Google. It doesn't change the
+    location stored for the site: to update `serviceAreaPostalAddress`, call Update
+    Location.
+
+    `fieldMask` is required, and only these top-level fields can be updated:
+    `title`, `storeCode`, `primaryPhone`, `additionalPhones`, `primaryCategory`,
+    `additionalCategories`, `storefrontAddress`, `websiteUri`, `regularHours`,
+    `serviceArea`, `latLng`, `openInfo`, `profile`.
+
+    Anything else, including a nested path such as `profile.description` or an
+    empty mask, fails with `INVALID_UPDATE_MASK` before Google is called.
+    `languageCode` can't be updated: Google treats it as read-only.
+
+    ## Categories and phone numbers replace the whole set
+
+    Google doesn't allow categories or phone numbers to be updated one at a time,
+    so each pair behaves as a single value and Google replaces everything in it.
+    Read this before updating either, because omitting a value deletes it.
+
+    For categories:
+
+    - Specify `primaryCategory` and `additionalCategories` together in `fieldMask`.
+    A mask with only one of them fails with `INVALID_UPDATE_MASK`.
+    - Specify the complete set you want the location to end up with, including a
+    primary category. A set without one fails with `INVALID_CATEGORIES`.
+    - Any additional category you leave out is removed, so resend the ones you want
+    to keep.
+
+    For phone numbers:
+
+    - Specify `primaryPhone` and `additionalPhones` together in `fieldMask`. A mask
+    with only one of them fails with `INVALID_UPDATE_MASK`.
+    - Specify the complete set of numbers you want the location to end up with. Any
+    number you leave out is removed.
+    - Unlike categories, no primary is required. Masking both and specifying none
+    removes every phone number.
+
+    ## Errors
+
+    - `INVALID_UPDATE_MASK`: the mask is empty, or names a field that can't be
+    updated, or masks only one half of the categories or phone numbers pair.
+    Google isn't called.
+    - `GOOGLE_LOCATION_VALIDATION_FAILED`: Google rejected the details, for example
+    an invalid phone number or address, or a listing that needs a postcard PIN.
+    The specific reasons are in the error payload and are worth surfacing: they
+    tell the site owner what to correct.
+    - `GOOGLE_API_CALL_FAILED`: the call to Google failed for any other reason.
+    Google's status and response are in the error payload.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    PATCH https://www.wixapis.com/gbp/v1/locations/{locationId}/google
+    ```
+
+    ## Path Params
+
+    <ParamField path="locationId" type="string" required>
+
+      ID of the location to update. This is Google's location identifier, without
+      the `locations/` prefix.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="location" type="GoogleLocation" required>
+
+      The profile values to set. Only the fields named in `fieldMask` are sent to
+      Google, so this can be partial.
+
+      <Expandable title="location properties">
+
+        <ParamField body="name" type="string">
+
+          Google resource name, e.g. "locations/12345678901234567890".
+          Empty on create request; populated on response.
+
+          Constraints: `maxLength 200`.
+
+        </ParamField>
+
+        <ParamField body="title" type="string">
+
+          Business name shown on the listing (Google's "title").
+
+          Constraints: `minLength 1`, `maxLength 300`.
+
+        </ParamField>
+
+        <ParamField body="languageCode" type="string">
+
+          BCP-47 language tag, e.g. "en-US". Required by Google, immutable.
+
+          Constraints: `format LANGUAGE_TAG`.
+
+        </ParamField>
+
+        <ParamField body="primaryCategory" type="Category">
+
+          Primary business category. Required by Google.
+
+          <Expandable title="primaryCategory properties">
+
+            <ParamField body="id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalCategories" type="Category[]">
+
+          Additional categories. Google caps at 9.
+
+          Constraints: `maxItems 9`.
+
+          <Expandable title="additionalCategories properties">
+
+            <ParamField body="id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="profile" type="Profile">
+
+          Optional. Google asks for a description for every category except lodging
+          but doesn't enforce it, so neither does this API. Both an absent profile and
+          one with an empty description are accepted.
+
+          <Expandable title="profile properties">
+
+            <ParamField body="description" type="string">
+
+              Description of the location in the site owner's own words. Optional, and an
+              empty value clears it on the listing. Google allows up to 750 characters.
+
+              Constraints: `maxLength 750`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="storefrontAddress" type="PostalAddress">
+
+          Storefront postal address. Required for a business that serves customers at
+          its premises, and allowed alongside `serviceArea` when that field's
+          `businessType` is `CUSTOMER_AND_BUSINESS_LOCATION`.
+
+          <Expandable title="storefrontAddress properties">
+
+            <ParamField body="countryCode" type="string">
+
+              ISO 3166-1 alpha-2 country code (e.g. "US", "GB").
+
+              Constraints: `format COUNTRY`.
+
+            </ParamField>
+
+            <ParamField body="postalCode" type="string">
+
+              Postal/ZIP code.
+
+              Constraints: `maxLength 20`.
+
+            </ParamField>
+
+            <ParamField body="administrativeArea" type="string">
+
+              Administrative area (state, province, region).
+
+              Constraints: `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="locality" type="string">
+
+              City or locality.
+
+              Constraints: `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="addressLines" type="string[]">
+
+              Street address lines. Up to 5 lines.
+
+              Constraints: `maxLength 255`, `maxItems 5`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="serviceArea" type="ServiceArea">
+
+          Service-area definition (for businesses that serve customers at the
+          customer's location, exclusively or in addition to their storefront).
+
+          <Expandable title="serviceArea properties">
+
+            <ParamField body="businessType" type="string">
+
+              Type of service-area business.
+
+              **Supported values:**
+
+              - `CUSTOMER_LOCATION_ONLY`
+              - `CUSTOMER_AND_BUSINESS_LOCATION`
+
+            </ParamField>
+
+            <ParamField body="places" type="PlaceInfo[]">
+
+              Places served. Google caps at 20.
+
+              Constraints: `maxItems 20`.
+
+              _Nested structure omitted for brevity — see the `PlaceInfo[]` object._
+
+            </ParamField>
+
+            <ParamField body="regionCode" type="string">
+
+              ISO 3166-1 alpha-2 country code. Required by Google for
+              CUSTOMER_LOCATION_ONLY businesses; ignored otherwise.
+
+              Constraints: `format COUNTRY`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="primaryPhone" type="string">
+
+          Primary business phone.
+
+          Constraints: `maxLength 50`.
+
+        </ParamField>
+
+        <ParamField body="additionalPhones" type="string[]">
+
+          Additional phones. Google caps at 2.
+
+          Constraints: `maxLength 50`, `maxItems 2`.
+
+        </ParamField>
+
+        <ParamField body="websiteUri" type="string">
+
+          Business website.
+
+          Clear it by masking `websiteUri` on Update Google Location and sending
+          `null`. Sending an empty string is rejected.
+
+        </ParamField>
+
+        <ParamField body="storeCode" type="string">
+
+          Merchant-defined store code (free-form identifier shown only to the merchant).
+
+          Constraints: `maxLength 64`.
+
+        </ParamField>
+
+        <ParamField body="regularHours" type="BusinessHours[]">
+
+          Regular weekly business hours.
+
+          Constraints: `maxItems 14`.
+
+          <Expandable title="regularHours properties">
+
+            <ParamField body="openDay" type="string">
+
+              Day of the week when this open/close window starts.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ParamField>
+
+            <ParamField body="openTime" type="TimeOfDay">
+
+              Wall-clock time the business opens on `openDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ParamField>
+
+            <ParamField body="closeDay" type="string">
+
+              Day of the week when this open/close window ends.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ParamField>
+
+            <ParamField body="closeTime" type="TimeOfDay">
+
+              Wall-clock time the business closes on `closeDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="latLng" type="LatLng">
+
+          Geographic coordinates of the storefront.
+
+          <Expandable title="latLng properties">
+
+            <ParamField body="latitude" type="number">
+
+              Latitude in degrees. Must be in [-90, 90].
+
+            </ParamField>
+
+            <ParamField body="longitude" type="number">
+
+              Longitude in degrees. Must be in [-180, 180].
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="openInfo" type="OpenInfo">
+
+          Open/closed state of the listing.
+
+          <Expandable title="openInfo properties">
+
+            <ParamField body="status" type="string">
+
+              Current listing status.
+
+              **Supported values:**
+
+              - `OPEN`
+              - `CLOSED_PERMANENTLY`
+              - `CLOSED_TEMPORARILY`
+
+            </ParamField>
+
+            <ParamField body="canReopen" type="boolean">
+
+              Whether the listing can be reopened (only relevant for CLOSED_PERMANENTLY).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="metadata" type="Metadata">
+
+          Read-only signals Google reports about the listing.
+
+          Only populated on the read paths (Query Google Locations, Get Google
+          Location) and on the Update Google Location response. Search Google
+          Locations reads Google's catalog rather than the merchant's own listing,
+          so it leaves this unset — don't read a default there as a "no".
+
+          **Read-only.**
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="canOperateLodgingData" type="boolean">
+
+              Whether this location can carry lodging (hotel) data — that is, whether
+              Get/Update Google Location Lodging are usable for it. Google derives it
+              from the primary category, so it flips when the category changes.
+
+            </ParamField>
+
+            <ParamField body="mapsUri" type="string">
+
+              Link to the location's page on Google Maps. Google returns it only once
+              the listing is on Maps, so it stays empty for a listing that is still
+              unverified or suspended.
+
+              Constraints: `format WEB_URL`, `maxLength 1000`.
+
+            </ParamField>
+
+            <ParamField body="canHaveFoodMenus" type="boolean">
+
+              Whether this location is eligible for food menus. Callers must check
+              this flag before using Update Location Food Menus.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="fieldMask" type="FieldMask" required>
+
+      The fields to update. Required: there's no inference, so send it explicitly.
+
+      Only these top-level paths are accepted: `title`, `storeCode`,
+      `primaryPhone`, `additionalPhones`, `primaryCategory`,
+      `additionalCategories`, `storefrontAddress`, `websiteUri`, `regularHours`,
+      `serviceArea`, `latLng`, `openInfo`, `profile`.
+
+      Paths are checked as sent. An unknown path, a nested one, the wrong case, or
+      an empty mask is rejected as
+      INVALID_UPDATE_MASK before any Google call.
+
+      Categories replace as a whole. Mask `primaryCategory` and
+      `additionalCategories` together, because a mask naming only one is rejected
+      with `INVALID_UPDATE_MASK`, and send the complete set you want, including a
+      valid `primaryCategory` or the call fails with `INVALID_CATEGORIES`. Google
+      replaces the whole set, so any additional category you want to keep has to be
+      resent or it's deleted.
+
+      Phone numbers replace as a whole too. Mask `primaryPhone` and
+      `additionalPhones` together, and send the complete set you want. Any
+      additional phone you want to keep has to be resent or it's deleted. Unlike
+      categories, no primary is required, so masking both with none set clears
+      every phone number.
+
+      Only top-level fields are valid. A nested path such as `serviceArea.places`
+      or `profile.description` is rejected with `INVALID_UPDATE_MASK`. Send the
+      top-level field instead, and Google replaces that whole part of the
+      profile.
+
+      <Expandable title="fieldMask properties">
+
+        <ParamField body="paths" type="string[]" />
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="location" type="GoogleLocation">
+
+      The location's full profile as Google now holds it, not just the fields you
+      changed.
+
+      <Expandable title="location properties">
+
+        <ResponseField name="name" type="string">
+
+          Google resource name, e.g. "locations/12345678901234567890".
+          Empty on create request; populated on response.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Business name shown on the listing (Google's "title").
+
+          Constraints: `minLength 1`, `maxLength 300`.
+
+        </ResponseField>
+
+        <ResponseField name="languageCode" type="string">
+
+          BCP-47 language tag, e.g. "en-US". Required by Google, immutable.
+
+          Constraints: `format LANGUAGE_TAG`.
+
+        </ResponseField>
+
+        <ResponseField name="primaryCategory" type="Category">
+
+          Primary business category. Required by Google.
+
+          <Expandable title="primaryCategory properties">
+
+            <ResponseField name="id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalCategories" type="Category[]">
+
+          Additional categories. Google caps at 9.
+
+          Constraints: `maxItems 9`.
+
+          <Expandable title="additionalCategories properties">
+
+            <ResponseField name="id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="profile" type="Profile">
+
+          Optional. Google asks for a description for every category except lodging
+          but doesn't enforce it, so neither does this API. Both an absent profile and
+          one with an empty description are accepted.
+
+          <Expandable title="profile properties">
+
+            <ResponseField name="description" type="string">
+
+              Description of the location in the site owner's own words. Optional, and an
+              empty value clears it on the listing. Google allows up to 750 characters.
+
+              Constraints: `maxLength 750`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="storefrontAddress" type="PostalAddress">
+
+          Storefront postal address. Required for a business that serves customers at
+          its premises, and allowed alongside `serviceArea` when that field's
+          `businessType` is `CUSTOMER_AND_BUSINESS_LOCATION`.
+
+          <Expandable title="storefrontAddress properties">
+
+            <ResponseField name="countryCode" type="string">
+
+              ISO 3166-1 alpha-2 country code (e.g. "US", "GB").
+
+              Constraints: `format COUNTRY`.
+
+            </ResponseField>
+
+            <ResponseField name="postalCode" type="string">
+
+              Postal/ZIP code.
+
+              Constraints: `maxLength 20`.
+
+            </ResponseField>
+
+            <ResponseField name="administrativeArea" type="string">
+
+              Administrative area (state, province, region).
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+            <ResponseField name="locality" type="string">
+
+              City or locality.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+            <ResponseField name="addressLines" type="string[]">
+
+              Street address lines. Up to 5 lines.
+
+              Constraints: `maxLength 255`, `maxItems 5`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="serviceArea" type="ServiceArea">
+
+          Service-area definition (for businesses that serve customers at the
+          customer's location, exclusively or in addition to their storefront).
+
+          <Expandable title="serviceArea properties">
+
+            <ResponseField name="businessType" type="string">
+
+              Type of service-area business.
+
+              **Supported values:**
+
+              - `CUSTOMER_LOCATION_ONLY`
+              - `CUSTOMER_AND_BUSINESS_LOCATION`
+
+            </ResponseField>
+
+            <ResponseField name="places" type="PlaceInfo[]">
+
+              Places served. Google caps at 20.
+
+              Constraints: `maxItems 20`.
+
+              _Nested structure omitted for brevity — see the `PlaceInfo[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="regionCode" type="string">
+
+              ISO 3166-1 alpha-2 country code. Required by Google for
+              CUSTOMER_LOCATION_ONLY businesses; ignored otherwise.
+
+              Constraints: `format COUNTRY`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="primaryPhone" type="string">
+
+          Primary business phone.
+
+          Constraints: `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="additionalPhones" type="string[]">
+
+          Additional phones. Google caps at 2.
+
+          Constraints: `maxLength 50`, `maxItems 2`.
+
+        </ResponseField>
+
+        <ResponseField name="websiteUri" type="string">
+
+          Business website.
+
+          Clear it by masking `websiteUri` on Update Google Location and sending
+          `null`. Sending an empty string is rejected.
+
+        </ResponseField>
+
+        <ResponseField name="storeCode" type="string">
+
+          Merchant-defined store code (free-form identifier shown only to the merchant).
+
+          Constraints: `maxLength 64`.
+
+        </ResponseField>
+
+        <ResponseField name="regularHours" type="BusinessHours[]">
+
+          Regular weekly business hours.
+
+          Constraints: `maxItems 14`.
+
+          <Expandable title="regularHours properties">
+
+            <ResponseField name="openDay" type="string">
+
+              Day of the week when this open/close window starts.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ResponseField>
+
+            <ResponseField name="openTime" type="TimeOfDay">
+
+              Wall-clock time the business opens on `openDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ResponseField>
+
+            <ResponseField name="closeDay" type="string">
+
+              Day of the week when this open/close window ends.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ResponseField>
+
+            <ResponseField name="closeTime" type="TimeOfDay">
+
+              Wall-clock time the business closes on `closeDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="latLng" type="LatLng">
+
+          Geographic coordinates of the storefront.
+
+          <Expandable title="latLng properties">
+
+            <ResponseField name="latitude" type="number">
+
+              Latitude in degrees. Must be in [-90, 90].
+
+            </ResponseField>
+
+            <ResponseField name="longitude" type="number">
+
+              Longitude in degrees. Must be in [-180, 180].
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="openInfo" type="OpenInfo">
+
+          Open/closed state of the listing.
+
+          <Expandable title="openInfo properties">
+
+            <ResponseField name="status" type="string">
+
+              Current listing status.
+
+              **Supported values:**
+
+              - `OPEN`
+              - `CLOSED_PERMANENTLY`
+              - `CLOSED_TEMPORARILY`
+
+            </ResponseField>
+
+            <ResponseField name="canReopen" type="boolean">
+
+              Whether the listing can be reopened (only relevant for CLOSED_PERMANENTLY).
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="metadata" type="Metadata">
+
+          Read-only signals Google reports about the listing.
+
+          Only populated on the read paths (Query Google Locations, Get Google
+          Location) and on the Update Google Location response. Search Google
+          Locations reads Google's catalog rather than the merchant's own listing,
+          so it leaves this unset — don't read a default there as a "no".
+
+          **Read-only.**
+
+          <Expandable title="metadata properties">
+
+            <ResponseField name="canOperateLodgingData" type="boolean">
+
+              Whether this location can carry lodging (hotel) data — that is, whether
+              Get/Update Google Location Lodging are usable for it. Google derives it
+              from the primary category, so it flips when the category changes.
+
+            </ResponseField>
+
+            <ResponseField name="mapsUri" type="string">
+
+              Link to the location's page on Google Maps. Google returns it only once
+              the listing is on Maps, so it stays empty for a listing that is still
+              unverified or suspended.
+
+              Constraints: `format WEB_URL`, `maxLength 1000`.
+
+            </ResponseField>
+
+            <ResponseField name="canHaveFoodMenus" type="boolean">
+
+              Whether this location is eligible for food menus. Callers must check
+              this flag before using Update Location Food Menus.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+    | `400` | `INVALID_ARGUMENT` | `GOOGLE_LOCATION_VALIDATION_FAILED` |  |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_UPDATE_MASK` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X PATCH \
+      'https://www.wixapis.com/gbp/v1/locations/8034569321457853640/google' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "location": {
+          "primaryPhone": "+1 415-555-0187",
+          "additionalPhones": ["+1 415-555-0142"],
+          "websiteUri": "https://www.sunsetcoffeeroasters.com/menu"
+        },
+        "fieldMask": "primaryPhone,additionalPhones,websiteUri"
+      }'
+      ```
+
+      ```json Response
+      {
+        "location": {
+          "name": "locations/8034569321457853640",
+          "title": "Sunset Coffee Roasters",
+          "languageCode": "en-US",
+          "primaryCategory": {
+            "id": "categories/gcid:coffee_shop",
+            "displayName": "Coffee shop"
+          },
+          "storefrontAddress": {
+            "countryCode": "US",
+            "postalCode": "94110",
+            "administrativeArea": "CA",
+            "locality": "San Francisco",
+            "addressLines": ["2436 Mission St"]
+          },
+          "primaryPhone": "+1 415-555-0187",
+          "additionalPhones": ["+1 415-555-0142"],
+          "websiteUri": "https://www.sunsetcoffeeroasters.com/menu",
+          "openInfo": {
+            "status": "OPEN",
+            "canReopen": true
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Updates a location's Business Profile in Google.
+
+    This changes the profile the public sees on Google. It doesn't change the
+    location stored for the site: to update `serviceAreaPostalAddress`, call Update
+    Location.
+
+    `fieldMask` is required, and only these top-level fields can be updated:
+    `title`, `storeCode`, `primaryPhone`, `additionalPhones`, `primaryCategory`,
+    `additionalCategories`, `storefrontAddress`, `websiteUri`, `regularHours`,
+    `serviceArea`, `latLng`, `openInfo`, `profile`.
+
+    Anything else, including a nested path such as `profile.description` or an
+    empty mask, fails with `INVALID_UPDATE_MASK` before Google is called.
+    `languageCode` can't be updated: Google treats it as read-only.
+
+    ## Categories and phone numbers replace the whole set
+
+    Google doesn't allow categories or phone numbers to be updated one at a time,
+    so each pair behaves as a single value and Google replaces everything in it.
+    Read this before updating either, because omitting a value deletes it.
+
+    For categories:
+
+    - Specify `primaryCategory` and `additionalCategories` together in `fieldMask`.
+    A mask with only one of them fails with `INVALID_UPDATE_MASK`.
+    - Specify the complete set you want the location to end up with, including a
+    primary category. A set without one fails with `INVALID_CATEGORIES`.
+    - Any additional category you leave out is removed, so resend the ones you want
+    to keep.
+
+    For phone numbers:
+
+    - Specify `primaryPhone` and `additionalPhones` together in `fieldMask`. A mask
+    with only one of them fails with `INVALID_UPDATE_MASK`.
+    - Specify the complete set of numbers you want the location to end up with. Any
+    number you leave out is removed.
+    - Unlike categories, no primary is required. Masking both and specifying none
+    removes every phone number.
+
+    ## Errors
+
+    - `INVALID_UPDATE_MASK`: the mask is empty, or names a field that can't be
+    updated, or masks only one half of the categories or phone numbers pair.
+    Google isn't called.
+    - `GOOGLE_LOCATION_VALIDATION_FAILED`: Google rejected the details, for example
+    an invalid phone number or address, or a listing that needs a postcard PIN.
+    The specific reasons are in the error payload and are worth surfacing: they
+    tell the site owner what to correct.
+    - `GOOGLE_API_CALL_FAILED`: the call to Google failed for any other reason.
+    Google's status and response are in the error payload.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { locations } from '@wix/gbp';
+
+    locations.updateGoogleLocation(locationId, location, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="locationId" type="string" required>
+
+      ID of the location to update. This is Google's location identifier, without
+      the `locations/` prefix.
+
+      Constraints: `minLength 1`, `maxLength 255`.
+
+    </ParamField>
+
+    <ParamField body="location" type="UpdateGoogleLocation" required>
+
+      The profile values to set. Only the fields named in `fieldMask` are sent to
+      Google, so this can be partial.
+
+      <Expandable title="location properties">
+
+        <ParamField body="name" type="string">
+
+          Google resource name, e.g. "locations/12345678901234567890".
+          Empty on create request; populated on response.
+
+          Constraints: `maxLength 200`.
+
+        </ParamField>
+
+        <ParamField body="title" type="string">
+
+          Business name shown on the listing (Google's "title").
+
+          Constraints: `minLength 1`, `maxLength 300`.
+
+        </ParamField>
+
+        <ParamField body="languageCode" type="string">
+
+          BCP-47 language tag, e.g. "en-US". Required by Google, immutable.
+
+          Constraints: `format LANGUAGE_TAG`.
+
+        </ParamField>
+
+        <ParamField body="primaryCategory" type="Category">
+
+          Primary business category. Required by Google.
+
+          <Expandable title="primaryCategory properties">
+
+            <ParamField body="_id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="additionalCategories" type="Category[]">
+
+          Additional categories. Google caps at 9.
+
+          Constraints: `maxItems 9`.
+
+          <Expandable title="additionalCategories properties">
+
+            <ParamField body="_id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ParamField>
+
+            <ParamField body="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="profile" type="Profile">
+
+          Optional. Google asks for a description for every category except lodging
+          but doesn't enforce it, so neither does this API. Both an absent profile and
+          one with an empty description are accepted.
+
+          <Expandable title="profile properties">
+
+            <ParamField body="description" type="string">
+
+              Description of the location in the site owner's own words. Optional, and an
+              empty value clears it on the listing. Google allows up to 750 characters.
+
+              Constraints: `maxLength 750`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="storefrontAddress" type="PostalAddress">
+
+          Storefront postal address. Required for a business that serves customers at
+          its premises, and allowed alongside `serviceArea` when that field's
+          `businessType` is `CUSTOMER_AND_BUSINESS_LOCATION`.
+
+          <Expandable title="storefrontAddress properties">
+
+            <ParamField body="countryCode" type="string">
+
+              ISO 3166-1 alpha-2 country code (e.g. "US", "GB").
+
+              Constraints: `format COUNTRY`.
+
+            </ParamField>
+
+            <ParamField body="postalCode" type="string">
+
+              Postal/ZIP code.
+
+              Constraints: `maxLength 20`.
+
+            </ParamField>
+
+            <ParamField body="administrativeArea" type="string">
+
+              Administrative area (state, province, region).
+
+              Constraints: `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="locality" type="string">
+
+              City or locality.
+
+              Constraints: `maxLength 100`.
+
+            </ParamField>
+
+            <ParamField body="addressLines" type="string[]">
+
+              Street address lines. Up to 5 lines.
+
+              Constraints: `maxLength 255`, `maxItems 5`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="serviceArea" type="ServiceArea">
+
+          Service-area definition (for businesses that serve customers at the
+          customer's location, exclusively or in addition to their storefront).
+
+          <Expandable title="serviceArea properties">
+
+            <ParamField body="businessType" type="string">
+
+              Type of service-area business.
+
+              **Supported values:**
+
+              - `CUSTOMER_LOCATION_ONLY`
+              - `CUSTOMER_AND_BUSINESS_LOCATION`
+
+            </ParamField>
+
+            <ParamField body="places" type="PlaceInfo[]">
+
+              Places served. Google caps at 20.
+
+              Constraints: `maxItems 20`.
+
+              _Nested structure omitted for brevity — see the `PlaceInfo[]` object._
+
+            </ParamField>
+
+            <ParamField body="regionCode" type="string">
+
+              ISO 3166-1 alpha-2 country code. Required by Google for
+              CUSTOMER_LOCATION_ONLY businesses; ignored otherwise.
+
+              Constraints: `format COUNTRY`.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="primaryPhone" type="string">
+
+          Primary business phone.
+
+          Constraints: `maxLength 50`.
+
+        </ParamField>
+
+        <ParamField body="additionalPhones" type="string[]">
+
+          Additional phones. Google caps at 2.
+
+          Constraints: `maxLength 50`, `maxItems 2`.
+
+        </ParamField>
+
+        <ParamField body="websiteUri" type="string">
+
+          Business website.
+
+          Clear it by masking `websiteUri` on Update Google Location and sending
+          `null`. Sending an empty string is rejected.
+
+        </ParamField>
+
+        <ParamField body="storeCode" type="string">
+
+          Merchant-defined store code (free-form identifier shown only to the merchant).
+
+          Constraints: `maxLength 64`.
+
+        </ParamField>
+
+        <ParamField body="regularHours" type="BusinessHours[]">
+
+          Regular weekly business hours.
+
+          Constraints: `maxItems 14`.
+
+          <Expandable title="regularHours properties">
+
+            <ParamField body="openDay" type="string">
+
+              Day of the week when this open/close window starts.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ParamField>
+
+            <ParamField body="openTime" type="TimeOfDay">
+
+              Wall-clock time the business opens on `openDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ParamField>
+
+            <ParamField body="closeDay" type="string">
+
+              Day of the week when this open/close window ends.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ParamField>
+
+            <ParamField body="closeTime" type="TimeOfDay">
+
+              Wall-clock time the business closes on `closeDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="latLng" type="LatLng">
+
+          Geographic coordinates of the storefront.
+
+          <Expandable title="latLng properties">
+
+            <ParamField body="latitude" type="number">
+
+              Latitude in degrees. Must be in [-90, 90].
+
+            </ParamField>
+
+            <ParamField body="longitude" type="number">
+
+              Longitude in degrees. Must be in [-180, 180].
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="openInfo" type="OpenInfo">
+
+          Open/closed state of the listing.
+
+          <Expandable title="openInfo properties">
+
+            <ParamField body="status" type="string">
+
+              Current listing status.
+
+              **Supported values:**
+
+              - `OPEN`
+              - `CLOSED_PERMANENTLY`
+              - `CLOSED_TEMPORARILY`
+
+            </ParamField>
+
+            <ParamField body="canReopen" type="boolean">
+
+              Whether the listing can be reopened (only relevant for CLOSED_PERMANENTLY).
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="metadata" type="Metadata">
+
+          Read-only signals Google reports about the listing.
+
+          Only populated on the read paths (Query Google Locations, Get Google
+          Location) and on the Update Google Location response. Search Google
+          Locations reads Google's catalog rather than the merchant's own listing,
+          so it leaves this unset — don't read a default there as a "no".
+
+          **Read-only.**
+
+          <Expandable title="metadata properties">
+
+            <ParamField body="canOperateLodgingData" type="boolean">
+
+              Whether this location can carry lodging (hotel) data — that is, whether
+              Get/Update Google Location Lodging are usable for it. Google derives it
+              from the primary category, so it flips when the category changes.
+
+            </ParamField>
+
+            <ParamField body="mapsUri" type="string">
+
+              Link to the location's page on Google Maps. Google returns it only once
+              the listing is on Maps, so it stays empty for a listing that is still
+              unverified or suspended.
+
+              Constraints: `format WEB_URL`, `maxLength 1000`.
+
+            </ParamField>
+
+            <ParamField body="canHaveFoodMenus" type="boolean">
+
+              Whether this location is eligible for food menus. Callers must check
+              this flag before using Update Location Food Menus.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField body="options" type="UpdateGoogleLocationOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="fieldMask" type="FieldMask" required>
+
+          The fields to update. Required: there's no inference, so send it explicitly.
+
+          Only these top-level paths are accepted: `title`, `storeCode`,
+          `primaryPhone`, `additionalPhones`, `primaryCategory`,
+          `additionalCategories`, `storefrontAddress`, `websiteUri`, `regularHours`,
+          `serviceArea`, `latLng`, `openInfo`, `profile`.
+
+          Paths are checked as sent. An unknown path, a nested one, the wrong case, or
+          an empty mask is rejected as
+          INVALID_UPDATE_MASK before any Google call.
+
+          Categories replace as a whole. Mask `primaryCategory` and
+          `additionalCategories` together, because a mask naming only one is rejected
+          with `INVALID_UPDATE_MASK`, and send the complete set you want, including a
+          valid `primaryCategory` or the call fails with `INVALID_CATEGORIES`. Google
+          replaces the whole set, so any additional category you want to keep has to be
+          resent or it's deleted.
+
+          Phone numbers replace as a whole too. Mask `primaryPhone` and
+          `additionalPhones` together, and send the complete set you want. Any
+          additional phone you want to keep has to be resent or it's deleted. Unlike
+          categories, no primary is required, so masking both with none set clears
+          every phone number.
+
+          Only top-level fields are valid. A nested path such as `serviceArea.places`
+          or `profile.description` is rejected with `INVALID_UPDATE_MASK`. Send the
+          top-level field instead, and Google replaces that whole part of the
+          profile.
+
+          <Expandable title="fieldMask properties">
+
+            <ParamField body="paths" type="string[]" />
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="location" type="GoogleLocation">
+
+      The location's full profile as Google now holds it, not just the fields you
+      changed.
+
+      <Expandable title="location properties">
+
+        <ResponseField name="name" type="string">
+
+          Google resource name, e.g. "locations/12345678901234567890".
+          Empty on create request; populated on response.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Business name shown on the listing (Google's "title").
+
+          Constraints: `minLength 1`, `maxLength 300`.
+
+        </ResponseField>
+
+        <ResponseField name="languageCode" type="string">
+
+          BCP-47 language tag, e.g. "en-US". Required by Google, immutable.
+
+          Constraints: `format LANGUAGE_TAG`.
+
+        </ResponseField>
+
+        <ResponseField name="primaryCategory" type="Category">
+
+          Primary business category. Required by Google.
+
+          <Expandable title="primaryCategory properties">
+
+            <ResponseField name="_id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="additionalCategories" type="Category[]">
+
+          Additional categories. Google caps at 9.
+
+          Constraints: `maxItems 9`.
+
+          <Expandable title="additionalCategories properties">
+
+            <ResponseField name="_id" type="string">
+
+              Google's category identifier, such as `categories/gcid:restaurant`.
+
+              The `categories/` prefix is optional when you send it. A bare `gcid:...` is
+              accepted and prefixed for you.
+
+              Constraints: `minLength 1`, `maxLength 200`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              Display name of the category. Returned by Google, and ignored if you send
+              it.
+
+              **Read-only.** Constraints: `maxLength 200`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="profile" type="Profile">
+
+          Optional. Google asks for a description for every category except lodging
+          but doesn't enforce it, so neither does this API. Both an absent profile and
+          one with an empty description are accepted.
+
+          <Expandable title="profile properties">
+
+            <ResponseField name="description" type="string">
+
+              Description of the location in the site owner's own words. Optional, and an
+              empty value clears it on the listing. Google allows up to 750 characters.
+
+              Constraints: `maxLength 750`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="storefrontAddress" type="PostalAddress">
+
+          Storefront postal address. Required for a business that serves customers at
+          its premises, and allowed alongside `serviceArea` when that field's
+          `businessType` is `CUSTOMER_AND_BUSINESS_LOCATION`.
+
+          <Expandable title="storefrontAddress properties">
+
+            <ResponseField name="countryCode" type="string">
+
+              ISO 3166-1 alpha-2 country code (e.g. "US", "GB").
+
+              Constraints: `format COUNTRY`.
+
+            </ResponseField>
+
+            <ResponseField name="postalCode" type="string">
+
+              Postal/ZIP code.
+
+              Constraints: `maxLength 20`.
+
+            </ResponseField>
+
+            <ResponseField name="administrativeArea" type="string">
+
+              Administrative area (state, province, region).
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+            <ResponseField name="locality" type="string">
+
+              City or locality.
+
+              Constraints: `maxLength 100`.
+
+            </ResponseField>
+
+            <ResponseField name="addressLines" type="string[]">
+
+              Street address lines. Up to 5 lines.
+
+              Constraints: `maxLength 255`, `maxItems 5`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="serviceArea" type="ServiceArea">
+
+          Service-area definition (for businesses that serve customers at the
+          customer's location, exclusively or in addition to their storefront).
+
+          <Expandable title="serviceArea properties">
+
+            <ResponseField name="businessType" type="string">
+
+              Type of service-area business.
+
+              **Supported values:**
+
+              - `CUSTOMER_LOCATION_ONLY`
+              - `CUSTOMER_AND_BUSINESS_LOCATION`
+
+            </ResponseField>
+
+            <ResponseField name="places" type="PlaceInfo[]">
+
+              Places served. Google caps at 20.
+
+              Constraints: `maxItems 20`.
+
+              _Nested structure omitted for brevity — see the `PlaceInfo[]` object._
+
+            </ResponseField>
+
+            <ResponseField name="regionCode" type="string">
+
+              ISO 3166-1 alpha-2 country code. Required by Google for
+              CUSTOMER_LOCATION_ONLY businesses; ignored otherwise.
+
+              Constraints: `format COUNTRY`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="primaryPhone" type="string">
+
+          Primary business phone.
+
+          Constraints: `maxLength 50`.
+
+        </ResponseField>
+
+        <ResponseField name="additionalPhones" type="string[]">
+
+          Additional phones. Google caps at 2.
+
+          Constraints: `maxLength 50`, `maxItems 2`.
+
+        </ResponseField>
+
+        <ResponseField name="websiteUri" type="string">
+
+          Business website.
+
+          Clear it by masking `websiteUri` on Update Google Location and sending
+          `null`. Sending an empty string is rejected.
+
+        </ResponseField>
+
+        <ResponseField name="storeCode" type="string">
+
+          Merchant-defined store code (free-form identifier shown only to the merchant).
+
+          Constraints: `maxLength 64`.
+
+        </ResponseField>
+
+        <ResponseField name="regularHours" type="BusinessHours[]">
+
+          Regular weekly business hours.
+
+          Constraints: `maxItems 14`.
+
+          <Expandable title="regularHours properties">
+
+            <ResponseField name="openDay" type="string">
+
+              Day of the week when this open/close window starts.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ResponseField>
+
+            <ResponseField name="openTime" type="TimeOfDay">
+
+              Wall-clock time the business opens on `openDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ResponseField>
+
+            <ResponseField name="closeDay" type="string">
+
+              Day of the week when this open/close window ends.
+
+              **Supported values:**
+
+              - `MONDAY`
+              - `TUESDAY`
+              - `WEDNESDAY`
+              - `THURSDAY`
+              - `FRIDAY`
+              - `SATURDAY`
+              - `SUNDAY`
+
+            </ResponseField>
+
+            <ResponseField name="closeTime" type="TimeOfDay">
+
+              Wall-clock time the business closes on `closeDay`.
+
+              _Nested structure omitted for brevity — see the `TimeOfDay` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="latLng" type="LatLng">
+
+          Geographic coordinates of the storefront.
+
+          <Expandable title="latLng properties">
+
+            <ResponseField name="latitude" type="number">
+
+              Latitude in degrees. Must be in [-90, 90].
+
+            </ResponseField>
+
+            <ResponseField name="longitude" type="number">
+
+              Longitude in degrees. Must be in [-180, 180].
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="openInfo" type="OpenInfo">
+
+          Open/closed state of the listing.
+
+          <Expandable title="openInfo properties">
+
+            <ResponseField name="status" type="string">
+
+              Current listing status.
+
+              **Supported values:**
+
+              - `OPEN`
+              - `CLOSED_PERMANENTLY`
+              - `CLOSED_TEMPORARILY`
+
+            </ResponseField>
+
+            <ResponseField name="canReopen" type="boolean">
+
+              Whether the listing can be reopened (only relevant for CLOSED_PERMANENTLY).
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="metadata" type="Metadata">
+
+          Read-only signals Google reports about the listing.
+
+          Only populated on the read paths (Query Google Locations, Get Google
+          Location) and on the Update Google Location response. Search Google
+          Locations reads Google's catalog rather than the merchant's own listing,
+          so it leaves this unset — don't read a default there as a "no".
+
+          **Read-only.**
+
+          <Expandable title="metadata properties">
+
+            <ResponseField name="canOperateLodgingData" type="boolean">
+
+              Whether this location can carry lodging (hotel) data — that is, whether
+              Get/Update Google Location Lodging are usable for it. Google derives it
+              from the primary category, so it flips when the category changes.
+
+            </ResponseField>
+
+            <ResponseField name="mapsUri" type="string">
+
+              Link to the location's page on Google Maps. Google returns it only once
+              the listing is on Maps, so it stays empty for a listing that is still
+              unverified or suspended.
+
+              Constraints: `format WEB_URL`, `maxLength 1000`.
+
+            </ResponseField>
+
+            <ResponseField name="canHaveFoodMenus" type="boolean">
+
+              Whether this location is eligible for food menus. Callers must check
+              this flag before using Update Location Food Menus.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+    | `400` | `INVALID_ARGUMENT` | `GOOGLE_LOCATION_VALIDATION_FAILED` |  |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_UPDATE_MASK` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-update-google-location" id="ex-sdk-update-google-location-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-update-google-location" id="ex-sdk-update-google-location-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-update-google-location-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-update-google-location-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Update a listing's phone numbers and website</span><span className="wix-picker-desc">Change fields on the Google Business Profile listing using a field mask. Mask primaryPhone and additionalPhones together, and send the complete set of numbers to keep</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">updateGoogleLocation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-update-google-location-0"><span className="wix-picker-name">Update a listing's phone numbers and website</span><span className="wix-picker-desc">Change fields on the Google Business Profile listing using a field mask. Mask primaryPhone and additionalPhones together, and send the complete set of numbers to keep</span></label>
+    <label htmlFor="ex-sdk-update-google-location-1"><span className="wix-picker-name">updateGoogleLocation (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Update a listing's phone numbers and website
+    import { locations } from "@wix/gbp";
+
+    async function updateGoogleLocation() {
+      const response = await locations.updateGoogleLocation(
+        "8034569321457853640",
+        {
+          primaryPhone: "+1 415-555-0187",
+          additionalPhones: ["+1 415-555-0142"],
+          websiteUri: "https://www.sunsetcoffeeroasters.com/menu",
+        },
+        { fieldMask: ["primaryPhone", "additionalPhones", "websiteUri"] },
+      );
+
+      console.log(response);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "location": {
+     *     "name": "locations/8034569321457853640",
+     *     "title": "Sunset Coffee Roasters",
+     *     "languageCode": "en-US",
+     *     "primaryCategory": {
+     *       "_id": "categories/gcid:coffee_shop",
+     *       "displayName": "Coffee shop"
+     *     },
+     *     "primaryPhone": "+1 415-555-0187",
+     *     "additionalPhones": ["+1 415-555-0142"],
+     *     "websiteUri": "https://www.sunsetcoffeeroasters.com/menu",
+     *     "openInfo": {
+     *       "status": "OPEN",
+     *       "canReopen": true
+     *     }
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript updateGoogleLocation (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { locations } from '@wix/gbp';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { locations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function updateGoogleLocation(locationId,location,options) {
+      const response = await myWixClient.locations.updateGoogleLocation(locationId,location,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

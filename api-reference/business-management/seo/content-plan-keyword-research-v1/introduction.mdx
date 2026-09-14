@@ -1,0 +1,69 @@
+---
+title: "Introduction"
+description: "The Keyword Research API lets you read and refine the keywords behind a site's content plan."
+icon: "file-lines"
+---
+
+The Keyword Research API lets you read and refine the keywords behind a site's content plan. Each item is one keyword, along with the page it targets, its estimated search volume, how competitive it is, and the cluster of related keywords it belongs to.
+
+This is the data the blog post briefs are built from. Reading it shows why a topic was chosen. Editing it steers what the next set of briefs covers.
+
+With the Keyword Research API, you can:
+
+- Retrieve the keywords behind the site's current content plan.
+- Change a keyword's text, one at a time or in a batch.
+- Promote a keyword to be the main keyword for its page.
+
+## Editing copies the research
+
+The first edit to generated keyword research doesn't change it. It copies the research, and the response carries a **different** `keywordResearchId` from the one you sent.
+
+Always send the ID from your most recent response on the next write. Sending the original ID again copies the research a second time and strands the first copy. Both [Update Keyword Research Item](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/update-keyword-research-item) and [Bulk Update Keyword Research Items](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/bulk-update-keyword-research-items) behave this way, so mixing the two against the original ID produces two separate copies.
+
+The original research isn't deleted. The copy simply becomes the most recent one, and reads always return the most recent.
+
+## Edits don't survive the next generation
+
+A generation that completes after your edit produces fresh research that becomes the newest. Reads then return that new research instead of your edited copy.
+
+Compare `keywordResearchId` between reads to detect this. If it changed, the research was replaced and your edits are no longer what a read returns.
+
+## What you can and can't change
+
+Only `keyword` and `mainKeyword` are writable, and both update methods are update-only. There's no way to add or delete a keyword through this API.
+
+`mainKeyword` only promotes. Setting it to `true` makes an item its page's main keyword. Setting it to `false`, or leaving it out, changes nothing, so you can't demote a main keyword directly. Promote a different keyword on that page instead.
+
+Changing `keyword` also refreshes that item's `searchVolume` and `competition`, because those figures describe the new keyword rather than the old one. A field mask doesn't hold them at their previous values.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Reads are scoped to the site, not to a content plan flow. There's no way to read the research of an earlier flow, and `contentPlanFlowId` on the read request is ignored.
+- A site with no keyword research returns a not found error rather than an empty list.
+- [Update Keyword Research Item](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/update-keyword-research-item) requires a `fieldMask` naming at least one writable field. An omitted or empty mask is rejected.
+- A keyword research holds at most 30 keywords. An update is rejected if a keyword is longer than 80 characters, or if it duplicates another keyword in the same research.
+- A bulk update is validated as a whole before anything is written, so a problem rejects the entire call. Every entry in the response reports success.
+
+## Use cases
+
+- [Review the keywords behind a content plan](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/sample-flows#review-the-keywords-behind-a-content-plan)
+- [Refine the keywords before the briefs are written](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/sample-flows#refine-the-keywords-before-the-briefs-are-written)
+- [Change which keyword a page targets](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-keyword-research-v1/sample-flows#change-which-keyword-a-page-targets)
+
+## Terminology
+
+- **Keyword research**: The full set of keywords generated for a site. It has an ID, and editing it can produce a new one.
+- **Keyword research item**: A single keyword, with its page, search data, and cluster.
+- **Main keyword**: The one keyword a page primarily targets. The rest of its cluster supports it.
+- **Cluster**: A group of keywords covering the same topic for one page.
+- **Search volume**: The estimated number of searches for a keyword per month.
+- **Competition**: How hard it is to rank for a keyword. A higher number means more competition.
+
+## See also
+
+- [Content Plan Flow API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-content-plan-flow-v1/introduction)
+- [Blog Post Candidate API](fallback::https://dev.wix.com/docs/api-reference/business-management/seo/content-plan-blog-post-candidate-v1/introduction)
+
+@sdk_package_setup

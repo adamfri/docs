@@ -1,0 +1,779 @@
+---
+title: "List Categories"
+description: "Retrieves Google's catalog of business categories."
+icon: "download"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-get">GET</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves Google's catalog of business categories.
+
+    Use it to let a site owner choose a primary or additional category before
+    creating or updating a location. Each returned `id` can be assigned directly
+    to a category on the location.
+
+    The catalog is the same for everyone, so results don't depend on the
+    location. `locationId` is optional and selects whose Google credentials the
+    catalog is read with, not which categories come back. Send it when you
+    already have a location, and leave it out before one exists, for example in
+    a create-location flow.
+
+    `searchTerm` matches against the category's localized display name. Pass a
+    plain term rather than a query expression. Leave it out to page through the
+    whole catalog.
+
+    Errors:
+    - `NOT_FOUND`: `locationId` was set but the location isn't recorded for this
+    site. Google isn't called.
+    - `GOOGLE_API_CALL_FAILED`: Google returned an error. Its HTTP status is in
+    the error data.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    GET https://www.wixapis.com/gbp/v1/categories
+    ```
+
+    ## Query Params
+
+    <ParamField query="regionCode" type="string" required>
+
+      ISO 3166-1 alpha-2 country code (e.g. "US") the catalog is scoped to.
+      Categories differ per country, so this is required.
+
+      Constraints: `format COUNTRY`.
+
+    </ParamField>
+
+    <ParamField query="languageCode" type="string" required>
+
+      Language to return the category display names in, as a BCP-47 code such as
+      `he` or `fr`. Required.
+
+      Constraints: `minLength 1`, `maxLength 35`.
+
+    </ParamField>
+
+    <ParamField query="searchTerm" type="string">
+
+      Term to match against the category display name. Pass a plain term rather
+      than a query expression. Leave it out to page through the whole catalog.
+
+      Constraints: `maxLength 255`.
+
+    </ParamField>
+
+    <ParamField query="view" type="string">
+
+      How much of each category to return. Unset behaves as BASIC.
+
+      **Supported values:**
+
+      - `BASIC` — Id and display name only. The default, and all a category picker needs.
+      - `FULL` — Adds the service types and more-hours types available for the category.
+
+    </ParamField>
+
+    <ParamField query="paging" type="CursorPaging">
+
+      Cursor-based paging. `limit` maps to Google's page size (unset uses a
+      server default of 100, min 1, max 100); `cursor` is the `next` token
+      returned by a previous response (an opaque Google page token).
+
+      <Expandable title="paging properties">
+
+        <ParamField query="limit" type="integer">
+
+          Maximum number of items to return in the results.
+
+        </ParamField>
+
+        <ParamField query="cursor" type="string">
+
+          Pointer to the next or previous page in the list of results.
+
+          Pass the relevant cursor token from the `pagingMetadata` object in the previous call's response.
+          Not relevant for the first request.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    <ParamField query="locationId" type="string">
+
+      Optional. Whose Google credentials to read the catalog with. This isn't a
+      filter: the catalog is the same for everyone, so it doesn't change which
+      categories come back.
+
+      Send it when you already have a location, so the read counts against that
+      site owner's own Google quota. Leave it out before any location exists, for
+      example in a create-location flow.
+
+      Constraints: `maxLength 255`.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="categories" type="CategoryMetadata[]">
+
+      Categories on this page, ordered as Google returned them.
+
+      <Expandable title="categories properties">
+
+        <ResponseField name="id" type="string">
+
+          Google category resource name, e.g. "categories/gcid:restaurant". Assign
+          as-is to Category.id when creating or updating a location.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+        <ResponseField name="displayName" type="string">
+
+          Display name in the requested language, or English if unavailable.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+        <ResponseField name="serviceTypes" type="ServiceType[]">
+
+          Service types offered by this category. Populated only when view = FULL.
+
+          Constraints: `maxItems 200`.
+
+          <Expandable title="serviceTypes properties">
+
+            <ResponseField name="serviceTypeId" type="string">
+
+              Google's stable id for the service type.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              Display name in the requested language, or English if unavailable.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="moreHoursTypes" type="MoreHoursType[]">
+
+          Additional hours types this category supports (e.g. "delivery",
+          "drive_through"). Populated only when view = FULL.
+
+          Constraints: `maxItems 200`.
+
+          <Expandable title="moreHoursTypes properties">
+
+            <ResponseField name="hoursTypeId" type="string">
+
+              Google's stable id for the hours type.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              English display name, singular ("Drive through").
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="localizedDisplayName" type="string">
+
+              Display name in the requested language, plural where the language
+              distinguishes it. Falls back to English when unavailable.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata. `cursors.next` is the token to specify for the next page, and
+      `hasNext` says whether there is one.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in current page.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursor strings that point to the next page, previous page, or both.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to the previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Whether there are more pages to retrieve following the current page.
+
+          + `true`: Another page of results can be retrieved.
+          + `false`: This is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X GET \
+      'https://www.wixapis.com/gbp/v1/categories?regionCode=US&languageCode=en&paging.limit=10' \
+      -H 'Authorization: <AUTH>'
+      ```
+
+      ```json Response
+      {
+        "categories": [
+          {
+            "id": "categories/gcid:accountant",
+            "displayName": "Accountant",
+            "serviceTypes": [],
+            "moreHoursTypes": []
+          },
+          {
+            "id": "categories/gcid:accounting_firm",
+            "displayName": "Accounting firm",
+            "serviceTypes": [],
+            "moreHoursTypes": []
+          }
+        ],
+        "pagingMetadata": {
+          "count": 10,
+          "cursors": {
+            "next": "ABHRLXVjkv_268kMrI1BcjUwKmJcyZrrJKZJkmE0kEdNFgjIpNkVKZM"
+          },
+          "hasNext": true
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Retrieves Google's catalog of business categories.
+
+    Use it to let a site owner choose a primary or additional category before
+    creating or updating a location. Each returned `id` can be assigned directly
+    to a category on the location.
+
+    The catalog is the same for everyone, so results don't depend on the
+    location. `locationId` is optional and selects whose Google credentials the
+    catalog is read with, not which categories come back. Send it when you
+    already have a location, and leave it out before one exists, for example in
+    a create-location flow.
+
+    `searchTerm` matches against the category's localized display name. Pass a
+    plain term rather than a query expression. Leave it out to page through the
+    whole catalog.
+
+    Errors:
+    - `NOT_FOUND`: `locationId` was set but the location isn't recorded for this
+    site. Google isn't called.
+    - `GOOGLE_API_CALL_FAILED`: Google returned an error. Its HTTP status is in
+    the error data.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.VIEW-SEO">View SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { locations } from '@wix/gbp';
+
+    locations.listCategories(regionCode, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="regionCode" type="string" required>
+
+      ISO 3166-1 alpha-2 country code (e.g. "US") the catalog is scoped to.
+      Categories differ per country, so this is required.
+
+      Constraints: `format COUNTRY`.
+
+    </ParamField>
+
+    <ParamField body="options" type="ListCategoriesOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="languageCode" type="string" required>
+
+          Language to return the category display names in, as a BCP-47 code such as
+          `he` or `fr`. Required.
+
+          Constraints: `minLength 1`, `maxLength 35`.
+
+        </ParamField>
+
+        <ParamField body="searchTerm" type="string">
+
+          Term to match against the category display name. Pass a plain term rather
+          than a query expression. Leave it out to page through the whole catalog.
+
+          Constraints: `maxLength 255`.
+
+        </ParamField>
+
+        <ParamField body="view" type="string">
+
+          How much of each category to return. Unset behaves as BASIC.
+
+          **Supported values:**
+
+          - `BASIC` — Id and display name only. The default, and all a category picker needs.
+          - `FULL` — Adds the service types and more-hours types available for the category.
+
+        </ParamField>
+
+        <ParamField body="paging" type="CursorPaging">
+
+          Cursor-based paging. `limit` maps to Google's page size (unset uses a
+          server default of 100, min 1, max 100); `cursor` is the `next` token
+          returned by a previous response (an opaque Google page token).
+
+          <Expandable title="paging properties">
+
+            <ParamField body="limit" type="integer">
+
+              Maximum number of items to return in the results.
+
+            </ParamField>
+
+            <ParamField body="cursor" type="string">
+
+              Pointer to the next or previous page in the list of results.
+
+              Pass the relevant cursor token from the `pagingMetadata` object in the previous call's response.
+              Not relevant for the first request.
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+        <ParamField body="locationId" type="string">
+
+          Optional. Whose Google credentials to read the catalog with. This isn't a
+          filter: the catalog is the same for everyone, so it doesn't change which
+          categories come back.
+
+          Send it when you already have a location, so the read counts against that
+          site owner's own Google quota. Leave it out before any location exists, for
+          example in a create-location flow.
+
+          Constraints: `maxLength 255`.
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="categories" type="CategoryMetadata[]">
+
+      Categories on this page, ordered as Google returned them.
+
+      <Expandable title="categories properties">
+
+        <ResponseField name="_id" type="string">
+
+          Google category resource name, e.g. "categories/gcid:restaurant". Assign
+          as-is to Category.id when creating or updating a location.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+        <ResponseField name="displayName" type="string">
+
+          Display name in the requested language, or English if unavailable.
+
+          Constraints: `maxLength 200`.
+
+        </ResponseField>
+
+        <ResponseField name="serviceTypes" type="ServiceType[]">
+
+          Service types offered by this category. Populated only when view = FULL.
+
+          Constraints: `maxItems 200`.
+
+          <Expandable title="serviceTypes properties">
+
+            <ResponseField name="serviceTypeId" type="string">
+
+              Google's stable id for the service type.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              Display name in the requested language, or English if unavailable.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="moreHoursTypes" type="MoreHoursType[]">
+
+          Additional hours types this category supports (e.g. "delivery",
+          "drive_through"). Populated only when view = FULL.
+
+          Constraints: `maxItems 200`.
+
+          <Expandable title="moreHoursTypes properties">
+
+            <ResponseField name="hoursTypeId" type="string">
+
+              Google's stable id for the hours type.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="displayName" type="string">
+
+              English display name, singular ("Drive through").
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="localizedDisplayName" type="string">
+
+              Display name in the requested language, plural where the language
+              distinguishes it. Falls back to English when unavailable.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="pagingMetadata" type="CursorPagingMetadata">
+
+      Paging metadata. `cursors.next` is the token to specify for the next page, and
+      `hasNext` says whether there is one.
+
+      <Expandable title="pagingMetadata properties">
+
+        <ResponseField name="count" type="integer">
+
+          Number of items returned in current page.
+
+        </ResponseField>
+
+        <ResponseField name="cursors" type="Cursors">
+
+          Cursor strings that point to the next page, previous page, or both.
+
+          <Expandable title="cursors properties">
+
+            <ResponseField name="next" type="string">
+
+              Cursor string pointing to the next page in the list of results.
+
+            </ResponseField>
+
+            <ResponseField name="prev" type="string">
+
+              Cursor pointing to the previous page in the list of results.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="hasNext" type="boolean">
+
+          Whether there are more pages to retrieve following the current page.
+
+          + `true`: Another page of results can be retrieved.
+          + `false`: This is the last page.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-list-categories" id="ex-sdk-list-categories-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-list-categories" id="ex-sdk-list-categories-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-list-categories-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-list-categories-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Search Google's business categories</span><span className="wix-picker-desc">Look up valid primary and additional categories for a region and language</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">listCategories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-list-categories-0"><span className="wix-picker-name">Search Google's business categories</span><span className="wix-picker-desc">Look up valid primary and additional categories for a region and language</span></label>
+    <label htmlFor="ex-sdk-list-categories-1"><span className="wix-picker-name">listCategories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Search Google's business categories
+    import { locations } from "@wix/gbp";
+
+    async function listCategories() {
+      const response = await locations.listCategories("US", {
+        languageCode: "en",
+        searchTerm: "coffee",
+        paging: { limit: 10 },
+      });
+
+      console.log(response.categories);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "categories": [
+     *     {
+     *       "_id": "categories/gcid:coffee_shop",
+     *       "displayName": "Coffee shop",
+     *       "serviceTypes": [],
+     *       "moreHoursTypes": []
+     *     },
+     *     {
+     *       "_id": "categories/gcid:coffee_roasters",
+     *       "displayName": "Coffee roasters",
+     *       "serviceTypes": [],
+     *       "moreHoursTypes": []
+     *     }
+     *   ],
+     *   "pagingMetadata": {
+     *     "count": 2,
+     *     "cursors": {},
+     *     "hasNext": false
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript listCategories (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { locations } from '@wix/gbp';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { locations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function listCategories(regionCode,options) {
+      const response = await myWixClient.locations.listCategories(regionCode,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

@@ -1,0 +1,685 @@
+---
+title: "Create Media"
+description: "Adds a media item to a location."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Adds a media item to a location.
+
+    Specify `sourceUrl`, a publicly reachable URL that Google fetches the image
+    from. The URL has to stay reachable until Google has fetched it. Returns the
+    created item, including the media key needed to delete it.
+
+    Two things to plan for:
+
+    - Google doesn't deduplicate by URL. Calling this twice with the same
+    `sourceUrl` creates two media items, so track what you've already added.
+    - Google allows about 10 edits per minute per Business Profile, and that budget
+    covers every write to the profile: adding and deleting media, but also Update
+    Google Location and Update Location Attributes. Interleaving those with media
+    writes brings the 429 closer, so pace the profile as a whole rather than each
+    method separately. Treat a 429 as worth retrying after a delay rather than as
+    a rejection of the image.
+
+    This method doesn't pace itself, so use it for single changes. To add several
+    photos at once, call Bulk Create Media Uploads instead. That queues the whole
+    set and applies it to Google gradually, which is what the per-minute budget
+    makes necessary.
+
+    Errors:
+    - `NOT_FOUND`: the location isn't recorded for this site. Google isn't called.
+    - `GOOGLE_API_CALL_FAILED`: the call to Google failed. Google's status and
+    response are in the error payload.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/gbp/v1/locations/{locationId}/media
+    ```
+
+    ## Path Params
+
+    <ParamField path="locationId" type="string" required>
+
+      Location ID. This is Google's location identifier.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="sourceUrl" type="string" required>
+
+      Publicly accessible URL of the media file to add. Google fetches the bytes
+      from this URL server-side, so it must be reachable without auth.
+
+      Constraints: `format WEB_URL`, `maxLength 2048`.
+
+    </ParamField>
+
+    <ParamField body="category" type="string" required>
+
+      Where the media is shown on the listing (e.g. EXTERIOR, INTERIOR, LOGO).
+
+      **Supported values:**
+
+      - `COVER` — The banner image at the top of the profile. One per location.
+      - `PROFILE` — The profile image shown alongside the business name.
+      - `LOGO` — The business's logo. One per location.
+      - `EXTERIOR` — The outside of the premises, including the storefront.
+      - `INTERIOR` — The inside of the premises.
+      - `PRODUCT` — A product the business sells.
+      - `AT_WORK` — The team at work, such as staff serving customers.
+      - `FOOD_AND_DRINK` — Food or drink the business serves.
+      - `MENU` — The menu, for a business that serves food or drink.
+      - `COMMON_AREA` — A shared space, such as a lobby or a waiting area.
+      - `ROOMS` — Guest rooms, for accommodation businesses.
+      - `TEAMS` — The people who work at the business.
+      - `ADDITIONAL` — Anything that doesn't fit the other categories. This is the default for a
+      gallery photo.
+
+    </ParamField>
+
+    <ParamField body="format" type="string" required>
+
+      PHOTO or VIDEO.
+
+      **Supported values:**
+
+      - `PHOTO`
+      - `VIDEO`
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="mediaItem" type="MediaItem">
+
+      The created media item.
+
+      <Expandable title="mediaItem properties">
+
+        <ResponseField name="mediaKey" type="string">
+
+          Google's opaque media key (used to reference/delete media).
+
+          Constraints: `maxLength 255`.
+
+        </ResponseField>
+
+        <ResponseField name="format" type="string">
+
+          Whether this item is a photo or a video.
+
+          **Supported values:**
+
+          - `PHOTO`
+          - `VIDEO`
+
+        </ResponseField>
+
+        <ResponseField name="googleUrl" type="string">
+
+          Google-hosted URL the media is served at.
+
+          Not stable: it can change over time, so use `mediaKey` as the durable
+          identifier rather than this. For a video, this is a preview image rather
+          than the stream.
+
+          Constraints: `format WEB_URL`, `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="category" type="string">
+
+          Category of the media (e.g. EXTERIOR, INTERIOR, LOGO).
+
+          **Supported values:**
+
+          - `COVER` — The banner image at the top of the profile. One per location.
+          - `PROFILE` — The profile image shown alongside the business name.
+          - `LOGO` — The business's logo. One per location.
+          - `EXTERIOR` — The outside of the premises, including the storefront.
+          - `INTERIOR` — The inside of the premises.
+          - `PRODUCT` — A product the business sells.
+          - `AT_WORK` — The team at work, such as staff serving customers.
+          - `FOOD_AND_DRINK` — Food or drink the business serves.
+          - `MENU` — The menu, for a business that serves food or drink.
+          - `COMMON_AREA` — A shared space, such as a lobby or a waiting area.
+          - `ROOMS` — Guest rooms, for accommodation businesses.
+          - `TEAMS` — The people who work at the business.
+          - `ADDITIONAL` — Anything that doesn't fit the other categories. This is the default for a
+          gallery photo.
+
+        </ResponseField>
+
+        <ResponseField name="thumbnailUrl" type="string">
+
+          Google-hosted thumbnail URL. Like `googleUrl`, this can change over time.
+
+          Constraints: `format WEB_URL`, `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Caption or description of the media item.
+
+          Constraints: `maxLength 5000`.
+
+        </ResponseField>
+
+        <ResponseField name="sourceUrl" type="string">
+
+          The URL the image was originally fetched from, echoing the `sourceUrl` it
+          was created with. Present on media the site owner posted, and absent on
+          media contributed by customers.
+
+          Constraints: `format WEB_URL`, `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="attribution" type="MediaItemAttribution">
+
+          Attribution of the contributor, for customer-contributed media. Empty for
+          merchant-posted media (e.g. items added via CreateMedia).
+
+          <Expandable title="attribution properties">
+
+            <ResponseField name="profileName" type="string">
+
+              Display name of the contributor.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="profilePhotoUrl" type="string">
+
+              URL of the contributor's profile photo.
+
+              Constraints: `format WEB_URL`, `maxLength 2048`.
+
+            </ResponseField>
+
+            <ResponseField name="takedownUrl" type="string">
+
+              URL to report the media or request its takedown.
+
+              Constraints: `format WEB_URL`, `maxLength 2048`.
+
+            </ResponseField>
+
+            <ResponseField name="profileUrl" type="string">
+
+              URL of the contributor's profile.
+
+              Constraints: `format WEB_URL`, `maxLength 2048`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/gbp/v1/locations/8034569321457853640/media' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "sourceUrl": "https://static.wixstatic.com/media/9c8f27_4e2b8a51d76c4f0a9d1e3b7f2a6c5d84~mv2.jpg",
+        "category": "INTERIOR",
+        "format": "PHOTO"
+      }'
+      ```
+
+      ```json Response
+      {
+        "mediaItem": {
+          "mediaKey": "AF1QipP5tWn2XcV7bRjL9mKqEuDgA3sYhTf6oZmNiC1B",
+          "format": "PHOTO",
+          "googleUrl": "https://lh3.googleusercontent.com/p/AF1QipP5tWn2XcV7bRjL9mKqEuDgA3sYhTf6oZmNiC1B",
+          "category": "INTERIOR",
+          "sourceUrl": "https://static.wixstatic.com/media/9c8f27_4e2b8a51d76c4f0a9d1e3b7f2a6c5d84~mv2.jpg"
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Adds a media item to a location.
+
+    Specify `sourceUrl`, a publicly reachable URL that Google fetches the image
+    from. The URL has to stay reachable until Google has fetched it. Returns the
+    created item, including the media key needed to delete it.
+
+    Two things to plan for:
+
+    - Google doesn't deduplicate by URL. Calling this twice with the same
+    `sourceUrl` creates two media items, so track what you've already added.
+    - Google allows about 10 edits per minute per Business Profile, and that budget
+    covers every write to the profile: adding and deleting media, but also Update
+    Google Location and Update Location Attributes. Interleaving those with media
+    writes brings the 429 closer, so pace the profile as a whole rather than each
+    method separately. Treat a 429 as worth retrying after a delay rather than as
+    a rejection of the image.
+
+    This method doesn't pace itself, so use it for single changes. To add several
+    photos at once, call Bulk Create Media Uploads instead. That queues the whole
+    set and applies it to Google gradually, which is what the per-minute budget
+    makes necessary.
+
+    Errors:
+    - `NOT_FOUND`: the location isn't recorded for this site. Google isn't called.
+    - `GOOGLE_API_CALL_FAILED`: the call to Google failed. Google's status and
+    response are in the error payload.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SEO">Manage SEO Settings</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { locations } from '@wix/gbp';
+
+    locations.createMedia(locationId, sourceUrl, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="locationId" type="string" required>
+
+      Location ID. This is Google's location identifier.
+
+      Constraints: `minLength 1`, `maxLength 255`.
+
+    </ParamField>
+
+    <ParamField body="sourceUrl" type="string" required>
+
+      Publicly accessible URL of the media file to add. Google fetches the bytes
+      from this URL server-side, so it must be reachable without auth.
+
+      Constraints: `format WEB_URL`, `maxLength 2048`.
+
+    </ParamField>
+
+    <ParamField body="options" type="CreateMediaOptions" required>
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="category" type="string" required>
+
+          Where the media is shown on the listing (e.g. EXTERIOR, INTERIOR, LOGO).
+
+          **Supported values:**
+
+          - `COVER` — The banner image at the top of the profile. One per location.
+          - `PROFILE` — The profile image shown alongside the business name.
+          - `LOGO` — The business's logo. One per location.
+          - `EXTERIOR` — The outside of the premises, including the storefront.
+          - `INTERIOR` — The inside of the premises.
+          - `PRODUCT` — A product the business sells.
+          - `AT_WORK` — The team at work, such as staff serving customers.
+          - `FOOD_AND_DRINK` — Food or drink the business serves.
+          - `MENU` — The menu, for a business that serves food or drink.
+          - `COMMON_AREA` — A shared space, such as a lobby or a waiting area.
+          - `ROOMS` — Guest rooms, for accommodation businesses.
+          - `TEAMS` — The people who work at the business.
+          - `ADDITIONAL` — Anything that doesn't fit the other categories. This is the default for a
+          gallery photo.
+
+        </ParamField>
+
+        <ParamField body="format" type="string" required>
+
+          PHOTO or VIDEO.
+
+          **Supported values:**
+
+          - `PHOTO`
+          - `VIDEO`
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="mediaItem" type="MediaItem">
+
+      The created media item.
+
+      <Expandable title="mediaItem properties">
+
+        <ResponseField name="mediaKey" type="string">
+
+          Google's opaque media key (used to reference/delete media).
+
+          Constraints: `maxLength 255`.
+
+        </ResponseField>
+
+        <ResponseField name="format" type="string">
+
+          Whether this item is a photo or a video.
+
+          **Supported values:**
+
+          - `PHOTO`
+          - `VIDEO`
+
+        </ResponseField>
+
+        <ResponseField name="googleUrl" type="string">
+
+          Google-hosted URL the media is served at.
+
+          Not stable: it can change over time, so use `mediaKey` as the durable
+          identifier rather than this. For a video, this is a preview image rather
+          than the stream.
+
+          Constraints: `format WEB_URL`, `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="category" type="string">
+
+          Category of the media (e.g. EXTERIOR, INTERIOR, LOGO).
+
+          **Supported values:**
+
+          - `COVER` — The banner image at the top of the profile. One per location.
+          - `PROFILE` — The profile image shown alongside the business name.
+          - `LOGO` — The business's logo. One per location.
+          - `EXTERIOR` — The outside of the premises, including the storefront.
+          - `INTERIOR` — The inside of the premises.
+          - `PRODUCT` — A product the business sells.
+          - `AT_WORK` — The team at work, such as staff serving customers.
+          - `FOOD_AND_DRINK` — Food or drink the business serves.
+          - `MENU` — The menu, for a business that serves food or drink.
+          - `COMMON_AREA` — A shared space, such as a lobby or a waiting area.
+          - `ROOMS` — Guest rooms, for accommodation businesses.
+          - `TEAMS` — The people who work at the business.
+          - `ADDITIONAL` — Anything that doesn't fit the other categories. This is the default for a
+          gallery photo.
+
+        </ResponseField>
+
+        <ResponseField name="thumbnailUrl" type="string">
+
+          Google-hosted thumbnail URL. Like `googleUrl`, this can change over time.
+
+          Constraints: `format WEB_URL`, `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Caption or description of the media item.
+
+          Constraints: `maxLength 5000`.
+
+        </ResponseField>
+
+        <ResponseField name="sourceUrl" type="string">
+
+          The URL the image was originally fetched from, echoing the `sourceUrl` it
+          was created with. Present on media the site owner posted, and absent on
+          media contributed by customers.
+
+          Constraints: `format WEB_URL`, `maxLength 2048`.
+
+        </ResponseField>
+
+        <ResponseField name="attribution" type="MediaItemAttribution">
+
+          Attribution of the contributor, for customer-contributed media. Empty for
+          merchant-posted media (e.g. items added via CreateMedia).
+
+          <Expandable title="attribution properties">
+
+            <ResponseField name="profileName" type="string">
+
+              Display name of the contributor.
+
+              Constraints: `maxLength 255`.
+
+            </ResponseField>
+
+            <ResponseField name="profilePhotoUrl" type="string">
+
+              URL of the contributor's profile photo.
+
+              Constraints: `format WEB_URL`, `maxLength 2048`.
+
+            </ResponseField>
+
+            <ResponseField name="takedownUrl" type="string">
+
+              URL to report the media or request its takedown.
+
+              Constraints: `format WEB_URL`, `maxLength 2048`.
+
+            </ResponseField>
+
+            <ResponseField name="profileUrl" type="string">
+
+              URL of the contributor's profile.
+
+              Constraints: `format WEB_URL`, `maxLength 2048`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `500` | `INTERNAL` | `GOOGLE_API_CALL_FAILED` |  |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-create-media" id="ex-sdk-create-media-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-create-media" id="ex-sdk-create-media-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-create-media-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-create-media-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Add a photo to a listing</span><span className="wix-picker-desc">Publish one photo to the Google Business Profile listing from a public URL</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">createMedia (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-create-media-0"><span className="wix-picker-name">Add a photo to a listing</span><span className="wix-picker-desc">Publish one photo to the Google Business Profile listing from a public URL</span></label>
+    <label htmlFor="ex-sdk-create-media-1"><span className="wix-picker-name">createMedia (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Add a photo to a listing
+    import { locations } from "@wix/gbp";
+
+    async function createMedia() {
+      const response = await locations.createMedia(
+        "8034569321457853640",
+        "https://static.wixstatic.com/media/9c8f27_4e2b8a51d76c4f0a9d1e3b7f2a6c5d84~mv2.jpg",
+        { category: "INTERIOR", format: "PHOTO" },
+      );
+
+      console.log(response.mediaItem);
+    }
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript createMedia (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { locations } from '@wix/gbp';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { locations },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function createMedia(locationId,sourceUrl,options) {
+      const response = await myWixClient.locations.createMedia(locationId,sourceUrl,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

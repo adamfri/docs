@@ -1,50 +1,105 @@
 ---
 title: "Introduction"
-description: "With the Campaign API you can manage and publish email marketing campaigns that have already been created by a Wix user."
+description: "With the Campaign API you can create and manage email marketing campaigns for a Wix site, including composing content, publishing to contacts, and tracking eng…"
 icon: "file-lines"
 ---
 
-With the Campaign API you can manage and publish email marketing campaigns that have already been created by a Wix user.
+With the Campaign API you can create and manage email marketing campaigns for a Wix site, including composing content, publishing to contacts, and tracking engagement statistics.
 
-With the Campaign API you can:
+With the Campaign API, you can:
 
-- Retrieve [statistics](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/list-statistics) and [recipients](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/list-recipients) of a campaign.
-- [Retrieve](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/get-campaign) information about the campaign.
-- [Publish](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/publish-campaign) a campaign and send it out to predefined contacts.
-- Send a [test email](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/send-test).
-- [Reschedule](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/reschedule) a campaign to send it at a different time.
-- [Reuse](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/reuse-campaign) an existing campaign so that a Wix user doesn't have to rebuild it from scratch.
+- [Create](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/create) campaigns from editor data.
+- [Retrieve](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/get-campaign) information about a campaign.
+- [List](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/list-campaigns) all campaigns for a site.
+- [Publish](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/publish-campaign) a campaign and send it to contacts.
+- Send a [test email](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/send-test) to preview how a campaign will look in an inbox.
+- [Reschedule](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/reschedule) a scheduled campaign.
+- [Resend](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/resend-to-non-openers) a campaign to recipients who didn't open the original email.
+- [Reuse](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/reuse-campaign) an existing campaign to create a draft copy.
+- Retrieve [statistics](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/list-statistics) and [recipients](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/list-recipients) for a campaign. Statistics are available only for published campaigns.
 
 ## Creating a campaign
 
-To create a campaign, a Wix user must either design a template from scratch or use one of the pre-made templates available in the Wix dashboard. The API does not support campaign creation.
+Use [Create Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/create) to create a new draft campaign from editor data. Pass the `composerDataJson` field with the campaign's content and set `campaignEditorType` to match the format you're using.
 
-After the campaign is created, you can send a test email to preview how it will appear in an inbox. We strongly recommend calling the [Send Test](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/send-test) method only a few times in a row. There's a rate limit to prevent abuse of the method.
+The `composerDataJson` field supports three formats, determined by `campaignEditorType`:
+
+- `WEB`: Wix proprietary JSON format for the classic drag-and-drop editor.
+- `MOBILE`: A subset of the `WEB` format for the classic mobile editor.
+- `MJML`: MJML markup wrapped in a JSON object under key "mjml".
+
+Passing a format that doesn't match the specified `campaignEditorType` doesn't return an immediate error, but causes the campaign to fail silently when previewing or sending. `MJML` is the most straightforward format to generate programmatically.
+
+You can also set an optional `emailPreheader` when creating or updating a campaign. This is short preview text shown after the subject line in many email clients and can improve open rates.
+
+After creating a campaign, you can update its content with [Update Composer](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/update-composer) or render a preview with [Preview Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/preview).
+
+The `campaignEditorType` can't be changed after a campaign is created. Passing a `composerDataJson` in a different format when calling Update Composer causes a silent failure when sending or previewing.
+
+If your campaign content contains dynamic placeholders for personalization, pass a `placeholders` map to [Preview Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/preview) to resolve those tokens in the preview. Set default placeholder values in `composer.defaultValues` to use as fallbacks when actual recipient values aren't available.
+
+To retrieve a campaign's subject line, use [Get Composer](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/get-composer). The `emailSubject` field on the [Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/campaign-object) object is deprecated.
 
 ## Publishing a campaign
 
-To publish a campaign, [sender details](fallback::https://dev.wix.com/docs/rest/business-management/marketing/sender-details/introduction) need to be set up. You can only publish the campaign to come from the default sender. Therefore, whenever you want to publish a different campaign, the appropriate sender must be set as the default. To determine which email address will be used as the "From" address, call [Identify Sender Address](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/identify-sender-address). Campaigns can only be sent to Wix site contacts.
+To publish a campaign, sender details must be set up for the site. Call [Identify Sender Address](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/identify-sender-address) to determine which email address will appear as the "From" address.
 
-It's possible to schedule a campaign when publishing it. You can schedule the campaign no less than 30 minutes before the sending time. A Wix user needs to [upgrade the plan](fallback::https://support.wix.com/en/article/email-marketing-upgrading-your-email-marketing-plan) to schedule the campaign.
+Call [Publish Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/publish-campaign) to send the campaign:
 
-When a campaign is published, you'll also receive a URL for the campaign's landing page, which can be shared on social media.
+- Pass `emailDistributionOptions` to distribute the campaign by email to contacts. Campaigns can only be sent to Wix site contacts, defined by contact IDs, contact labels, or segment IDs.
+- Omit `emailDistributionOptions` to publish the campaign as a landing page only, without sending any emails. This decision is permanent — once published as a landing page only, the campaign can't be sent by email. Use [Reuse Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/reuse-campaign) to create a new draft copy if you need to send emails later.
 
-A campaign can also be published without sending emails. In this case, only the campaign landing page URL will be provided.
+The response always includes a `landingPageUrl` that can be shared on social media, regardless of whether emails are sent.
 
-A Wix user can be blocked from using Wix Email Marketing if they don't comply with the [Wix Email Marketing Terms of Use](fallback::https://www.wix.com/shoutout/terms-of-use).
+You can schedule a campaign to send at a future time by passing `emailDistributionOptions.sendAt`. The scheduled time must be at least 30 minutes in the future. Use [Pause Scheduling](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/pause-scheduling) and [Reschedule](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/reschedule) to adjust a scheduled campaign before it sends.
+
+## Email distribution process
+
+After publishing with email distribution, the campaign moves through the following `distributionStatus` values:
+
+1. `SAMPLING`: A small subset of the audience receives the email first. The system checks for issues such as spam-trap hits or excessive bounce rates.
+2. `SENDING`: Sampling passed and the email is being sent to the full audience.
+3. `DISTRIBUTED`: The email has been sent to all recipients.
+4. `TERMINATED`: Sampling failed due to quality issues. The campaign is stopped before reaching the full audience. A terminated campaign can be reused with [Reuse Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/reuse-campaign) to create a new draft for republishing.
+5. `REJECTED`: The campaign was identified as abusive and blocked before sending.
+
+## Paused campaigns and audience retrieval
+
+When a scheduled campaign is paused with [Pause Scheduling](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/pause-scheduling), the original audience settings are preserved. Use [Get Audience](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/get-audience) to retrieve those audience settings so you can pass them back when republishing the campaign.
+
+## Resending to non-openers
+
+Use [Resend to Non-Openers](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/resend-to-non-openers) to send a follow-up to recipients who didn't open the original campaign email. The following conditions must be met:
+
+- The original campaign was sent at least 24 hours ago.
+- There are recipients who received the email but didn't open it.
+- Resend to Non-Openers hasn't already been called for this campaign.
+
+An optional different subject line can be passed to improve open rates on the follow-up.
 
 ## Before you begin
 
-- Each Wix site has an email limit. The limit depends on the [email marketing plan](fallback::https://support.wix.com/en/article/email-marketing-upgrading-your-email-marketing-plan).
+It's important to note the following points before starting to code:
+
+- Each site has an email quota per billing period that depends on the [email marketing plan](fallback::https://support.wix.com/en/article/email-marketing-upgrading-your-email-marketing-plan).
+- The site's email marketing account must be active. A site owner can be blocked from using email marketing for not complying with the [Wix Email Marketing Terms of Use](fallback::https://www.wix.com/shoutout/terms-of-use). Use [Get Account Details](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/account-details/get-account-details) to check the account status before publishing.
+- Sender details must be configured before publishing a campaign.
+- Campaigns can only be sent to Wix site [contacts](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/contacts/contacts/contact-v4/introduction).
 
 ## Use cases
 
-- [A/B testing for subject lines and call-to-action (CTA) buttons](fallback::https://dev.wix.com/docs/rest/business-management/marketing/email-marketing/campaign/sample-use-cases-and-flows)
+- [A/B test email subject lines](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/sample-use-cases-and-flows)
 
 ## Terminology
 
-- **Campaign:** A marketing message designed to be distributed to an audience with email.
-- **Template:** A predefined structure for creating campaigns. Templates include placeholders that can be replaced with specific values to customize the content.
-- **Audience:** The group of recipients targeted by a campaign.
-- **Campaign scheduling:** The process of setting a specific date and time for when a campaign will be sent. Requires at least 30 minutes notice before the scheduled send time.
-- **Label:** A tag that allows Wix users to organize and group contacts.
+- **Campaign:** A marketing message distributed to an audience via email and a public landing page.
+- **Composer:** The editor data for a campaign, containing the email content in `composerDataJson` and the email subject.
+- **Campaign editor type:** Determines the format of `composerDataJson`. Options are `WEB`, `MOBILE`, `MJML`.
+- **Preheader:** Short preview text shown after the subject line in many email clients. Set via `emailPreheader` on [Create Campaign](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/create) or [Update Composer](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/emails/email-marketing/campaign/update-composer).
+- **Sampling:** The initial phase of email distribution where a small subset of recipients receive the email first, before it's sent to the full audience.
+- **Audience:** The group of recipients targeted by a campaign, defined by contact IDs, contact labels, or segment IDs.
+- **Campaign scheduling:** Setting a future date and time for a campaign to be sent. Requires at least 30 minutes' notice and a plan that supports scheduling.
+- **Label:** A tag used to organize and group site contacts, which can be used to define a campaign audience.
+- **Landing page:** A public web page generated for each published campaign. Available regardless of whether the campaign is distributed by email.
+
+@sdk_package_setup

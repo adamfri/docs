@@ -1,0 +1,989 @@
+---
+title: "Regenerate Marketing Activity Stories"
+description: "Regenerates the story drafts for a marketing activity, leaving its post drafts unchanged."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Regenerates the story drafts for a marketing activity, leaving its post drafts unchanged.
+
+    Generation is asynchronous. The response returns a transient snapshot; regeneration continues
+    in the background. Poll [Get Marketing Activity Posts](https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/get-marketing-activity-posts) to check
+    when the new stories are ready.
+
+    If the activity has no story draft, nothing is regenerated and the returned snapshot is final.
+    This method never creates a story that was not already planned.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-MARKETING-PLAN">Manage Marketing Plans</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/promote/marketing-plan-service/v1/marketing-plan/regenerate-marketing-activity-stories
+    ```
+
+    ## Body Params
+
+    <ParamField body="marketingActivityId" type="string" required>
+
+      ID of the marketing activity whose stories will be regenerated.
+
+      **Read-only.**
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="marketingActivity" type="SocialPlanMarketingActivity">
+
+      A transient snapshot of the marketing activity at the time of the call. Regeneration happens in
+      the background, so these stories may not reflect the final result. Poll `GetMarketingActivityPosts`
+      for the regenerated stories.
+
+      <Expandable title="marketingActivity properties">
+
+        <ResponseField name="marketingActivityId" type="string">
+
+          Marketing activity ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="date" type="datetime">
+
+          Scheduled date of the marketing activity.
+
+        </ResponseField>
+
+        <ResponseField name="items" type="Item[]">
+
+          Posts associated with this activity. Items can be of any status (`DRAFT`, `SCHEDULED`, or published).
+          Only items whose `status` is `DRAFT` can be scheduled with `ScheduleDrafts`.
+
+          Constraints: `minItems 0`, `maxItems 10`.
+
+          <Expandable title="items properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="channel" type="Channel">
+
+              Social channel the item is published to, and the account within that channel.
+
+              _Nested structure omitted for brevity — see the `Channel` object._
+
+            </ResponseField>
+
+            <ResponseField name="type" type="string">
+
+              Item format. The `type` and the content set in `data` must match a combination supported by the item's `channel.name`:
+
+              - Instagram: `POST` with `instagramPost`, or `STORY` with `instagramStory`.
+              - Facebook: `POST` with `facebookPost`, `REEL` with `facebookReel`, or `STORY` with `facebookStory`.
+              - YouTube: `VIDEO` with `youtubeVideo`, or `SHORT` with `youtubeShort`.
+              - LinkedIn: `POST` with `linkedinPost`.
+              - X (Twitter): `POST` with `twitterPost`. Deprecated: No longer functional as of July 31, 2026.
+              - Pinterest: `POST` with `pinterestPost`.
+              - Google Business Profile: `POST` with `gbpPost`.
+              - TikTok: `POST` with `tiktokPhoto`, or `VIDEO` with `tiktokVideo`.
+
+              **Supported values:**
+
+              - `POST` — A standard post.
+              - `REEL` — A short-form vertical video reel.
+              - `VIDEO` — A video.
+              - `SHORT` — A short-form vertical video.
+              - `STORY` — A story that's available for a limited time.
+
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+
+              Current status of the item in its lifecycle.
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `PUBLISHED` — Published to the social channel.
+              - `SCHEDULED` — Scheduled to be published at a future date.
+              - `CANCELED` — Scheduling was canceled before the item was published.
+              - `FAILED` — Publishing failed.
+              - `DELETED` — Deleted.
+              - `PROCESSING` — Publishing is in progress.
+              - `DRAFT` — Saved as a draft, not yet published.
+              - `IN_QUEUE` — Queued for publishing as part of a bulk operation.
+
+            </ResponseField>
+
+            <ResponseField name="publishedDate" type="datetime">
+
+              Date and time the item was published. Returned only after the item is published.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="schedulingInfo" type="SchedulingInfo">
+
+              Scheduling info. Set to schedule the item for a future date instead of publishing it immediately.
+
+              _Nested structure omitted for brevity — see the `SchedulingInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="consumerInfo" type="ConsumerInfo">
+
+              Identifies what created the item.
+
+              Specify `consumerInfo.name` when you create or publish an item, using one stable name for whatever is
+              making the call, whether that's an app, an AI agent, or a service of your own. An item created without
+              it is stored with an empty name, and the name can't be added later, because Update Item doesn't change
+              it. See
+              [Identifying what created an item](https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/introduction#identifying-what-created-an-item).
+
+              _Nested structure omitted for brevity — see the `ConsumerInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="referenceId" type="string">
+
+              Caller-defined reference that uniquely identifies the item. Can be used to prevent duplicate publishing: an attempt to publish a second item with the same `referenceId` fails. Can also be used as a UTM campaign ID.
+
+            </ResponseField>
+
+            <ResponseField name="siteAnalytics" type="SiteAnalytics">
+
+              Aggregated analytics for the site, attributed to traffic from this post.
+
+              _Nested structure omitted for brevity — see the `SiteAnalytics` object._
+
+            </ResponseField>
+
+            <ResponseField name="insightsSummary" type="InsightsSummary">
+
+              Summary of the post's performance on the social channel, such as impressions and interactions.
+
+              _Nested structure omitted for brevity — see the `InsightsSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="draftInfo" type="DraftInfo">
+
+              Creation and update dates, returned for draft items.
+
+              _Nested structure omitted for brevity — see the `DraftInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="suggested" type="boolean">
+
+              Whether the item was generated as an AI suggestion.
+
+            </ResponseField>
+
+            <ResponseField name="external" type="boolean">
+
+              Whether the item is a post created natively on the social channel rather than published through Wix.
+
+            </ResponseField>
+
+            <ResponseField name="publicationError" type="PublicationErrorDetails">
+
+              Details of why the item failed to publish. Returned only when `status` is `FAILED`.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `PublicationErrorDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="siteAssetRef" type="AssetReference">
+
+              Reference to the site content the post promotes, such as a product, a blog post, or an event.
+              Set per channel.
+
+              _Nested structure omitted for brevity — see the `AssetReference` object._
+
+            </ResponseField>
+
+            <ResponseField name="originItemId" type="string">
+
+              ID of the item this item was derived from, when publishing produced several items
+              from one. Currently set only by `PublishMultiStoryDraft`, which splits a multi-media
+              story draft into one published item per frame: every resulting item carries the
+              originating draft's ID here. Lets a consumer re-correlate the new items with whatever
+              it had recorded against the original draft, which no longer exists after the split.
+              Set by the publisher, never by the caller.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Title of the marketing activity.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Description of the marketing activity.
+
+        </ResponseField>
+
+        <ResponseField name="videoCandidates" type="VideoCandidate[]">
+
+          Asynchronously generated video options for this activity. Poll `GetMarketingActivityPosts` to check their status.
+
+          Constraints: `minItems 0`, `maxItems 10`.
+
+          <Expandable title="videoCandidates properties">
+
+            <ResponseField name="executionId" type="string">
+
+              Unique identifier of the video generation process.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+
+              Current generation status of the video candidate.
+
+              **Supported values:**
+
+              - `IN_PROGRESS` — Video is currently being generated.
+              - `FAILED` — Generation failed. Add a new candidate to retry.
+              - `READY` — Video is ready. `video_url` is populated.
+
+            </ResponseField>
+
+            <ResponseField name="videoUrl" type="string">
+
+              URL of the generated video. Returned only when `status` is `READY`.
+
+            </ResponseField>
+
+            <ResponseField name="prompt" type="string">
+
+              Prompt used to generate the video.
+
+            </ResponseField>
+
+            <ResponseField name="sourceMediaUrl" type="string">
+
+              URL of the source media used as input for video generation.
+
+            </ResponseField>
+
+            <ResponseField name="itemType" type="string">
+
+              Type of activity content this video was generated for. Either `POST` or `STORY`. Defaults to `POST`.
+
+              **Supported values:**
+
+              - `POST` — A standard post.
+              - `REEL` — A short-form vertical video reel.
+              - `VIDEO` — A video.
+              - `SHORT` — A short-form vertical video.
+              - `STORY` — A story that's available for a limited time.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="asset" type="AssetReference">
+
+          Site asset this activity is grounded in.
+
+          <Expandable title="asset properties">
+
+            <ResponseField name="type" type="string">
+
+              Type of the site asset (for example, product or blog post). See `SiteAsset.Type` for the closed set of values.
+
+              **Supported values:**
+
+              - `BLOG_POST` — A Wix Blog post.
+              - `EVENT` — A Wix Events event.
+              - `STORES_PRODUCT` — A Wix Stores product.
+              - `BOOKINGS_SERVICE` — A Wix Bookings service.
+              - `STORES_COUPON` — A Wix Stores coupon.
+              - `STORES_CATEGORY` — A Wix Stores category.
+
+            </ResponseField>
+
+            <ResponseField name="id" type="string">
+
+              ID of the asset within its provider's data store.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Display name of the asset (for example, the product title or blog post title), cached at activity-generation time.
+
+              Constraints: `maxLength 3000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Generate fresh AI-suggested stories for a single marketing activity, replacing its current stories and leaving its posts unchanged. Generation continues in the background, so the returned stories may not reflect the final result.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/promote/marketing-plan-service/v1/marketing-plan/regenerate-marketing-activity-stories' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "marketingActivityId": "b3f9d2e1-7a4c-4d68-9f02-1c5e8a6b4d30"
+      }'
+      ```
+
+      ```json Response
+      {
+        "marketingActivity": {
+          "marketingActivityId": "b3f9d2e1-7a4c-4d68-9f02-1c5e8a6b4d30",
+          "date": "2026-07-08T09:00:00.000Z",
+          "title": "Summer collection launch",
+          "description": "Announce the new handmade ceramic mugs summer collection with a 20% launch discount.",
+          "items": [
+            {
+              "id": "8e2b7c94-0af1-4d35-b6e8-3c7f01d29b45",
+              "channel": {
+                "name": "INSTAGRAM",
+                "accountId": "17841405822304914"
+              },
+              "type": "STORY",
+              "status": "DRAFT",
+              "instagramStory": {
+                "mediaWrapper": {
+                  "media": [
+                    {
+                      "type": "IMAGE",
+                      "url": "https://static.wixstatic.com/media/cf2434_9d1f68b0c72e45a3b8e4f5027ac13d69~mv2.jpg"
+                    },
+                    {
+                      "type": "IMAGE",
+                      "url": "https://static.wixstatic.com/media/cf2434_2a6e40f9d81b47c5ae390bd7f6142c83~mv2.jpg"
+                    },
+                    {
+                      "type": "IMAGE",
+                      "url": "https://static.wixstatic.com/media/cf2434_5b83c1e7a04f42d9b7e2680fc3915ad4~mv2.jpg"
+                    }
+                  ]
+                }
+              },
+              "draftInfo": {
+                "createdDate": "2026-06-25T08:05:12.330Z",
+                "updatedDate": "2026-06-25T08:05:12.330Z"
+              },
+              "suggested": true,
+              "external": false
+            }
+          ]
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Regenerates the story drafts for a marketing activity, leaving its post drafts unchanged.
+
+    Generation is asynchronous. The response returns a transient snapshot; regeneration continues
+    in the background. Poll [Get Marketing Activity Posts](https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/get-marketing-activity-posts) to check
+    when the new stories are ready.
+
+    If the activity has no story draft, nothing is regenerated and the returned snapshot is final.
+    This method never creates a story that was not already planned.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-MARKETING-PLAN">Manage Marketing Plans</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { marketingPlan } from '@wix/promote-growth-tools-marketing-plan';
+
+    marketingPlan.regenerateMarketingActivityStories(marketingActivityId): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="marketingActivityId" type="string" required>
+
+      ID of the marketing activity whose stories will be regenerated.
+
+      **Read-only.**
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="marketingActivity" type="SocialPlanMarketingActivity">
+
+      A transient snapshot of the marketing activity at the time of the call. Regeneration happens in
+      the background, so these stories may not reflect the final result. Poll `GetMarketingActivityPosts`
+      for the regenerated stories.
+
+      <Expandable title="marketingActivity properties">
+
+        <ResponseField name="marketingActivityId" type="string">
+
+          Marketing activity ID.
+
+          **Read-only.**
+
+        </ResponseField>
+
+        <ResponseField name="date" type="datetime">
+
+          Scheduled date of the marketing activity.
+
+        </ResponseField>
+
+        <ResponseField name="items" type="Item[]">
+
+          Posts associated with this activity. Items can be of any status (`DRAFT`, `SCHEDULED`, or published).
+          Only items whose `status` is `DRAFT` can be scheduled with `ScheduleDrafts`.
+
+          Constraints: `minItems 0`, `maxItems 10`.
+
+          <Expandable title="items properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="channel" type="Channel">
+
+              Social channel the item is published to, and the account within that channel.
+
+              _Nested structure omitted for brevity — see the `Channel` object._
+
+            </ResponseField>
+
+            <ResponseField name="type" type="string">
+
+              Item format. The `type` and the content set in `data` must match a combination supported by the item's `channel.name`:
+
+              - Instagram: `POST` with `instagramPost`, or `STORY` with `instagramStory`.
+              - Facebook: `POST` with `facebookPost`, `REEL` with `facebookReel`, or `STORY` with `facebookStory`.
+              - YouTube: `VIDEO` with `youtubeVideo`, or `SHORT` with `youtubeShort`.
+              - LinkedIn: `POST` with `linkedinPost`.
+              - X (Twitter): `POST` with `twitterPost`. Deprecated: No longer functional as of July 31, 2026.
+              - Pinterest: `POST` with `pinterestPost`.
+              - Google Business Profile: `POST` with `gbpPost`.
+              - TikTok: `POST` with `tiktokPhoto`, or `VIDEO` with `tiktokVideo`.
+
+              **Supported values:**
+
+              - `POST` — A standard post.
+              - `REEL` — A short-form vertical video reel.
+              - `VIDEO` — A video.
+              - `SHORT` — A short-form vertical video.
+              - `STORY` — A story that's available for a limited time.
+
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+
+              Current status of the item in its lifecycle.
+
+              **Read-only.**
+
+              **Supported values:**
+
+              - `PUBLISHED` — Published to the social channel.
+              - `SCHEDULED` — Scheduled to be published at a future date.
+              - `CANCELED` — Scheduling was canceled before the item was published.
+              - `FAILED` — Publishing failed.
+              - `DELETED` — Deleted.
+              - `PROCESSING` — Publishing is in progress.
+              - `DRAFT` — Saved as a draft, not yet published.
+              - `IN_QUEUE` — Queued for publishing as part of a bulk operation.
+
+            </ResponseField>
+
+            <ResponseField name="publishedDate" type="datetime">
+
+              Date and time the item was published. Returned only after the item is published.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="schedulingInfo" type="SchedulingInfo">
+
+              Scheduling info. Set to schedule the item for a future date instead of publishing it immediately.
+
+              _Nested structure omitted for brevity — see the `SchedulingInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="consumerInfo" type="ConsumerInfo">
+
+              Identifies what created the item.
+
+              Specify `consumerInfo.name` when you create or publish an item, using one stable name for whatever is
+              making the call, whether that's an app, an AI agent, or a service of your own. An item created without
+              it is stored with an empty name, and the name can't be added later, because Update Item doesn't change
+              it. See
+              [Identifying what created an item](https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/introduction#identifying-what-created-an-item).
+
+              _Nested structure omitted for brevity — see the `ConsumerInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="referenceId" type="string">
+
+              Caller-defined reference that uniquely identifies the item. Can be used to prevent duplicate publishing: an attempt to publish a second item with the same `referenceId` fails. Can also be used as a UTM campaign ID.
+
+            </ResponseField>
+
+            <ResponseField name="siteAnalytics" type="SiteAnalytics">
+
+              Aggregated analytics for the site, attributed to traffic from this post.
+
+              _Nested structure omitted for brevity — see the `SiteAnalytics` object._
+
+            </ResponseField>
+
+            <ResponseField name="insightsSummary" type="InsightsSummary">
+
+              Summary of the post's performance on the social channel, such as impressions and interactions.
+
+              _Nested structure omitted for brevity — see the `InsightsSummary` object._
+
+            </ResponseField>
+
+            <ResponseField name="draftInfo" type="DraftInfo">
+
+              Creation and update dates, returned for draft items.
+
+              _Nested structure omitted for brevity — see the `DraftInfo` object._
+
+            </ResponseField>
+
+            <ResponseField name="suggested" type="boolean">
+
+              Whether the item was generated as an AI suggestion.
+
+            </ResponseField>
+
+            <ResponseField name="external" type="boolean">
+
+              Whether the item is a post created natively on the social channel rather than published through Wix.
+
+            </ResponseField>
+
+            <ResponseField name="publicationError" type="PublicationErrorDetails">
+
+              Details of why the item failed to publish. Returned only when `status` is `FAILED`.
+
+              **Read-only.**
+
+              _Nested structure omitted for brevity — see the `PublicationErrorDetails` object._
+
+            </ResponseField>
+
+            <ResponseField name="siteAssetRef" type="AssetReference">
+
+              Reference to the site content the post promotes, such as a product, a blog post, or an event.
+              Set per channel.
+
+              _Nested structure omitted for brevity — see the `AssetReference` object._
+
+            </ResponseField>
+
+            <ResponseField name="originItemId" type="string">
+
+              ID of the item this item was derived from, when publishing produced several items
+              from one. Currently set only by `PublishMultiStoryDraft`, which splits a multi-media
+              story draft into one published item per frame: every resulting item carries the
+              originating draft's ID here. Lets a consumer re-correlate the new items with whatever
+              it had recorded against the original draft, which no longer exists after the split.
+              Set by the publisher, never by the caller.
+
+              **Read-only.**
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="title" type="string">
+
+          Title of the marketing activity.
+
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+
+          Description of the marketing activity.
+
+        </ResponseField>
+
+        <ResponseField name="videoCandidates" type="VideoCandidate[]">
+
+          Asynchronously generated video options for this activity. Poll `GetMarketingActivityPosts` to check their status.
+
+          Constraints: `minItems 0`, `maxItems 10`.
+
+          <Expandable title="videoCandidates properties">
+
+            <ResponseField name="executionId" type="string">
+
+              Unique identifier of the video generation process.
+
+              **Read-only.**
+
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+
+              Current generation status of the video candidate.
+
+              **Supported values:**
+
+              - `IN_PROGRESS` — Video is currently being generated.
+              - `FAILED` — Generation failed. Add a new candidate to retry.
+              - `READY` — Video is ready. `video_url` is populated.
+
+            </ResponseField>
+
+            <ResponseField name="videoUrl" type="string">
+
+              URL of the generated video. Returned only when `status` is `READY`.
+
+            </ResponseField>
+
+            <ResponseField name="prompt" type="string">
+
+              Prompt used to generate the video.
+
+            </ResponseField>
+
+            <ResponseField name="sourceMediaUrl" type="string">
+
+              URL of the source media used as input for video generation.
+
+            </ResponseField>
+
+            <ResponseField name="itemType" type="string">
+
+              Type of activity content this video was generated for. Either `POST` or `STORY`. Defaults to `POST`.
+
+              **Supported values:**
+
+              - `POST` — A standard post.
+              - `REEL` — A short-form vertical video reel.
+              - `VIDEO` — A video.
+              - `SHORT` — A short-form vertical video.
+              - `STORY` — A story that's available for a limited time.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="asset" type="AssetReference">
+
+          Site asset this activity is grounded in.
+
+          <Expandable title="asset properties">
+
+            <ResponseField name="type" type="string">
+
+              Type of the site asset (for example, product or blog post). See `SiteAsset.Type` for the closed set of values.
+
+              **Supported values:**
+
+              - `BLOG_POST` — A Wix Blog post.
+              - `EVENT` — A Wix Events event.
+              - `STORES_PRODUCT` — A Wix Stores product.
+              - `BOOKINGS_SERVICE` — A Wix Bookings service.
+              - `STORES_COUPON` — A Wix Stores coupon.
+              - `STORES_CATEGORY` — A Wix Stores category.
+
+            </ResponseField>
+
+            <ResponseField name="_id" type="string">
+
+              ID of the asset within its provider's data store.
+
+            </ResponseField>
+
+            <ResponseField name="name" type="string">
+
+              Display name of the asset (for example, the product title or blog post title), cached at activity-generation time.
+
+              Constraints: `maxLength 3000`.
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    <Note>
+
+      This method doesn't return any custom errors, but may return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-regenerate-marketing-activity-stories" id="ex-sdk-regenerate-marketing-activity-stories-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-regenerate-marketing-activity-stories" id="ex-sdk-regenerate-marketing-activity-stories-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-regenerate-marketing-activity-stories-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-regenerate-marketing-activity-stories-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Regenerate the stories of a marketing activity</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">regenerateMarketingActivityStories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-regenerate-marketing-activity-stories-0"><span className="wix-picker-name">Regenerate the stories of a marketing activity</span></label>
+    <label htmlFor="ex-sdk-regenerate-marketing-activity-stories-1"><span className="wix-picker-name">regenerateMarketingActivityStories (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Regenerate the stories of a marketing activity
+    // @description: Generation continues in the background, so the returned stories may not reflect the final result.
+    import { marketingPlan } from "@wix/promote-growth-tools-marketing-plan";
+
+    const marketingActivityId = "b3f9d2e1-7a4c-4d68-9f02-1c5e8a6b4d30";
+
+    async function regenerateMarketingActivityStories() {
+      const response =
+        await marketingPlan.regenerateMarketingActivityStories(marketingActivityId);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "marketingActivity": {
+     *     "marketingActivityId": "b3f9d2e1-7a4c-4d68-9f02-1c5e8a6b4d30",
+     *     "date": "2026-07-08T09:00:00.000Z",
+     *     "title": "Summer collection launch",
+     *     "description": "Announce the new handmade ceramic mugs summer collection with a 20% launch discount.",
+     *     "items": [
+     *       {
+     *         "_id": "8e2b7c94-0af1-4d35-b6e8-3c7f01d29b45",
+     *         "channel": {
+     *           "name": "INSTAGRAM",
+     *           "accountId": "17841405822304914"
+     *         },
+     *         "type": "STORY",
+     *         "status": "DRAFT",
+     *         "instagramStory": {
+     *           "mediaWrapper": {
+     *             "media": [
+     *               {
+     *                 "type": "IMAGE",
+     *                 "url": "https://static.wixstatic.com/media/cf2434_9d1f68b0c72e45a3b8e4f5027ac13d69~mv2.jpg"
+     *               },
+     *               {
+     *                 "type": "IMAGE",
+     *                 "url": "https://static.wixstatic.com/media/cf2434_2a6e40f9d81b47c5ae390bd7f6142c83~mv2.jpg"
+     *               },
+     *               {
+     *                 "type": "IMAGE",
+     *                 "url": "https://static.wixstatic.com/media/cf2434_5b83c1e7a04f42d9b7e2680fc3915ad4~mv2.jpg"
+     *               }
+     *             ]
+     *           }
+     *         },
+     *         "draftInfo": {
+     *           "_createdDate": "2026-06-25T08:05:12.330Z",
+     *           "_updatedDate": "2026-06-25T08:05:12.330Z"
+     *         },
+     *         "suggested": true,
+     *         "external": false
+     *       }
+     *     ]
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript regenerateMarketingActivityStories (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { marketingPlan } from '@wix/promote-growth-tools-marketing-plan';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { marketingPlan },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function regenerateMarketingActivityStories(marketingActivityId) {
+      const response = await myWixClient.marketingPlan.regenerateMarketingActivityStories(marketingActivityId);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

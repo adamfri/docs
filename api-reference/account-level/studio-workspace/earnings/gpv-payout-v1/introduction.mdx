@@ -1,0 +1,131 @@
+---
+title: "Introduction"
+description: "The Revenue Share GPV Payouts API lets a Wix Partner read their revenue-share earnings derived from gross payment volume (GPV), the total payment volume proces…"
+icon: "file-lines"
+---
+
+The Revenue Share GPV Payouts API lets a Wix Partner read their revenue-share
+earnings derived from gross payment volume (GPV), the total payment volume
+processed across the sites the partner manages. It's a read-only API for
+reviewing what the partner earned from GPV and whether Wix invoiced it.
+
+A GPV payout represents a partner's GPV-derived revenue-share earning for a
+single period. Wix creates and maintains these records automatically as payment
+volume accrues on the partner's sites, and the partner can't create or edit them.
+Each payout exposes the period's total GPV, the partner's earned `amount`, the
+revenue-share rate that was applied, and a per-site breakdown. All monetary
+values are in USD.
+
+With the Revenue Share GPV Payouts API, you can:
+
+- Retrieve a single GPV payout by ID.
+- Query GPV payouts across the partner's account, for example to list earnings
+  for a specified period or to export them to an external system.
+- Aggregate GPV payouts for a filter to get the total earned amount, total GPV,
+  payout count, and the minimum and maximum revenue-share rate applied.
+
+## How this fits with the other revenue-share APIs
+
+A partner in the Wix Partner Program earns revenue share from separate streams,
+each with its own read-only API:
+[Revenue Share Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1)
+for premium subscriptions the partner sold, this API for GPV-derived earnings,
+and [Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1)
+for marketplace transactions such as template sales. These APIs record
+per-earning revenue share. Separately, the
+[Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1)
+API surfaces the invoices and payments the partner actually received, and breaks
+each invoice total down into premium, GPV, marketplace, and app market
+sub-totals. The GPV sub-total cross-links back to this API.
+
+## GPV payout periods
+
+- Wix maintains a single GPV payout per `transactionDate`, the GPV period,
+  updating it in place as more volume accrues. Don't expect multiple payouts for
+  the same period.
+- GPV payouts have no reversal model. Where premium and marketplace payouts
+  record a correction as a separate negative payout, Wix restates the day's
+  aggregate GPV payout in place.
+- `transactionDate` is the day the volume was processed, and it's the date to
+  filter and sort on. `createdDate` and `updatedDate` are record bookkeeping.
+  They record when Wix created the payout and when it last changed as volume
+  accrued.
+- A period with negligible GPV produces no payout, so query results can have gaps
+  for periods with little or no qualifying volume.
+- Queries return a flat list, 1 row per day, across all time. Group the rows in
+  your own code if you need weekly or monthly totals, or call
+  [Get Gpv Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/get-gpv-payouts-aggregate)
+  with a date-bounded filter.
+
+## Invoices and payment status
+
+A payout's `invoiceId` is the reference code of the partner invoice Wix included
+it in, and it's empty until Wix invoices the payout. To resolve the code, query
+the [Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1)
+API for the invoice whose `invoicesRefCodes` contains that value, and read the
+`status` of that invoice to see whether Wix paid it.
+
+## Differences from the Wix Studio dashboard
+
+Partners also see their GPV earnings in the Wix Studio dashboard. The dashboard
+presents the same records, but names and shapes them differently:
+
+- **Gross volume**: The dashboard labels `gpv` as **Client sales**.
+- **Per-site breakdown**: This API returns more detail than the dashboard.
+  `sitesGpv` lists up to 200 contributing sites, each with the volume it
+  processed in USD and the site's name. The dashboard shows only the site count
+  and the first few site names, without amounts.
+- **Site names**: Each `sitesGpv[].siteName` is captured when Wix last calculated
+  the payout. A day's payout is recalculated while volume is still accruing, so a
+  site renamed during that window can show the newer name. Once the day is
+  settled, the name stops changing. The field is best effort. It can be empty,
+  and it's empty on payouts created before Wix started capturing it. You can't
+  filter or sort on it, so use `metaSiteId` as the stable key.
+- **Shape**: This API returns a flat list, 1 payout per day, for all time. The
+  dashboard's month-then-day nested table is a presentation layer over the same
+  rows. It shows 1 month at a time and derives the monthly figures by summing its
+  days. To reproduce it, group the returned payouts by month in your own code.
+- **Payment status**: The dashboard's status badge isn't a field on this entity.
+  A payout with an empty `invoiceId` isn't invoiced yet. Once `invoiceId` is set,
+  the `status` of the matching materialized invoice tells you whether Wix paid it.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Wix creates GPV payouts automatically. The partner can't create, update, or
+  delete them.
+- GPV revenue-share eligibility applies only to sites that use Wix Payments as
+  their payment method. Payment volume processed through other payment methods
+  doesn't qualify for GPV revenue share.
+- Reads are scoped to the caller's partner account. You only see GPV payouts that
+  belong to your own account.
+- All monetary fields, `gpv`, `amount`, and `sitesGpv.gpvInUsd`, are in USD, even
+  where the field name doesn't carry an explicit `InUsd` suffix.
+- The revenue-share rate in `paymentRevenueSharePercent` is a fractional percent.
+  `0.05` means 0.05% and `0.1` means 0.1%, not 5% or 10%. Wix sets it
+  automatically based on the period's GPV. For the calculation, see Terminology.
+
+## Use cases
+
+- [Export GPV payouts to an external system](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/sample-flows#export-gpv-payouts-to-an-external-system).
+- [Summarize GPV earnings for a period](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/sample-flows#summarize-gpv-earnings-for-a-period).
+- [Reconcile GPV earnings against a paid invoice](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1/sample-flows#reconcile-gpv-earnings-against-a-paid-invoice).
+
+## Terminology
+
+- **GPV payout**: The entity managed by this API. A partner's GPV-derived
+  revenue-share earning for a single period, generated automatically by Wix.
+- **Gross payment volume (GPV)**: The total payment volume processed across the
+  sites a partner manages for a period, in USD.
+- **Revenue-share rate**: The fractional percentage applied to GPV to calculate
+  the partner's earned amount, exposed in `paymentRevenueSharePercent`. Wix sets
+  it automatically per period: 0.05% when the period's GPV is 2,000 USD or less,
+  and 0.1% when it's above 2,000 USD. The earned `amount` equals
+  `gpv` × `paymentRevenueSharePercent` ÷ 100.
+- **Site GPV**: The portion of a payout's GPV contributed by a single site,
+  exposed in `sitesGpv`.
+- **Invoice**: Once Wix includes a payout in an invoice, the payout's `invoiceId`
+  is set. Until then, the payout is uninvoiced.
+
+@sdk_package_setup

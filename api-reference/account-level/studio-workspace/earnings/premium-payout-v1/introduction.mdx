@@ -1,0 +1,132 @@
+---
+title: "Introduction"
+description: "The Revenue Share Premium Payouts API lets a Wix Partner read the revenue share they earned from the premium subscriptions they sold, for example Wix.com, Stud…"
+icon: "file-lines"
+---
+
+The Revenue Share Premium Payouts API lets a Wix Partner read the revenue share
+they earned from the premium subscriptions they sold, for example Wix.com,
+Studio, or POS plans. It's a read-only API for reporting and reconciliation.
+
+A premium payout represents a single revenue-share earning from 1 premium
+subscription transaction. Wix creates the records automatically as partners earn,
+and a partner can't create, update, or delete them. Each record carries the
+transaction amount it was calculated from, the revenue-share rate, the earned
+amount, an approval status, and, once invoiced, the partner payout invoice Wix
+included it in. All amounts are in US dollars (USD).
+
+With the Revenue Share Premium Payouts API, you can:
+
+- Retrieve a single premium payout by ID.
+- Query a partner's premium payouts with filtering, sorting, and paging, for
+  example to list all payouts for a specified month.
+- Get the aggregate total amount and count of premium payouts matching a filter.
+
+## How this fits with the other revenue-share APIs
+
+A Wix Partner earns revenue share from separate streams, each with its own
+read-only API: premium subscriptions through this API, gross payment volume
+through the [Revenue Share GPV Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1)
+API, and marketplace transactions such as template sales through the
+[Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1)
+API. These APIs record per-earning payout entities. Separately, the
+[Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1)
+API surfaces the invoices and payments the partner actually received, grouped by
+month and status, with the invoice total broken down into premium, GPV,
+marketplace, and app market sub-totals. Use the payout APIs to see what a partner
+earned per transaction, and Materialized Invoices to see what Wix paid.
+
+## Approval status and reversals
+
+- A payout's `status` reflects an approval lifecycle. A `PENDING` payout is
+  evaluated when the related subscription's trial ends, or immediately if there's
+  no trial. It then resolves to `APPROVED` if the subscription was active, or
+  `REJECTED` if the subscription was canceled or marked fraudulent. Approval
+  isn't a fixed waiting period.
+- A payout with `negative` set to `true` reverses an earlier payout, for example
+  after a subscription cancellation or refund. It carries a negative `amount`,
+  queries return it like any other payout, and aggregate totals include it. Don't
+  filter these out. Sum `amount` across payouts to get a partner's net earnings.
+  A reversal carries no field identifying the payout it reverses, so this API
+  can't pair them for you.
+
+## Payout dates and invoices
+
+`transactionDate` is the date of the subscription charge the payout was earned
+on, and it's the date to filter and sort on when reporting on a period.
+`createdDate` and `updatedDate` are record bookkeeping. They record when Wix
+recorded the payout and when it last changed, for example when its `status` was
+resolved, and they can differ from `transactionDate` by days.
+
+A payout's `invoiceId` is the partner payout invoice Wix included it in, and it's
+empty until Wix invoices the payout. To resolve the code, query the
+[Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1)
+API for the invoice whose `invoicesRefCodes` contains that value.
+
+## Differences from the Wix Studio dashboard
+
+Partners also see their premium earnings in the Wix Studio dashboard. The
+dashboard presents the same records, but labels and totals them differently:
+
+- **Status labels**: The dashboard renders `PENDING` as **Estimated**, `APPROVED`
+  as **Paid**, and `REJECTED` as **Cancelled**.
+- **Total**: The dashboard's earnings total excludes `REJECTED` payouts, while
+  its row list includes them, so the total doesn't equal the sum of the rows on
+  screen. The equivalent through this API is
+  `sum(amount) where status != REJECTED`, which you can get in a single call from
+  [Get Premium Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/get-premium-payouts-aggregate)
+  with `status` not equal to `REJECTED` in the filter. Without that condition, it
+  totals every matching payout, including rejected ones.
+- **Subscription charge**: The dashboard doesn't display `transactionAmount`. For
+  a regular payout, you can derive it from the 2 values the dashboard does
+  show. `transactionAmount` = `amount` / (`paymentRevenueSharePercent` / 100).
+  This doesn't hold for a reversal, a payout with `negative` set to `true`, which
+  carries a negative `amount` but keeps the original positive charge in
+  `transactionAmount`.
+- **Site**: `siteName` is the name of the site the payout was earned on, captured
+  when Wix created the payout. It's a snapshot of a past state, so it doesn't
+  follow later renames, and it's best effort. It can be empty, and it's empty on
+  payouts created before Wix started capturing it.
+  [Query Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/query-premium-payouts)
+  can't filter or sort on it, so use `metaSiteId` as the stable key. The
+  dashboard also shows the site's domain, which this API doesn't return.
+- **Plan**: The dashboard shows 2 lines for the plan. The first is the plan
+  family, which is `premiumPlanType` here, for example `STUDIO` or `WIX_COM`. The
+  second is a product name that the dashboard resolves itself and translates into
+  the language it's being viewed in, and it isn't part of this API. Use
+  `premiumProductId` as the stable key for the product.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Wix creates premium payouts automatically as the partner earns. The partner
+  can't create, update, or delete them, and the public API is read-only.
+- Only certain premium products are eligible for revenue share. For the list of
+  products that qualify, see
+  [Wix Studio: Receiving Revenue Share](fallback::https://support.wix.com/en/article/wix-studio-receiving-revenue-share).
+- Reads are scoped to the caller's partner account. A payout ID belonging to
+  another account reads as not found.
+- All monetary amounts, `amount` and `transactionAmount`, are in US dollars
+  (USD), even though the fields are plain numbers without a currency suffix.
+
+## Use cases
+
+- [List a partner's premium payouts for a month](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/sample-flows#list-a-partners-premium-payouts-for-a-month).
+- [Calculate total approved premium earnings for a period](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/sample-flows#calculate-total-approved-premium-earnings-for-a-period).
+- [Reconcile premium earnings with the partner's invoice and payment](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1/sample-flows#reconcile-premium-earnings-with-the-partners-invoice-and-payment).
+
+## Terminology
+
+- **Premium payout**: The entity managed by this API. A single revenue-share
+  earning from 1 premium subscription transaction the partner sold.
+- **Premium subscription**: A paid Wix plan, for example Wix.com, Studio, or POS,
+  that the partner sold and earns revenue share on.
+- **Transaction amount**: The subscription charge, in USD, that the revenue-share
+  rate is applied to, to calculate the earned amount.
+- **Revenue-share rate**: The percentage of the transaction amount paid to the
+  partner, exposed as `paymentRevenueSharePercent`.
+- **Approval status**: The payout's lifecycle state, `PENDING`, `APPROVED`, or
+  `REJECTED`, resolved from the subscription's billing status at trial end.
+
+@sdk_package_setup

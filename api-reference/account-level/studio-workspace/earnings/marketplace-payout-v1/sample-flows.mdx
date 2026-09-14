@@ -1,0 +1,103 @@
+---
+title: "Sample Flows"
+description: "This article presents possible use cases and corresponding sample flows that you can support."
+icon: "file-lines"
+---
+
+This article presents possible use cases and corresponding sample flows that you
+can support. It provides a useful starting point as you plan your implementation.
+
+## List a partner's marketplace payouts for a period
+
+Show a partner the marketplace transactions they earned revenue share on within a
+date range, such as a single month.
+
+To list a partner's marketplace payouts for a period:
+
+1. Call **[Query Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/query-marketplace-payouts)** with a filter on `transactionDate` and sort
+   the results so the most recent payouts come first. Set `cursorPaging.limit` to
+   `100` (the maximum). If you receive a full page, follow
+   `pagingMetadata.cursors.next` to retrieve the next page.
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "transactionDate": {
+            "$gte": "2026-05-01T00:00:00.000Z",
+            "$lt": "2026-06-01T00:00:00.000Z"
+          }
+        },
+        "sort": [
+          { "fieldName": "transactionDate", "order": "DESC" }
+        ],
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. For each returned payout, read `amount` (in USD), `transactionAmount`,
+   `listing`, and `negative` to present the earning. Payouts with `negative` set
+   to `true` reverse an earlier earning, so subtract them when totaling.
+
+1. To display a single total instead of a list, call **[Get Marketplace Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/get-marketplace-payouts-aggregate)** with the same filter and read `payoutsTotalAmount` and
+   `payoutsCount`. The total covers exactly the payouts the filter matches,
+   including rejected ones.
+
+1. To match the earnings total in the Wix Studio dashboard, which leaves rejected
+   payouts out of the total while still listing them, add a `status` condition to
+   the aggregate filter:
+
+    ```json
+    {
+      "filter": {
+        "transactionDate": {
+          "$gte": "2026-05-01T00:00:00.000Z",
+          "$lt": "2026-06-01T00:00:00.000Z"
+        },
+        "status": { "$ne": "REJECTED" }
+      }
+    }
+    ```
+
+   `status` isn't part of the query pattern declared for **Query Marketplace
+   Payouts**, so you can't reuse this condition when listing payouts — filter by
+   date there and skip rejected rows client-side.
+
+## Reconcile marketplace earnings against a monthly invoice
+
+Confirm that the marketplace payouts a partner earned in a month match the
+marketplace sub-total of that month's invoice, and check whether the partner has
+been paid.
+
+To reconcile marketplace earnings for a month:
+
+1. Call **[Query Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/query-marketplace-payouts)** filtered to the month, as in the flow
+   above, and sum the `amount` of the payouts whose `status` isn't `REJECTED`
+   (keeping `negative` payouts in the sum, since they offset earlier earnings).
+   Rejected payouts are never invoiced, so including them would overstate the
+   total against the invoice. Alternatively, call **[Get Marketplace Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/get-marketplace-payouts-aggregate)** with the same filter plus `status` not equal to
+   `REJECTED` to get `payoutsTotalAmount` directly.
+
+1. Read the matching materialized invoice for that month with **[Query
+   Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/query-materialized-invoices)** (Materialized Invoices API), filtering on
+   `earningsMonth` for the same month:
+
+    ```json
+    {
+      "query": {
+        "filter": {
+          "earningsMonth": "2026-05-01T00:00:00.000Z"
+        },
+        "cursorPaging": { "limit": 100 }
+      }
+    }
+    ```
+
+1. Compare your marketplace payout total to the invoice's
+   `revenueStreamsAggregation.marketplace` sub-total for that month. They should
+   match.
+
+1. Check whether the partner has actually been paid by calling **[Get Last
+   Payment](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1/get-last-payment)** (Materialized Invoices API) and reading the most recent payment's
+   status.

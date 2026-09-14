@@ -4,13 +4,14 @@ description: "The Marketing Plan API generates and manages a site's AI-driven so
 icon: "file-lines"
 ---
 
-The Marketing Plan API generates and manages a site's AI-driven social media marketing plan. A plan is a schedule of marketing activities covering today through the end of next month. Social posts can then be generated for those activities, ready to schedule and publish. A site has at most one plan at a time.
+The Marketing Plan API generates and manages a site's AI-driven social media marketing plan. A plan is a schedule of marketing activities covering today through the end of next month. Social posts and stories can then be generated for those activities, ready to schedule and publish. A site has at most one plan at a time.
 
 With the Marketing Plan API, you can:
 
 - Generate and regenerate a marketing plan.
 - Regenerate a plan with fresh SEO keyword research to add blog activities.
 - Generate social posts for activities, and regenerate their content or media.
+- Regenerate an activity's stories, clear them, or replace their media.
 - Schedule the generated post drafts for publishing.
 - Retrieve a plan's status and activities, and delete a plan or its activities.
 
@@ -32,6 +33,16 @@ When a plan is generated, posts are created automatically only for the nearest-t
 
 `RegenerateMarketingPlan` rebuilds the plan's upcoming activities from the current marketing settings and site content. `RegenerateMarketingPlanWithKeywordResearch` does the same but first runs fresh SEO keyword research to refresh the plan's blog activities, so it's multi-stage and takes longer. Use the keyword-research variant after changing the content pillars (the `topics` in the marketing settings) so the blog activities reflect them; otherwise the plain regenerate is faster. Both run asynchronously and report `GENERATING` while they work (the keyword-research variant has an internal preconditions phase, but the status you see stays `GENERATING`), so poll [Get Social Marketing Plan](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/get-social-marketing-plan) the same way.
 
+## Stories
+
+Alongside posts, an activity can also carry a story: a set of full-screen vertical images with no caption, held as a single draft with one image per frame. Whether an activity gets a story is decided during generation, so not every activity has one, and the number of frames varies between activities, up to a maximum of 5.
+
+Story drafts are managed separately from post drafts. [Regenerate Marketing Activity Stories](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/regenerate-marketing-activity-stories), [Clear Marketing Activity Stories](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/clear-marketing-activity-stories), and [Update Marketing Activity Stories Media](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/update-marketing-activity-stories-media) affect only an activity's stories and leave its posts untouched, and the equivalent post methods leave its stories untouched. To replace a single frame of a story, specify `mediaIndex` when calling [Update Marketing Activity Stories Media](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/marketing-plan-v1/update-marketing-activity-stories-media).
+
+Regenerating an activity's stories never creates a story that wasn't already planned. If the activity has no story draft, nothing is regenerated and the returned activity is unchanged.
+
+Because a story holds several images, publishing one goes through [Publish Multi Story Draft](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/social-media/item-v1/publish-multi-story-draft) in the Publisher API, which publishes each frame as its own story.
+
 ## Before you begin
 
 It's important to note the following points before starting to code:
@@ -40,17 +51,21 @@ It's important to note the following points before starting to code:
 - Generation is asynchronous and non-deterministic. Poll for completion instead of relying on the immediate response.
 - Marketing settings are optional. Defaults are applied at generation time. Social marketing must be enabled in the settings for posts to be generated automatically when a plan is created.
 - Scheduling a draft succeeds, but only drafts whose channel is connected through the Publisher API are actually scheduled. The rest remain drafts. Connect channels through the Publisher to publish.
+- Media you apply to an activity's posts or stories: Media Manager URLs (`static.wixstatic.com` for images, `video.wixstatic.com` for videos) are the supported option and are what the site's dashboard produces. The API doesn't validate the URL's host, so a non-Media-Manager URL is accepted, but it must be publicly reachable by the target channel, and channels differ in how they handle such a URL. To use an image or video that isn't in the Media Manager yet, add it first with the [Media Manager](fallback::https://dev.wix.com/docs/rest/assets/media/media-manager).
 
 ## Use cases
 
 - [Generate a marketing plan and publish its posts](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows#generate-a-marketing-plan-and-publish-its-posts)
 - [Generate and schedule posts for more activities](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows#generate-and-schedule-posts-for-more-activities)
+- [Publish an activity's story](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows#publish-an-activitys-story)
+- [Replace a frame in an activity's story](fallback::https://dev.wix.com/docs/api-reference/business-management/marketing/marketing-plan/sample-flows#replace-a-frame-in-an-activitys-story)
 
 ## Terminology
 
 - **Marketing plan:** A per-site, AI-generated schedule of marketing activities covering today through the end of next month.
 - **Marketing activity:** A single planned marketing action within a plan, such as a social campaign, blog post, or email.
 - **Post:** An image and channel-specific caption generated for an activity, created as a draft that can be scheduled for publishing.
+- **Story:** A set of full-screen vertical images generated for an activity, created as a single draft holding one image per frame. Only some activities get stories, and a story has no caption.
 
 ## See also
 

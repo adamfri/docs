@@ -1,0 +1,562 @@
+---
+title: "Publish Multi Story Draft"
+description: "Publishes a multi-story draft as a sequence of single-media story items."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Publishes a multi-story draft as a sequence of single-media story items.
+
+    The draft's media list is split into individual story items that are published sequentially
+    in media order, stopping on the first failure. Each story item gets a derived `referenceId`
+    of `{draftReferenceId}:story:{index}` (the draft `id` is used when the draft has no `referenceId`).
+    Story items already published by a previous call are skipped, so the method can be safely retried
+    after a partial failure. The draft is deleted only after all story items are published.
+    To schedule the story sequence, set `schedulingInfo.scheduledDate`; otherwise it's published immediately.
+
+    <Note>
+
+      **Authentication**
+
+      You can only call this method when authenticated as a Wix app or Wix user [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SOCIAL-POSTS">Manage Social Posts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/social-publisher/v1/publish-multi-story-draft
+    ```
+
+    ## Body Params
+
+    <ParamField body="id" type="string" required>
+
+      ID of the multi-story draft to publish.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="schedulingInfo" type="SchedulingInfo">
+
+      Scheduling info applied to all story items. If set, the story items are scheduled instead of published immediately.
+
+      <Expandable title="schedulingInfo properties">
+
+        <ParamField body="scheduledDate" type="datetime">
+
+          Date and time the item is scheduled to be published.
+
+        </ParamField>
+
+        <ParamField body="schedulingTimestamp" type="datetime">
+
+          Date and time the item was scheduled.
+
+          **Read-only.**
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="results" type="BulkItemsResult[]">
+
+      Results, one per story item handled in this call, in story order. Story items already published by a previous call aren't included.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual item's publish result.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Item">
+
+          Published item. Returned only when `returnEntity` is `true` in the request.
+
+          See the [Item Object](/api-reference/business-management/marketing/social-media/item-v1/item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NOT_MULTI_STORY_DRAFT` | The item isn't a story draft with more than one media item. |
+    | `428` | `FAILED_PRECONDITION` | `INELIGIBLE_FOR_FEATURE` | The site's social media marketing plan doesn't permit this action, or its quota for the current period is exhausted. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    Split a story draft that holds several media items into one story item per frame, and publish them in media order. Setting `schedulingInfo.scheduledDate` schedules the sequence instead of publishing it immediately. The draft is deleted only after all its story items are published, so the call can be safely retried after a partial failure.
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/social-publisher/v1/publish-multi-story-draft' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "id": "8e2b7c94-0af1-4d35-b6e8-3c7f01d29b45"
+      }'
+      ```
+
+      ```json Response
+      {
+        "results": [
+          {
+            "itemMetadata": {
+              "id": "1f5c8a37-9be2-4d10-84af-06b73e2d915c",
+              "originalIndex": 0,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "7ab049d6-3c81-4f27-95e0-b2d641f8a37e",
+              "originalIndex": 1,
+              "success": true
+            }
+          },
+          {
+            "itemMetadata": {
+              "id": "c34e17b8-05fa-4d93-a6b1-8e70925cf4d2",
+              "originalIndex": 2,
+              "success": true
+            }
+          }
+        ],
+        "bulkActionMetadata": {
+          "totalSuccesses": 3,
+          "totalFailures": 0,
+          "undetailedFailures": 0
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Publishes a multi-story draft as a sequence of single-media story items.
+
+    The draft's media list is split into individual story items that are published sequentially
+    in media order, stopping on the first failure. Each story item gets a derived `referenceId`
+    of `{draftReferenceId}:story:{index}` (the draft `id` is used when the draft has no `referenceId`).
+    Story items already published by a previous call are skipped, so the method can be safely retried
+    after a partial failure. The draft is deleted only after all story items are published.
+    To schedule the story sequence, set `schedulingInfo.scheduledDate`; otherwise it's published immediately.
+
+    <Note>
+
+      **Authentication**
+
+      This method may require higher-level permissions than the caller has, based on their [identity](https://dev.wix.com/docs/api-reference/articles/authentication/about-identities) and [roles and permissions](https://support.wix.com/en/article/roles-permissions-overview). In these cases, you can ensure the method is called with the required level of authorization by using one of the following:
+
+      - In Wix sites and Wix apps, use [elevated permissions](https://dev.wix.com/docs/api-reference/articles/authentication/about-elevated-permissions).
+      - In Wix Headless projects, use [API key authentication](https://dev.wix.com/docs/go-headless/develop-your-project/admin-operations/about-admin-operations).
+
+    </Note>
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.PROMOTE.MANAGE-SOCIAL-POSTS">Manage Social Posts</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { items } from '@wix/promote-growth-tools-publisher';
+
+    items.publishMultiStoryDraft(_id, options): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="_id" type="string" required>
+
+      ID of the multi-story draft to publish.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="options" type="PublishMultiStoryDraftOptions">
+
+      options
+
+      <Expandable title="options properties">
+
+        <ParamField body="schedulingInfo" type="SchedulingInfo">
+
+          Scheduling info applied to all story items. If set, the story items are scheduled instead of published immediately.
+
+          <Expandable title="schedulingInfo properties">
+
+            <ParamField body="scheduledDate" type="datetime">
+
+              Date and time the item is scheduled to be published.
+
+            </ParamField>
+
+            <ParamField body="schedulingTimestamp" type="datetime">
+
+              Date and time the item was scheduled.
+
+              **Read-only.**
+
+            </ParamField>
+
+          </Expandable>
+
+        </ParamField>
+
+      </Expandable>
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="results" type="BulkItemsResult[]">
+
+      Results, one per story item handled in this call, in story order. Story items already published by a previous call aren't included.
+
+      <Expandable title="results properties">
+
+        <ResponseField name="itemMetadata" type="ItemMetadata">
+
+          Metadata for the individual item's publish result.
+
+          <Expandable title="itemMetadata properties">
+
+            <ResponseField name="_id" type="string">
+
+              Item ID. Should always be available, unless it's impossible (for example, when failing to create an item).
+
+            </ResponseField>
+
+            <ResponseField name="originalIndex" type="integer">
+
+              Index of the item within the request array. Allows for correlation between request and response items.
+
+            </ResponseField>
+
+            <ResponseField name="success" type="boolean">
+
+              Whether the requested action was successful for this item. When `false`, the `error` field is populated.
+
+            </ResponseField>
+
+            <ResponseField name="error" type="ApplicationError">
+
+              Details about the error in case of failure.
+
+              _Nested structure omitted for brevity — see the `ApplicationError` object._
+
+            </ResponseField>
+
+          </Expandable>
+
+        </ResponseField>
+
+        <ResponseField name="item" type="Item">
+
+          Published item. Returned only when `returnEntity` is `true` in the request.
+
+          See the [Item Object](/api-reference/business-management/marketing/social-media/item-v1/item-object) for this object's fields.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    <ResponseField name="bulkActionMetadata" type="BulkActionMetadata">
+
+      Bulk action metadata.
+
+      <Expandable title="bulkActionMetadata properties">
+
+        <ResponseField name="totalSuccesses" type="integer">
+
+          Number of items that were successfully processed.
+
+        </ResponseField>
+
+        <ResponseField name="totalFailures" type="integer">
+
+          Number of items that couldn't be processed.
+
+        </ResponseField>
+
+        <ResponseField name="undetailedFailures" type="integer">
+
+          Number of failures without details because detailed failure threshold was exceeded.
+
+        </ResponseField>
+
+      </Expandable>
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `400` | `INVALID_ARGUMENT` | `NOT_MULTI_STORY_DRAFT` | The item isn't a story draft with more than one media item. |
+    | `428` | `FAILED_PRECONDITION` | `INELIGIBLE_FOR_FEATURE` | The site's social media marketing plan doesn't permit this action, or its quota for the current period is exhausted. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-publish-multi-story-draft" id="ex-sdk-publish-multi-story-draft-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-publish-multi-story-draft" id="ex-sdk-publish-multi-story-draft-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-publish-multi-story-draft-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-publish-multi-story-draft-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Publish a multi-frame story draft</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">publishMultiStoryDraft (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-publish-multi-story-draft-0"><span className="wix-picker-name">Publish a multi-frame story draft</span></label>
+    <label htmlFor="ex-sdk-publish-multi-story-draft-1"><span className="wix-picker-name">publishMultiStoryDraft (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Publish a multi-frame story draft
+    // @description: Each frame becomes its own story item, published in media order. The draft is deleted only after all of them are published.
+    import { items } from "@wix/promote-growth-tools-publisher";
+
+    const draftId = "8e2b7c94-0af1-4d35-b6e8-3c7f01d29b45";
+
+    async function publishMultiStoryDraft() {
+      const response = await items.publishMultiStoryDraft(draftId);
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "results": [
+     *     {
+     *       "itemMetadata": {
+     *         "_id": "1f5c8a37-9be2-4d10-84af-06b73e2d915c",
+     *         "originalIndex": 0,
+     *         "success": true
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "_id": "7ab049d6-3c81-4f27-95e0-b2d641f8a37e",
+     *         "originalIndex": 1,
+     *         "success": true
+     *       }
+     *     },
+     *     {
+     *       "itemMetadata": {
+     *         "_id": "c34e17b8-05fa-4d93-a6b1-8e70925cf4d2",
+     *         "originalIndex": 2,
+     *         "success": true
+     *       }
+     *     }
+     *   ],
+     *   "bulkActionMetadata": {
+     *     "totalSuccesses": 3,
+     *     "totalFailures": 0,
+     *     "undetailedFailures": 0
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript publishMultiStoryDraft (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { items } from '@wix/promote-growth-tools-publisher';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { items },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function publishMultiStoryDraft(_id,options) {
+      const response = await myWixClient.items.publishMultiStoryDraft(_id,options);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

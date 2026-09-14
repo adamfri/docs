@@ -1,0 +1,120 @@
+---
+title: "Introduction"
+description: "The Marketplace Payouts API lets a Wix Partner read their revenue-share earnings from marketplace transactions, such as template sales."
+icon: "file-lines"
+---
+
+The Marketplace Payouts API lets a Wix Partner read their revenue-share earnings
+from marketplace transactions, such as template sales. It's a read-only API. You
+can retrieve and query individual payouts and get aggregate totals, but Wix
+creates the payouts automatically, and you can't create or change them through
+this API.
+
+A marketplace payout represents the partner's revenue share from a single
+marketplace transaction. Wix creates 1 payout automatically whenever a qualifying
+marketplace transaction occurs, recording the transaction amount, the
+revenue-share rate, and the resulting earning. All amounts are in USD.
+
+With the Marketplace Payouts API, you can:
+
+- Retrieve a single marketplace payout by ID.
+- Query a partner's marketplace payouts with filtering, sorting, and paging, for
+  example to list all payouts earned in a date range.
+- Get aggregate totals of the payouts that match a filter, the summed amount and
+  the count, for example a partner's total marketplace earnings for a month.
+
+## How this fits with the other revenue-share APIs
+
+A Wix Partner earns revenue share from separate streams: premium subscriptions
+they sell, gross payment volume (GPV) processed across the sites they manage, and
+marketplace transactions. Each stream records individual payout entities through
+its own API:
+[Revenue Share Premium Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/premium-payout-v1),
+[Revenue Share GPV Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/gpv-payout-v1),
+and this Marketplace Payouts API. Separately, the
+[Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1)
+API surfaces the invoices and payments the partner actually received, and its
+`revenueStreamsAggregation` breaks each invoice down into premium, GPV, and
+marketplace sub-totals that link back to these payout APIs, plus an `appMarket`
+sub-total for Wix App Market earnings, which has no payout API.
+
+## Approval status and reversals
+
+- A marketplace payout's `status` is `APPROVED` when it's eligible to be invoiced,
+  or `REJECTED` when Wix won't pay it. Wix creates payouts as `APPROVED`.
+- A payout with `negative` set to `true` reverses an earlier payout, for example
+  after a transaction cancellation or refund, so it offsets a previous earning.
+  It carries a negative `amount`, queries return it like any other payout, and
+  aggregate totals include it. Don't filter these out when summing. At most 1
+  positive and 1 negative payout exist per transaction, but a reversal carries no
+  field identifying the payout it reverses, so this API can't pair them for you.
+
+## Payout dates and invoices
+
+`transactionDate` is the date of the marketplace transaction the payout was
+earned on, and it's the date to filter and sort on. `createdDate` and
+`updatedDate` are record bookkeeping. They record when Wix recorded the payout
+and when it last changed.
+
+A payout's `invoiceId` is empty until Wix invoices the payout. Once invoiced, it
+holds the reference code of the partner invoice. To resolve the code, query the
+[Materialized Invoices](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/materialized-invoice-v1)
+API for the invoice whose `invoicesRefCodes` contains that value, and read the
+`status` of that invoice to see whether Wix paid it.
+
+## Differences from the Wix Studio dashboard
+
+Partners also see their marketplace earnings in the Wix Studio dashboard. The
+dashboard presents the same records, but labels and totals them differently:
+
+- **Status labels**: The dashboard renders an `APPROVED` payout as **Paid**, or as
+  **Reversed** when `negative` is `true`, and a `REJECTED` payout as
+  **Cancelled**. The dashboard doesn't display the `negative` flag itself.
+- **Total**: The dashboard's earnings total excludes `REJECTED` payouts, while its
+  row list includes them, so the total doesn't equal the sum of the rows on
+  screen. The equivalent through this API is
+  `sum(amount) where status != REJECTED`, which you can get in a single call from
+  [Get Marketplace Payouts Aggregate](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/get-marketplace-payouts-aggregate)
+  by adding `status` not equal to `REJECTED` to its filter. Without that
+  condition, it totals every payout the filter matches, rejected ones included.
+  `status` isn't part of the query pattern declared for
+  [Query Marketplace Payouts](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/query-marketplace-payouts),
+  so you can't apply the same condition when listing payouts. Filter by date
+  there and skip rejected rows in your own code. The dashboard also hides the
+  total when it comes to exactly `0`, whereas the API returns `0`.
+- **Listing**: The dashboard resolves the listing to the sold template's name.
+  This API returns `listing.id` and `listing.type`.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Wix creates marketplace payouts automatically when a marketplace transaction
+  occurs. A partner can't create, update, or delete them.
+- Reads are scoped to the caller's partner account. You only see your own
+  marketplace payouts.
+- All monetary amounts are in USD, including `transactionAmount` and `amount`,
+  even though they're typed as plain numbers without a currency suffix.
+- The revenue-share rate, `paymentSharePercent`, is the percentage of
+  `transactionAmount` paid to the partner. The earned `amount` equals
+  `transactionAmount` × `paymentSharePercent` ÷ 100.
+
+## Use cases
+
+- [List a partner's marketplace payouts for a period](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/sample-flows#list-a-partners-marketplace-payouts-for-a-period).
+- [Reconcile marketplace earnings against a monthly invoice](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/earnings/marketplace-payout-v1/sample-flows#reconcile-marketplace-earnings-against-a-monthly-invoice).
+
+## Terminology
+
+- **Marketplace payout**: The entity managed by this API. A partner's revenue
+  share from a single marketplace transaction, such as a template sale.
+- **Listing**: The marketplace item the transaction was made on, for example the
+  template that was sold. Identified by `listing.id`, with `listing.type` always
+  `TEMPLATE`.
+- **Revenue share**: The portion of a transaction amount a partner earns,
+  expressed as `paymentSharePercent` and applied to `transactionAmount` to
+  produce `amount`.
+- **Reversal**: A payout with `negative` set to `true` that offsets an earlier
+  earning, for example after a cancellation or refund.
+
+@sdk_package_setup

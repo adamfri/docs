@@ -18,10 +18,10 @@ Sending a key that isn't a field's `target` fails the whole submission, not just
 
 Each value's shape follows the originating field's `inputType`, not the component that renders it:
 
-- `STRING`: A string. Date and time fields are strings too, formatted according to the field's `validation.format`.
+- `STRING`: A string. For a [choice field](fallback::#choice) it's the selected option's value. Date and time fields are strings too, formatted according to the field's `validation.format`.
 - `NUMBER`: A number.
 - `BOOLEAN`: A boolean.
-- `ARRAY`: An array of the selected option values.
+- `ARRAY`: An array of the [selected option values](fallback::#choice).
 - `ADDRESS`: An [address object](fallback::#address).
 - `PAYMENT`: An array of [product objects](fallback::#payment), 1 per item bought.
 - `SCHEDULING`: An [appointment object](fallback::#appointment).
@@ -29,6 +29,28 @@ Each value's shape follows the originating field's `inputType`, not the componen
 This is why a single-line address field and a multi-line address field aren't interchangeable, even though both map to a contact's address: the first submits a string, the second an object.
 
 For how a field declares its `target` and `inputType`, see [About Form Fields](fallback::https://dev.wix.com/docs/api-reference/crm/forms/form-schemas/about-form-fields).
+
+### Choice
+
+Choice fields submit an option's `value`, not its ID or its label. Which shape a field submits depends on how many selections it accepts.
+
+A single choice, dropdown, or service picker field has the `STRING` input type, so it submits 1 value:
+
+```json
+"heard_about_us_3978": "Social media"
+```
+
+A multi choice, image choice, tag picker, or multi-service picker field has the `ARRAY` input type, so it submits 1 entry per selection:
+
+```json
+"services_used_21e8": ["Online store", "Consultation"]
+```
+
+In service picker and multi-service picker fields, each value is a Wix Services service ID rather than free text.
+
+Every value must appear in the field's declared list of accepted values. A `STRING` field declares that list in `stringOptions.validation.enum`, and an `ARRAY` field declares it in `arrayOptions.validation.items.stringOptions.enum`. A value outside the list fails validation, which fails the whole submission.
+
+A schema declares its choices twice, in the component's `options` array and in that validation list, so read the accepted values from the validation list.
 
 ### Address
 

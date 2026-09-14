@@ -1,0 +1,119 @@
+---
+title: "Introduction"
+description: "The Connection API connects a Wix site to a Google Business Profile account, reports whether that connection is still usable, and removes it."
+icon: "file-lines"
+---
+
+The Connection API connects a Wix site to a Google Business Profile account, reports whether that
+connection is still usable, and removes it. A connection is the prerequisite for Google-backed
+operations and imports in the Google Business Profile Locations API. Wix-only reads and deletes do
+not need active Google credentials.
+
+Wix holds the site owner's Google credentials server-side. This API never returns an access token, a
+refresh token, or any Google identity — only whether a connection exists and when it was created.
+
+## What the API provides
+
+With the Connection API, your app can:
+
+- Start a Google authorization by retrieving a connect URL for the site owner to open.
+- Check whether a site has usable Google credentials on file.
+- Distinguish "never connected" from "connected but the credentials are gone".
+- Disconnect a site, deleting the credentials Wix stores.
+
+**What `VALID` does and doesn't tell you.** `VALID` means Wix holds a credential for this site. It is
+not a live health check — Get Connection does not call Google, deliberately, so that polling it never
+touches the stored credential. A connection can therefore report `VALID` and still be refused by
+Google, for example if the owner revoked Wix's access from their Google account settings. Treat a
+Google-side authorization failure on a Locations call as the authoritative signal, and re-run the
+connect flow when you see one.
+
+## Connecting an account
+
+1. Call **Get Connect URL**. You get back a Google authorization URL.
+2. Surface that URL to the site owner and have them open it. They authorize in their own browser —
+   your app never handles their Google password or the authorization code.
+3. Google redirects back to Wix, which completes the OAuth exchange server-side.
+4. Poll **Get Connection** until `status` is `VALID`.
+
+To disconnect, call **Disconnect**.
+
+## Before you begin
+
+- **The site owner must authorize in a browser.** There is no way to connect a Google account purely
+  server-to-server, whether the flow starts in your app or in the SEO dashboard. Plan for a step your
+  app cannot complete on the owner's behalf.
+- **A site can have one connected Google account.** Get Connection and Disconnect therefore take no
+  ID. Get Connect URL is no longer rejected just because the site is already connected — it starts
+  a new authorization attempt whatever Get Connection reports, and neither case requires a
+  Disconnect first. (It is not unconditional: a site that somehow holds two connections returns
+  `MULTIPLE_CONNECTIONS_NOT_REPRESENTABLE`, described below.) Authorizing with the same Google
+  account heals the connection in place **while its stored credentials are still there**, meaning
+  Get Connection reports `VALID`. Authorizing with a different one replaces it — permanently
+  removing every Business Profile location on the connection it replaced — created and imported
+  alike.
+- **A connect URL is single-use and expires after 15 minutes.** Request a fresh one for every
+  attempt. Don't cache one or hand the same URL to two people.
+- **Get Connect URL is not idempotent, despite its GET route.** Each successful call creates a
+  distinct authorization attempt. Do not configure automatic retries or retry after a timeout or
+  ambiguous response; first re-check the connection and let the site owner explicitly start another
+  attempt if needed. The typed `CONNECTING_USER_LOOKUP_UNAVAILABLE` error is safe to retry because it
+  occurs before an authorization attempt is created.
+- **Completion is asynchronous.** Get Connect URL returning a URL does not mean the site is
+  connected — only that authorization can now begin. `status` is the source of truth.
+- **`NEEDS_RECONNECT` is not the same as an error.** It means the connection record still exists but
+  the stored Google credentials are gone, typically because the Google account holder exercised a
+  data-deletion request. Google-backed Locations calls and imports will fail until the site owner
+  connects again, so treat it as a prompt to re-run the connect flow rather than as a transient
+  failure to retry.
+
+  **Reconnecting from `NEEDS_RECONNECT` always replaces the connection, even with the same Google
+  account.** This is the one case where the same-account heal above does not apply. Wix identifies
+  the account by an opaque reference to the stored credentials, so once those are erased there is
+  nothing left to match the incoming account against, and the reconnect is treated as a
+  replacement. Warn the site owner first: every Business Profile location on the old
+  connection are permanently removed, and for locations migrated from an earlier Wix integration
+  that cannot be reversed by re-importing.
+- **Disconnecting is a Wix-side operation.** It deletes the credentials Wix stores. It does not change
+  the customer's Google Business Profile, and it does not revoke Wix's grant inside their Google
+  account — the owner does that from their Google account settings.
+- **The connection is owned by the calling user.** When the caller is an app rather than a user, the
+  connection is owned by the site owner instead.
+
+Get Connect URL can fail while resolving that owner for an app caller:
+
+- `CONNECTING_USER_LOOKUP_UNAVAILABLE` means the site-owner lookup failed temporarily. Retry Get
+  Connect URL.
+- `CONNECTING_USER_NOT_RESOLVABLE` means Wix could not identify a user to own the credential. This is
+  not retryable until the caller identity or site ownership is corrected.
+
+## Use cases
+
+REST:
+
+- Add a "Connect Google Business Profile" step to an onboarding flow, then poll until it completes.
+- Show connection health on a dashboard and prompt for reconnection when `status` is
+  `NEEDS_RECONNECT`.
+- Check for a connection before attempting a Google-backed Locations call or import, so a missing
+  connection is reported as a setup step rather than a failure.
+
+Velo:
+
+- Not available. This API is not mapped on site or Wix Code hosts, and site visitors are not an
+  allowed audience, so it cannot be called from site code.
+
+SDK:
+
+- Drive the connect flow from a dashboard extension or a headless client, letting Wix own the OAuth
+  exchange.
+
+## Terminology
+
+- **Connection**: The link between a Wix site and a Google account authorized to manage its Business
+  Profile. Holds dates only — no Google identity and no credentials.
+- **Connect URL**: A single-use, 15-minute Google authorization URL for the site owner to open.
+- **Connection status**: `NEVER_CONNECTED`, `VALID`, or `NEEDS_RECONNECT`.
+- **Google Business Profile (GBP)**: Google's product for managing how a business appears on Google
+  Search and Maps. Business Profile *locations* are managed through the Locations API.
+
+@sdk_package_setup

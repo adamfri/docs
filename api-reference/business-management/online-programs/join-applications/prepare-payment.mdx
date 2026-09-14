@@ -1,0 +1,469 @@
+---
+title: "Prepare Payment"
+description: "Prepares payment for a join application, or resolves an existing Pricing Plans entitlement."
+icon: "upload"
+tag: "Preview"
+mode: "wide"
+---
+
+<span className="wix-method wix-method-post">POST</span>
+
+<Tabs>
+
+  <Tab title="REST">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Prepares payment for a join application, or resolves an existing Pricing Plans entitlement.
+
+    Before creating or refreshing checkout details, the method checks whether the member already has an eligible Pricing Plans entitlement for the program. If so, it returns the join application with `paymentStatus` set to `PAYMENT_SUCCESSFUL` and the eligible plan IDs in `paymentInfo.paidPlanIds`. No checkout is needed, even when the application was previously in `PAYMENT_PENDING`.
+
+    If no eligible entitlement exists, `paymentStatus` must be `PAYMENT_PENDING`, `PAYMENT_FAILED`, or `PAYMENT_CANCELED`. Calling the method for `PAYMENT_FAILED` or `PAYMENT_CANCELED` retries payment by replacing stale payment details with newly prepared ones.
+
+    Specify `paymentType` to choose the flow:
+
+    - `SINGLE_PAYMENT`: Creates a Wix Payments order and sets `paymentStatus` to `PAYMENT_IN_PROGRESS`.
+    - `PAID_PLANS`: Validates that pricing plans are connected to the program and sets `paymentStatus` to `PAYMENT_IN_PROGRESS`.
+
+    Check the returned `paymentStatus` before starting checkout, and direct the member to checkout only when it's `PAYMENT_IN_PROGRESS`. To apply a discount before the member completes a Wix Payments checkout, call [Apply Coupon](https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/apply-coupon).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CHALLENGES.MANAGE">Manage Online Programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`.
+
+    ## Endpoint
+
+    ```http
+    POST https://www.wixapis.com/online-programs/participants/v3/join-applications/{joinApplicationId}/prepare-payment
+    ```
+
+    ## Path Params
+
+    <ParamField path="joinApplicationId" type="string" required>
+
+      ID of the join application to prepare payment for.
+
+    </ParamField>
+
+    ## Body Params
+
+    <ParamField body="paymentType" type="string" required>
+
+      Type of payment to prepare.
+
+      **Supported values:**
+
+      - `SINGLE_PAYMENT` — One-time payment through Wix Payments.
+      - `PAID_PLANS` — Payment through Wix Pricing Plans.
+
+    </ParamField>
+
+    ## Response Object
+
+    <ResponseField name="joinApplication" type="JoinApplication">
+
+      Join application with refreshed payment info. Check `paymentStatus` before directing the member to checkout.
+
+      See the [Join Application Object](/api-reference/business-management/online-programs/join-applications/join-application-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `OP_APP_NOT_INSTALLED` | Online Programs isn't installed on the site. |
+    | `428` | `FAILED_PRECONDITION` | `PP_APP_NOT_INSTALLED` | Pricing Plans isn't installed on the site. |
+    | `404` | `NOT_FOUND` | `NO_PAID_PLAN_CONNECTED` | No paid plan is connected to the program. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PAYMENT_STATUS` | The join application's `paymentStatus` doesn't permit preparing payment. Allowed from `PAYMENT_PENDING`, `PAYMENT_FAILED`, and `PAYMENT_CANCELED`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/rest/articles/getting-started/errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Join Application Updated | `wix.online_programs.participants.v3.join_application_updated` | Triggered when a join application is updated. |
+    | Join Application Payment Status Changed | `wix.online_programs.participants.v3.join_application_payment_status_changed` | Triggered when a join application's `paymentStatus` changes. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-rest-prepare-payment" id="ex-rest-prepare-payment-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-rest-prepare-payment" id="ex-rest-prepare-payment-1" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-rest-prepare-payment-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-rest-prepare-payment-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Prepare single payment</span><span className="wix-picker-desc">Initiates a single payment process for a join application</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Prepare paid plans payment</span><span className="wix-picker-desc">Initiates a paid plans payment process for a join application</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-rest-prepare-payment-0"><span className="wix-picker-name">Prepare single payment</span><span className="wix-picker-desc">Initiates a single payment process for a join application</span></label>
+    <label htmlFor="ex-rest-prepare-payment-1"><span className="wix-picker-name">Prepare paid plans payment</span><span className="wix-picker-desc">Initiates a paid plans payment process for a join application</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/online-programs/participants/v3/join-applications/4f87b2e3-2a0d-4b9f-9a1c-2d8e71b7e5c4/prepare-payment' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "paymentType": "SINGLE_PAYMENT"
+      }'
+      ```
+
+      ```json Response
+      {
+        "joinApplication": {
+          "id": "4f87b2e3-2a0d-4b9f-9a1c-2d8e71b7e5c4",
+          "revision": "2",
+          "createdDate": "2026-06-01T14:21:15.691Z",
+          "updatedDate": "2026-06-01T14:21:53.092Z",
+          "memberId": "2a01d8c7-54e5-4f42-9c9f-7a5d4d2ec4f1",
+          "programId": "8d3f2b9f-2c31-4f45-8e5a-1f4b9259a6c2",
+          "status": "APPROVED",
+          "paymentStatus": "PAYMENT_IN_PROGRESS",
+          "paymentInfo": {
+            "paymentOrderId": "0f0c80c2-cf4c-49db-93b4-30d0409aeb2b",
+            "paidPlanIds": []
+          },
+          "member": {
+            "email": "alex.member@example.com",
+            "contactId": "2a01d8c7-54e5-4f42-9c9f-7a5d4d2ec4f1",
+            "nickname": "alex.member"
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    <CodeGroup>
+
+      ```bash Request
+      curl -X POST \
+      'https://www.wixapis.com/online-programs/participants/v3/join-applications/6d8c2f30-69f6-4484-a836-6d70a6e3f902/prepare-payment' \
+      -H 'Authorization: <AUTH>' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "paymentType": "PAID_PLANS"
+      }'
+      ```
+
+      ```json Response
+      {
+        "joinApplication": {
+          "id": "6d8c2f30-69f6-4484-a836-6d70a6e3f902",
+          "revision": "2",
+          "createdDate": "2026-06-01T14:26:18.245Z",
+          "updatedDate": "2026-06-01T14:26:42.611Z",
+          "memberId": "6c7c7b22-67a2-43c7-9d27-3b8ed07d9a45",
+          "programId": "8d3f2b9f-2c31-4f45-8e5a-1f4b9259a6c2",
+          "status": "APPROVED",
+          "paymentStatus": "PAYMENT_IN_PROGRESS",
+          "paymentInfo": {
+            "paidPlanIds": [
+              "9d1ecfc5-55fb-4a6c-a4b7-3c4eaf1da5de"
+            ]
+          }
+        }
+      }
+      ```
+
+    </CodeGroup>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+  <Tab title="SDK">
+
+    <div className="wix-api-columns">
+
+    <div className="wix-ref">
+
+    <Info>
+
+      **Developer Preview.** This method is in Developer Preview and may change without notice.
+
+    </Info>
+
+    Prepares payment for a join application, or resolves an existing Pricing Plans entitlement.
+
+    Before creating or refreshing checkout details, the method checks whether the member already has an eligible Pricing Plans entitlement for the program. If so, it returns the join application with `paymentStatus` set to `PAYMENT_SUCCESSFUL` and the eligible plan IDs in `paymentInfo.paidPlanIds`. No checkout is needed, even when the application was previously in `PAYMENT_PENDING`.
+
+    If no eligible entitlement exists, `paymentStatus` must be `PAYMENT_PENDING`, `PAYMENT_FAILED`, or `PAYMENT_CANCELED`. Calling the method for `PAYMENT_FAILED` or `PAYMENT_CANCELED` retries payment by replacing stale payment details with newly prepared ones.
+
+    Specify `paymentType` to choose the flow:
+
+    - `SINGLE_PAYMENT`: Creates a Wix Payments order and sets `paymentStatus` to `PAYMENT_IN_PROGRESS`.
+    - `PAID_PLANS`: Validates that pricing plans are connected to the program and sets `paymentStatus` to `PAYMENT_IN_PROGRESS`.
+
+    Check the returned `paymentStatus` before starting checkout, and direct the member to checkout only when it's `PAYMENT_IN_PROGRESS`. To apply a discount before the member completes a Wix Payments checkout, call [Apply Coupon](https://dev.wix.com/docs/api-reference/business-management/online-programs/join-applications/apply-coupon).
+
+    ## Permissions
+
+    This method requires one of the following permission scopes:
+
+    <div className="wix-scopes">
+
+    <span className="wix-scope" title="SCOPE.CHALLENGES.MANAGE">Manage Online Programs</span>
+
+    </div>
+
+    Learn more about [app permissions](https://dev.wix.com/docs/build-apps/develop-your-app/access/authorization/about-permissions).
+
+    Callable by: `APP`, `MEMBER`.
+
+    ## Method Declaration
+
+    ```typescript
+    import { joinApplications } from '@wix/online-programs';
+
+    joinApplications.preparePayment(joinApplicationId, paymentType): Promise
+    ```
+
+    ## Method Parameters
+
+    <ParamField body="joinApplicationId" type="string" required>
+
+      ID of the join application to prepare payment for.
+
+      Constraints: `format GUID`.
+
+    </ParamField>
+
+    <ParamField body="paymentType" type="string" required>
+
+      Type of payment to prepare.
+
+      **Supported values:**
+
+      - `SINGLE_PAYMENT` — One-time payment through Wix Payments.
+      - `PAID_PLANS` — Payment through Wix Pricing Plans.
+
+    </ParamField>
+
+    ## Returns
+
+    <ResponseField name="joinApplication" type="JoinApplication">
+
+      Join application with refreshed payment info. Check `paymentStatus` before directing the member to checkout.
+
+      See the [Join Application Object](/api-reference/business-management/online-programs/join-applications/join-application-object) for this object's fields.
+
+    </ResponseField>
+
+    ## Errors
+
+    | Status | Code | Application code | Description |
+    | --- | --- | --- | --- |
+    | `428` | `FAILED_PRECONDITION` | `OP_APP_NOT_INSTALLED` | Online Programs isn't installed on the site. |
+    | `428` | `FAILED_PRECONDITION` | `PP_APP_NOT_INSTALLED` | Pricing Plans isn't installed on the site. |
+    | `404` | `NOT_FOUND` | `NO_PAID_PLAN_CONNECTED` | No paid plan is connected to the program. |
+    | `428` | `FAILED_PRECONDITION` | `INVALID_PAYMENT_STATUS` | The join application's `paymentStatus` doesn't permit preparing payment. Allowed from `PAYMENT_PENDING`, `PAYMENT_FAILED`, and `PAYMENT_CANCELED`. |
+
+    <Note>
+
+      This method may also return standard errors. [Learn more about standard Wix errors](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-errors).
+
+    </Note>
+
+    ## Event Triggers
+
+    This method triggers the following events:
+
+    | Event | Type | Description |
+    | --- | --- | --- |
+    | Join Application Updated | `wix.online_programs.participants.v3.join_application_updated` | Triggered when a join application is updated. |
+    | Join Application Payment Status Changed | `wix.online_programs.participants.v3.join_application_payment_status_changed` | Triggered when a join application's `paymentStatus` changes. |
+
+    </div>
+
+    <div className="wix-examples">
+
+    ## Examples
+
+    <div className="wix-picker">
+
+    <input type="radio" name="ex-sdk-prepare-payment" id="ex-sdk-prepare-payment-0" className="wix-picker-radio" defaultChecked />
+    <input type="radio" name="ex-sdk-prepare-payment" id="ex-sdk-prepare-payment-1" className="wix-picker-radio" />
+    <input type="radio" name="ex-sdk-prepare-payment" id="ex-sdk-prepare-payment-2" className="wix-picker-radio" />
+
+    <input type="checkbox" id="ex-sdk-prepare-payment-open" className="wix-picker-toggle" />
+
+    <label htmlFor="ex-sdk-prepare-payment-open" className="wix-picker-button">
+
+    <span className="wix-picker-current"><span className="wix-picker-name">Prepare a single payment</span><span className="wix-picker-desc">Creates a Wix Payments order so the member can pay a one-time program fee</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">Prepare a paid plans payment</span><span className="wix-picker-desc">Starts the Pricing Plans payment flow for a join application</span></span>
+    <span className="wix-picker-current"><span className="wix-picker-name">preparePayment (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></span>
+
+    </label>
+
+    <div className="wix-picker-options">
+
+    <label htmlFor="ex-sdk-prepare-payment-0"><span className="wix-picker-name">Prepare a single payment</span><span className="wix-picker-desc">Creates a Wix Payments order so the member can pay a one-time program fee</span></label>
+    <label htmlFor="ex-sdk-prepare-payment-1"><span className="wix-picker-name">Prepare a paid plans payment</span><span className="wix-picker-desc">Starts the Pricing Plans payment flow for a join application</span></label>
+    <label htmlFor="ex-sdk-prepare-payment-2"><span className="wix-picker-name">preparePayment (self-hosted)</span><span className="wix-picker-desc">Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client)</span></label>
+
+    </div>
+
+    <div className="wix-picker-panels">
+
+    <div className="wix-picker-panel">
+
+    ```javascript Prepare a single payment
+    import { joinApplications } from "@wix/online-programs";
+
+    async function preparePayment() {
+      const response = await joinApplications.preparePayment(
+        "4f87b2e3-2a0d-4b9f-9a1c-2d8e71b7e5c4",
+        "SINGLE_PAYMENT",
+      );
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "joinApplication": {
+     *     "_id": "4f87b2e3-2a0d-4b9f-9a1c-2d8e71b7e5c4",
+     *     "revision": "2",
+     *     "_createdDate": "2026-06-01T14:21:15.691Z",
+     *     "_updatedDate": "2026-06-01T14:21:53.092Z",
+     *     "memberId": "2a01d8c7-54e5-4f42-9c9f-7a5d4d2ec4f1",
+     *     "programId": "8d3f2b9f-2c31-4f45-8e5a-1f4b9259a6c2",
+     *     "status": "APPROVED",
+     *     "paymentStatus": "PAYMENT_IN_PROGRESS",
+     *     "paymentInfo": {
+     *       "paymentOrderId": "0f0c80c2-cf4c-49db-93b4-30d0409aeb2b",
+     *       "paidPlanIds": []
+     *     }
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript Prepare a paid plans payment
+    import { joinApplications } from "@wix/online-programs";
+
+    async function preparePayment() {
+      const response = await joinApplications.preparePayment(
+        "6d8c2f30-69f6-4484-a836-6d70a6e3f902",
+        "PAID_PLANS",
+      );
+    }
+
+    /* Promise resolves to:
+     * {
+     *   "joinApplication": {
+     *     "_id": "6d8c2f30-69f6-4484-a836-6d70a6e3f902",
+     *     "revision": "2",
+     *     "_createdDate": "2026-06-01T14:26:18.245Z",
+     *     "_updatedDate": "2026-06-01T14:26:42.611Z",
+     *     "memberId": "6c7c7b22-67a2-43c7-9d27-3b8ed07d9a45",
+     *     "programId": "8d3f2b9f-2c31-4f45-8e5a-1f4b9259a6c2",
+     *     "status": "APPROVED",
+     *     "paymentStatus": "PAYMENT_IN_PROGRESS",
+     *     "paymentInfo": {
+     *       "paidPlanIds": ["c9f1a0d7-4a5c-4f2e-9f0b-2c7a3e6d1b48"]
+     *     }
+     *   }
+     * }
+     */
+    ```
+
+    </div>
+
+    <div className="wix-picker-panel">
+
+    ```javascript preparePayment (self-hosted)
+    import { createClient } from '@wix/sdk';
+    import { joinApplications } from '@wix/online-programs';
+    // Import the auth strategy for the relevant access type
+    // Import the relevant host module if needed
+
+    const myWixClient = createClient ({
+      modules: { joinApplications },
+      // Include the auth strategy and host as relevant
+    });
+
+    async function preparePayment(joinApplicationId,paymentType) {
+      const response = await myWixClient.joinApplications.preparePayment(joinApplicationId,paymentType);
+    };
+    ```
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <Note>
+
+      Self-hosted SDK calls require you to [create a client](https://dev.wix.com/docs/sdk/articles/work-with-the-sdk/about-the-wix-client).
+
+    </Note>
+
+    </div>
+
+    </div>
+
+  </Tab>
+
+</Tabs>

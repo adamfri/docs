@@ -1,0 +1,67 @@
+---
+title: "Introduction"
+description: "The Projects API lets you manage the engagements between Wix Marketplace providers and the clients who request their services."
+icon: "file-lines"
+---
+
+The Projects API lets you manage the engagements between Wix Marketplace providers and the clients who request their services. A project is created when a client's brief is matched with a provider, and it tracks that engagement from the client's first request through to delivery and review.
+
+The API is built for providers and the apps that serve them. It surfaces the work waiting on a provider, what each client asked for, and the methods to move an engagement forward as the work progresses.
+
+With the Projects API, you can:
+
+- Retrieve a provider's projects and filter them by the stage they've reached.
+- Read the request a client submitted, without retrieving the brief itself.
+- Move an engagement through its lifecycle as work starts, finishes, or falls through.
+- Record what was delivered and what the client agreed to pay.
+- Respond to the reviews clients leave on completed work.
+
+## The engagement lifecycle
+
+A project's `status` tracks where the engagement stands:
+
+- `NEW`: the project was created from the client's brief and no one has acted on it yet.
+- `CONTACTED`: the provider has messaged the client for the first time. This status is set automatically when the first message is sent, not through this API.
+- `IN_DISCUSSION`: the provider and client are discussing the engagement.
+- `IN_PROGRESS`: the provider has started work. Set by calling Start Project.
+- `COMPLETED`: the provider has delivered the engagement. Set by calling Complete Project.
+- `CANCELED_BY_PROVIDER`: the provider ended the engagement. Set by calling Cancel Project.
+- `CANCELED_BY_CLIENT`: the client ended the engagement.
+- `EXPIRED`: no one acted on the project before it expired.
+
+A provider drives the engagement with Start Project, Complete Project, and Cancel Project. The client drives the rest: they can cancel on their side, and they can review a project once it's completed. The `statusTimeline` field records the statuses a project has moved through.
+
+`COMPLETED`, `EXPIRED`, `CANCELED_BY_CLIENT`, and `CANCELED_BY_PROVIDER` are final. Once a project reaches one of them it can't move to another status, so a canceled engagement can't be restarted and a delivered one can't be reopened.
+
+A project that no one acts on doesn't stay open indefinitely. Each project is created with an `expirationDate`, and a project that's still `NEW` at that time moves to `EXPIRED` automatically. Acting on a project takes it out of `NEW`, after which it no longer expires.
+
+## Reviews
+
+Once a project is `COMPLETED`, the client can review it. A review has an `overallScore` from 1 to 5 and written `text`, and a provider can respond to it by calling Reply to Project Review. A review supports a single reply, and neither a review nor its reply can be changed after it's submitted.
+
+## Before you begin
+
+It's important to note the following points before starting to code:
+
+- Projects are created as part of the marketplace matching flow, so there's no method for creating one.
+- A provider can only retrieve and update the projects that belong to their own account.
+- A project belongs to the brief it was created from, so deleting that brief deletes the project along with it.
+- Completing a project requires proof of delivery, so `completedProjectSnapshot` or `metasiteId` must be set on the project or specified in the request.
+- A project doesn't carry the client's name or contact details. Pass its `contactId` to the [Contacts API](fallback::https://dev.wix.com/docs/rest/crm/members-contacts/contacts/contacts/introduction) to retrieve them.
+
+## Use cases
+
+- [Build a provider's work queue](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/sample-flows#build-a-providers-work-queue)
+- [Take an engagement from first contact to delivery](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/sample-flows#take-an-engagement-from-first-contact-to-delivery)
+- [End an engagement that isn't going ahead](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/sample-flows#end-an-engagement-that-isnt-going-ahead)
+- [Respond to a client's review](fallback::https://dev.wix.com/docs/api-reference/account-level/studio-workspace/marketplace/project-v1/sample-flows#respond-to-a-clients-review)
+
+## Terminology
+
+- **Provider**: a professional who offers services in the Wix Marketplace.
+- **Client**: a Wix user who requests help from a provider.
+- **Brief**: the request a client submits when they're looking for help. A project is created from a brief.
+- **Project**: the engagement between 1 client and 1 provider for a submitted brief. A client who's matched with several providers has a separate project with each of them.
+- **Marketplace service**: the category of work a project is attributed to, such as building a site or search engine optimization.
+
+@sdk_package_setup
